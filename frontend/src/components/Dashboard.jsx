@@ -9,7 +9,6 @@ import {
   ShoppingBag, 
   ArrowRightLeft,
   Gift,
-  ChevronRight,
   User,
   LogOut
 } from "lucide-react";
@@ -59,45 +58,17 @@ export default function Dashboard() {
   const progressPercent = user ? Math.min((user.daily_steps / 10000) * 100, 100) : 0;
 
   const features = [
-    {
-      id: "move",
-      title: "MOVE",
-      subtitle: "Walk and Earn",
-      icon: Footprints,
-      color: "cyan",
-      path: "/move"
-    },
-    {
-      id: "play",
-      title: "PLAY",
-      subtitle: "zBricks Game",
-      icon: Gamepad2,
-      color: "purple",
-      path: "/play"
-    },
-    {
-      id: "shop",
-      title: "SHOP",
-      subtitle: "Zupreme Imports",
-      icon: ShoppingBag,
-      color: "pink",
-      path: "/shop"
-    },
-    {
-      id: "swap",
-      title: "SWAP",
-      subtitle: "Exchange Tokens",
-      icon: ArrowRightLeft,
-      color: "blue",
-      path: "/swap"
-    }
+    { id: "move", title: "MOVE", subtitle: "Walk & Earn", icon: Footprints, color: "cyan", path: "/move" },
+    { id: "play", title: "PLAY", subtitle: "zCube & Trivia", icon: Gamepad2, color: "purple", path: "/play" },
+    { id: "shop", title: "SHOP", subtitle: "Zupreme Imports", icon: ShoppingBag, color: "pink", path: "/shop" },
+    { id: "swap", title: "SWAP", subtitle: "Exchange Tokens", icon: ArrowRightLeft, color: "blue", path: "/swap" }
   ];
 
   const colorClasses = {
-    cyan: "from-cyan-500/20 to-cyan-500/5 border-cyan-500/30 hover:border-cyan-400",
-    purple: "from-purple-500/20 to-purple-500/5 border-purple-500/30 hover:border-purple-400",
-    pink: "from-pink-500/20 to-pink-500/5 border-pink-500/30 hover:border-pink-400",
-    blue: "from-blue-500/20 to-blue-500/5 border-blue-500/30 hover:border-blue-400"
+    cyan: "from-cyan-500/20 to-cyan-500/5 border-cyan-500/30 active:border-cyan-400",
+    purple: "from-purple-500/20 to-purple-500/5 border-purple-500/30 active:border-purple-400",
+    pink: "from-pink-500/20 to-pink-500/5 border-pink-500/30 active:border-pink-400",
+    blue: "from-blue-500/20 to-blue-500/5 border-blue-500/30 active:border-blue-400"
   };
 
   const iconColors = {
@@ -108,19 +79,19 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0b1e] p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold neon-text" data-testid="dashboard-logo">ZWAP!</h1>
+    <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-3 pb-[72px] overflow-hidden">
+      {/* Header - Compact */}
+      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+        <h1 className="text-2xl font-bold neon-text" data-testid="dashboard-logo">ZWAP!</h1>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
-              className="w-10 h-10 rounded-full bg-cyan-500/20 p-0"
+              className="w-9 h-9 rounded-full bg-cyan-500/20 p-0"
               data-testid="profile-button"
             >
-              <User className="w-5 h-5 text-cyan-400" />
+              <User className="w-4 h-4 text-cyan-400" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-[#141530] border-cyan-500/30">
@@ -139,52 +110,34 @@ export default function Dashboard() {
         </DropdownMenu>
       </div>
 
-      {/* Balance Card */}
-      <div className="balance-glow p-6 mb-6" data-testid="balance-card">
-        <div className="text-center">
-          <p className="text-gray-400 text-sm mb-1">Your Balance</p>
-          <h2 className="text-5xl font-bold neon-text" data-testid="zwap-balance">
-            {user?.zwap_balance?.toFixed(2) || "0.00"}
-          </h2>
-          <p className="text-cyan-400 text-lg">ZWAP</p>
+      {/* Balance Card - Compact */}
+      <div className="balance-glow p-4 mb-3 flex-shrink-0" data-testid="balance-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-gray-400 text-xs">Your Balance</p>
+            <h2 className="text-4xl font-bold neon-text leading-tight" data-testid="zwap-balance">
+              {user?.zwap_balance?.toFixed(0) || "0"}
+            </h2>
+            <p className="text-cyan-400 text-sm -mt-1">ZWAP</p>
+          </div>
+          <div className="text-right">
+            <p className="text-gray-400 text-xs">Steps Today</p>
+            <p className="text-2xl font-bold text-white">{user?.daily_steps?.toLocaleString() || "0"}</p>
+            <p className="text-xs text-gray-500">/ 10,000</p>
+          </div>
         </div>
         
-        {/* Progress to daily goal */}
-        <div className="mt-6">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-gray-400">Daily Progress</span>
-            <span className="text-cyan-400">{user?.daily_steps || 0} / 10,000 steps</span>
+        {/* Progress bar */}
+        <div className="mt-3">
+          <div className="progress-bar h-2">
+            <div className="progress-fill h-full" style={{ width: `${progressPercent}%` }} />
           </div>
-          <div className="progress-bar h-3">
-            <div 
-              className="progress-fill h-full"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            Earn up to 700 ZWAP! daily
-          </p>
+          <p className="text-[10px] text-gray-500 mt-1 text-center">Earn up to 700 ZWAP! daily</p>
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="glass-card p-4 text-center">
-          <p className="text-gray-400 text-xs mb-1">Total Steps</p>
-          <p className="text-2xl font-bold text-white" data-testid="total-steps">
-            {user?.total_steps?.toLocaleString() || "0"}
-          </p>
-        </div>
-        <div className="glass-card p-4 text-center">
-          <p className="text-gray-400 text-xs mb-1">Games Played</p>
-          <p className="text-2xl font-bold text-white" data-testid="games-played">
-            {user?.games_played || 0}
-          </p>
-        </div>
-      </div>
-
-      {/* Feature Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      {/* Feature Grid - Main content area, takes remaining space */}
+      <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
         {features.map((feature) => {
           const Icon = feature.icon;
           return (
@@ -192,47 +145,43 @@ export default function Dashboard() {
               key={feature.id}
               data-testid={`feature-${feature.id}`}
               onClick={() => navigate(feature.path)}
-              className={`p-4 rounded-2xl border bg-gradient-to-br ${colorClasses[feature.color]} transition-all duration-300 hover:scale-[1.02] text-left`}
+              className={`p-3 rounded-2xl border bg-gradient-to-br ${colorClasses[feature.color]} transition-all duration-200 active:scale-[0.98] flex flex-col justify-center`}
             >
-              <Icon className={`w-8 h-8 ${iconColors[feature.color]} mb-3`} />
-              <h3 className="text-white font-bold text-lg">{feature.title}</h3>
-              <p className="text-gray-400 text-sm">{feature.subtitle}</p>
+              <Icon className={`w-7 h-7 ${iconColors[feature.color]} mb-2`} />
+              <h3 className="text-white font-bold text-base">{feature.title}</h3>
+              <p className="text-gray-400 text-xs">{feature.subtitle}</p>
             </button>
           );
         })}
       </div>
 
-      {/* Scratch to Win */}
+      {/* Scratch to Win - Bottom compact */}
       <div 
-        className="scratch-card rounded-2xl p-4 cursor-pointer"
+        className="scratch-card rounded-xl p-3 cursor-pointer mt-3 flex-shrink-0"
         data-testid="scratch-card"
         onClick={scratchResult ? resetScratch : handleScratch}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
-              <Gift className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+              <Gift className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-bold">zWheel BONUS</h3>
-              <p className="text-gray-400 text-sm">
+              <h3 className="text-white font-bold text-sm">zWheel BONUS</h3>
+              <p className="text-gray-400 text-xs">
                 {scratchResult 
-                  ? (scratchResult.won ? `Won ${scratchResult.amount} ZWAP! Tap to try again` : "Tap to try again")
+                  ? (scratchResult.won ? `Won ${scratchResult.amount} ZWAP!` : "Try again")
                   : "Scratch to Win"
                 }
               </p>
             </div>
           </div>
-          <ChevronRight className={`w-6 h-6 text-gray-400 ${isScratching ? 'animate-spin' : ''}`} />
+          {scratchResult && (
+            <span className={`text-xs font-bold px-2 py-1 rounded ${scratchResult.won ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+              {scratchResult.won ? '🎉' : '🔄'}
+            </span>
+          )}
         </div>
-        
-        {scratchResult && (
-          <div className={`mt-4 text-center py-3 rounded-xl ${scratchResult.won ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-            <p className={`font-bold ${scratchResult.won ? 'text-green-400' : 'text-red-400'}`}>
-              {scratchResult.won ? `🎉 You won ${scratchResult.amount} ZWAP!` : "😢 Better luck next time!"}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
