@@ -58,6 +58,8 @@ User flow:
 - [x] Scratch to Win bonus
 - [x] Tiered faucet earning system
 - [x] Bottom tab navigation
+- [x] **Mobile-first no-scroll layout** - All screens fit without scrolling
+- [x] **PWA Support** - manifest.json, service worker, app icons for store distribution
 
 ## Prioritized Backlog
 
