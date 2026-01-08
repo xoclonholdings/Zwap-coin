@@ -1,34 +1,45 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Additional App styles */
+.App {
+  min-height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
 }
 
-.App-link {
-    color: #61dafb;
+/* Toast customization */
+[data-sonner-toaster] {
+  --normal-bg: #141530 !important;
+  --normal-border: rgba(0, 245, 255, 0.2) !important;
+  --success-bg: rgba(34, 197, 94, 0.2) !important;
+  --error-bg: rgba(239, 68, 68, 0.2) !important;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Button glow on hover */
+button:hover {
+  transition: all 0.2s ease;
+}
+
+/* Input focus states */
+input:focus {
+  outline: none;
+  border-color: #00f5ff !important;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+}
+
+/* Select customization */
+[data-radix-select-viewport] {
+  background: #141530;
+}
+
+/* Dialog overlay */
+[data-state="open"] > [data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
 }
