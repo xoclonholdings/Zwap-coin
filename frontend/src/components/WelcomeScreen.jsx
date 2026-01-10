@@ -22,9 +22,12 @@ export default function WelcomeScreen() {
       {/* Content */}
       <div className="relative z-10 text-center w-full max-w-sm mx-auto flex flex-col h-full justify-center">
         {/* Logo */}
-        <div className="mb-6">
+        <div className="mb-2">
           <img src={ZWAP_LOGO} alt="ZWAP!" className="h-16 mx-auto" data-testid="zwap-logo" />
         </div>
+
+        {/* Tagline */}
+        <p className="text-gray-400 text-sm mb-6">The Crypto Faucet That Moves With You</p>
 
         {/* Welcome text */}
         <div className="mb-8">
@@ -44,7 +47,7 @@ export default function WelcomeScreen() {
               <ArrowRightLeft className="w-5 h-5 text-cyan-400" />
             </div>
             <div className="text-left">
-              <div className="text-white font-semibold flex items-center gap-2">Swap <span>💱</span></div>
+              <div className="text-white font-semibold flex items-center gap-2">Swap</div>
               <div className="text-gray-400 text-xs">Exchange tokens securely</div>
             </div>
           </Button>
@@ -59,7 +62,7 @@ export default function WelcomeScreen() {
               <Target className="w-5 h-5 text-purple-400" />
             </div>
             <div className="text-left">
-              <div className="text-white font-semibold flex items-center gap-2">Earn <span>🎯</span></div>
+              <div className="text-white font-semibold flex items-center gap-2">Earn</div>
               <div className="text-gray-400 text-xs">Claim free ZWAP! through faucet</div>
             </div>
           </Button>
@@ -74,7 +77,7 @@ export default function WelcomeScreen() {
               <ShoppingBag className="w-5 h-5 text-pink-400" />
             </div>
             <div className="text-left">
-              <div className="text-white font-semibold flex items-center gap-2">Shop <span>🛍️</span></div>
+              <div className="text-white font-semibold flex items-center gap-2">Shop</div>
               <div className="text-gray-400 text-xs">Browse with your crypto</div>
             </div>
           </Button>

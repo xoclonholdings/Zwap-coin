@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ZWAP_LOGO, ZWAP_BANG } from "@/App";
+import { ZWAP_LOGO } from "@/App";
 
 export default function SplashScreen({ onEnter }) {
   const [stage, setStage] = useState(0);
@@ -17,14 +17,14 @@ export default function SplashScreen({ onEnter }) {
       return;
     }
 
-    // Animation sequence
+    // Animation sequence - slower timing
     const timers = [
-      setTimeout(() => setStage(1), 500),   // MOVE slides in
-      setTimeout(() => setStage(2), 1200),  // PLAY dissolves
-      setTimeout(() => setStage(3), 1900),  // SWAP falls
-      setTimeout(() => setStage(4), 2600),  // SHOP letter by letter
-      setTimeout(() => setStage(5), 3800),  // Logo swirls in
-      setTimeout(() => setShowButtons(true), 4500), // Buttons appear
+      setTimeout(() => setStage(1), 600),   // MOVE slides in
+      setTimeout(() => setStage(2), 1500),  // PLAY dissolves
+      setTimeout(() => setStage(3), 2400),  // SWAP falls
+      setTimeout(() => setStage(4), 3300),  // SHOP letter by letter
+      setTimeout(() => setStage(5), 4800),  // Logo swirls in (slower)
+      setTimeout(() => setShowButtons(true), 6200), // Buttons appear later
     ];
 
     return () => timers.forEach(clearTimeout);
@@ -39,8 +39,6 @@ export default function SplashScreen({ onEnter }) {
     sessionStorage.setItem("zwap_splash_shown", "true");
     navigate("/about");
   };
-
-  const words = ["MOVE.", "PLAY.", "SWAP.", "SHOP."];
 
   return (
     <div className="fixed inset-0 z-50 bg-[#050510] flex flex-col items-center justify-center overflow-hidden">
@@ -125,19 +123,24 @@ export default function SplashScreen({ onEnter }) {
         </AnimatePresence>
       </div>
 
-      {/* Logo swirl in */}
+      {/* Logo swirl in - starts from far back and swirls in slower */}
       <AnimatePresence>
         {stage >= 5 && (
           <motion.div
-            initial={{ scale: 0, rotate: -180, opacity: 0 }}
+            initial={{ scale: 0.1, rotate: -360, opacity: 0 }}
             animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{ type: "spring", damping: 12, duration: 0.8 }}
-            className="relative z-10 mb-4"
+            transition={{ 
+              type: "spring", 
+              damping: 15, 
+              stiffness: 60,
+              duration: 1.5 
+            }}
+            className="relative z-10 mb-2"
           >
             <motion.img
-              src={ZWAP_BANG}
+              src={ZWAP_LOGO}
               alt="ZWAP!"
-              className="h-32 sm:h-40 drop-shadow-[0_0_30px_rgba(0,245,255,0.6)]"
+              className="h-20 sm:h-24 drop-shadow-[0_0_30px_rgba(0,245,255,0.6)]"
               animate={{ 
                 filter: [
                   "drop-shadow(0 0 20px rgba(0,245,255,0.4))",
@@ -151,16 +154,16 @@ export default function SplashScreen({ onEnter }) {
         )}
       </AnimatePresence>
 
-      {/* Tagline */}
+      {/* Tagline - actual tagline */}
       <AnimatePresence>
         {stage >= 5 && (
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-gray-400 text-sm sm:text-base mb-8 text-center px-4"
+            transition={{ delay: 0.5 }}
+            className="text-gray-400 text-base sm:text-lg mb-10 text-center px-4 font-medium"
           >
-            Walk. Play. Earn. Exchange.
+            The Crypto Faucet That Moves With You
           </motion.p>
         )}
       </AnimatePresence>
@@ -171,7 +174,7 @@ export default function SplashScreen({ onEnter }) {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col gap-3 items-center relative z-10"
+            className="flex flex-col gap-4 items-center relative z-10"
           >
             <Button
               onClick={handleEnter}
@@ -183,8 +186,7 @@ export default function SplashScreen({ onEnter }) {
             
             <Button
               onClick={handleWhatIsZwap}
-              variant="ghost"
-              className="text-gray-400 hover:text-white underline underline-offset-4"
+              className="px-8 py-5 text-base font-semibold bg-transparent border-2 border-cyan-500/50 hover:border-cyan-400 text-cyan-400 hover:text-cyan-300 rounded-full transition-all hover:shadow-[0_0_20px_rgba(0,245,255,0.3)]"
               data-testid="splash-about"
             >
               WHAT IS ZWAP!?

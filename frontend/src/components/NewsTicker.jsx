@@ -18,31 +18,31 @@ const getTickerContent = (user) => {
   
   return [
     // Deals & Incentives
-    { type: "DEAL", text: "🎉 Plus subscribers get 1.5x rewards on all earnings!" },
-    { type: "DEAL", text: "🔥 Weekend bonus: Double Z Points on games (Sat-Sun)" },
-    { type: "DEAL", text: "💎 Refer a friend, earn 100 ZWAP when they join!" },
+    { type: "DEAL", text: "Plus subscribers get 1.5x rewards on all earnings!" },
+    { type: "DEAL", text: "Weekend bonus: Double Z Points on games (Sat-Sun)" },
+    { type: "DEAL", text: "Refer a friend, earn 100 ZWAP when they join!" },
     
     // Leaderboard (local/regional/global placeholders)
-    { type: "LEADERBOARD", text: `🏆 ${username}: #247 in Los Angeles • #1,892 in California • #12,456 Global` },
-    { type: "LEADERBOARD", text: "👑 Top Earner Today: CryptoKing#8821 with 2,450 ZWAP" },
-    { type: "LEADERBOARD", text: "🎮 Top Gamer This Week: BlockMaster#3344 with 89 games" },
-    { type: "LEADERBOARD", text: "🚶 Most Steps Today: WalkChamp#5567 with 25,432 steps" },
+    { type: "LEADERBOARD", text: `${username}: #247 in Los Angeles • #1,892 in California • #12,456 Global` },
+    { type: "LEADERBOARD", text: "Top Earner Today: CryptoKing#8821 with 2,450 ZWAP" },
+    { type: "LEADERBOARD", text: "Top Gamer This Week: BlockMaster#3344 with 89 games" },
+    { type: "LEADERBOARD", text: "Most Steps Today: WalkChamp#5567 with 25,432 steps" },
     
     // App Updates
-    { type: "UPDATE", text: "📱 New: zTetris game now available for Plus members!" },
-    { type: "UPDATE", text: "🔄 App v2.0 released - Faster swaps, better rewards" },
-    { type: "UPDATE", text: "🎊 Coming Soon: zDance mode for Sustainers" },
+    { type: "UPDATE", text: "New: zTetris game now available for Plus members!" },
+    { type: "UPDATE", text: "App v2.0 released - Faster swaps, better rewards" },
+    { type: "UPDATE", text: "Coming Soon: zDance mode for Sustainers" },
     
     // Crypto Headlines
-    { type: "NEWS", text: "📈 BTC hits new ATH! Up 5.2% in 24h" },
-    { type: "NEWS", text: "🔷 Polygon network upgrade completed successfully" },
-    { type: "NEWS", text: "💰 Crypto market cap surpasses $3T milestone" },
+    { type: "NEWS", text: "BTC hits new ATH! Up 5.2% in 24h" },
+    { type: "NEWS", text: "Polygon network upgrade completed successfully" },
+    { type: "NEWS", text: "Crypto market cap surpasses $3T milestone" },
     
     // Tips & How-tos
-    { type: "TIP", text: "💡 Tip: Play games to earn Z Points - walking only gives ZWAP!" },
-    { type: "TIP", text: "💡 Did you know? 1000 Z Points = 1 ZWAP in the shop" },
-    { type: "TIP", text: "💡 Pro tip: Higher game levels = better rewards!" },
-    { type: "TIP", text: "💡 FAQ: Swap fees are only 1% - lowest in the market!" },
+    { type: "TIP", text: "Tip: Play games to earn Z Points - walking only gives ZWAP!" },
+    { type: "TIP", text: "Did you know? 1000 Z Points = 1 ZWAP in the shop" },
+    { type: "TIP", text: "Pro tip: Higher game levels = better rewards!" },
+    { type: "TIP", text: "FAQ: Swap fees are only 1% - lowest in the market!" },
   ];
 };
 
@@ -67,8 +67,8 @@ export default function NewsTicker() {
       setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % tickerContent.length);
         setIsVisible(true);
-      }, 500);
-    }, 5000); // Change every 5 seconds
+      }, 800); // Longer fade transition
+    }, 8000); // Change every 8 seconds (slower)
 
     return () => clearInterval(interval);
   }, [tickerContent.length]);
@@ -80,8 +80,8 @@ export default function NewsTicker() {
   const Icon = config.icon;
 
   return (
-    <div className="fixed bottom-[60px] left-0 right-0 z-30 bg-[#0a0b1e]/95 backdrop-blur-lg border-t border-b border-cyan-500/10">
-      <div className="max-w-lg mx-auto px-4 py-2">
+    <div className="fixed bottom-[68px] left-0 right-0 z-30 bg-[#0a0b1e]/95 backdrop-blur-lg border-t border-cyan-500/20">
+      <div className="max-w-lg mx-auto px-4 py-3">
         <AnimatePresence mode="wait">
           {isVisible && (
             <motion.div
@@ -89,25 +89,25 @@ export default function NewsTicker() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="flex items-center gap-2"
+              transition={{ duration: 0.6 }}
+              className="flex items-center gap-3"
             >
-              <div className={`w-6 h-6 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0`}>
-                <Icon className={`w-3 h-3 ${config.color}`} />
+              <div className={`w-8 h-8 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0`}>
+                <Icon className={`w-4 h-4 ${config.color}`} />
               </div>
-              <p className="text-xs text-gray-300 truncate">{current.text}</p>
+              <p className="text-sm text-gray-200 leading-tight">{current.text}</p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
       
-      {/* Progress dots */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800">
+      {/* Progress bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800/50">
         <motion.div
           className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
           initial={{ width: "0%" }}
           animate={{ width: "100%" }}
-          transition={{ duration: 5, ease: "linear" }}
+          transition={{ duration: 8, ease: "linear" }}
           key={currentIndex}
         />
       </div>
