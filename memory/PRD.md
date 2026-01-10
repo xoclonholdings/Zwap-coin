@@ -72,30 +72,39 @@ User flow:
 - [x] **ZWAP! Official Logos** - Added throughout app
 - [x] **1.5x Rewards for Plus** - Multiplier for Plus tier users
 
+## What's Been Implemented (2025-01-11)
+- [x] **Animated Splash Screen** - Shows MOVE, PLAY, SWAP, SHOP animations on app launch
+- [x] **Persistent AppHeader** - Fixed header with ZWAP logo, balances (ZWAP & zPts), and profile badge
+- [x] **Profile Settings Sheet** - Opens from profile badge with user info, tier status, upgrade option, and settings
+- [x] **NewsTicker Footer** - Rotating ticker showing deals, leaderboard, tips, news
+- [x] **About Page** - "What is ZWAP!?" informational page accessible from splash screen
+- [x] **Refactored Tab Components** - All main tabs (Dashboard, Move, Play, Shop, Swap) use global header
+- [x] **Accessibility Fix** - Added aria-describedby for profile sheet
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
 - All core features implemented ✅
+- UI/UX Overhaul completed ✅
 
 ### P1 (High Priority)
-- [ ] Real wallet integration (actual MetaMask signing)
-- [ ] Blockchain transaction recording
-- [ ] User authentication persistence
+- [ ] User Profile Settings page with privacy, terms, FAQs
+- [ ] Leaderboard logic (backend API + frontend display in ticker)
+- [ ] Full Stripe subscription webhook processing
 
 ### P2 (Medium Priority)
-- [ ] Leaderboards for steps and games
-- [ ] Daily/weekly challenges
+- [ ] Implement zTetris and zSlots games
+- [ ] Monthly ZWAP and daily Z-Point reward caps enforcement
+- [ ] Add USDT to SWAP tab
 - [ ] Push notifications
-- [ ] Social sharing
 
 ### P3 (Nice to Have)
+- [ ] Higher tiers ($XHI token, Sustainer tier)
 - [ ] NFT rewards for achievements
 - [ ] Referral system
 - [ ] Multi-language support
-- [ ] Dark/light theme toggle
 
 ## Next Tasks
-1. Implement real MetaMask/WalletConnect integration
-2. Add blockchain transaction history
-3. Create leaderboard system
-4. Add push notifications for daily bonuses
+1. Implement User Profile Settings (privacy, terms, FAQs)
+2. Build Leaderboard backend API and display in NewsTicker
+3. Complete Stripe webhook processing for Plus subscription
