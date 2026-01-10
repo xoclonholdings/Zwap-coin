@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp, api } from "@/App";
-import { Trophy, TrendingUp, Newspaper, Lightbulb, Gift, Bell } from "lucide-react";
+import { Trophy, TrendingUp, Newspaper, Lightbulb, Gift, Bell, Users } from "lucide-react";
 
 // Ticker content types
 const TICKER_TYPES = {
@@ -10,65 +10,121 @@ const TICKER_TYPES = {
   NEWS: { icon: Newspaper, color: "text-blue-400", bg: "bg-blue-500/20" },
   TIP: { icon: Lightbulb, color: "text-purple-400", bg: "bg-purple-500/20" },
   UPDATE: { icon: Bell, color: "text-green-400", bg: "bg-green-500/20" },
+  STATS: { icon: Users, color: "text-pink-400", bg: "bg-pink-500/20" },
 };
 
-// Sample ticker content (will be replaced with API data)
-const getTickerContent = (user) => {
-  const username = user ? `Zwapper#${(parseInt(user.wallet_address?.slice(2, 10) || "0", 16) % 9999).toString().padStart(4, '0')}` : "You";
+// Static content
+const staticContent = [
+  // Deals & Incentives
+  { type: "DEAL", text: "Plus subscribers get 1.5x rewards on all earnings!" },
+  { type: "DEAL", text: "Weekend bonus: Double Z Points on games (Sat-Sun)" },
+  { type: "DEAL", text: "Refer a friend, earn 100 ZWAP when they join!" },
   
-  return [
-    // Deals & Incentives
-    { type: "DEAL", text: "Plus subscribers get 1.5x rewards on all earnings!" },
-    { type: "DEAL", text: "Weekend bonus: Double Z Points on games (Sat-Sun)" },
-    { type: "DEAL", text: "Refer a friend, earn 100 ZWAP when they join!" },
-    
-    // Leaderboard (local/regional/global placeholders)
-    { type: "LEADERBOARD", text: `${username}: #247 in Los Angeles • #1,892 in California • #12,456 Global` },
-    { type: "LEADERBOARD", text: "Top Earner Today: CryptoKing#8821 with 2,450 ZWAP" },
-    { type: "LEADERBOARD", text: "Top Gamer This Week: BlockMaster#3344 with 89 games" },
-    { type: "LEADERBOARD", text: "Most Steps Today: WalkChamp#5567 with 25,432 steps" },
-    
-    // App Updates
-    { type: "UPDATE", text: "New: zTetris game now available for Plus members!" },
-    { type: "UPDATE", text: "App v2.0 released - Faster swaps, better rewards" },
-    { type: "UPDATE", text: "Coming Soon: zDance mode for Sustainers" },
-    
-    // Crypto Headlines
-    { type: "NEWS", text: "BTC hits new ATH! Up 5.2% in 24h" },
-    { type: "NEWS", text: "Polygon network upgrade completed successfully" },
-    { type: "NEWS", text: "Crypto market cap surpasses $3T milestone" },
-    
-    // Tips & How-tos
-    { type: "TIP", text: "Tip: Play games to earn Z Points - walking only gives ZWAP!" },
-    { type: "TIP", text: "Did you know? 1000 Z Points = 1 ZWAP in the shop" },
-    { type: "TIP", text: "Pro tip: Higher game levels = better rewards!" },
-    { type: "TIP", text: "FAQ: Swap fees are only 1% - lowest in the market!" },
-  ];
-};
+  // App Updates
+  { type: "UPDATE", text: "New: zTetris game now available for Plus members!" },
+  { type: "UPDATE", text: "App v2.0 released - Faster swaps, better rewards" },
+  
+  // Tips & How-tos
+  { type: "TIP", text: "Tip: Play games to earn Z Points - walking only gives ZWAP!" },
+  { type: "TIP", text: "Did you know? 1000 Z Points = 1 ZWAP in the shop" },
+  { type: "TIP", text: "Pro tip: Higher game levels = better rewards!" },
+  { type: "TIP", text: "FAQ: Swap fees are only 1% - lowest in the market!" },
+];
 
 export default function NewsTicker() {
-  const { user } = useApp();
+  const { user, walletAddress } = useApp();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [tickerContent, setTickerContent] = useState([]);
+  const [leaderboardStats, setLeaderboardStats] = useState(null);
+  const [userRank, setUserRank] = useState(null);
 
+  // Fetch leaderboard stats
   useEffect(() => {
-    setTickerContent(getTickerContent(user));
-  }, [user]);
+    const fetchStats = async () => {
+      try {
+        const stats = await api.getLeaderboardStats();
+        setLeaderboardStats(stats);
+      } catch (error) {
+        console.error("Failed to fetch leaderboard stats:", error);
+      }
+    };
+    
+    fetchStats();
+    const interval = setInterval(fetchStats, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, []);
 
+  // Fetch user rank if connected
+  useEffect(() => {
+    const fetchUserRank = async () => {
+      if (!walletAddress) return;
+      try {
+        const rank = await api.getUserRank(walletAddress, "earned");
+        setUserRank(rank);
+      } catch (error) {
+        console.error("Failed to fetch user rank:", error);
+      }
+    };
+    
+    fetchUserRank();
+  }, [walletAddress]);
+
+  // Build ticker content
+  useEffect(() => {
+    const content = [...staticContent];
+    
+    // Add dynamic leaderboard content
+    if (leaderboardStats) {
+      if (leaderboardStats.top_earner?.username !== "N/A") {
+        content.push({
+          type: "LEADERBOARD",
+          text: `Top Earner: ${leaderboardStats.top_earner.username} with ${leaderboardStats.top_earner.value.toLocaleString()} ZWAP`
+        });
+      }
+      if (leaderboardStats.top_gamer?.username !== "N/A") {
+        content.push({
+          type: "LEADERBOARD",
+          text: `Top Gamer: ${leaderboardStats.top_gamer.username} with ${leaderboardStats.top_gamer.value.toLocaleString()} games`
+        });
+      }
+      if (leaderboardStats.top_stepper?.username !== "N/A") {
+        content.push({
+          type: "LEADERBOARD",
+          text: `Most Steps: ${leaderboardStats.top_stepper.username} with ${leaderboardStats.top_stepper.value.toLocaleString()} steps`
+        });
+      }
+      if (leaderboardStats.total_users > 0) {
+        content.push({
+          type: "STATS",
+          text: `${leaderboardStats.total_users.toLocaleString()} Zwappers have earned ${leaderboardStats.total_zwap_distributed.toLocaleString()} ZWAP!`
+        });
+      }
+    }
+    
+    // Add user rank if available
+    if (userRank) {
+      content.push({
+        type: "LEADERBOARD",
+        text: `${userRank.username}: #${userRank.local_rank} Local • #${userRank.regional_rank} Regional • #${userRank.global_rank} Global`
+      });
+    }
+    
+    setTickerContent(content);
+  }, [leaderboardStats, userRank]);
+
+  // Rotate ticker
   useEffect(() => {
     if (tickerContent.length === 0) return;
 
     const interval = setInterval(() => {
-      // Fade out
       setIsVisible(false);
       
-      // After fade out, change content and fade in
       setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % tickerContent.length);
         setIsVisible(true);
-      }, 800); // Longer fade transition
-    }, 8000); // Change every 8 seconds (slower)
+      }, 800);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [tickerContent.length]);
@@ -92,9 +148,19 @@ export default function NewsTicker() {
               transition={{ duration: 0.6 }}
               className="flex items-center gap-3"
             >
-              <div className={`w-8 h-8 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0`}>
+              <motion.div 
+                className={`w-8 h-8 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0`}
+                animate={{ 
+                  boxShadow: [
+                    "0 0 10px rgba(0,245,255,0.2)",
+                    "0 0 20px rgba(0,245,255,0.4)",
+                    "0 0 10px rgba(0,245,255,0.2)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
                 <Icon className={`w-4 h-4 ${config.color}`} />
-              </div>
+              </motion.div>
               <p className="text-sm text-gray-200 leading-tight">{current.text}</p>
             </motion.div>
           )}
