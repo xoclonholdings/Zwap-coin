@@ -3,7 +3,7 @@ import { useApp, ZWAP_BANG, api } from "@/App";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail } from "lucide-react";
+import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail, Link2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -21,7 +21,7 @@ const generateUsername = (wallet) => {
 };
 
 export default function AppHeader() {
-  const { user, walletAddress, setIsWalletModalOpen, disconnectWallet } = useApp();
+  const { user, walletAddress, setIsWalletModalOpen, disconnectWallet, onchainBalance } = useApp();
   const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
