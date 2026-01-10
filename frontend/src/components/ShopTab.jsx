@@ -1,9 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { useApp, api } from "@/App";
+import { useApp, api, ZWAP_BANG } from "@/App";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ShoppingBag, Check, Loader2, Crown, Coins, Zap } from "lucide-react";
+import { Check, Loader2, Crown, Coins, Zap, ShoppingBag } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
+// Zupreme Imports styled logo component
+const ZupremeLogoHeader = () => (
+  <div className="relative py-6 mb-4">
+    {/* Background glow */}
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="w-48 h-48 bg-pink-500/10 rounded-full blur-3xl" />
+    </div>
+    
+    {/* Logo and title */}
+    <div className="relative text-center">
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500/30 to-purple-500/30 border border-pink-500/30 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-pink-500/20">
+        <ShoppingBag className="w-8 h-8 text-pink-400" />
+      </div>
+      <h1 className="text-2xl font-extrabold">
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-pink-400">
+          ZUPREME
+        </span>
+      </h1>
+      <p className="text-gray-500 text-xs tracking-widest">IMPORTS</p>
+    </div>
+  </div>
+);
 
 export default function ShopTab() {
   const { user, walletAddress, refreshUser } = useApp();
@@ -18,7 +41,7 @@ export default function ShopTab() {
 
   const loadItems = async () => {
     try { const data = await api.getShopItems(); setItems(data); }
-    catch (error) { toast.error("Failed to load"); }
+    catch (error) { toast.error("Failed to load items"); }
     finally { setIsLoading(false); }
   };
 
@@ -46,64 +69,49 @@ export default function ShopTab() {
   const categories = [...new Set(items.map(item => item.category))];
 
   return (
-    <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-4 pb-[72px] overflow-hidden" data-testid="shop-tab">
-      {/* Header */}
-      <div className="text-center mb-3 flex-shrink-0">
-        <div className="w-12 h-12 rounded-full bg-pink-500/20 flex items-center justify-center mx-auto mb-1">
-          <ShoppingBag className="w-6 h-6 text-pink-400" />
-        </div>
-        <h1 className="text-xl font-bold text-white">SHOP</h1>
-        <p className="text-gray-400 text-xs">Zupreme Imports</p>
-      </div>
-
-      {/* Balances */}
-      <div className="grid grid-cols-2 gap-2 mb-3 flex-shrink-0">
-        <div className="glass-card p-2 rounded-xl flex items-center gap-2">
-          <Coins className="w-4 h-4 text-cyan-400" />
-          <div>
-            <p className="text-[10px] text-gray-400">ZWAP</p>
-            <p className="text-sm font-bold text-cyan-400">{user?.zwap_balance?.toFixed(0) || "0"}</p>
-          </div>
-        </div>
-        <div className="glass-card p-2 rounded-xl flex items-center gap-2">
-          <Zap className="w-4 h-4 text-purple-400" />
-          <div>
-            <p className="text-[10px] text-gray-400">Z Points</p>
-            <p className="text-sm font-bold text-purple-400">{user?.zpts_balance || 0}</p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4" data-testid="shop-tab">
+      {/* Zupreme Imports Header */}
+      <ZupremeLogoHeader />
 
       {/* Items Grid */}
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-1 px-1">
+      <div className="flex-1 overflow-y-auto -mx-1 px-1 pb-4">
         {isLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-cyan-400 animate-spin" /></div>
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-pink-400 animate-spin" /></div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {categories.map(category => (
               <div key={category}>
-                <h2 className="text-sm font-semibold text-gray-400 mb-2 capitalize">{category}</h2>
+                <h2 className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{category}</h2>
                 <div className="grid grid-cols-3 gap-2">
                   {items.filter(item => item.category === category).map(item => (
                     <div
                       key={item.id}
                       data-testid={`shop-item-${item.id}`}
                       onClick={() => setSelectedItem(item)}
-                      className="shop-card rounded-xl overflow-hidden cursor-pointer relative"
+                      className="shop-card rounded-xl overflow-hidden cursor-pointer relative group"
                     >
                       {item.plus_only && (
-                        <div className="absolute top-1 right-1 bg-yellow-500/80 rounded px-1">
+                        <div className="absolute top-1 right-1 z-10 bg-yellow-500/90 rounded px-1 py-0.5">
                           <Crown className="w-3 h-3 text-white" />
                         </div>
                       )}
                       <div className="aspect-square overflow-hidden">
-                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                        />
                       </div>
-                      <div className="p-1.5">
+                      <div className="p-2 bg-gradient-to-t from-[#0a0b1e] to-transparent">
                         <h3 className="text-white font-medium text-[10px] truncate">{item.name}</h3>
-                        <div className="flex gap-1 mt-0.5">
+                        <div className="flex items-center gap-1 mt-0.5">
                           <span className="text-cyan-400 font-bold text-[10px]">{item.price_zwap}</span>
-                          {item.price_zpts && <span className="text-purple-400 text-[10px]">/ {item.price_zpts}zP</span>}
+                          {item.price_zpts && (
+                            <>
+                              <span className="text-gray-600 text-[10px]">/</span>
+                              <span className="text-purple-400 text-[10px]">{item.price_zpts}zP</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -115,9 +123,9 @@ export default function ShopTab() {
         )}
       </div>
 
-      {/* Z Points Conversion Tip */}
-      <div className="mt-2 text-center text-[10px] text-gray-500 flex-shrink-0">
-        💡 1000 Z Points = 1 ZWAP
+      {/* Conversion tip */}
+      <div className="py-2 text-center border-t border-gray-800">
+        <p className="text-[10px] text-gray-500">💎 1000 Z Points = 1 ZWAP</p>
       </div>
 
       {/* Purchase Dialog */}
@@ -130,7 +138,7 @@ export default function ShopTab() {
               </div>
               <DialogTitle className="text-lg text-white mb-2">Purchase Complete!</DialogTitle>
               <DialogDescription className="text-gray-400 text-sm mb-4">You've purchased {selectedItem?.name}</DialogDescription>
-              <Button onClick={handleCloseDialog} className="bg-pink-500 hover:bg-pink-600">Continue</Button>
+              <Button onClick={handleCloseDialog} className="bg-pink-500 hover:bg-pink-600">Continue Shopping</Button>
             </div>
           ) : selectedItem && (
             <>
@@ -152,31 +160,37 @@ export default function ShopTab() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setPaymentType("zwap")}
-                    className={`p-2 rounded-lg border transition-all ${
+                    className={`p-3 rounded-xl border transition-all flex items-center gap-2 ${
                       paymentType === "zwap" 
                         ? "border-cyan-500 bg-cyan-500/20" 
                         : "border-gray-700 bg-gray-800/50"
                     }`}
                   >
-                    <p className="text-cyan-400 font-bold">{selectedItem.price_zwap} ZWAP</p>
-                    <p className={`text-[10px] ${canAffordZwap(selectedItem.price_zwap) ? "text-green-400" : "text-red-400"}`}>
-                      {canAffordZwap(selectedItem.price_zwap) ? "✓ Available" : "✗ Insufficient"}
-                    </p>
+                    <Coins className="w-4 h-4 text-cyan-400" />
+                    <div className="text-left">
+                      <p className="text-cyan-400 font-bold text-sm">{selectedItem.price_zwap}</p>
+                      <p className={`text-[10px] ${canAffordZwap(selectedItem.price_zwap) ? "text-green-400" : "text-red-400"}`}>
+                        {canAffordZwap(selectedItem.price_zwap) ? "✓ Available" : "✗ Insufficient"}
+                      </p>
+                    </div>
                   </button>
                   
                   {selectedItem.price_zpts && (
                     <button
                       onClick={() => setPaymentType("zpts")}
-                      className={`p-2 rounded-lg border transition-all ${
+                      className={`p-3 rounded-xl border transition-all flex items-center gap-2 ${
                         paymentType === "zpts" 
                           ? "border-purple-500 bg-purple-500/20" 
                           : "border-gray-700 bg-gray-800/50"
                       }`}
                     >
-                      <p className="text-purple-400 font-bold">{selectedItem.price_zpts} zPts</p>
-                      <p className={`text-[10px] ${canAffordZpts(selectedItem.price_zpts) ? "text-green-400" : "text-red-400"}`}>
-                        {canAffordZpts(selectedItem.price_zpts) ? "✓ Available" : "✗ Insufficient"}
-                      </p>
+                      <Zap className="w-4 h-4 text-purple-400" />
+                      <div className="text-left">
+                        <p className="text-purple-400 font-bold text-sm">{selectedItem.price_zpts} zPts</p>
+                        <p className={`text-[10px] ${canAffordZpts(selectedItem.price_zpts) ? "text-green-400" : "text-red-400"}`}>
+                          {canAffordZpts(selectedItem.price_zpts) ? "✓ Available" : "✗ Insufficient"}
+                        </p>
+                      </div>
                     </button>
                   )}
                 </div>
@@ -187,7 +201,7 @@ export default function ShopTab() {
                 onClick={handlePurchase}
                 disabled={
                   isPurchasing || 
-                  selectedItem.plus_only && user?.tier !== "plus" ||
+                  (selectedItem.plus_only && user?.tier !== "plus") ||
                   (paymentType === "zwap" && !canAffordZwap(selectedItem.price_zwap)) ||
                   (paymentType === "zpts" && !canAffordZpts(selectedItem.price_zpts))
                 }
@@ -195,7 +209,7 @@ export default function ShopTab() {
               >
                 {isPurchasing ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
-                ) : selectedItem.plus_only && user?.tier !== "plus" ? (
+                ) : (selectedItem.plus_only && user?.tier !== "plus") ? (
                   "Plus Required"
                 ) : (
                   "Confirm Purchase"
