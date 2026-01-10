@@ -22,7 +22,7 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050510] text-white overflow-x-hidden overflow-y-auto">
+    <div className="min-h-screen bg-[#050510] text-white overflow-x-hidden overflow-y-auto pb-12">
       {/* Back button */}
       <motion.button
         initial={{ opacity: 0, x: -20 }}
