@@ -7,42 +7,25 @@ Build a cryptocurrency app for ZWAP! Coin with:
 - Tab for marketplace (SHOP) - "Zupreme Imports" with digital items
 - Tab for crypto exchange (SWAP) - One tap swap for ZWAP to BTC, ETH, POL, SOL
 
-User flow:
-1. Welcome screen with 3 options: Swap, Earn, Shop
-2. Wallet connection check before any action
-3. Modal with 4 wallet options: MetaMask, Trust Wallet, Speed Wallet, Help
+**Tagline: "MOVE. PLAY. SWAP. SHOP."**
 
 ## Architecture
 
 ### Backend (FastAPI + MongoDB)
-- `server.py` - Main API with endpoints for:
-  - User management (wallet connection, balance)
-  - Faucets (steps, game, scratch bonus)
-  - Shop (items, purchases)
-  - Swap (prices from CoinGecko, exchange execution)
+- `server.py` - Main API with endpoints for users, games, shop, swap, subscriptions
 
-### Frontend (React + Tailwind)
+### Frontend (React + Tailwind + Framer Motion)
 - `App.js` - Main app with context, routing, API functions
-- `WelcomeScreen.jsx` - First-time user flow
-- `WalletModal.jsx` - Wallet connection options
-- `Dashboard.jsx` - Main dashboard with balance, features
-- `TabNavigation.jsx` - Bottom navigation
-- `MoveTab.jsx` - Step tracking with DeviceMotion API
-- `PlayTab.jsx` - Games (zBrickles, zTrivia)
-- `ShopTab.jsx` - Marketplace with carousel
-- `SwapTab.jsx` - Token exchange
+- `SplashScreen.jsx` - Animated splash with tagline
+- `Dashboard.jsx` - Main dashboard with feature grid
+- `AppHeader.jsx` - Persistent header with wallet/balances/profile
+- `NewsTicker.jsx` - Animated footer ticker
+- `FirstTimeUserPrompt.jsx` - Prompt for unconnected users
+- `MoveTab.jsx`, `PlayTab.jsx`, `ShopTab.jsx`, `SwapTab.jsx` - Main tabs
 
-## Core Requirements (Static)
-- Dark theme with neon cyan/purple accents
-- Mobile-first responsive design
-- Wallet-based authentication (WalletConnect)
-- 100 ZWAP starting bonus for new users
-- Tiered earning for steps and games
-- Real crypto prices from CoinGecko
-- 1% swap fee
-- **Tagline: "MOVE. PLAY. SWAP. SHOP."**
+## What's Been Implemented
 
-## What's Been Implemented (2025-01-08)
+### Phase 1 (2025-01-08)
 - [x] Welcome screen with Swap/Earn/Shop actions
 - [x] Wallet connection modal (MetaMask, Trust, Speed, Help)
 - [x] Dashboard with balance, progress, features
@@ -50,44 +33,40 @@ User flow:
 - [x] PLAY tab - Brickles game with paddle/ball physics
 - [x] SHOP tab - Zupreme Imports marketplace
 - [x] SWAP tab - Exchange with live prices
-- [x] Scratch to Win bonus
-- [x] Tiered faucet earning system
-- [x] Bottom tab navigation
-- [x] **Mobile-first no-scroll layout**
-- [x] **PWA Support** - manifest.json, service worker
+- [x] PWA Support - manifest.json, service worker
 
-## What's Been Implemented (2025-01-10)
-- [x] **Z Points System** - Game-only loyalty currency (1000 zPts = 1 ZWAP)
-- [x] **Tiered Subscriptions** - Starter (free) and Plus ($12.99/mo)
-- [x] **Daily Z Points Caps** - 20/day Starter, 30/day Plus
-- [x] **4 Games** - zBrickles, zTrivia (Starter), zTetris, zSlots (Plus only)
-- [x] **Progressive Difficulty** - Games get harder, rewards scale
-- [x] **Dual Payment Shop** - Pay with ZWAP! Coin or Z Points
-- [x] **Stripe Integration** - Plus subscription checkout
-- [x] **1.5x Rewards for Plus** - Multiplier for Plus tier users
+### Phase 2 (2025-01-10)
+- [x] Z Points System - Game-only loyalty currency (1000 zPts = 1 ZWAP)
+- [x] Tiered Subscriptions - Starter (free) and Plus ($12.99/mo)
+- [x] 4 Games - zBrickles, zTrivia (Starter), zTetris, zSlots (Plus only)
+- [x] Dual Payment Shop - Pay with ZWAP! Coin or Z Points
+- [x] Stripe Integration - Plus subscription checkout
 
-## What's Been Implemented (2025-01-11)
-- [x] **Animated Splash Screen** - "MOVE. PLAY. SWAP. SHOP." animated tagline that repositions under large logo (3-5x larger)
-- [x] **Persistent AppHeader** - 2x larger elements: ZWAP_BANG logo (h-14), larger balances (text-base), larger profile badge (w-14 h-14)
-- [x] **Connect Wallet in Header** - Always visible next to balances when not connected
-- [x] **Profile Settings with Contact** - Added Contact option to settings menu (mailto:support@zwap.app)
-- [x] **NewsTicker Footer** - Rotating ticker (8-second intervals) with glowing animations
-- [x] **About Page Overhaul** - Larger bang logo (h-32), reduced spacing, no Get Started button, DUAL CURRENCY section before HOW IT WORKS
-- [x] **Shop Page Carousel** - Zupreme Imports logo image, category toolbar, carousel product display with navigation
-- [x] **ZWAP Coin Logo in SWAP** - Added actual ZWAP coin logo (ejxhkn40_IMG_0609.jpeg) to CRYPTO_LOGOS
-- [x] **Animated UI** - All elements have framer-motion animations with glow/pulse effects (no static colors)
+### Phase 3 (2025-01-11) - UI Overhaul
+- [x] Animated Splash Screen - "MOVE. PLAY. SWAP. SHOP." tagline repositions under large logo
+- [x] Welcome Screen Removed - Splash goes directly to Dashboard
+- [x] First-Time User Prompt - Shows when unconnected users click interactive features
+- [x] AppHeader Redesign:
+  - Logo + "Connect Wallet" button on LEFT
+  - Balances + 👤 emoji profile badge on RIGHT
+  - All elements 2x larger with animated glows
+- [x] Contact Option - Added to User Settings (mailto:support@zwap.app)
+- [x] Shop Carousel - Zupreme Imports logo, category toolbar, carousel display
+- [x] Correct Logos - ZUPREME_LOGO and ZWAP_COIN updated
+- [x] Full Animation Pass - All elements have framer-motion glow/pulse effects
+
+## Key Assets
+- ZWAP_LOGO: Full logo with text (splash screen)
+- ZWAP_BANG: 3D bang icon (header)
+- ZWAP_COIN: Actual coin image (SWAP page prices)
+- ZUPREME_LOGO: Zupreme Imports store logo
 
 ## Prioritized Backlog
 
-### P0 (Critical)
-- All core features implemented ✅
-- UI/UX Overhaul completed ✅
-- Animation pass completed ✅
-
 ### P1 (High Priority)
-- [ ] Leaderboard logic (backend API + frontend display in ticker)
-- [ ] Full Stripe subscription webhook processing
-- [ ] Complete user profile page
+- [ ] Leaderboard backend API + NewsTicker display
+- [ ] Complete Stripe webhook processing
+- [ ] User profile page with settings
 
 ### P2 (Medium Priority)
 - [ ] Implement zTetris and zSlots games
@@ -98,19 +77,12 @@ User flow:
 - [ ] Higher tiers ($XHI token, Sustainer tier)
 - [ ] NFT rewards for achievements
 - [ ] Referral system
-- [ ] Multi-language support
 
 ## Next Tasks
-1. Build Leaderboard backend API and connect to NewsTicker display
-2. Complete Stripe webhook processing for Plus subscription
-3. Implement zTetris and zSlots games
-
-## Key Assets
-- ZWAP_LOGO: Full logo with text (for splash/welcome)
-- ZWAP_BANG: 3D bang icon (for header)
-- ZWAP_COIN: Actual coin image (for SWAP page)
-- ZUPREME_LOGO: Zupreme Imports store logo
+1. Build Leaderboard backend API
+2. Connect Leaderboard to NewsTicker display
+3. Complete Stripe webhook processing
 
 ## Notes
-- Leaderboard data in NewsTicker is currently **MOCKED**
-- Stripe subscription flow is partially implemented (checkout works, webhook needs completion)
+- Leaderboard data in NewsTicker is **MOCKED**
+- Stripe subscription checkout works, webhook processing needs completion
