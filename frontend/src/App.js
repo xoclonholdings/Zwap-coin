@@ -27,8 +27,8 @@ export const useApp = () => useContext(AppContext);
 // ZWAP Logo URLs
 export const ZWAP_LOGO = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/8gvtmj56_Zwap_logo_full.png";
 export const ZWAP_BANG = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/ubzr4hka_Zwap_bang_3d.png";
-export const ZUPREME_LOGO = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/3x86eqay_image.png";
-export const ZWAP_COIN = "https://customer-assets.emergentagent.com/job_8243de8c-fe3d-478f-9f50-7ad5404aea5c/artifacts/ejxhkn40_IMG_0609.jpeg";
+export const ZUPREME_LOGO = "https://customer-assets.emergentagent.com/job_a4dcc7bf-3db5-4e78-a723-311ef95c2e90/artifacts/bpbzieau_Zwap_Logo.png-1.png";
+export const ZWAP_COIN = "https://customer-assets.emergentagent.com/job_a4dcc7bf-3db5-4e78-a723-311ef95c2e90/artifacts/7csajqza_zwap_coin_logo.png";
 
 // Crypto logos
 export const CRYPTO_LOGOS = {
@@ -37,7 +37,7 @@ export const CRYPTO_LOGOS = {
   SOL: "https://cryptologos.cc/logos/solana-sol-logo.png?v=029",
   POL: "https://cryptologos.cc/logos/polygon-matic-logo.png?v=029",
   USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png?v=029",
-  ZWAP: "https://customer-assets.emergentagent.com/job_8243de8c-fe3d-478f-9f50-7ad5404aea5c/artifacts/ejxhkn40_IMG_0609.jpeg",
+  ZWAP: "https://customer-assets.emergentagent.com/job_a4dcc7bf-3db5-4e78-a723-311ef95c2e90/artifacts/7csajqza_zwap_coin_logo.png",
 };
 
 // Tier configs
