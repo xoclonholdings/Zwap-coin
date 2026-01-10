@@ -370,6 +370,67 @@ async def get_tiers():
     """Get available subscription tiers"""
     return TIERS
 
+# ============ BLOCKCHAIN ENDPOINTS ============
+
+@api_router.get("/blockchain/balance/{wallet_address}")
+async def get_blockchain_balance(wallet_address: str):
+    """Get real on-chain ZWAP balance from Polygon"""
+    try:
+        balance = await get_onchain_zwap_balance(wallet_address)
+        if balance is None:
+            return {
+                "wallet_address": wallet_address,
+                "onchain_balance": None,
+                "error": "Unable to fetch on-chain balance",
+                "connected": w3.is_connected() if w3 else False
+            }
+        
+        return {
+            "wallet_address": wallet_address,
+            "onchain_balance": balance,
+            "contract_address": ZWAP_CONTRACT_ADDRESS,
+            "network": "polygon",
+            "chain_id": ZWAP_CHAIN_ID,
+            "decimals": ZWAP_DECIMALS
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blockchain/contract-info")
+async def get_contract_info():
+    """Get ZWAP token contract information"""
+    if not zwap_contract or not w3:
+        return {
+            "connected": False,
+            "error": "Web3 not connected"
+        }
+    
+    try:
+        loop = asyncio.get_event_loop()
+        
+        # Get token info
+        symbol = await loop.run_in_executor(None, zwap_contract.functions.symbol().call)
+        decimals = await loop.run_in_executor(None, zwap_contract.functions.decimals().call)
+        total_supply_wei = await loop.run_in_executor(None, zwap_contract.functions.totalSupply().call)
+        total_supply = total_supply_wei / (10 ** decimals)
+        
+        return {
+            "connected": True,
+            "contract_address": ZWAP_CONTRACT_ADDRESS,
+            "network": "polygon",
+            "chain_id": ZWAP_CHAIN_ID,
+            "symbol": symbol,
+            "decimals": decimals,
+            "total_supply": total_supply,
+            "total_supply_formatted": f"{total_supply:,.0f}"
+        }
+    except Exception as e:
+        logging.error(f"Error fetching contract info: {e}")
+        return {
+            "connected": w3.is_connected() if w3 else False,
+            "error": str(e)
+        }
+
 # ============ FAUCET ENDPOINTS (MOVE) ============
 
 @api_router.post("/faucet/steps/{wallet_address}")
