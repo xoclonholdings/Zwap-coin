@@ -218,6 +218,16 @@ export const api = {
     });
     return res.json();
   },
+  
+  getOnchainBalance: async (walletAddress) => {
+    const res = await fetch(`${API}/blockchain/balance/${walletAddress}`);
+    return res.json();
+  },
+  
+  getContractInfo: async () => {
+    const res = await fetch(`${API}/blockchain/contract-info`);
+    return res.json();
+  },
 };
 
 function AppProvider({ children }) {
