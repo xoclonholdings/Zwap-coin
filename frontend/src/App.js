@@ -173,13 +173,17 @@ function AppProvider({ children }) {
   const [walletAddress, setWalletAddress] = useState(null);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const savedWallet = localStorage.getItem("zwap_wallet");
     if (savedWallet) {
       setWalletAddress(savedWallet);
-      loadUser(savedWallet);
+      loadUser(savedWallet).finally(() => setInitialized(true));
+    } else {
+      setIsLoading(false);
+      setInitialized(true);
     }
   }, []);
 
