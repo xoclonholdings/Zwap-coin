@@ -714,6 +714,25 @@ async def execute_swap(wallet_address: str, swap: SwapRequest):
 
 # ============ LEADERBOARD ============
 
+class LeaderboardEntry(BaseModel):
+    rank: int
+    username: str
+    wallet: str
+    value: int
+    tier: str
+
+class UserRankResponse(BaseModel):
+    local_rank: int
+    regional_rank: int
+    global_rank: int
+    category: str
+    value: int
+
+def generate_username(wallet: str) -> str:
+    """Generate username from wallet address"""
+    hash_num = int(wallet[2:10], 16) % 9999
+    return f"Zwapper#{str(hash_num).zfill(4)}"
+
 @api_router.get("/leaderboard/{category}")
 async def get_leaderboard(category: str, limit: int = 10):
     """Get leaderboard by category"""
@@ -733,12 +752,95 @@ async def get_leaderboard(category: str, limit: int = 10):
     return [
         {
             "rank": i + 1,
+            "username": generate_username(u['wallet_address']),
             "wallet": f"{u['wallet_address'][:6]}...{u['wallet_address'][-4:]}",
             "value": u.get(sort_field, 0),
             "tier": u.get("tier", "starter")
         }
         for i, u in enumerate(users)
     ]
+
+@api_router.get("/leaderboard/user/{wallet_address}/{category}")
+async def get_user_rank(wallet_address: str, category: str):
+    """Get user's rank in a specific category"""
+    wallet = wallet_address.lower()
+    
+    if category == "steps":
+        sort_field = "total_steps"
+    elif category == "games":
+        sort_field = "games_played"
+    elif category == "earned":
+        sort_field = "total_earned"
+    elif category == "zpts":
+        sort_field = "zpts_balance"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid category")
+    
+    user = await db.users.find_one({"wallet_address": wallet})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_value = user.get(sort_field, 0)
+    
+    # Count users with higher values for global rank
+    global_rank = await db.users.count_documents({sort_field: {"$gt": user_value}}) + 1
+    total_users = await db.users.count_documents({})
+    
+    # Simulate regional and local ranks (in production, would use geolocation)
+    regional_rank = max(1, global_rank // 10)  # Simplified
+    local_rank = max(1, global_rank // 50)  # Simplified
+    
+    return {
+        "username": generate_username(wallet),
+        "category": category,
+        "value": user_value,
+        "local_rank": local_rank,
+        "regional_rank": regional_rank,
+        "global_rank": global_rank,
+        "total_users": total_users
+    }
+
+@api_router.get("/leaderboard/stats")
+async def get_leaderboard_stats():
+    """Get global stats for the ticker"""
+    total_users = await db.users.count_documents({})
+    
+    # Top earner today (simplified - using total_earned)
+    top_earner = await db.users.find_one({}, {"_id": 0, "wallet_address": 1, "total_earned": 1}, sort=[("total_earned", -1)])
+    
+    # Top gamer
+    top_gamer = await db.users.find_one({}, {"_id": 0, "wallet_address": 1, "games_played": 1}, sort=[("games_played", -1)])
+    
+    # Top stepper
+    top_stepper = await db.users.find_one({}, {"_id": 0, "wallet_address": 1, "total_steps": 1}, sort=[("total_steps", -1)])
+    
+    # Total ZWAP distributed
+    pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_earned"}}}]
+    total_earned_result = await db.users.aggregate(pipeline).to_list(1)
+    total_zwap_distributed = total_earned_result[0]["total"] if total_earned_result else 0
+    
+    # Total steps walked
+    steps_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_steps"}}}]
+    total_steps_result = await db.users.aggregate(steps_pipeline).to_list(1)
+    total_steps = total_steps_result[0]["total"] if total_steps_result else 0
+    
+    return {
+        "total_users": total_users,
+        "total_zwap_distributed": round(total_zwap_distributed, 2),
+        "total_steps_walked": total_steps,
+        "top_earner": {
+            "username": generate_username(top_earner["wallet_address"]) if top_earner else "N/A",
+            "value": top_earner.get("total_earned", 0) if top_earner else 0
+        },
+        "top_gamer": {
+            "username": generate_username(top_gamer["wallet_address"]) if top_gamer else "N/A",
+            "value": top_gamer.get("games_played", 0) if top_gamer else 0
+        },
+        "top_stepper": {
+            "username": generate_username(top_stepper["wallet_address"]) if top_stepper else "N/A",
+            "value": top_stepper.get("total_steps", 0) if top_stepper else 0
+        }
+    }
 
 # ============ HEALTH & ROOT ============
 
