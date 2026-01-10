@@ -11,13 +11,15 @@ Build a cryptocurrency app for ZWAP! Coin with:
 
 ## Architecture
 
-### Backend (FastAPI + MongoDB)
+### Backend (FastAPI + MongoDB + Web3.py)
 - `server.py` - All API endpoints
+- Polygon RPC integration via Alchemy
 
 ### Frontend (React + Tailwind + Framer Motion)
 - Splash → Dashboard flow (no Welcome page)
 - Persistent header with wallet connection
 - Animated footer ticker with live leaderboard
+- On-chain balance display in header
 
 ## What's Been Implemented
 
@@ -62,43 +64,68 @@ Build a cryptocurrency app for ZWAP! Coin with:
 - [x] Glowing icons on all tabs
 - [x] First-time user prompt
 - [x] "Get Started" button on About page
+- [x] AboutPage scrolling fixed (Jan 10, 2025)
 
-## Current Status: SIMULATED
+### Blockchain Integration (Jan 10, 2025)
+- [x] **REAL ZWAP Token Contract Connected** on Polygon
+  - Contract Address: `0xe8898453af13b9496a6e8ada92c6efdaf4967a81`
+  - Network: Polygon Mainnet (Chain ID: 137)
+  - Symbol: ZWAP
+  - Decimals: 18
+  - Total Supply: 30,000,000,000 (30 billion)
+- [x] `/api/blockchain/contract-info` - Returns verified contract data
+- [x] `/api/blockchain/balance/{wallet}` - Returns REAL on-chain balance
+- [x] On-chain balance display in AppHeader
+- [x] Alchemy RPC integration configured
 
-⚠️ **Currently all transactions are simulated (MongoDB only)**:
-- Swap function updates database, not blockchain
-- Subscription money goes to Stripe test mode
-- ZWAP! Coin is not connected to real blockchain
+## Current Status: HYBRID (Partial Real Integration)
 
-## To Make It Real
+### REAL (On-Chain):
+✅ ZWAP token balance reading from Polygon blockchain
+✅ Contract info verification
+✅ Wallet connection via WalletConnect
 
-### 1. Smart Contract Integration
-- Deploy ERC-20 token on Polygon
-- Replace MongoDB balances with on-chain reads
-- Sign real transactions with user wallets
-
-### 2. Stripe Production
-- Replace test keys with live keys
-- Set up webhook for subscription activation
-- Connect bank account for payouts
-
-### 3. Ads Integration
-- Google AdSense / AdMob
-- "Watch ad for bonus" feature
+### STILL SIMULATED:
+⚠️ In-app ZWAP balance (database only, not synced with chain)
+⚠️ Swap execution (updates database, not real DEX)
+⚠️ Subscription money (Stripe test mode)
+⚠️ Reward distribution (no on-chain transfers yet)
 
 ## Prioritized Backlog
 
+### P0 (Immediate Next Steps)
+- [ ] Verify ZWAP contract on PolygonScan using ZWAPCoin_Optimized.sol
+- [ ] Implement real token swaps (1inch/Li.Fi backend integration)
+- [ ] Stripe webhook for automatic tier upgrades
+- [ ] Ad integration (rewarded video between game rounds)
+
 ### P1 (Ready for Production)
-- [ ] Deploy ZWAP! token contract (needs contract details)
-- [ ] Switch to Stripe live mode (needs live keys)
-- [ ] Add ads integration
+- [ ] ZWAP faucet/reward distribution (treasury wallet sends real tokens)
+- [ ] Switch to Stripe live mode
+- [ ] Sync on-chain and in-app balances
 
 ### P2 (Feature Enhancements)
-- [ ] Implement zTetris and zSlots games
-- [ ] Real DEX swap integration
+- [ ] Implement zTetris and zSlots games (full gameplay)
+- [ ] Real DEX swap integration (custom backend with 1inch)
 - [ ] Geolocation for local leaderboards
+- [ ] Progressive game difficulty
 
 ### P3 (Future)
 - [ ] Higher tiers ($XHI token, Sustainer)
 - [ ] NFT rewards
 - [ ] Referral system
+- [ ] Add USDT to SWAP tab
+
+## Key Technical Details
+
+### ZWAP Contract
+```
+Address: 0xe8898453af13b9496a6e8ada92c6efdaf4967a81
+Network: Polygon PoS (Chain ID: 137)
+Owner/Deployer: 0x85EaDbB165cf4c8202d33562DfaeeA0b632B0849
+Solidity Source: /app/memory/ZWAPCoin_Optimized.sol
+```
+
+### Environment Configuration
+- Backend: `/app/backend/.env` contains `POLYGON_RPC_URL` (Alchemy)
+- Frontend: Uses `REACT_APP_BACKEND_URL` for API calls
