@@ -312,21 +312,30 @@ class ZWAPAPITester:
             print(f"   Found {len(items)} shop items")
             if items:
                 first_item = items[0]
-                print(f"   Sample item: {first_item.get('name')} - {first_item.get('price')} ZWAP")
+                print(f"   Sample item: {first_item.get('name')}")
+                print(f"   ZWAP price: {first_item.get('price_zwap')} ZWAP")
+                print(f"   Z Points price: {first_item.get('price_zpts')} zPts")
+                print(f"   Plus only: {first_item.get('plus_only', False)}")
                 
-                # Test purchase (might fail due to insufficient balance, that's ok)
+                # Test purchase with ZWAP (might fail due to insufficient balance, that's ok)
                 if self.test_wallet:
                     success, purchase_result = self.run_test(
-                        "Purchase Item",
+                        "Purchase Item with ZWAP",
                         "POST",
                         f"shop/purchase/{self.test_wallet}",
-                        200,  # Expect success or 400 for insufficient funds
-                        {"item_id": first_item.get('id')}
+                        400,  # Expect 400 for insufficient funds
+                        {"item_id": first_item.get('id'), "payment_type": "zwap"}
                     )
                     
-                    # If it fails with 400, that's expected for insufficient balance
-                    if not success:
-                        print("   Note: Purchase may fail due to insufficient balance (expected)")
+                    # Test purchase with Z Points (should also fail due to insufficient balance)
+                    if first_item.get('price_zpts'):
+                        success, purchase_result = self.run_test(
+                            "Purchase Item with Z Points",
+                            "POST",
+                            f"shop/purchase/{self.test_wallet}",
+                            400,  # Expect 400 for insufficient funds
+                            {"item_id": first_item.get('id'), "payment_type": "zpts"}
+                        )
 
     def test_swap_endpoints(self):
         """Test swap endpoints"""
