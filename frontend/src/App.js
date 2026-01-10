@@ -189,7 +189,15 @@ function AppProvider({ children }) {
       const userData = await api.getUser(address);
       setUser(userData);
     } catch (error) {
-      console.log("User not found");
+      // User not found, try to create
+      try {
+        const newUser = await api.connectWallet(address);
+        setUser(newUser);
+      } catch (err) {
+        console.log("Failed to load/create user");
+        localStorage.removeItem("zwap_wallet");
+        setWalletAddress(null);
+      }
     } finally {
       setIsLoading(false);
     }
