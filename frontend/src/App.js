@@ -257,7 +257,7 @@ function AppProvider({ children }) {
 }
 
 function AppContent() {
-  const { walletAddress, isWalletModalOpen, setIsWalletModalOpen, pendingAction, setPendingAction } = useApp();
+  const { walletAddress, isWalletModalOpen, setIsWalletModalOpen, pendingAction, setPendingAction, initialized } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -272,6 +272,15 @@ function AppContent() {
       }
     }
   }, [walletAddress, pendingAction, navigate, setPendingAction]);
+
+  // Wait for initialization before rendering
+  if (!initialized) {
+    return (
+      <div className="h-screen bg-[#0a0b1e] flex items-center justify-center">
+        <div className="text-cyan-400 animate-pulse">Loading...</div>
+      </div>
+    );
+  }
 
   if (!walletAddress && location.pathname === "/") {
     return (
