@@ -841,34 +841,6 @@ async def get_leaderboard(category: str, limit: int = 10):
         }
         for i, u in enumerate(users)
     ]
-    
-    # Total ZWAP distributed
-    pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_earned"}}}]
-    total_earned_result = await db.users.aggregate(pipeline).to_list(1)
-    total_zwap_distributed = total_earned_result[0]["total"] if total_earned_result else 0
-    
-    # Total steps walked
-    steps_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_steps"}}}]
-    total_steps_result = await db.users.aggregate(steps_pipeline).to_list(1)
-    total_steps = total_steps_result[0]["total"] if total_steps_result else 0
-    
-    return {
-        "total_users": total_users,
-        "total_zwap_distributed": round(total_zwap_distributed, 2),
-        "total_steps_walked": total_steps,
-        "top_earner": {
-            "username": generate_username(top_earner["wallet_address"]) if top_earner else "N/A",
-            "value": top_earner.get("total_earned", 0) if top_earner else 0
-        },
-        "top_gamer": {
-            "username": generate_username(top_gamer["wallet_address"]) if top_gamer else "N/A",
-            "value": top_gamer.get("games_played", 0) if top_gamer else 0
-        },
-        "top_stepper": {
-            "username": generate_username(top_stepper["wallet_address"]) if top_stepper else "N/A",
-            "value": top_stepper.get("total_steps", 0) if top_stepper else 0
-        }
-    }
 
 # ============ HEALTH & ROOT ============
 
