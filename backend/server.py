@@ -274,6 +274,30 @@ async def check_and_reset_daily_zpts(user: dict) -> dict:
 def get_user_tier_config(tier: str) -> dict:
     return TIERS.get(tier, TIERS["starter"])
 
+async def get_onchain_zwap_balance(wallet_address: str) -> Optional[float]:
+    """Get ZWAP balance from Polygon blockchain"""
+    if not zwap_contract or not w3:
+        logging.warning("Web3 not connected, cannot fetch on-chain balance")
+        return None
+    
+    try:
+        # Run blocking Web3 call in thread pool
+        loop = asyncio.get_event_loop()
+        checksum_address = Web3.to_checksum_address(wallet_address)
+        
+        # Get balance (blocking call)
+        balance_wei = await loop.run_in_executor(
+            None, 
+            zwap_contract.functions.balanceOf(checksum_address).call
+        )
+        
+        # Convert from wei (18 decimals) to human readable
+        balance = balance_wei / (10 ** ZWAP_DECIMALS)
+        return balance
+    except Exception as e:
+        logging.error(f"Error fetching on-chain balance for {wallet_address}: {e}")
+        return None
+
 # ============ USER ENDPOINTS ============
 
 @api_router.post("/users/connect", response_model=UserResponse)
