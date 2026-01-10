@@ -1,53 +1,21 @@
-import React, { useState } from "react";
-import { useApp, api, ZWAP_LOGO, TIERS } from "@/App";
+import React from "react";
+import { useApp, api, TIERS } from "@/App";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Footprints, Gamepad2, ShoppingBag, ArrowRightLeft, Gift, User, LogOut, Crown, Zap } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Footprints, Gamepad2, ShoppingBag, ArrowRightLeft, TrendingUp, Zap } from "lucide-react";
 
 export default function Dashboard() {
-  const { user, walletAddress, disconnectWallet, refreshUser } = useApp();
+  const { user } = useApp();
   const navigate = useNavigate();
-  const [isScratching, setIsScratching] = useState(false);
-  const [scratchResult, setScratchResult] = useState(null);
-
-  const formatAddress = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "";
-
-  const handleScratch = async () => {
-    if (isScratching || scratchResult) return;
-    setIsScratching(true);
-    try {
-      const result = await api.scratchToWin(walletAddress);
-      setScratchResult(result);
-      await refreshUser();
-      if (result.won) toast.success(`You won ${result.amount} ZWAP!`);
-      else toast.info("Better luck next time!");
-    } catch (error) {
-      toast.error("Failed to scratch");
-    } finally {
-      setIsScratching(false);
-    }
-  };
-
-  const handleUpgrade = async () => {
-    try {
-      const result = await api.createSubscription(window.location.origin);
-      if (result.url) window.location.href = result.url;
-    } catch (error) {
-      toast.error("Failed to start subscription");
-    }
-  };
 
   const tierConfig = TIERS[user?.tier || "starter"];
   const progressPercent = user ? Math.min((user.daily_steps / 10000) * 100, 100) : 0;
   const zptsProgress = user ? Math.min((user.daily_zpts_earned / tierConfig.dailyZptsCap) * 100, 100) : 0;
 
   const features = [
-    { id: "move", title: "MOVE", subtitle: "Walk & Earn", icon: Footprints, color: "cyan", path: "/move" },
-    { id: "play", title: "PLAY", subtitle: "Games", icon: Gamepad2, color: "purple", path: "/play" },
-    { id: "shop", title: "SHOP", subtitle: "Zupreme", icon: ShoppingBag, color: "pink", path: "/shop" },
-    { id: "swap", title: "SWAP", subtitle: "Exchange", icon: ArrowRightLeft, color: "blue", path: "/swap" }
+    { id: "move", title: "MOVE", subtitle: "Walk & Earn", icon: Footprints, color: "cyan", path: "/move", stat: `${user?.total_steps?.toLocaleString() || 0} steps` },
+    { id: "play", title: "PLAY", subtitle: "Games", icon: Gamepad2, color: "purple", path: "/play", stat: `${user?.games_played || 0} played` },
+    { id: "shop", title: "SHOP", subtitle: "Zupreme", icon: ShoppingBag, color: "pink", path: "/shop", stat: "Browse items" },
+    { id: "swap", title: "SWAP", subtitle: "Exchange", icon: ArrowRightLeft, color: "blue", path: "/swap", stat: "Trade tokens" }
   ];
 
   const colorClasses = {
@@ -60,81 +28,63 @@ export default function Dashboard() {
   const iconColors = { cyan: "text-cyan-400", purple: "text-purple-400", pink: "text-pink-400", blue: "text-blue-400" };
 
   return (
-    <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-3 pb-[72px] overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2 flex-shrink-0">
-        <img src={ZWAP_LOGO} alt="ZWAP!" className="h-8" data-testid="dashboard-logo" />
-        
-        <div className="flex items-center gap-2">
-          {user?.tier === "starter" && (
-            <Button onClick={handleUpgrade} size="sm" className="h-8 bg-gradient-to-r from-yellow-500 to-orange-500 text-xs" data-testid="upgrade-btn">
-              <Crown className="w-3 h-3 mr-1" /> Upgrade
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-8 h-8 rounded-full bg-cyan-500/20 p-0" data-testid="profile-button">
-                <User className="w-4 h-4 text-cyan-400" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-[#141530] border-cyan-500/30">
-              <DropdownMenuItem className="text-gray-400 text-sm">{formatAddress(walletAddress)}</DropdownMenuItem>
-              <DropdownMenuItem className="text-cyan-400 text-sm">
-                <Crown className="w-3 h-3 mr-2" /> {tierConfig.name}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={disconnectWallet} className="text-red-400 cursor-pointer" data-testid="disconnect-wallet">
-                <LogOut className="w-4 h-4 mr-2" /> Disconnect
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Balance Cards Row */}
-      <div className="grid grid-cols-2 gap-2 mb-2 flex-shrink-0">
-        {/* ZWAP Balance */}
-        <div className="balance-glow p-3 rounded-xl" data-testid="balance-card">
-          <p className="text-gray-400 text-[10px]">ZWAP! Coin</p>
-          <h2 className="text-2xl font-bold neon-text leading-tight" data-testid="zwap-balance">
-            {user?.zwap_balance?.toFixed(0) || "0"}
-          </h2>
+    <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="dashboard">
+      {/* Stats Summary */}
+      <div className="glass-card p-4 mb-4 rounded-xl">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-white font-semibold text-sm">Today's Progress</h2>
+          <TrendingUp className="w-4 h-4 text-cyan-400" />
         </div>
         
-        {/* Z Points Balance */}
-        <div className="glass-card p-3 rounded-xl border border-purple-500/30">
-          <p className="text-gray-400 text-[10px]">Z Points</p>
-          <h2 className="text-2xl font-bold text-purple-400 leading-tight" data-testid="zpts-balance">
-            {user?.zpts_balance || 0}
-          </h2>
-        </div>
-      </div>
-
-      {/* Progress Bars */}
-      <div className="glass-card p-3 mb-2 flex-shrink-0 rounded-xl">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Steps Progress */}
           <div>
             <div className="flex justify-between text-[10px] mb-1">
               <span className="text-gray-400">Steps</span>
-              <span className="text-cyan-400">{user?.daily_steps?.toLocaleString() || 0}/10K</span>
+              <span className="text-cyan-400">{user?.daily_steps?.toLocaleString() || 0} / 10K</span>
             </div>
-            <div className="progress-bar h-2">
-              <div className="progress-fill h-full" style={{ width: `${progressPercent}%` }} />
+            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all" 
+                style={{ width: `${progressPercent}%` }} 
+              />
             </div>
           </div>
+          
+          {/* Z Points Progress */}
           <div>
             <div className="flex justify-between text-[10px] mb-1">
-              <span className="text-gray-400">Daily zPts</span>
-              <span className="text-purple-400">{user?.daily_zpts_earned || 0}/{tierConfig.dailyZptsCap}</span>
+              <span className="text-gray-400">Z Points</span>
+              <span className="text-purple-400">{user?.daily_zpts_earned || 0} / {tierConfig.dailyZptsCap}</span>
             </div>
-            <div className="h-2 bg-purple-500/20 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all" style={{ width: `${zptsProgress}%` }} />
+            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all" 
+                style={{ width: `${zptsProgress}%` }} 
+              />
             </div>
+          </div>
+        </div>
+
+        {/* Quick stats row */}
+        <div className="flex justify-between mt-4 pt-3 border-t border-gray-800">
+          <div className="text-center">
+            <p className="text-lg font-bold text-cyan-400">{user?.total_earned?.toFixed(0) || 0}</p>
+            <p className="text-[10px] text-gray-500">Total Earned</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-purple-400">{user?.zpts_balance || 0}</p>
+            <p className="text-[10px] text-gray-500">Z Points</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-white">{user?.games_played || 0}</p>
+            <p className="text-[10px] text-gray-500">Games</p>
           </div>
         </div>
       </div>
 
       {/* Feature Grid */}
-      <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+      <div className="grid grid-cols-2 gap-3 flex-1">
         {features.map((feature) => {
           const Icon = feature.icon;
           return (
@@ -142,40 +92,27 @@ export default function Dashboard() {
               key={feature.id}
               data-testid={`feature-${feature.id}`}
               onClick={() => navigate(feature.path)}
-              className={`p-3 rounded-2xl border bg-gradient-to-br ${colorClasses[feature.color]} transition-all duration-200 active:scale-[0.98] flex flex-col justify-center`}
+              className={`p-4 rounded-2xl border bg-gradient-to-br ${colorClasses[feature.color]} transition-all duration-200 active:scale-[0.98] flex flex-col`}
             >
-              <Icon className={`w-6 h-6 ${iconColors[feature.color]} mb-1`} />
-              <h3 className="text-white font-bold text-sm">{feature.title}</h3>
-              <p className="text-gray-400 text-[10px]">{feature.subtitle}</p>
+              <div className="flex items-center justify-between mb-2">
+                <Icon className={`w-7 h-7 ${iconColors[feature.color]}`} />
+                {feature.id === "play" && (
+                  <Zap className="w-4 h-4 text-purple-400" />
+                )}
+              </div>
+              <h3 className="text-white font-bold text-lg">{feature.title}</h3>
+              <p className="text-gray-400 text-xs">{feature.subtitle}</p>
+              <p className={`text-[10px] mt-auto pt-2 ${iconColors[feature.color]}`}>{feature.stat}</p>
             </button>
           );
         })}
       </div>
 
-      {/* Scratch to Win */}
-      <div 
-        className="scratch-card rounded-xl p-3 cursor-pointer mt-2 flex-shrink-0"
-        data-testid="scratch-card"
-        onClick={scratchResult ? () => setScratchResult(null) : handleScratch}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center flex-shrink-0">
-              <Gift className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-sm">zWheel BONUS</h3>
-              <p className="text-gray-400 text-[10px]">
-                {scratchResult ? (scratchResult.won ? `+${scratchResult.amount} ZWAP!` : "Try again") : "Scratch to Win"}
-              </p>
-            </div>
-          </div>
-          {scratchResult && (
-            <span className={`text-xs font-bold px-2 py-1 rounded ${scratchResult.won ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
-              {scratchResult.won ? '🎉' : '🔄'}
-            </span>
-          )}
-        </div>
+      {/* Tip */}
+      <div className="mt-4 text-center">
+        <p className="text-[10px] text-gray-500">
+          💡 Play games to earn Z Points • Walk to earn ZWAP!
+        </p>
       </div>
     </div>
   );
