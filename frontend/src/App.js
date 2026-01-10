@@ -311,12 +311,16 @@ function AppProvider({ children }) {
   const disconnectWallet = () => {
     setUser(null);
     setWalletAddress(null);
+    setOnchainBalance(null);
     localStorage.removeItem("zwap_wallet");
     toast.success("Wallet disconnected");
   };
 
   const refreshUser = async () => {
-    if (walletAddress) await loadUser(walletAddress);
+    if (walletAddress) {
+      await loadUser(walletAddress);
+      await fetchOnchainBalance(walletAddress);
+    }
   };
 
   const requireWallet = (action) => {
@@ -333,6 +337,7 @@ function AppProvider({ children }) {
       user, walletAddress, isWalletModalOpen, setIsWalletModalOpen,
       pendingAction, setPendingAction, connectWallet, disconnectWallet,
       refreshUser, requireWallet, isLoading, initialized, showSplash, setShowSplash,
+      onchainBalance, fetchOnchainBalance,
     }}>
       {children}
     </AppContext.Provider>
