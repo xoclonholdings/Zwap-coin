@@ -41,6 +41,51 @@ ZWAP_DECIMALS = 18
 # Treasury wallet (to be set)
 TREASURY_WALLET = os.environ.get("TREASURY_WALLET", "")
 
+# Web3 Setup for Polygon
+POLYGON_RPC_URL = os.environ.get("POLYGON_RPC_URL", "")
+w3 = Web3(Web3.HTTPProvider(POLYGON_RPC_URL)) if POLYGON_RPC_URL else None
+
+# ERC-20 ABI (minimal for balanceOf)
+ERC20_ABI = [
+    {
+        "constant": True,
+        "inputs": [{"name": "_owner", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "balance", "type": "uint256"}],
+        "type": "function"
+    },
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"name": "", "type": "uint8"}],
+        "type": "function"
+    },
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [{"name": "", "type": "string"}],
+        "type": "function"
+    },
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "type": "function"
+    }
+]
+
+# ZWAP Contract instance
+zwap_contract = None
+if w3 and w3.is_connected():
+    zwap_contract = w3.eth.contract(
+        address=Web3.to_checksum_address(ZWAP_CONTRACT_ADDRESS),
+        abi=ERC20_ABI
+    )
+    logging.info(f"Connected to Polygon. ZWAP contract loaded at {ZWAP_CONTRACT_ADDRESS}")
+
 TIERS = {
     "starter": {
         "name": "Starter",
