@@ -406,7 +406,10 @@ class ZWAPAPITester:
         try:
             self.test_health_endpoints()
             self.test_user_endpoints()
+            self.test_tier_endpoints()
             self.test_faucet_endpoints()
+            self.test_game_endpoints()
+            self.test_zpts_conversion()
             self.test_shop_endpoints()
             self.test_swap_endpoints()
             self.test_error_cases()
