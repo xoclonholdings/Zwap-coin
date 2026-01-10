@@ -46,8 +46,8 @@ export const CRYPTO_LOGOS = {
 
 // Tier configs
 export const TIERS = {
-  starter: { name: "Starter", games: ["zbrickles", "ztrivia"], dailyZptsCap: 20, multiplier: 1.0 },
-  plus: { name: "Plus", games: ["zbrickles", "ztrivia", "ztetris", "zslots"], dailyZptsCap: 30, multiplier: 1.5 }
+  starter: { name: "Starter", games: ["zbrickles", "ztrivia"], dailyZptsCap: 75, multiplier: 1 },
+  plus: { name: "Plus", games: ["zbrickles", "ztrivia", "ztetris", "zslots"], dailyZptsCap: 150, multiplier: 1.5 }
 };
 
 // API functions
