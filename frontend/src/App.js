@@ -238,6 +238,7 @@ function AppProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [onchainBalance, setOnchainBalance] = useState(null);
 
   useEffect(() => {
     const savedWallet = localStorage.getItem("zwap_wallet");
@@ -249,6 +250,26 @@ function AppProvider({ children }) {
       setInitialized(true);
     }
   }, []);
+
+  // Fetch on-chain balance when wallet is connected
+  useEffect(() => {
+    if (walletAddress) {
+      fetchOnchainBalance(walletAddress);
+    } else {
+      setOnchainBalance(null);
+    }
+  }, [walletAddress]);
+
+  const fetchOnchainBalance = async (address) => {
+    try {
+      const data = await api.getOnchainBalance(address);
+      if (data.onchain_balance !== null && data.onchain_balance !== undefined) {
+        setOnchainBalance(data.onchain_balance);
+      }
+    } catch (error) {
+      console.log("Failed to fetch on-chain balance:", error);
+    }
+  };
 
   const loadUser = async (address) => {
     try {
