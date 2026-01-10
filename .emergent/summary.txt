@@ -1,0 +1,165 @@
+<analysis>**original_problem_statement:**
+The user wants to build a mobile-first cryptocurrency PWA called ZWAP! Coin.
+
+**PRODUCT REQUIREMENTS:**
+1.  **Core Tabs:**
+    *   **MOVE:** A pedometer that acts as a faucet for earning ZWAP! Coin.
+    *   **PLAY:** A section for games (zBrickles, zTrivia, zTetris, zSlots) that award ZWAP! Coin and Z Points.
+    *   **SHOP:** A marketplace (Zupreme Imports) where users can buy items with ZWAP! Coin or Z Points.
+    *   **SWAP:** A crypto exchange to swap ZWAP! Coin with BTC, ETH, POL, SOL.
+2.  **Token Ecosystem:**
+    *   **ZWAP! Coin ():** The main reward token.
+    *   **Z Points (zPts):** A game-only loyalty currency, convertible to ZWAP (1000 zPts = 1 ZWAP).
+3.  **User Tiers (Subscriptions):**
+    *   **Starter (Free):** Access to 2 games (zBrickles, zTrivia), with daily reward caps.
+    *   **Plus (2.99/mo):** Access to all 4 games, higher reward caps, and other bonuses. Stripe integration is required.
+4.  **UI/UX:**
+    *   An animated splash screen on app launch.
+    *   A persistent header on all pages containing the app logo, user balances (ZWAP & Z-Points), and a clickable user profile badge.
+    *   A persistent footer containing a news/info/leaderboard ticker.
+    *   The main content area must be optimized for mobile to avoid scrolling.
+    *   Use of official brand logos for the app and third-party cryptocurrencies.
+5.  **Authentication:**
+    *   Wallet-based authentication using WalletConnect (MetaMask, Trust Wallet, Speed Wallet). User account is created upon wallet connection.
+
+**User's preferred language**: English
+
+**what currently exists?**
+A full-stack application using FastAPI, React, and MongoDB. The initial MVP is built, including the four main tabs, wallet connection, and PWA configuration. A subsequent update added the Z-Points system, user tiers (Starter and Plus), and game-locking based on tier. The shop supports dual-currency payments. A major UI overhaul is currently in progress to add a persistent header, footer, and animated splash screen.
+
+**Last working item**:
+-   **Last item agent was working:** The agent was in the middle of a major UI/UX overhaul. It had created the new , , , and  components. It had updated  to orchestrate the new layout and refactored the , , , and  to remove their individual headers. The last pending action was to apply the same refactoring to the  component.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Frontend testing agent
+-   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+-   **Issue 1 (P0):** The  component has not been updated to use the new global header, causing an inconsistent UI.
+
+    -   **Attempted fixes:** None yet. The agent was just about to start this step.
+    -   **Next debug checklist:**
+        1.  Use  to remove the old header section from .
+        2.  Ensure the remaining content in the component is correctly structured to render within the new global layout.
+    -   **Why fix this issue and what will be achieved with the fix?** To complete the UI refactoring task, ensuring all pages have a consistent look and feel with the new persistent header and footer.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** frontend
+    -   **Blocked on other issue:** None
+
+**In progress Task List**:
+-   **Task 1 (P0): Complete the UI/UX Overhaul**
+    -   **Where to resume:** Update  to remove its local header. After this, restart the frontend and backend services to apply all the recent changes for the UI overhaul.
+    -   **What will be achieved with this?** The application will have the user-requested layout: an animated splash screen, a persistent header with balances, a persistent ticker footer, and all main pages will render correctly within this new structure.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** both
+    -   **Blocked on something:** None
+
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks:**
+    -   **(P0) Test the UI/UX Overhaul:** Once the code changes are complete, run comprehensive frontend tests (screenshots, testing agent) to verify the new splash screen, header, footer, and updated page layouts work as expected without regressions.
+    -   **(P1) Implement User Profile Settings:** Create a new page/modal accessible from the profile badge in the header. This should display user info, privacy agreements, terms of use, FAQs, etc.
+    -   **(P1) Implement Leaderboard Logic:** The backend needs to be updated to track and serve leaderboard data (local, regional, global ranks). The frontend  component needs to be updated to display this data.
+-   **Future Tasks:**
+    -   **(P1) Implement Full Stripe Subscription:** Fully integrate Stripe to handle the  Plus subscription checkout and use webhooks to update user tiers in the database.
+    -   **(P1) Implement Progressive Game Difficulty:** Enhance the game logic in  to make games harder as the user plays more.
+    -   **(P2) Add New Games:** Implement the  and  games and logic to unlock them for Plus tier users.
+    -   **(P2) Implement Reward Caps:** Enforce the monthly ZWAP and daily Z-Point earning limits per tier in the backend.
+    -   **(P2) Add USDT to SWAP tab.**
+    -   **(P3) Implement higher tiers ( token, Sustainer tier, etc.) as detailed in the whitepaper.**
+
+**Completed work in this session**
+-   Mobile-first, no-scroll UI optimization across all tabs.
+-   PWA Support:  and  created and linked.
+-   Z-Points System: Implemented as a secondary, game-only currency.
+-   Tiered Subscriptions: Starter and Plus tiers created on the backend; UI reflects tier status.
+-   Game Gating:  now locks/unlocks games based on the user's subscription tier.
+-   Shop Update: Marketplace now shows dual-currency pricing (ZWAP & Z-Points).
+-   Bug Fix (Backend): Resolved a database validation error for shop items.
+-   Bug Fix (Frontend): Fixed a wallet state persistence issue on page refresh.
+-   UI Overhaul (In Progress): Created , , , and  components.
+
+**Earlier issues found/mentioned but not fixed**
+None. All previously identified issues were resolved.
+
+**Known issue recurrence from previous fork**
+None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend:** FastAPI, MongoDB (via ), Pydantic
+-   **Frontend:** React, Tailwind CSS, shadcn/ui
+-   **Blockchain:** WalletConnect, ethers.js
+-   **Deployment:** PWA (Progressive Web App)
+-   **Payments:** Stripe (planned for subscriptions)
+
+**key DB schema**
+-   **users**: 
+-   **shop_items**: 
+
+**changes in tech stack**
+-   , ,  were added for WalletConnect v2 integration.
+-    Python library was added to the backend for subscription management.
+
+**All files of reference**
+-   **/app/backend/server.py**: Contains all API logic for users, games, shop, and subscriptions.
+-   **/app/frontend/src/App.js**: Main frontend component managing routing, global state (user, wallet), and the new persistent layout.
+-   **/app/frontend/src/components/AppHeader.jsx**: The new persistent header component.
+-   **/app/frontend/src/components/NewsTicker.jsx**: The new persistent footer ticker component.
+-   **/app/frontend/src/components/SplashScreen.jsx**: The new animated splash screen shown on app launch.
+-   **/app/frontend/src/components/AboutPage.jsx**: The What is ZWAP!? informational page.
+-   **/app/frontend/public/manifest.json**: PWA configuration file.
+
+**Areas that need refactoring**:
+The primary refactoring is currently in progress. All main page components (, , , etc.) are being modified to remove their individual headers and rely on the new global . This work needs to be completed and verified.
+
+**key api endpoints**
+-   : Get or create a user profile based on wallet address.
+-   : Submit results from a game to earn rewards.
+-   : Retrieve all items available in the marketplace.
+-   : Fetch live prices for cryptocurrencies for the SWAP tab.
+-   : Get details of available subscription tiers.
+-   : Endpoint to initiate a Stripe subscription.
+-   : Endpoint to receive and process Stripe events.
+
+**Critical Info for New Agent**
+You are in the middle of a significant UI overhaul. Do not start new features until this is complete. The immediate next step is to update  to remove its local header. After that, you must restart the services and thoroughly test the entire application's new layout, including the splash screen, persistent header/footer, and all main pages, to ensure there are no visual or functional regressions. The user has explicitly requested the zWheel BONUS section on the dashboard be removed and replaced by the new  footer.
+
+**documents and test reports created in this job**
+-   /app/memory/PRD.md
+-   /app/test_reports/iteration_1.json
+-   /app/test_reports/iteration_2.json
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User (msg 190):** Provided detailed specs for the persistent header, splash screen animations, and What is ZWAP? page. Confirmed leaderboard scope.
+2.  **User (msg 185):** Requested analysis on faucet sustainability, specified a major UI overhaul (persistent header/footer ticker, remove wheel bonus), requested an animated splash screen, and an explanation page.
+3.  **Agent (msg 184):** Finished implementing Z-Points and Tiers.
+4.  **Agent (msg 182):** Updated PRD.
+5.  **Agent (msg 181):** Confirmed wallet persistence fix and successful redirection after connection.
+6.  **User (msg 111):** Confirmed tier name (Starter), free games (zBricks, zTrivia), Z-Point caps, and conversion rate (1000 zPts = 1 ZWAP).
+7.  **Agent (msg 110):** Asked for clarification on the Free tier name, games for that tier, and Z-Point conversion rate.
+8.  **User (msg 109):** Prioritized implementing Z-Points and a two-tier system (Starter/Plus). Specified games for each tier and confirmed Stripe integration for the Plus tier at 2.99/mo.
+9.  **Agent (msg 108):** Asked clarifying questions based on the whitepaper about tokens, tiers, games, and reward caps.
+10. **User (msg 107):** Provided the ZWAP! whitepaper text.
+
+**Project Health Check:**
+-   **Broken:** The UI is in a partially refactored state. The  component is still using an old layout, which will clash with the new persistent header. The app will likely have visual bugs until the refactoring is complete and services are restarted.
+-   **Mocked:** Leaderboard stats and the full Stripe subscription flow are mocked/not yet implemented.
+
+**3rd Party Integrations**
+-   **WalletConnect:** Integrated for user authentication.
+-   **Stripe:** Backend library installed, and API endpoints created for subscription checkout, but the full payment flow is not yet implemented or tested. The playbook indicates a system-provided key should be used.
+-   **CoinGecko:** An external API is being called (implicitly) to fetch live crypto prices for the SWAP tab.
+
+**Testing status**
+-   **Testing agent used after significant changes:** YES
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** []
+-   **Known regressions:** None currently known, but the ongoing UI refactor is high-risk for introducing new ones.
+
+**Credentials to test flow:**
+No username/password is required. Testing is done by connecting a crypto wallet via the WalletConnect modal.
+
+**What agent forgot to execute**
+The agent was mid-task. It needs to complete the final step of the UI refactoring, which is to update  to remove its local header. Following that, a service restart and comprehensive testing of the new UI are required.</analysis>
