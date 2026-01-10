@@ -375,9 +375,18 @@ function AppContent() {
     );
   }
 
-  // About page - no header/footer
+  // About page - no header/footer, needs special scroll handling
   if (location.pathname === "/about") {
-    return <AboutPage />;
+    return (
+      <div className="about-page-wrapper" style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        overflow: 'auto', 
+        WebkitOverflowScrolling: 'touch' 
+      }}>
+        <AboutPage />
+      </div>
+    );
   }
 
   // Settings pages - no main layout
