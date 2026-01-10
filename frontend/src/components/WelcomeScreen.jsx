@@ -1,5 +1,5 @@
 import React from "react";
-import { useApp } from "@/App";
+import { useApp, ZWAP_LOGO } from "@/App";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLeft, Target, ShoppingBag } from "lucide-react";
 
@@ -23,8 +23,7 @@ export default function WelcomeScreen() {
       <div className="relative z-10 text-center w-full max-w-sm mx-auto flex flex-col h-full justify-center">
         {/* Logo */}
         <div className="mb-6">
-          <h1 className="text-5xl font-extrabold tracking-tight neon-text" data-testid="zwap-logo">ZWAP!</h1>
-          <p className="text-cyan-400/80 mt-1">Coin</p>
+          <img src={ZWAP_LOGO} alt="ZWAP!" className="h-16 mx-auto" data-testid="zwap-logo" />
         </div>
 
         {/* Welcome text */}
