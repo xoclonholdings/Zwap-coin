@@ -1,13 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useApp, ZWAP_BANG, api, TIERS } from "@/App";
-import { ArrowLeft, Crown, Wallet, Trophy, Footprints, Gamepad2, ShoppingBag, Calendar } from "lucide-react";
+import { ArrowLeft, Crown, Wallet, Trophy, Footprints, Gamepad2, ShoppingBag, Calendar, Edit2, Check, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+// Avatar options
+const AVATAR_OPTIONS = [
+  "👤", "🦸", "🧑‍🚀", "🥷", "🧙", "🦊", "🐱", "🐶", "🦁", "🐼", 
+  "🚀", "⚡", "🔥", "💎", "🌟", "🎮", "💰", "🏆", "👑", "🎯"
+];
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, walletAddress, setIsWalletModalOpen } = useApp();
+  const { user, walletAddress, setIsWalletModalOpen, refreshUser } = useApp();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar_url || "👤");
+  const [isSaving, setIsSaving] = useState(false);
   
   const tierConfig = TIERS[user?.tier || "starter"];
   
@@ -16,6 +29,37 @@ export default function ProfilePage() {
     const hash = wallet.slice(2, 10);
     const num = parseInt(hash, 16) % 9999;
     return `Zwapper#${num.toString().padStart(4, '0')}`;
+  };
+
+  const displayName = user?.custom_username || generateUsername(walletAddress);
+  const displayAvatar = user?.avatar_url || "👤";
+
+  const handleSaveUsername = async () => {
+    if (!newUsername.trim()) return;
+    setIsSaving(true);
+    try {
+      await api.updateProfile(walletAddress, newUsername.trim(), null);
+      await refreshUser();
+      setIsEditingName(false);
+      toast.success("Username updated!");
+    } catch (error) {
+      toast.error("Failed to update username");
+    }
+    setIsSaving(false);
+  };
+
+  const handleSaveAvatar = async (avatar) => {
+    setIsSaving(true);
+    try {
+      await api.updateProfile(walletAddress, null, avatar);
+      await refreshUser();
+      setSelectedAvatar(avatar);
+      setIsEditingAvatar(false);
+      toast.success("Avatar updated!");
+    } catch (error) {
+      toast.error("Failed to update avatar");
+    }
+    setIsSaving(false);
   };
 
   const handleUpgrade = async () => {
@@ -55,14 +99,93 @@ export default function ProfilePage() {
         >
           {walletAddress ? (
             <>
-              <motion.div 
-                className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center mx-auto mb-4 text-4xl"
-                animate={{ boxShadow: ["0 0 20px rgba(0,245,255,0.3)", "0 0 40px rgba(0,245,255,0.5)", "0 0 20px rgba(0,245,255,0.3)"] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                👤
-              </motion.div>
-              <h2 className="text-2xl font-bold text-white mb-1">{generateUsername(walletAddress)}</h2>
+              {/* Avatar */}
+              <div className="relative inline-block mb-4">
+                <motion.div 
+                  className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-4xl cursor-pointer"
+                  animate={{ boxShadow: ["0 0 20px rgba(0,245,255,0.3)", "0 0 40px rgba(0,245,255,0.5)", "0 0 20px rgba(0,245,255,0.3)"] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  onClick={() => setIsEditingAvatar(true)}
+                >
+                  {displayAvatar}
+                </motion.div>
+                <button 
+                  onClick={() => setIsEditingAvatar(true)}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg"
+                >
+                  <Camera className="w-4 h-4 text-white" />
+                </button>
+              </div>
+
+              {/* Avatar Selector */}
+              {isEditingAvatar && (
+                <motion.div 
+                  className="mb-4 p-4 bg-gray-800/50 rounded-xl"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <p className="text-gray-400 text-sm mb-3">Choose your avatar:</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {AVATAR_OPTIONS.map((avatar) => (
+                      <button
+                        key={avatar}
+                        onClick={() => handleSaveAvatar(avatar)}
+                        disabled={isSaving}
+                        className={`w-12 h-12 rounded-lg text-2xl flex items-center justify-center transition-all ${
+                          selectedAvatar === avatar 
+                            ? "bg-cyan-500/30 ring-2 ring-cyan-500" 
+                            : "bg-gray-700/50 hover:bg-gray-600/50"
+                        }`}
+                      >
+                        {avatar}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={() => setIsEditingAvatar(false)}
+                    className="mt-3 text-gray-400 text-sm hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Username */}
+              {isEditingName ? (
+                <div className="flex items-center gap-2 justify-center mb-2">
+                  <Input
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    placeholder="Enter new username"
+                    className="max-w-[200px] bg-gray-800 border-gray-700"
+                    autoFocus
+                  />
+                  <button 
+                    onClick={handleSaveUsername}
+                    disabled={isSaving}
+                    className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center"
+                  >
+                    <Check className="w-4 h-4 text-white" />
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingName(false)}
+                    className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 justify-center mb-1">
+                  <h2 className="text-2xl font-bold text-white">{displayName}</h2>
+                  <button 
+                    onClick={() => { setNewUsername(displayName); setIsEditingName(true); }}
+                    className="text-gray-400 hover:text-cyan-400"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
               <p className="text-gray-500 text-sm mb-2">{walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}</p>
               <div className="flex items-center justify-center gap-2">
                 {user?.tier === "plus" ? (
