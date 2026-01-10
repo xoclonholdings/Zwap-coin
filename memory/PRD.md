@@ -61,6 +61,17 @@ User flow:
 - [x] **Mobile-first no-scroll layout** - All screens fit without scrolling
 - [x] **PWA Support** - manifest.json, service worker, app icons for store distribution
 
+## What's Been Implemented (2025-01-10)
+- [x] **Z Points System** - Game-only loyalty currency (1000 zPts = 1 ZWAP)
+- [x] **Tiered Subscriptions** - Starter (free) and Plus ($12.99/mo)
+- [x] **Daily Z Points Caps** - 20/day Starter, 30/day Plus
+- [x] **4 Games** - zBrickles, zTrivia (Starter), zTetris, zSlots (Plus only)
+- [x] **Progressive Difficulty** - Games get harder, rewards scale
+- [x] **Dual Payment Shop** - Pay with ZWAP! Coin or Z Points
+- [x] **Stripe Integration** - Plus subscription checkout
+- [x] **ZWAP! Official Logos** - Added throughout app
+- [x] **1.5x Rewards for Plus** - Multiplier for Plus tier users
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
