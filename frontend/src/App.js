@@ -289,9 +289,9 @@ function AppContent() {
     }
   }, [walletAddress, pendingAction, navigate, setPendingAction]);
 
-  // Show splash screen
+  // Show splash screen on root - goes to dashboard after
   if (showSplash && location.pathname === "/") {
-    return <SplashScreen onEnter={() => setShowSplash(false)} />;
+    return <SplashScreen onEnter={() => { setShowSplash(false); navigate("/dashboard"); }} />;
   }
 
   // Wait for initialization
@@ -308,18 +308,8 @@ function AppContent() {
     return <AboutPage />;
   }
 
-  // Welcome screen for non-connected users
-  if (!walletAddress && location.pathname === "/") {
-    return (
-      <>
-        <WelcomeScreen />
-        <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
-      </>
-    );
-  }
-
-  // Redirect connected users from root to dashboard
-  if (walletAddress && location.pathname === "/") {
+  // Redirect from root to dashboard (no welcome screen)
+  if (location.pathname === "/") {
     navigate("/dashboard");
     return null;
   }
@@ -334,7 +324,7 @@ function AppContent() {
       {/* Main content with padding for header/ticker/nav */}
       <main className={showLayout ? "pt-20 pb-32" : ""}>
         <Routes>
-          <Route path="/" element={<WelcomeScreen />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/move" element={<MoveTab />} />
