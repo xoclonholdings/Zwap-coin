@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { useApp, ZWAP_BANG, api } from "@/App";
+import { useApp, ZWAP_BANG, api, ZWAP_CONTRACT } from "@/App";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail, Link2 } from "lucide-react";
+import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail, Link2, ExternalLink } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -18,6 +18,11 @@ const generateUsername = (wallet) => {
   const hash = wallet.slice(2, 10);
   const num = parseInt(hash, 16) % 9999;
   return `Zwapper#${num.toString().padStart(4, '0')}`;
+};
+
+// PolygonScan URL helper
+const getPolygonScanUrl = (address, type = "address") => {
+  return `https://polygonscan.com/${type}/${address}`;
 };
 
 export default function AppHeader() {
