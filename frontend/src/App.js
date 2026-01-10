@@ -197,6 +197,15 @@ export const api = {
     if (!res.ok) return null;
     return res.json();
   },
+  
+  updateProfile: async (walletAddress, username, avatarUrl) => {
+    const res = await fetch(`${API}/users/${walletAddress}/profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, avatar_url: avatarUrl }),
+    });
+    return res.json();
+  },
 };
 
 function AppProvider({ children }) {
