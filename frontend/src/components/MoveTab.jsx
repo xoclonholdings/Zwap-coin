@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useApp, api } from "@/App";
+import { useApp, api, TIERS } from "@/App";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Footprints, Play, Pause, RotateCcw, Coins } from "lucide-react";
+import { Footprints, Play, Pause, RotateCcw, Coins, Crown } from "lucide-react";
 
 export default function MoveTab() {
   const { user, walletAddress, refreshUser } = useApp();
@@ -11,25 +11,28 @@ export default function MoveTab() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [potentialReward, setPotentialReward] = useState(0);
   const lastAcceleration = useRef({ x: 0, y: 0, z: 0 });
-  const stepThreshold = useRef(1.2);
+
+  const tierConfig = TIERS[user?.tier || "starter"];
+  const multiplier = user?.tier === "plus" ? 1.5 : 1.0;
 
   const calculateRewards = (stepCount) => {
-    if (stepCount < 1000) return stepCount * 0.01;
-    if (stepCount < 5000) return 10 + (stepCount - 1000) * 0.02;
-    if (stepCount < 10000) return 90 + (stepCount - 5000) * 0.03;
-    return 240 + (stepCount - 10000) * 0.05;
+    let base;
+    if (stepCount < 1000) base = stepCount * 0.01;
+    else if (stepCount < 5000) base = 10 + (stepCount - 1000) * 0.02;
+    else if (stepCount < 10000) base = 90 + (stepCount - 5000) * 0.03;
+    else base = 240 + (stepCount - 10000) * 0.05;
+    return base * multiplier;
   };
 
   useEffect(() => {
     setPotentialReward(calculateRewards(steps));
-  }, [steps]);
+  }, [steps, multiplier]);
 
   useEffect(() => {
     if (!isTracking) return;
 
     let stepBuffer = 0;
     let lastStepTime = 0;
-    const minStepInterval = 300;
 
     const handleMotion = (event) => {
       const { x, y, z } = event.accelerationIncludingGravity || event.acceleration || {};
@@ -38,11 +41,10 @@ export default function MoveTab() {
       const deltaX = Math.abs(x - lastAcceleration.current.x);
       const deltaY = Math.abs(y - lastAcceleration.current.y);
       const deltaZ = Math.abs(z - lastAcceleration.current.z);
-      
       const magnitude = Math.sqrt(deltaX ** 2 + deltaY ** 2 + deltaZ ** 2);
       
       const now = Date.now();
-      if (magnitude > stepThreshold.current && now - lastStepTime > minStepInterval) {
+      if (magnitude > 1.2 && now - lastStepTime > 300) {
         stepBuffer++;
         lastStepTime = now;
         if (stepBuffer >= 1) {
@@ -54,30 +56,21 @@ export default function MoveTab() {
     };
 
     if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission()
-        .then(permissionState => {
-          if (permissionState === 'granted') {
-            window.addEventListener('devicemotion', handleMotion);
-          } else {
-            const interval = setInterval(() => {
-              setSteps(prev => prev + Math.floor(Math.random() * 3) + 1);
-            }, 1000);
-            return () => clearInterval(interval);
-          }
-        })
-        .catch(console.error);
+      DeviceMotionEvent.requestPermission().then(permission => {
+        if (permission === 'granted') window.addEventListener('devicemotion', handleMotion);
+        else {
+          const interval = setInterval(() => setSteps(prev => prev + Math.floor(Math.random() * 3) + 1), 1000);
+          return () => clearInterval(interval);
+        }
+      }).catch(console.error);
     } else if (typeof DeviceMotionEvent !== 'undefined') {
       window.addEventListener('devicemotion', handleMotion);
     } else {
-      const interval = setInterval(() => {
-        setSteps(prev => prev + Math.floor(Math.random() * 5) + 1);
-      }, 800);
+      const interval = setInterval(() => setSteps(prev => prev + Math.floor(Math.random() * 5) + 1), 800);
       return () => clearInterval(interval);
     }
 
-    return () => {
-      window.removeEventListener('devicemotion', handleMotion);
-    };
+    return () => window.removeEventListener('devicemotion', handleMotion);
   }, [isTracking]);
 
   const handleStartStop = async () => {
@@ -87,23 +80,15 @@ export default function MoveTab() {
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
         try {
           const permission = await DeviceMotionEvent.requestPermission();
-          if (permission !== 'granted') {
-            toast.error("Motion permission required");
-            return;
-          }
-        } catch (error) {
-          console.error("Permission error:", error);
-        }
+          if (permission !== 'granted') { toast.error("Motion permission required"); return; }
+        } catch (error) { console.error(error); }
       }
       setIsTracking(true);
       toast.success("Tracking started!");
     }
   };
 
-  const handleReset = () => {
-    setSteps(0);
-    setPotentialReward(0);
-  };
+  const handleReset = () => { setSteps(0); setPotentialReward(0); };
 
   const handleClaim = async () => {
     if (steps === 0) return;
@@ -114,44 +99,44 @@ export default function MoveTab() {
       await refreshUser();
       setSteps(0);
       setPotentialReward(0);
-    } catch (error) {
-      toast.error("Failed to claim");
-    } finally {
-      setIsClaiming(false);
-    }
+    } catch (error) { toast.error("Failed to claim"); }
+    finally { setIsClaiming(false); }
   };
 
   const tiers = [
-    { range: "0-1K", rate: "0.01/step", active: steps < 1000 },
-    { range: "1K-5K", rate: "0.02/step", active: steps >= 1000 && steps < 5000 },
-    { range: "5K-10K", rate: "0.03/step", active: steps >= 5000 && steps < 10000 },
-    { range: "10K+", rate: "0.05/step", active: steps >= 10000 },
+    { range: "0-1K", rate: "0.01", active: steps < 1000 },
+    { range: "1K-5K", rate: "0.02", active: steps >= 1000 && steps < 5000 },
+    { range: "5K-10K", rate: "0.03", active: steps >= 5000 && steps < 10000 },
+    { range: "10K+", rate: "0.05", active: steps >= 10000 },
   ];
 
   return (
     <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-4 pb-[72px] overflow-hidden" data-testid="move-tab">
-      {/* Header - Compact */}
+      {/* Header */}
       <div className="text-center mb-3 flex-shrink-0">
         <div className="w-14 h-14 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-2 pulse-glow">
           <Footprints className="w-7 h-7 text-cyan-400" />
         </div>
-        <h1 className="text-2xl font-bold text-white">MOVE</h1>
+        <h1 className="text-2xl font-bold text-white">zWALK</h1>
         <p className="text-gray-400 text-sm">Walk and Earn ZWAP!</p>
+        {user?.tier === "plus" && (
+          <span className="inline-flex items-center gap-1 text-yellow-400 text-xs mt-1">
+            <Crown className="w-3 h-3" /> 1.5× Rewards
+          </span>
+        )}
       </div>
 
       {/* Steps Counter */}
       <div className="balance-glow p-4 mb-3 text-center flex-shrink-0">
         <p className="text-gray-400 text-xs mb-1">Current Steps</p>
-        <h2 className="text-5xl font-bold neon-text" data-testid="step-counter">
-          {steps.toLocaleString()}
-        </h2>
+        <h2 className="text-5xl font-bold neon-text" data-testid="step-counter">{steps.toLocaleString()}</h2>
         <div className="flex items-center justify-center gap-2 text-cyan-400 mt-1">
           <Coins className="w-4 h-4" />
           <span className="text-base font-semibold">{potentialReward.toFixed(2)} ZWAP pending</span>
         </div>
       </div>
 
-      {/* Control Buttons */}
+      {/* Controls */}
       <div className="flex gap-3 mb-3 flex-shrink-0">
         <Button
           data-testid="tracking-toggle"
@@ -165,7 +150,7 @@ export default function MoveTab() {
         </Button>
       </div>
 
-      {/* Claim Button */}
+      {/* Claim */}
       <Button
         data-testid="claim-steps"
         onClick={handleClaim}
@@ -175,9 +160,9 @@ export default function MoveTab() {
         {isClaiming ? "Claiming..." : `Claim ${potentialReward.toFixed(2)} ZWAP`}
       </Button>
 
-      {/* Tier System - Compact grid */}
-      <div className="glass-card p-3 flex-1 min-h-0">
-        <h3 className="text-white font-semibold text-sm mb-2">Tiered Earning</h3>
+      {/* Tier System */}
+      <div className="glass-card p-3 flex-1 min-h-0 rounded-xl">
+        <h3 className="text-white font-semibold text-sm mb-2">Tiered Earning (ZWAP/step)</h3>
         <div className="grid grid-cols-2 gap-2">
           {tiers.map((tier, i) => (
             <div key={i} className={`p-2 rounded-lg text-center ${tier.active ? "bg-cyan-500/20 border border-cyan-500/50" : "bg-gray-800/50"}`}>
@@ -186,7 +171,9 @@ export default function MoveTab() {
             </div>
           ))}
         </div>
-        <p className="text-center text-xs text-gray-500 mt-2">Balance: {user?.zwap_balance?.toFixed(2) || "0"} ZWAP</p>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          Note: zWALK earns ZWAP only (no Z Points)
+        </p>
       </div>
     </div>
   );
