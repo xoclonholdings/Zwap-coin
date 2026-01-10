@@ -195,6 +195,41 @@ export default function AppHeader() {
                   </div>
                 </div>
 
+                {/* Balance Details (when connected) */}
+                {walletAddress && (
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
+                    <p className="text-xs text-gray-500 mb-3 uppercase tracking-wider">Balances</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-lg font-bold text-cyan-400">
+                          {onchainBalance !== null ? onchainBalance.toFixed(2) : "—"}
+                        </p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <Link2 className="w-3 h-3" /> On-Chain ZWAP
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-cyan-400/70">
+                          {user?.zwap_balance?.toFixed(2) || 0}
+                        </p>
+                        <p className="text-xs text-gray-500">In-App ZWAP</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-purple-400">
+                          {user?.zpts_balance || 0}
+                        </p>
+                        <p className="text-xs text-gray-500">Z Points</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-green-400">
+                          {user?.total_earned?.toFixed(0) || 0}
+                        </p>
+                        <p className="text-xs text-gray-500">Total Earned</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Connect Wallet Banner (if not connected) */}
                 {!walletAddress && (
                   <motion.button
