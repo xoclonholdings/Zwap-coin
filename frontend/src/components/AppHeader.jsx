@@ -203,7 +203,17 @@ export default function AppHeader() {
                 {/* Balance Details (when connected) */}
                 {walletAddress && (
                   <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
-                    <p className="text-xs text-gray-500 mb-3 uppercase tracking-wider">Balances</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">Balances</p>
+                      <a 
+                        href={getPolygonScanUrl(walletAddress)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 flex items-center gap-1 hover:text-cyan-300 transition-colors"
+                      >
+                        View on PolygonScan <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-lg font-bold text-cyan-400">
@@ -231,6 +241,18 @@ export default function AppHeader() {
                         </p>
                         <p className="text-xs text-gray-500">Total Earned</p>
                       </div>
+                    </div>
+                    
+                    {/* ZWAP Contract Link */}
+                    <div className="mt-3 pt-3 border-t border-cyan-500/20">
+                      <a 
+                        href={getPolygonScanUrl(ZWAP_CONTRACT.address, "token")} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-gray-500 flex items-center gap-1 hover:text-cyan-400 transition-colors"
+                      >
+                        ZWAP Token Contract <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                   </div>
                 )}
