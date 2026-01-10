@@ -283,6 +283,28 @@ export default function AboutPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Get Started CTA */}
+      <section className="py-12 px-6 bg-[#050510]">
+        <div className="max-w-lg mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-2xl font-bold text-white mb-4">Ready to Start Earning?</h2>
+            <p className="text-gray-400 mb-6">Join thousands of Zwappers earning crypto every day.</p>
+            <motion.button
+              onClick={() => navigate("/dashboard")}
+              className="px-10 py-4 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 rounded-full text-white shadow-[0_0_30px_rgba(0,245,255,0.4)] hover:shadow-[0_0_50px_rgba(0,245,255,0.6)] transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Get Started
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
     </div>
   );
 }
