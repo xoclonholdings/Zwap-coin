@@ -12,21 +12,20 @@ Build a cryptocurrency app for ZWAP! Coin with:
 ## Architecture
 
 ### Backend (FastAPI + MongoDB)
-- `server.py` - Main API with endpoints for users, games, shop, swap, subscriptions
+- `server.py` - Main API with endpoints for users, games, shop, swap, subscriptions, leaderboard
 
 ### Frontend (React + Tailwind + Framer Motion)
 - `App.js` - Main app with context, routing, API functions
 - `SplashScreen.jsx` - Animated splash with tagline
 - `Dashboard.jsx` - Main dashboard with feature grid
 - `AppHeader.jsx` - Persistent header with wallet/balances/profile
-- `NewsTicker.jsx` - Animated footer ticker
+- `NewsTicker.jsx` - Animated footer ticker with live leaderboard data
 - `FirstTimeUserPrompt.jsx` - Prompt for unconnected users
 - `MoveTab.jsx`, `PlayTab.jsx`, `ShopTab.jsx`, `SwapTab.jsx` - Main tabs
 
 ## What's Been Implemented
 
 ### Phase 1 (2025-01-08)
-- [x] Welcome screen with Swap/Earn/Shop actions
 - [x] Wallet connection modal (MetaMask, Trust, Speed, Help)
 - [x] Dashboard with balance, progress, features
 - [x] MOVE tab - Real step tracking with DeviceMotion API
@@ -55,6 +54,14 @@ Build a cryptocurrency app for ZWAP! Coin with:
 - [x] Correct Logos - ZUPREME_LOGO and ZWAP_COIN updated
 - [x] Full Animation Pass - All elements have framer-motion glow/pulse effects
 
+### Phase 4 (2025-01-11) - Leaderboard
+- [x] Leaderboard Backend API:
+  - GET /api/leaderboard/stats - Global stats (total users, ZWAP distributed, top earners)
+  - GET /api/leaderboard/{category} - Category leaderboards (steps, games, earned, zpts)
+  - GET /api/leaderboard/user/{wallet}/{category} - User rank (local, regional, global)
+- [x] NewsTicker Integration - Now fetches and displays live leaderboard data
+- [x] Dynamic username generation from wallet addresses
+
 ## Key Assets
 - ZWAP_LOGO: Full logo with text (splash screen)
 - ZWAP_BANG: 3D bang icon (header)
@@ -64,9 +71,8 @@ Build a cryptocurrency app for ZWAP! Coin with:
 ## Prioritized Backlog
 
 ### P1 (High Priority)
-- [ ] Leaderboard backend API + NewsTicker display
 - [ ] Complete Stripe webhook processing
-- [ ] User profile page with settings
+- [ ] User profile page with full settings
 
 ### P2 (Medium Priority)
 - [ ] Implement zTetris and zSlots games
@@ -78,11 +84,30 @@ Build a cryptocurrency app for ZWAP! Coin with:
 - [ ] NFT rewards for achievements
 - [ ] Referral system
 
-## Next Tasks
-1. Build Leaderboard backend API
-2. Connect Leaderboard to NewsTicker display
-3. Complete Stripe webhook processing
+## API Endpoints
 
-## Notes
-- Leaderboard data in NewsTicker is **MOCKED**
-- Stripe subscription checkout works, webhook processing needs completion
+### Leaderboard
+- `GET /api/leaderboard/stats` - Global stats for ticker
+- `GET /api/leaderboard/{category}?limit=10` - Top users by category
+- `GET /api/leaderboard/user/{wallet}/{category}` - User's rank
+
+### Users
+- `POST /api/users/connect` - Connect wallet / create user
+- `GET /api/users/{wallet}` - Get user profile
+
+### Games
+- `POST /api/games/result/{wallet}` - Submit game result
+- `GET /api/games/trivia/questions` - Get trivia questions
+
+### Shop
+- `GET /api/shop/items` - List all items
+- `POST /api/shop/purchase/{wallet}` - Purchase item
+
+### Swap
+- `GET /api/swap/prices` - Get live crypto prices
+- `POST /api/swap/execute/{wallet}` - Execute swap
+
+## Next Tasks
+1. Complete Stripe webhook processing for Plus activation
+2. Implement zTetris game
+3. Add geolocation for regional/local leaderboards
