@@ -36,6 +36,9 @@ export const ZWAP_CONTRACT = {
   symbol: "ZWAP",
   decimals: 18,
   name: "ZWAP Coin",
+  totalSupply: "30000000000", // 30 billion
+  // The contract itself holds the treasury tokens
+  // Owner/deployer: 0x85EaDbB165cf4c8202d33562DfaeeA0b632B0849
 };
 
 // ZWAP Logo URLs
