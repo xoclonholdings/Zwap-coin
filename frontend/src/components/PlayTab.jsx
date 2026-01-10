@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useApp, api } from "@/App";
+import { useApp, api, TIERS } from "@/App";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Gamepad2, Play, Coins, Trophy } from "lucide-react";
+import { Gamepad2, Play, Coins, Trophy, Lock, Crown, ChevronLeft, HelpCircle } from "lucide-react";
 
-const BricklesGame = ({ onGameEnd, isPlaying }) => {
+// ============ GAME COMPONENTS ============
+
+// zBrickles Game
+const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
   const canvasRef = useRef(null);
-  const gameRef = useRef(null);
   const animationRef = useRef(null);
 
   useEffect(() => {
@@ -17,9 +19,13 @@ const BricklesGame = ({ onGameEnd, isPlaying }) => {
     const width = canvas.width;
     const height = canvas.height;
 
+    // Difficulty increases with level
+    const ballSpeed = 4 + level * 0.5;
+    const brickRows = Math.min(4 + Math.floor(level / 2), 7);
+
     const game = {
-      paddle: { x: width / 2 - 40, y: height - 25, width: 80, height: 10 },
-      ball: { x: width / 2, y: height - 45, dx: 4, dy: -4, radius: 7 },
+      paddle: { x: width / 2 - 40, y: height - 25, width: 80 - level * 3, height: 10 },
+      ball: { x: width / 2, y: height - 45, dx: ballSpeed, dy: -ballSpeed, radius: 7 },
       bricks: [],
       score: 0,
       blocksDestroyed: 0,
@@ -27,26 +33,22 @@ const BricklesGame = ({ onGameEnd, isPlaying }) => {
       isRunning: true
     };
 
-    const brickRows = 4;
     const brickCols = 7;
     const brickWidth = (width - 30) / brickCols;
     const brickHeight = 18;
-    const brickPadding = 3;
 
     for (let row = 0; row < brickRows; row++) {
       for (let col = 0; col < brickCols; col++) {
         game.bricks.push({
           x: 15 + col * brickWidth,
-          y: 30 + row * (brickHeight + brickPadding),
-          width: brickWidth - brickPadding,
+          y: 30 + row * (brickHeight + 3),
+          width: brickWidth - 3,
           height: brickHeight,
           alive: true,
           color: `hsl(${180 + row * 25}, 100%, ${60 - row * 5}%)`
         });
       }
     }
-
-    gameRef.current = game;
 
     const handleMove = (clientX) => {
       const rect = canvas.getBoundingClientRect();
@@ -73,7 +75,7 @@ const BricklesGame = ({ onGameEnd, isPlaying }) => {
           game.ball.x >= game.paddle.x && game.ball.x <= game.paddle.x + game.paddle.width) {
         game.ball.dy = -Math.abs(game.ball.dy);
         const hitPos = (game.ball.x - game.paddle.x) / game.paddle.width;
-        game.ball.dx = 6 * (hitPos - 0.5);
+        game.ball.dx = (ballSpeed + 2) * (hitPos - 0.5);
       }
 
       game.bricks.forEach(brick => {
@@ -82,21 +84,21 @@ const BricklesGame = ({ onGameEnd, isPlaying }) => {
             game.ball.y - game.ball.radius <= brick.y + brick.height && game.ball.y + game.ball.radius >= brick.y) {
           brick.alive = false;
           game.ball.dy *= -1;
-          game.score += 10;
+          game.score += 10 + level * 2;
           game.blocksDestroyed++;
         }
       });
 
       if (game.ball.y > height) {
         game.lives--;
-        if (game.lives <= 0) { game.isRunning = false; onGameEnd(game.score, game.blocksDestroyed); return; }
-        game.ball.x = width / 2; game.ball.y = height - 45; game.ball.dx = 4; game.ball.dy = -4;
+        if (game.lives <= 0) { game.isRunning = false; onGameEnd(game.score, game.blocksDestroyed, level); return; }
+        game.ball.x = width / 2; game.ball.y = height - 45; game.ball.dx = ballSpeed; game.ball.dy = -ballSpeed;
       }
 
       if (game.bricks.every(b => !b.alive)) {
         game.isRunning = false;
-        game.score += 500;
-        onGameEnd(game.score, game.blocksDestroyed);
+        game.score += 500 + level * 100;
+        onGameEnd(game.score, game.blocksDestroyed, level, true);
       }
     };
 
@@ -122,9 +124,9 @@ const BricklesGame = ({ onGameEnd, isPlaying }) => {
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = "#fff"; ctx.font = "14px 'Exo 2'";
-      ctx.fillText(`Score: ${game.score}`, 8, 18);
-      ctx.fillText(`❤️`.repeat(game.lives), width - 60, 18);
+      ctx.fillStyle = "#fff"; ctx.font = "12px 'Exo 2'";
+      ctx.fillText(`Score: ${game.score} | Lvl: ${level}`, 8, 16);
+      ctx.fillText(`❤️`.repeat(game.lives), width - 50, 16);
     };
 
     const gameLoop = () => {
@@ -139,101 +141,323 @@ const BricklesGame = ({ onGameEnd, isPlaying }) => {
       canvas.removeEventListener("mousemove", handleMouse);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [isPlaying, onGameEnd]);
+  }, [isPlaying, level, onGameEnd]);
 
-  return <canvas ref={canvasRef} width={280} height={360} className="rounded-xl border border-cyan-500/30 mx-auto touch-none" data-testid="game-canvas" />;
+  return <canvas ref={canvasRef} width={280} height={320} className="rounded-xl border border-cyan-500/30 mx-auto touch-none" data-testid="game-canvas" />;
 };
+
+// zTrivia Game
+const TriviaGame = ({ onGameEnd, isPlaying }) => {
+  const [questions, setQuestions] = useState([]);
+  const [currentQ, setCurrentQ] = useState(0);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showResult, setShowResult] = useState(false);
+  const [difficulty, setDifficulty] = useState(1);
+  const startTimeRef = useRef(Date.now());
+
+  useEffect(() => {
+    if (isPlaying) loadQuestions();
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isPlaying || showResult) return;
+    const timer = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          handleTimeout();
+          return 30;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isPlaying, currentQ, showResult]);
+
+  const loadQuestions = async () => {
+    try {
+      const qs = await api.getTriviaQuestions(5, difficulty);
+      setQuestions(qs);
+      setCurrentQ(0);
+      setScore(0);
+      setTimeLeft(30);
+      startTimeRef.current = Date.now();
+    } catch (error) {
+      toast.error("Failed to load questions");
+    }
+  };
+
+  const handleTimeout = () => {
+    if (currentQ < questions.length - 1) {
+      setCurrentQ(c => c + 1);
+      setTimeLeft(30);
+      startTimeRef.current = Date.now();
+    } else {
+      onGameEnd(score, difficulty);
+    }
+  };
+
+  const handleAnswer = async (answer) => {
+    if (selectedAnswer) return;
+    setSelectedAnswer(answer);
+    
+    const timeTaken = (Date.now() - startTimeRef.current) / 1000;
+    const result = await api.checkTriviaAnswer(questions[currentQ].id, answer, timeTaken);
+    
+    setShowResult(true);
+    if (result.correct) {
+      const points = 1 + Math.round(result.time_bonus);
+      setScore(s => s + points);
+      setDifficulty(d => Math.min(d + 1, 5)); // Increase difficulty on correct
+    }
+
+    setTimeout(() => {
+      setShowResult(false);
+      setSelectedAnswer(null);
+      if (currentQ < questions.length - 1) {
+        setCurrentQ(c => c + 1);
+        setTimeLeft(30);
+        startTimeRef.current = Date.now();
+      } else {
+        onGameEnd(score + (result.correct ? 1 : 0), difficulty);
+      }
+    }, 1500);
+  };
+
+  if (!questions.length) return <div className="flex items-center justify-center h-64"><div className="text-cyan-400">Loading...</div></div>;
+
+  const q = questions[currentQ];
+
+  return (
+    <div className="w-full max-w-sm mx-auto p-4" data-testid="trivia-game">
+      {/* Progress & Timer */}
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-gray-400 text-sm">Q{currentQ + 1}/{questions.length}</span>
+        <span className="text-cyan-400 font-bold">Score: {score}</span>
+        <span className={`font-mono ${timeLeft < 10 ? 'text-red-400' : 'text-gray-400'}`}>{timeLeft}s</span>
+      </div>
+
+      {/* Question */}
+      <div className="glass-card p-4 mb-4 rounded-xl">
+        <p className="text-white text-center">{q.question}</p>
+      </div>
+
+      {/* Options */}
+      <div className="space-y-2">
+        {q.options.map((opt, i) => (
+          <button
+            key={i}
+            onClick={() => handleAnswer(opt)}
+            disabled={!!selectedAnswer}
+            className={`w-full p-3 rounded-xl text-left transition-all ${
+              selectedAnswer === opt
+                ? showResult
+                  ? opt === selectedAnswer && selectedAnswer === q.correctAnswer
+                    ? 'bg-green-500/30 border-green-500'
+                    : 'bg-red-500/30 border-red-500'
+                  : 'bg-cyan-500/30 border-cyan-500'
+                : 'bg-[#141530] border-gray-700 hover:border-cyan-500/50'
+            } border`}
+          >
+            <span className="text-white text-sm">{opt}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ============ MAIN PLAY TAB ============
 
 export default function PlayTab() {
   const { user, walletAddress, refreshUser } = useApp();
+  const [selectedGame, setSelectedGame] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [lastScore, setLastScore] = useState(null);
-  const [lastBlocks, setLastBlocks] = useState(null);
-  const [pendingReward, setPendingReward] = useState(0);
+  const [gameResult, setGameResult] = useState(null);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(1);
 
-  const calculateRewards = (score, blocks) => Math.min(blocks * 0.5 + (score > 1000 ? (score - 1000) * 0.01 : 0), 500);
+  const tierConfig = TIERS[user?.tier || "starter"];
+  const isPlusUser = user?.tier === "plus";
 
-  const handleGameEnd = useCallback((score, blocksDestroyed) => {
-    setLastScore(score); setLastBlocks(blocksDestroyed);
-    setPendingReward(calculateRewards(score, blocksDestroyed));
+  const games = [
+    { id: "zbrickles", name: "zBrickles", icon: "🧱", color: "cyan", description: "Break blocks!", locked: false },
+    { id: "ztrivia", name: "zTrivia", icon: "❓", color: "purple", description: "Test your crypto knowledge", locked: false },
+    { id: "ztetris", name: "zTetris", icon: "🎮", color: "pink", description: "Stack blocks", locked: !isPlusUser },
+    { id: "zslots", name: "zSlots", icon: "🎰", color: "yellow", description: "Try your luck", locked: !isPlusUser },
+  ];
+
+  const handleGameEnd = useCallback(async (score, blocksOrDifficulty, level = 1, cleared = false) => {
     setIsPlaying(false);
-    toast.info(`Game Over! Score: ${score}`);
-  }, []);
+    
+    const gameType = selectedGame;
+    const blocks = gameType === "zbrickles" ? blocksOrDifficulty : 0;
+    const difficulty = gameType === "ztrivia" ? blocksOrDifficulty : level;
 
-  const handleClaim = async () => {
-    if (!lastScore) return;
-    setIsClaiming(true);
     try {
-      const result = await api.claimGameRewards(walletAddress, lastScore, lastBlocks);
-      toast.success(result.message);
+      const result = await api.submitGameResult(walletAddress, gameType, score, difficulty, blocks);
+      setGameResult({
+        ...result,
+        cleared,
+        nextLevel: cleared ? level + 1 : level
+      });
       await refreshUser();
-      setLastScore(null); setLastBlocks(null); setPendingReward(0);
-    } catch (error) { toast.error("Failed to claim"); }
-    finally { setIsClaiming(false); }
+    } catch (error) {
+      toast.error(error.message || "Failed to submit result");
+      setGameResult({ score, zwap_earned: 0, zpts_earned: 0 });
+    }
+  }, [selectedGame, walletAddress, refreshUser]);
+
+  const handleClaim = () => {
+    setGameResult(null);
+    setSelectedGame(null);
+    setCurrentLevel(1);
   };
 
-  const handleStartGame = () => { setIsPlaying(true); setLastScore(null); setLastBlocks(null); setPendingReward(0); };
+  const handlePlayAgain = () => {
+    if (gameResult?.cleared) setCurrentLevel(gameResult.nextLevel);
+    setGameResult(null);
+    setIsPlaying(true);
+  };
 
+  const startGame = (gameId) => {
+    const game = games.find(g => g.id === gameId);
+    if (game?.locked) {
+      toast.error("Upgrade to Plus to unlock this game!");
+      return;
+    }
+    setSelectedGame(gameId);
+    setIsPlaying(true);
+    setGameResult(null);
+  };
+
+  // Game selection screen
+  if (!selectedGame) {
+    return (
+      <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-4 pb-[72px] overflow-hidden" data-testid="play-tab">
+        <div className="text-center mb-4 flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-2">
+            <Gamepad2 className="w-6 h-6 text-purple-400" />
+          </div>
+          <h1 className="text-xl font-bold text-white">PLAY</h1>
+          <p className="text-gray-400 text-xs">Earn ZWAP! + Z Points</p>
+        </div>
+
+        {/* Z Points info */}
+        <div className="glass-card p-3 mb-4 flex-shrink-0 rounded-xl">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-gray-400 text-xs">Daily Z Points</p>
+              <p className="text-purple-400 font-bold">{user?.daily_zpts_earned || 0} / {tierConfig.dailyZptsCap}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-gray-400 text-xs">Your Balance</p>
+              <p className="text-cyan-400 font-bold">{user?.zpts_balance || 0} zPts</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Game grid */}
+        <div className="grid grid-cols-2 gap-3 flex-1">
+          {games.map((game) => (
+            <button
+              key={game.id}
+              data-testid={`game-${game.id}`}
+              onClick={() => startGame(game.id)}
+              className={`p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] flex flex-col items-center justify-center relative ${
+                game.locked 
+                  ? 'bg-gray-800/50 border-gray-700 opacity-60' 
+                  : `bg-gradient-to-br from-${game.color}-500/20 to-${game.color}-500/5 border-${game.color}-500/30`
+              }`}
+            >
+              {game.locked && (
+                <div className="absolute top-2 right-2">
+                  <Lock className="w-4 h-4 text-gray-500" />
+                </div>
+              )}
+              <span className="text-3xl mb-2">{game.icon}</span>
+              <h3 className="text-white font-bold text-sm">{game.name}</h3>
+              <p className="text-gray-400 text-[10px] text-center">{game.description}</p>
+              {game.locked && (
+                <span className="text-[10px] text-yellow-400 mt-1 flex items-center gap-1">
+                  <Crown className="w-3 h-3" /> Plus
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Tip */}
+        <div className="mt-3 text-center text-xs text-gray-500 flex-shrink-0">
+          <HelpCircle className="w-3 h-3 inline mr-1" />
+          Games get harder = more rewards!
+        </div>
+      </div>
+    );
+  }
+
+  // Active game or result screen
   return (
     <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-4 pb-[72px] overflow-hidden" data-testid="play-tab">
       {/* Header */}
-      <div className="text-center mb-2 flex-shrink-0">
-        <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-1">
-          <Gamepad2 className="w-6 h-6 text-purple-400" />
-        </div>
-        <h1 className="text-xl font-bold text-white">PLAY</h1>
-        <p className="text-gray-400 text-xs">zBricks - Earn ZWAP!</p>
+      <div className="flex items-center mb-3 flex-shrink-0">
+        <button onClick={() => { setSelectedGame(null); setIsPlaying(false); setGameResult(null); }} className="text-gray-400 mr-3">
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-bold text-white">{games.find(g => g.id === selectedGame)?.name}</h1>
+        {selectedGame === "zbrickles" && <span className="ml-auto text-cyan-400 text-sm">Level {currentLevel}</span>}
       </div>
 
       {/* Game Area */}
-      <div className="game-container flex-1 flex items-center justify-center min-h-0">
+      <div className="flex-1 flex items-center justify-center min-h-0">
         {isPlaying ? (
-          <BricklesGame onGameEnd={handleGameEnd} isPlaying={isPlaying} />
+          selectedGame === "zbrickles" ? (
+            <BricklesGame onGameEnd={handleGameEnd} isPlaying={isPlaying} level={currentLevel} />
+          ) : selectedGame === "ztrivia" ? (
+            <TriviaGame onGameEnd={handleGameEnd} isPlaying={isPlaying} />
+          ) : (
+            <div className="text-gray-400">Coming soon...</div>
+          )
+        ) : gameResult ? (
+          <div className="w-full max-w-xs mx-auto text-center">
+            <Trophy className={`w-16 h-16 mx-auto mb-3 ${gameResult.cleared ? 'text-yellow-400' : 'text-gray-400'}`} />
+            <h2 className="text-xl font-bold text-white mb-1">{gameResult.cleared ? "Level Complete!" : "Game Over!"}</h2>
+            <p className="text-gray-400 text-sm mb-4">Score: {gameResult.score}</p>
+            
+            <div className="glass-card p-4 mb-4 rounded-xl">
+              <div className="flex justify-around">
+                <div className="text-center">
+                  <p className="text-cyan-400 text-xl font-bold">+{gameResult.zwap_earned?.toFixed(2)}</p>
+                  <p className="text-gray-400 text-xs">ZWAP</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-purple-400 text-xl font-bold">+{gameResult.zpts_earned}</p>
+                  <p className="text-gray-400 text-xs">zPts</p>
+                </div>
+              </div>
+              {gameResult.zpts_capped && (
+                <p className="text-yellow-400 text-xs mt-2">Daily zPts cap reached!</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Button onClick={handlePlayAgain} className="w-full bg-purple-500 hover:bg-purple-600">
+                <Play className="w-4 h-4 mr-2" /> {gameResult.cleared ? `Play Level ${gameResult.nextLevel}` : "Play Again"}
+              </Button>
+              <Button onClick={handleClaim} variant="outline" className="w-full border-gray-600">
+                Back to Games
+              </Button>
+            </div>
+          </div>
         ) : (
-          <div className="w-[280px] h-[360px] rounded-xl border border-purple-500/30 flex flex-col items-center justify-center bg-[#0f1029] p-4">
-            {lastScore !== null ? (
-              <>
-                <Trophy className="w-12 h-12 text-yellow-400 mb-2" />
-                <h2 className="text-xl font-bold text-white mb-1">Game Over!</h2>
-                <p className="text-gray-400 text-sm">Score: <span className="text-cyan-400">{lastScore}</span> • Blocks: <span className="text-purple-400">{lastBlocks}</span></p>
-                <div className="flex items-center gap-2 text-base my-3">
-                  <Coins className="w-4 h-4 text-cyan-400" />
-                  <span className="text-white font-semibold">{pendingReward.toFixed(2)} ZWAP</span>
-                </div>
-                <div className="space-y-2 w-full">
-                  <Button data-testid="claim-game" onClick={handleClaim} disabled={isClaiming} className="w-full bg-gradient-to-r from-cyan-500 to-purple-500">
-                    {isClaiming ? "Claiming..." : "Claim Rewards"}
-                  </Button>
-                  <Button data-testid="play-again" onClick={handleStartGame} variant="outline" className="w-full border-purple-500/50 text-purple-400">
-                    Play Again
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <Gamepad2 className="w-16 h-16 text-purple-400 mb-3 float" />
-                <h2 className="text-lg text-white mb-1">Ready to Play?</h2>
-                <p className="text-gray-400 text-xs mb-4 text-center">Move finger/mouse to control paddle</p>
-                <Button data-testid="start-game" onClick={handleStartGame} className="bg-purple-500 hover:bg-purple-600 px-6">
-                  <Play className="w-4 h-4 mr-2" />Start Game
-                </Button>
-              </>
-            )}
+          <div className="text-center">
+            <span className="text-6xl mb-4 block">{games.find(g => g.id === selectedGame)?.icon}</span>
+            <Button onClick={() => setIsPlaying(true)} className="bg-purple-500 hover:bg-purple-600">
+              <Play className="w-4 h-4 mr-2" /> Start Game
+            </Button>
           </div>
         )}
-      </div>
-
-      {/* Stats */}
-      <div className="flex gap-3 mt-2 flex-shrink-0">
-        <div className="glass-card p-2 flex-1 text-center">
-          <p className="text-gray-400 text-[10px]">Games Played</p>
-          <p className="text-lg font-bold text-purple-400">{user?.games_played || 0}</p>
-        </div>
-        <div className="glass-card p-2 flex-1 text-center">
-          <p className="text-gray-400 text-[10px]">Balance</p>
-          <p className="text-lg font-bold text-cyan-400">{user?.zwap_balance?.toFixed(0) || "0"}</p>
-        </div>
       </div>
     </div>
   );
