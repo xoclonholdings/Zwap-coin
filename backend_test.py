@@ -151,21 +151,6 @@ class ZWAPAPITester:
             print(f"   Rewards earned: {step_result.get('rewards_earned')} ZWAP")
             print(f"   New balance: {step_result.get('new_balance')} ZWAP")
         
-        # Test game rewards
-        success, game_result = self.run_test(
-            "Claim Game Rewards",
-            "POST",
-            f"faucet/game/{self.test_wallet}",
-            200,
-            {"score": 1200, "blocks_destroyed": 15}
-        )
-        
-        if success and game_result:
-            print(f"   Score: {game_result.get('score')}")
-            print(f"   Blocks destroyed: {game_result.get('blocks_destroyed')}")
-            print(f"   Rewards earned: {game_result.get('rewards_earned')} ZWAP")
-            print(f"   New balance: {game_result.get('new_balance')} ZWAP")
-        
         # Test scratch to win
         success, scratch_result = self.run_test(
             "Scratch to Win",
@@ -178,6 +163,136 @@ class ZWAPAPITester:
             print(f"   Won: {scratch_result.get('won')}")
             print(f"   Amount: {scratch_result.get('amount')} ZWAP")
             print(f"   New balance: {scratch_result.get('new_balance')} ZWAP")
+
+    def test_game_endpoints(self):
+        """Test game endpoints"""
+        print("\n" + "="*50)
+        print("TESTING GAME ENDPOINTS")
+        print("="*50)
+        
+        if not self.test_wallet:
+            print("❌ No test wallet available, skipping game tests")
+            return
+        
+        # Test zBrickles game result
+        success, game_result = self.run_test(
+            "Submit zBrickles Game Result",
+            "POST",
+            f"games/result/{self.test_wallet}",
+            200,
+            {"game_type": "zbrickles", "score": 1200, "level": 1, "blocks_destroyed": 15}
+        )
+        
+        if success and game_result:
+            print(f"   Game: {game_result.get('game')}")
+            print(f"   Score: {game_result.get('score')}")
+            print(f"   ZWAP earned: {game_result.get('zwap_earned')}")
+            print(f"   Z Points earned: {game_result.get('zpts_earned')}")
+            print(f"   New ZWAP balance: {game_result.get('new_zwap_balance')}")
+            print(f"   New Z Points balance: {game_result.get('new_zpts_balance')}")
+        
+        # Test zTrivia game result
+        success, trivia_result = self.run_test(
+            "Submit zTrivia Game Result",
+            "POST",
+            f"games/result/{self.test_wallet}",
+            200,
+            {"game_type": "ztrivia", "score": 5, "level": 2}
+        )
+        
+        if success and trivia_result:
+            print(f"   Game: {trivia_result.get('game')}")
+            print(f"   Score: {trivia_result.get('score')}")
+            print(f"   ZWAP earned: {trivia_result.get('zwap_earned')}")
+            print(f"   Z Points earned: {trivia_result.get('zpts_earned')}")
+        
+        # Test trivia questions
+        success, questions = self.run_test(
+            "Get Trivia Questions",
+            "GET",
+            "games/trivia/questions?count=5&difficulty=1",
+            200
+        )
+        
+        if success and questions:
+            print(f"   Retrieved {len(questions)} trivia questions")
+            if questions:
+                print(f"   Sample question: {questions[0].get('question', '')[:50]}...")
+        
+        # Test trivia answer check
+        if success and questions and len(questions) > 0:
+            success, answer_result = self.run_test(
+                "Check Trivia Answer",
+                "POST",
+                "games/trivia/answer",
+                200,
+                {"question_id": questions[0].get('id'), "answer": "Bitcoin", "time_taken": 5.5}
+            )
+            
+            if success and answer_result:
+                print(f"   Answer correct: {answer_result.get('correct')}")
+                print(f"   Time bonus: {answer_result.get('time_bonus')}")
+
+    def test_tier_endpoints(self):
+        """Test tier configuration endpoints"""
+        print("\n" + "="*50)
+        print("TESTING TIER ENDPOINTS")
+        print("="*50)
+        
+        # Test get tiers
+        success, tiers = self.run_test(
+            "Get Tier Configuration",
+            "GET",
+            "tiers",
+            200
+        )
+        
+        if success and tiers:
+            print(f"   Available tiers: {list(tiers.keys())}")
+            for tier_name, tier_config in tiers.items():
+                print(f"   {tier_name}: {tier_config.get('name')} - ${tier_config.get('price')}")
+                print(f"     Games: {tier_config.get('games')}")
+                print(f"     Daily Z Points cap: {tier_config.get('daily_zpts_cap')}")
+
+    def test_zpts_conversion(self):
+        """Test Z Points conversion"""
+        print("\n" + "="*50)
+        print("TESTING Z POINTS CONVERSION")
+        print("="*50)
+        
+        if not self.test_wallet:
+            print("❌ No test wallet available, skipping Z Points tests")
+            return
+        
+        # First, earn some Z Points through games
+        print("   Earning Z Points through game...")
+        success, game_result = self.run_test(
+            "Earn Z Points via Game",
+            "POST",
+            f"games/result/{self.test_wallet}",
+            200,
+            {"game_type": "zbrickles", "score": 2000, "level": 1, "blocks_destroyed": 25}
+        )
+        
+        if success and game_result:
+            zpts_earned = game_result.get('zpts_earned', 0)
+            print(f"   Earned {zpts_earned} Z Points")
+            
+            # Try to convert Z Points to ZWAP (need at least 1000)
+            if zpts_earned >= 1000:
+                success, convert_result = self.run_test(
+                    "Convert Z Points to ZWAP",
+                    "POST",
+                    f"zpts/convert/{self.test_wallet}",
+                    200,
+                    {"zpts_amount": 1000}
+                )
+                
+                if success and convert_result:
+                    print(f"   Converted: {convert_result.get('zpts_converted')} Z Points")
+                    print(f"   Received: {convert_result.get('zwap_received')} ZWAP")
+            else:
+                print(f"   Not enough Z Points for conversion (need 1000, have {zpts_earned})")
 
     def test_shop_endpoints(self):
         """Test shop endpoints"""
