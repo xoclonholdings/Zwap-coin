@@ -30,6 +30,14 @@ app = FastAPI(title="ZWAP! Coin API")
 api_router = APIRouter(prefix="/api")
 
 # ============ CONSTANTS ============
+# ============ ZWAP CONTRACT CONFIG ============
+ZWAP_CONTRACT_ADDRESS = "0xe8898453af13b9496a6e8ada92c6efdaf4967a81"
+ZWAP_CHAIN_ID = 137  # Polygon
+ZWAP_DECIMALS = 18
+
+# Treasury wallet (to be set)
+TREASURY_WALLET = os.environ.get("TREASURY_WALLET", "")
+
 TIERS = {
     "starter": {
         "name": "Starter",
