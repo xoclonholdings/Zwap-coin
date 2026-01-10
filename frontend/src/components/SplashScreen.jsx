@@ -7,7 +7,10 @@ import { ZWAP_LOGO } from "@/App";
 export default function SplashScreen({ onEnter }) {
   const [stage, setStage] = useState(0);
   const [showButtons, setShowButtons] = useState(false);
+  const [taglineComplete, setTaglineComplete] = useState(false);
   const navigate = useNavigate();
+
+  const words = ["MOVE.", "PLAY.", "SWAP.", "SHOP."];
 
   useEffect(() => {
     // Check if splash was already shown this session
@@ -23,8 +26,9 @@ export default function SplashScreen({ onEnter }) {
       setTimeout(() => setStage(2), 1500),  // PLAY dissolves
       setTimeout(() => setStage(3), 2400),  // SWAP falls
       setTimeout(() => setStage(4), 3300),  // SHOP letter by letter
-      setTimeout(() => setStage(5), 4800),  // Logo swirls in (slower)
-      setTimeout(() => setShowButtons(true), 6200), // Buttons appear later
+      setTimeout(() => setTaglineComplete(true), 4200), // Tagline complete, starts moving
+      setTimeout(() => setStage(5), 5000),  // Logo appears
+      setTimeout(() => setShowButtons(true), 6500), // Buttons appear
     ];
 
     return () => timers.forEach(clearTimeout);
@@ -56,14 +60,46 @@ export default function SplashScreen({ onEnter }) {
         />
       </div>
 
-      {/* Word animations */}
-      <div className="relative z-10 h-24 flex items-center justify-center mb-8">
-        <AnimatePresence mode="wait">
-          {stage >= 1 && stage < 5 && (
+      {/* Logo and tagline container */}
+      <div className="relative z-10 flex flex-col items-center">
+        {/* Logo swirl in - 3-5x larger */}
+        <AnimatePresence>
+          {stage >= 5 && (
             <motion.div
-              key="words"
-              className="flex gap-4 text-3xl sm:text-4xl font-extrabold"
-              exit={{ opacity: 0, y: -50 }}
+              initial={{ scale: 0.05, rotate: -720, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ 
+                type: "spring", 
+                damping: 20, 
+                stiffness: 40,
+                duration: 2 
+              }}
+              className="mb-4"
+            >
+              <motion.img
+                src={ZWAP_LOGO}
+                alt="ZWAP!"
+                className="h-40 sm:h-56 drop-shadow-[0_0_40px_rgba(0,245,255,0.6)]"
+                animate={{ 
+                  filter: [
+                    "drop-shadow(0 0 30px rgba(0,245,255,0.4))",
+                    "drop-shadow(0 0 60px rgba(0,245,255,0.8))",
+                    "drop-shadow(0 0 30px rgba(0,245,255,0.4))"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Tagline: "MOVE. PLAY. SWAP. SHOP." - animated words then repositioned */}
+        <AnimatePresence mode="wait">
+          {!taglineComplete && stage >= 1 && stage < 5 && (
+            <motion.div
+              key="words-center"
+              className="flex gap-3 sm:gap-4 text-2xl sm:text-4xl font-extrabold"
+              exit={{ opacity: 0 }}
             >
               {/* MOVE - slides in */}
               {stage >= 1 && (
@@ -121,52 +157,24 @@ export default function SplashScreen({ onEnter }) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Tagline repositioned under logo */}
+        <AnimatePresence>
+          {stage >= 5 && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="flex gap-2 sm:gap-3 text-sm sm:text-lg font-bold mt-2"
+            >
+              <span className="text-cyan-400" style={{ textShadow: "0 0 10px rgba(0,245,255,0.6)" }}>MOVE.</span>
+              <span className="text-purple-400" style={{ textShadow: "0 0 10px rgba(153,69,255,0.6)" }}>PLAY.</span>
+              <span className="text-blue-400" style={{ textShadow: "0 0 10px rgba(59,130,246,0.6)" }}>SWAP.</span>
+              <span className="text-pink-400" style={{ textShadow: "0 0 10px rgba(236,72,153,0.6)" }}>SHOP.</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-
-      {/* Logo swirl in - starts from far back and swirls in slower */}
-      <AnimatePresence>
-        {stage >= 5 && (
-          <motion.div
-            initial={{ scale: 0.1, rotate: -360, opacity: 0 }}
-            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{ 
-              type: "spring", 
-              damping: 15, 
-              stiffness: 60,
-              duration: 1.5 
-            }}
-            className="relative z-10 mb-2"
-          >
-            <motion.img
-              src={ZWAP_LOGO}
-              alt="ZWAP!"
-              className="h-20 sm:h-24 drop-shadow-[0_0_30px_rgba(0,245,255,0.6)]"
-              animate={{ 
-                filter: [
-                  "drop-shadow(0 0 20px rgba(0,245,255,0.4))",
-                  "drop-shadow(0 0 40px rgba(0,245,255,0.8))",
-                  "drop-shadow(0 0 20px rgba(0,245,255,0.4))"
-                ]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Tagline - actual tagline */}
-      <AnimatePresence>
-        {stage >= 5 && (
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-gray-400 text-base sm:text-lg mb-10 text-center px-4 font-medium"
-          >
-            The Crypto Faucet That Moves With You
-          </motion.p>
-        )}
-      </AnimatePresence>
 
       {/* Buttons */}
       <AnimatePresence>
@@ -174,7 +182,7 @@ export default function SplashScreen({ onEnter }) {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col gap-4 items-center relative z-10"
+            className="flex flex-col gap-4 items-center relative z-10 mt-12"
           >
             <Button
               onClick={handleEnter}

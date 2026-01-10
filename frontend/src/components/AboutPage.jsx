@@ -1,9 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ZWAP_LOGO, ZWAP_BANG } from "@/App";
-import { ArrowLeft, Footprints, Gamepad2, ArrowRightLeft, ShoppingBag, Coins, Users, Shield, Zap } from "lucide-react";
+import { ZWAP_BANG } from "@/App";
+import { ArrowLeft, Footprints, Gamepad2, ArrowRightLeft, ShoppingBag, Coins, Zap, Shield } from "lucide-react";
 
 export default function AboutPage() {
   const navigate = useNavigate();
@@ -13,13 +12,6 @@ export default function AboutPage() {
     { icon: Gamepad2, title: "PLAY", desc: "Play games like zBrickles and zTrivia to earn ZWAP! and Z Points. Games get harder = more rewards!", color: "purple" },
     { icon: ArrowRightLeft, title: "SWAP", desc: "One-tap exchange between ZWAP! and major cryptos like BTC, ETH, SOL, and POL.", color: "blue" },
     { icon: ShoppingBag, title: "SHOP", desc: "Spend your earnings at Zupreme Imports. Merch, eBooks, tech, and exclusive drops.", color: "pink" },
-  ];
-
-  const stats = [
-    { value: "30B", label: "ZWAP! SUPPLY", icon: Coins },
-    { value: "4+", label: "EARNING GAMES", icon: Gamepad2 },
-    { value: "5", label: "CRYPTO PAIRS", icon: ArrowRightLeft },
-    { value: "∞", label: "POSSIBILITIES", icon: Zap },
   ];
 
   const colorMap = {
@@ -42,32 +34,48 @@ export default function AboutPage() {
         <span>Back</span>
       </motion.button>
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      {/* Hero Section - Reduced spacing */}
+      <section className="relative min-h-[60vh] flex flex-col items-center justify-center px-6 pt-12 pb-8">
         {/* Background effects */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[150px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[150px]" />
+          <motion.div 
+            className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-cyan-500/15 rounded-full blur-[120px]"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          <motion.div 
+            className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/15 rounded-full blur-[120px]"
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.15, 0.2] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10 text-center max-w-4xl mx-auto"
         >
-          {/* Logo */}
+          {/* Logo - Larger */}
           <motion.img
             src={ZWAP_BANG}
             alt="ZWAP!"
-            className="h-24 sm:h-32 mx-auto mb-6"
+            className="h-32 sm:h-44 mx-auto mb-4"
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            animate={{ 
+              scale: 1, 
+              opacity: 1,
+              filter: [
+                "drop-shadow(0 0 20px rgba(0,245,255,0.4))",
+                "drop-shadow(0 0 40px rgba(0,245,255,0.7))",
+                "drop-shadow(0 0 20px rgba(0,245,255,0.4))"
+              ]
+            }}
+            transition={{ delay: 0.2, duration: 2, repeat: Infinity }}
           />
 
           {/* Headline */}
           <motion.h1
-            className="text-3xl sm:text-5xl font-extrabold mb-4 leading-tight"
+            className="text-3xl sm:text-4xl font-extrabold mb-3 leading-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -81,97 +89,21 @@ export default function AboutPage() {
 
           {/* Subtitle */}
           <motion.p
-            className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-8"
+            className="text-gray-400 text-base sm:text-lg max-w-xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            Turn everyday movement and gameplay into real, spendable value. 
-            Walk, play, shop, and earn — with built-in crypto swap functionality.
+            Turn everyday movement and gameplay into real, spendable value.
           </motion.p>
-
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <Button
-              onClick={() => navigate("/")}
-              className="px-8 py-6 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full shadow-[0_0_30px_rgba(0,245,255,0.3)]"
-            >
-              GET STARTED
-            </Button>
-          </motion.div>
-        </motion.div>
-
-        {/* Stats Bar */}
-        <motion.div
-          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0a0b1e] to-transparent py-8"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-        >
-          <div className="max-w-4xl mx-auto px-6 grid grid-cols-4 gap-4">
-            {stats.map((stat, i) => {
-              const Icon = stat.icon;
-              return (
-                <div key={i} className="text-center">
-                  <p className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
-                    {stat.value}
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">{stat.label}</p>
-                </div>
-              );
-            })}
-          </div>
         </motion.div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-6 bg-[#0a0b1e]">
+      {/* Token Section - MOVED UP (was below "How it works") */}
+      <section className="py-12 px-6 bg-[#0a0b1e]">
         <div className="max-w-4xl mx-auto">
           <motion.h2
-            className="text-2xl sm:text-3xl font-bold text-center mb-12"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            <span className="text-gray-400">HOW IT</span>{" "}
-            <span className="text-cyan-400">WORKS</span>
-          </motion.h2>
-
-          <div className="grid sm:grid-cols-2 gap-6">
-            {features.map((feature, i) => {
-              const Icon = feature.icon;
-              return (
-                <motion.div
-                  key={i}
-                  className="glass-card p-6 rounded-2xl"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <div className={`w-12 h-12 rounded-xl ${colorMap[feature.color]} flex items-center justify-center mb-4`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <h3 className={`text-xl font-bold mb-2 ${colorMap[feature.color].split(" ")[0]}`}>
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-400 text-sm">{feature.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Token Section */}
-      <section className="py-20 px-6 bg-[#050510]">
-        <div className="max-w-4xl mx-auto">
-          <motion.h2
-            className="text-2xl sm:text-3xl font-bold text-center mb-12"
+            className="text-2xl sm:text-3xl font-bold text-center mb-8"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -186,8 +118,21 @@ export default function AboutPage() {
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
+              whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(0,245,255,0.2)" }}
             >
-              <Coins className="w-10 h-10 text-cyan-400 mb-4" />
+              <motion.div
+                animate={{ 
+                  boxShadow: [
+                    "0 0 10px rgba(0,245,255,0.2)",
+                    "0 0 20px rgba(0,245,255,0.4)",
+                    "0 0 10px rgba(0,245,255,0.2)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4"
+              >
+                <Coins className="w-6 h-6 text-cyan-400" />
+              </motion.div>
               <h3 className="text-xl font-bold text-cyan-400 mb-2">ZWAP! COIN</h3>
               <p className="text-gray-400 text-sm mb-4">
                 The main reward token. Earn it through walking, playing games, and faucet rewards. 
@@ -205,8 +150,21 @@ export default function AboutPage() {
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
+              whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(153,69,255,0.2)" }}
             >
-              <Zap className="w-10 h-10 text-purple-400 mb-4" />
+              <motion.div
+                animate={{ 
+                  boxShadow: [
+                    "0 0 10px rgba(153,69,255,0.2)",
+                    "0 0 20px rgba(153,69,255,0.4)",
+                    "0 0 10px rgba(153,69,255,0.2)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4"
+              >
+                <Zap className="w-6 h-6 text-purple-400" />
+              </motion.div>
               <h3 className="text-xl font-bold text-purple-400 mb-2">Z POINTS</h3>
               <p className="text-gray-400 text-sm mb-4">
                 Loyalty credits earned only from games. Use them for exclusive items, 
@@ -222,51 +180,106 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Features Section - MOVED DOWN (was above token section) */}
+      <section className="py-12 px-6 bg-[#050510]">
+        <div className="max-w-4xl mx-auto">
+          <motion.h2
+            className="text-2xl sm:text-3xl font-bold text-center mb-8"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <span className="text-gray-400">HOW IT</span>{" "}
+            <span className="text-cyan-400">WORKS</span>
+          </motion.h2>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {features.map((feature, i) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={i}
+                  className="glass-card p-5 rounded-2xl"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  whileHover={{ scale: 1.02, y: -5 }}
+                >
+                  <motion.div 
+                    className={`w-10 h-10 rounded-xl ${colorMap[feature.color]} flex items-center justify-center mb-3`}
+                    animate={{ 
+                      boxShadow: [
+                        `0 0 10px rgba(0,0,0,0.1)`,
+                        `0 0 20px rgba(0,0,0,0.2)`,
+                        `0 0 10px rgba(0,0,0,0.1)`
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </motion.div>
+                  <h3 className={`text-lg font-bold mb-2 ${colorMap[feature.color].split(" ")[0]}`}>
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-400 text-sm">{feature.desc}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* Trust Section */}
-      <section className="py-20 px-6 bg-[#0a0b1e]">
+      <section className="py-12 px-6 bg-[#0a0b1e]">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Shield className="w-16 h-16 text-cyan-400 mx-auto mb-6" />
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+            <motion.div
+              animate={{ 
+                filter: [
+                  "drop-shadow(0 0 10px rgba(0,245,255,0.3))",
+                  "drop-shadow(0 0 25px rgba(0,245,255,0.5))",
+                  "drop-shadow(0 0 10px rgba(0,245,255,0.3))"
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Shield className="w-14 h-14 text-cyan-400 mx-auto mb-4" />
+            </motion.div>
+            <h2 className="text-xl sm:text-2xl font-bold mb-3">
               <span className="text-cyan-400">BUILT</span>{" "}
               <span className="text-white">FOR THE FUTURE</span>
             </h2>
-            <p className="text-gray-400 max-w-xl mx-auto mb-8">
+            <p className="text-gray-400 max-w-xl mx-auto mb-6 text-sm">
               ZWAP! is powered by XOCLON HOLDINGS INC. — a trust-owned platform 
               focused on restoration, innovation, and legacy.
             </p>
             <div className="flex justify-center gap-4 text-xs text-gray-500">
-              <span>Polygon Network</span>
+              <motion.span 
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                Polygon Network
+              </motion.span>
               <span>•</span>
-              <span>Multichain Ready</span>
+              <motion.span 
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+              >
+                Multichain Ready
+              </motion.span>
               <span>•</span>
-              <span>30B Supply</span>
+              <motion.span 
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
+              >
+                30B Supply
+              </motion.span>
             </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="py-16 px-6 bg-gradient-to-t from-cyan-500/10 to-transparent">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-white">
-              READY TO START EARNING?
-            </h2>
-            <Button
-              onClick={() => navigate("/")}
-              className="px-12 py-6 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"
-            >
-              ENTER ZWAP!
-            </Button>
           </motion.div>
         </div>
       </section>
