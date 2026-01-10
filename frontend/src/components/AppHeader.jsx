@@ -47,30 +47,50 @@ export default function AppHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#0a0b1e]/95 backdrop-blur-lg border-b border-cyan-500/20">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
-        {/* Logo - Left (using ZWAP_BANG, larger) */}
-        <motion.img 
-          src={ZWAP_BANG} 
-          alt="ZWAP!" 
-          className="h-14 cursor-pointer" 
-          onClick={() => navigate("/dashboard")}
-          data-testid="header-logo"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          animate={{ 
-            filter: [
-              "drop-shadow(0 0 8px rgba(0,245,255,0.3))",
-              "drop-shadow(0 0 16px rgba(0,245,255,0.5))",
-              "drop-shadow(0 0 8px rgba(0,245,255,0.3))"
-            ]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-
-        {/* Right side - Balances + Connect Button + Profile */}
+        {/* Left side - Logo + Connect Wallet Button */}
         <div className="flex items-center gap-3">
-          {/* Balances - always visible, larger */}
+          {/* Logo */}
+          <motion.img 
+            src={ZWAP_BANG} 
+            alt="ZWAP!" 
+            className="h-14 cursor-pointer" 
+            onClick={() => navigate("/dashboard")}
+            data-testid="header-logo"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            animate={{ 
+              filter: [
+                "drop-shadow(0 0 8px rgba(0,245,255,0.3))",
+                "drop-shadow(0 0 16px rgba(0,245,255,0.5))",
+                "drop-shadow(0 0 8px rgba(0,245,255,0.3))"
+              ]
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+
+          {/* Connect Wallet Button - on left side when not connected */}
+          {!walletAddress && (
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Button
+                onClick={() => setIsWalletModalOpen(true)}
+                className="h-12 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-base font-semibold shadow-lg shadow-cyan-500/30"
+                data-testid="connect-wallet-btn"
+              >
+                <Wallet className="w-5 h-5 mr-2" />
+                Connect Wallet
+              </Button>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Right side - Balances + Profile Badge */}
+        <div className="flex items-center gap-3">
+          {/* Balances - always visible */}
           <motion.div 
-            className="flex items-center gap-3 mr-2"
+            className="flex items-center gap-3"
             animate={{ 
               boxShadow: [
                 "0 0 10px rgba(0,245,255,0.1)",
@@ -103,134 +123,141 @@ export default function AppHeader() {
             </div>
           </motion.div>
 
-          {/* Connect Wallet Button - always visible when not connected */}
-          {!walletAddress && (
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                onClick={() => setIsWalletModalOpen(true)}
-                className="h-12 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-base font-semibold shadow-lg shadow-cyan-500/30"
-                data-testid="connect-wallet-btn"
+          {/* Profile Badge - 👤 emoji */}
+          <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <SheetTrigger asChild>
+              <motion.button
+                className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/30"
+                data-testid="profile-badge"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                animate={{ 
+                  boxShadow: [
+                    "0 0 15px rgba(0,245,255,0.3)",
+                    "0 0 30px rgba(0,245,255,0.5)",
+                    "0 0 15px rgba(0,245,255,0.3)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
-                <Wallet className="w-5 h-5 mr-2" />
-                Connect
-              </Button>
-            </motion.div>
-          )}
-
-          {/* Profile Badge - only for connected users, larger */}
-          {walletAddress && (
-            <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-              <SheetTrigger asChild>
-                <motion.button
-                  className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/30"
-                  data-testid="profile-badge"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  animate={{ 
-                    boxShadow: [
-                      "0 0 15px rgba(0,245,255,0.3)",
-                      "0 0 30px rgba(0,245,255,0.5)",
-                      "0 0 15px rgba(0,245,255,0.3)"
-                    ]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  {username.slice(-4)}
-                </motion.button>
-              </SheetTrigger>
-              <SheetContent side="right" className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80" aria-describedby="account-sheet-description">
-                <SheetHeader>
-                  <SheetTitle className="text-white">Account</SheetTitle>
-                  <p id="account-sheet-description" className="sr-only">Manage your ZWAP! account settings and profile</p>
-                </SheetHeader>
-                
-                <div className="mt-6 space-y-6">
-                  {/* User Info */}
-                  <div className="flex items-center gap-3">
-                    <motion.div 
-                      className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg"
-                      animate={{ 
-                        boxShadow: [
-                          "0 0 10px rgba(0,245,255,0.3)",
-                          "0 0 20px rgba(0,245,255,0.5)",
-                          "0 0 10px rgba(0,245,255,0.3)"
-                        ]
-                      }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      {username.slice(-4)}
-                    </motion.div>
-                    <div>
-                      <p className="text-white font-semibold">{username}</p>
+                👤
+              </motion.button>
+            </SheetTrigger>
+            <SheetContent side="right" className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80" aria-describedby="account-sheet-description">
+              <SheetHeader>
+                <SheetTitle className="text-white">Account</SheetTitle>
+                <p id="account-sheet-description" className="sr-only">Manage your ZWAP! account settings and profile</p>
+              </SheetHeader>
+              
+              <div className="mt-6 space-y-6">
+                {/* User Info */}
+                <div className="flex items-center gap-3">
+                  <motion.div 
+                    className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-2xl"
+                    animate={{ 
+                      boxShadow: [
+                        "0 0 10px rgba(0,245,255,0.3)",
+                        "0 0 20px rgba(0,245,255,0.5)",
+                        "0 0 10px rgba(0,245,255,0.3)"
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    👤
+                  </motion.div>
+                  <div>
+                    <p className="text-white font-semibold">{walletAddress ? username : "Guest"}</p>
+                    {walletAddress ? (
                       <p className="text-gray-500 text-xs">
                         {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
                       </p>
-                      <div className="flex items-center gap-1 mt-1">
-                        {user?.tier === "plus" ? (
-                          <span className="text-xs text-yellow-400 flex items-center gap-1">
-                            <Crown className="w-3 h-3" /> Plus Member
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-500">Starter</span>
-                        )}
-                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-xs">Not connected</p>
+                    )}
+                    <div className="flex items-center gap-1 mt-1">
+                      {user?.tier === "plus" ? (
+                        <span className="text-xs text-yellow-400 flex items-center gap-1">
+                          <Crown className="w-3 h-3" /> Plus Member
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-500">{walletAddress ? "Starter" : "Connect to save progress"}</span>
+                      )}
                     </div>
                   </div>
+                </div>
 
-                  {/* Upgrade Banner */}
-                  {user?.tier !== "plus" && (
-                    <motion.button
-                      onClick={handleUpgrade}
-                      className="w-full p-4 rounded-xl bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-left"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-yellow-400 font-semibold flex items-center gap-2">
-                            <Crown className="w-4 h-4" /> Upgrade to Plus
-                          </p>
-                          <p className="text-gray-400 text-xs">$12.99/mo • 1.5x rewards</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-yellow-400" />
-                      </div>
-                    </motion.button>
-                  )}
-
-                  {/* Settings Menu */}
-                  <div className="space-y-1">
-                    {settingsItems.map((item, i) => {
-                      const Icon = item.icon;
-                      return (
-                        <motion.button
-                          key={i}
-                          onClick={item.action}
-                          className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/50 text-left transition-colors"
-                          whileHover={{ x: 5 }}
-                        >
-                          <Icon className="w-5 h-5 text-gray-400" />
-                          <span className="text-gray-300">{item.label}</span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Disconnect */}
+                {/* Connect Wallet Banner (if not connected) */}
+                {!walletAddress && (
                   <motion.button
-                    onClick={() => { disconnectWallet(); setSettingsOpen(false); navigate("/"); }}
+                    onClick={() => { setIsWalletModalOpen(true); setSettingsOpen(false); }}
+                    className="w-full p-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-left"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-cyan-400 font-semibold flex items-center gap-2">
+                          <Wallet className="w-4 h-4" /> Connect Wallet
+                        </p>
+                        <p className="text-gray-400 text-xs">Save progress & earn rewards</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-cyan-400" />
+                    </div>
+                  </motion.button>
+                )}
+
+                {/* Upgrade Banner */}
+                {walletAddress && user?.tier !== "plus" && (
+                  <motion.button
+                    onClick={handleUpgrade}
+                    className="w-full p-4 rounded-xl bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-left"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-yellow-400 font-semibold flex items-center gap-2">
+                          <Crown className="w-4 h-4" /> Upgrade to Plus
+                        </p>
+                        <p className="text-gray-400 text-xs">$12.99/mo • 1.5x rewards</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-yellow-400" />
+                    </div>
+                  </motion.button>
+                )}
+
+                {/* Settings Menu */}
+                <div className="space-y-1">
+                  {settingsItems.map((item, i) => {
+                    const Icon = item.icon;
+                    return (
+                      <motion.button
+                        key={i}
+                        onClick={item.action}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800/50 text-left transition-colors"
+                        whileHover={{ x: 5 }}
+                      >
+                        <Icon className="w-5 h-5 text-gray-400" />
+                        <span className="text-gray-300">{item.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+
+                {/* Disconnect (only if connected) */}
+                {walletAddress && (
+                  <motion.button
+                    onClick={() => { disconnectWallet(); setSettingsOpen(false); navigate("/dashboard"); }}
                     className="w-full flex items-center gap-3 p-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
                     whileHover={{ x: 5 }}
                   >
                     <LogOut className="w-5 h-5" />
                     <span>Disconnect Wallet</span>
                   </motion.button>
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
