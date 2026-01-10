@@ -249,7 +249,7 @@ function AppProvider({ children }) {
     <AppContext.Provider value={{
       user, walletAddress, isWalletModalOpen, setIsWalletModalOpen,
       pendingAction, setPendingAction, connectWallet, disconnectWallet,
-      refreshUser, requireWallet, isLoading,
+      refreshUser, requireWallet, isLoading, initialized,
     }}>
       {children}
     </AppContext.Provider>
