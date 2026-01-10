@@ -74,12 +74,16 @@ User flow:
 
 ## What's Been Implemented (2025-01-11)
 - [x] **Animated Splash Screen** - Shows MOVE, PLAY, SWAP, SHOP animations on app launch
-- [x] **Persistent AppHeader** - Fixed header with ZWAP logo, balances (ZWAP & zPts), and profile badge
-- [x] **Profile Settings Sheet** - Opens from profile badge with user info, tier status, upgrade option, and settings
-- [x] **NewsTicker Footer** - Rotating ticker showing deals, leaderboard, tips, news
+- [x] **Persistent AppHeader** - Fixed header with ZWAP_BANG logo, balances, and profile badge/Connect button
+- [x] **Profile Settings Sheet** - Opens from profile badge with user info, tier status, upgrade option
+- [x] **NewsTicker Footer** - Rotating ticker (8-second intervals) showing deals, leaderboard, tips, news
 - [x] **About Page** - "What is ZWAP!?" informational page accessible from splash screen
-- [x] **Refactored Tab Components** - All main tabs (Dashboard, Move, Play, Shop, Swap) use global header
-- [x] **Accessibility Fix** - Added aria-describedby for profile sheet
+- [x] **UI Fixes (2025-01-11)**:
+  - Logo swap: ZWAP_LOGO on splash/welcome, ZWAP_BANG in header
+  - NewsTicker thicker (py-3) and slower transitions (8 seconds)
+  - Tagline "The Crypto Faucet That Moves With You" on splash and welcome
+  - "WHAT IS ZWAP!?" button styled properly (border, rounded-full)
+  - Header shows Connect button next to balances when not connected
 
 ## Prioritized Backlog
 
