@@ -16,6 +16,10 @@ import ShopTab from "@/components/ShopTab";
 import SwapTab from "@/components/SwapTab";
 import TabNavigation from "@/components/TabNavigation";
 import SubscriptionSuccess from "@/components/SubscriptionSuccess";
+import ProfilePage from "@/components/ProfilePage";
+import ContactPage from "@/components/ContactPage";
+import PrivacyPage from "@/components/PrivacyPage";
+import TermsPage from "@/components/TermsPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
