@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useApp, api, TIERS } from "@/App";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Footprints, Play, Pause, RotateCcw, Coins, Crown } from "lucide-react";
+import { Footprints, Play, Pause, RotateCcw, Coins, Crown, TrendingUp } from "lucide-react";
 
 export default function MoveTab() {
   const { user, walletAddress, refreshUser } = useApp();
@@ -13,7 +13,7 @@ export default function MoveTab() {
   const lastAcceleration = useRef({ x: 0, y: 0, z: 0 });
 
   const tierConfig = TIERS[user?.tier || "starter"];
-  const multiplier = user?.tier === "plus" ? 1.5 : 1.0;
+  const multiplier = tierConfig.multiplier;
 
   const calculateRewards = (stepCount) => {
     let base;
@@ -111,11 +111,11 @@ export default function MoveTab() {
   ];
 
   return (
-    <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-4 pb-[72px] overflow-hidden" data-testid="move-tab">
+    <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="move-tab">
       {/* Header */}
-      <div className="text-center mb-3 flex-shrink-0">
-        <div className="w-14 h-14 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-2 pulse-glow">
-          <Footprints className="w-7 h-7 text-cyan-400" />
+      <div className="text-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-2 pulse-glow">
+          <Footprints className="w-8 h-8 text-cyan-400" />
         </div>
         <h1 className="text-2xl font-bold text-white">zWALK</h1>
         <p className="text-gray-400 text-sm">Walk and Earn ZWAP!</p>
@@ -127,26 +127,26 @@ export default function MoveTab() {
       </div>
 
       {/* Steps Counter */}
-      <div className="balance-glow p-4 mb-3 text-center flex-shrink-0">
+      <div className="balance-glow p-5 mb-4 text-center rounded-xl">
         <p className="text-gray-400 text-xs mb-1">Current Steps</p>
         <h2 className="text-5xl font-bold neon-text" data-testid="step-counter">{steps.toLocaleString()}</h2>
-        <div className="flex items-center justify-center gap-2 text-cyan-400 mt-1">
+        <div className="flex items-center justify-center gap-2 text-cyan-400 mt-2">
           <Coins className="w-4 h-4" />
-          <span className="text-base font-semibold">{potentialReward.toFixed(2)} ZWAP pending</span>
+          <span className="text-lg font-semibold">{potentialReward.toFixed(2)} ZWAP pending</span>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="flex gap-3 mb-3 flex-shrink-0">
+      <div className="flex gap-3 mb-4">
         <Button
           data-testid="tracking-toggle"
           onClick={handleStartStop}
-          className={`flex-1 h-12 text-base font-semibold ${isTracking ? "bg-red-500 hover:bg-red-600" : "bg-cyan-500 hover:bg-cyan-600"}`}
+          className={`flex-1 h-14 text-lg font-semibold ${isTracking ? "bg-red-500 hover:bg-red-600" : "bg-cyan-500 hover:bg-cyan-600"}`}
         >
-          {isTracking ? <><Pause className="w-4 h-4 mr-2" />Stop</> : <><Play className="w-4 h-4 mr-2" />Start</>}
+          {isTracking ? <><Pause className="w-5 h-5 mr-2" />Stop</> : <><Play className="w-5 h-5 mr-2" />Start</>}
         </Button>
-        <Button data-testid="reset-steps" onClick={handleReset} variant="outline" className="h-12 px-4 border-gray-600" disabled={isTracking}>
-          <RotateCcw className="w-4 h-4" />
+        <Button data-testid="reset-steps" onClick={handleReset} variant="outline" className="h-14 px-5 border-gray-600" disabled={isTracking}>
+          <RotateCcw className="w-5 h-5" />
         </Button>
       </div>
 
@@ -155,24 +155,27 @@ export default function MoveTab() {
         data-testid="claim-steps"
         onClick={handleClaim}
         disabled={steps === 0 || isClaiming || isTracking}
-        className="w-full h-12 text-base font-semibold bg-gradient-to-r from-cyan-500 to-purple-500 mb-3 flex-shrink-0"
+        className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-cyan-500 to-purple-500 mb-4"
       >
         {isClaiming ? "Claiming..." : `Claim ${potentialReward.toFixed(2)} ZWAP`}
       </Button>
 
       {/* Tier System */}
-      <div className="glass-card p-3 flex-1 min-h-0 rounded-xl">
-        <h3 className="text-white font-semibold text-sm mb-2">Tiered Earning (ZWAP/step)</h3>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="glass-card p-4 flex-1 rounded-xl">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="w-4 h-4 text-cyan-400" />
+          <h3 className="text-white font-semibold text-sm">Tiered Earning (ZWAP/step)</h3>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
           {tiers.map((tier, i) => (
             <div key={i} className={`p-2 rounded-lg text-center ${tier.active ? "bg-cyan-500/20 border border-cyan-500/50" : "bg-gray-800/50"}`}>
-              <span className={`text-xs ${tier.active ? "text-cyan-400" : "text-gray-500"}`}>{tier.range}</span>
+              <span className={`text-[10px] ${tier.active ? "text-cyan-400" : "text-gray-500"}`}>{tier.range}</span>
               <p className={`font-mono text-sm ${tier.active ? "text-white" : "text-gray-500"}`}>{tier.rate}</p>
             </div>
           ))}
         </div>
-        <p className="text-center text-xs text-gray-500 mt-2">
-          Note: zWALK earns ZWAP only (no Z Points)
+        <p className="text-center text-[10px] text-gray-500 mt-3">
+          ⚡ zWALK earns ZWAP only (no Z Points)
         </p>
       </div>
     </div>
