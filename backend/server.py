@@ -35,7 +35,7 @@ TIERS = {
         "name": "Starter",
         "price": 0,
         "zwap_multiplier": 1.0,
-        "daily_zpts_cap": 20,
+        "daily_zpts_cap": 75,
         "monthly_zwap_cap": 146250,
         "games": ["zbrickles", "ztrivia"],
         "features": ["zWALK", "ads"]
@@ -44,7 +44,7 @@ TIERS = {
         "name": "Plus",
         "price": 12.99,
         "zwap_multiplier": 1.5,
-        "daily_zpts_cap": 30,
+        "daily_zpts_cap": 150,
         "monthly_zwap_cap": 219375,
         "games": ["zbrickles", "ztrivia", "ztetris", "zslots"],
         "features": ["zWALK", "no_ads", "zDance", "zWorkout"]
