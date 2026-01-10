@@ -258,6 +258,33 @@ async def get_user(wallet_address: str):
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(**user)
 
+class ProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+@api_router.put("/users/{wallet_address}/profile")
+async def update_profile(wallet_address: str, profile: ProfileUpdate):
+    """Update user profile (username and avatar)"""
+    wallet = wallet_address.lower()
+    user = await db.users.find_one({"wallet_address": wallet})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = {}
+    if profile.username:
+        update_data["custom_username"] = profile.username
+    if profile.avatar_url:
+        update_data["avatar_url"] = profile.avatar_url
+    
+    if update_data:
+        await db.users.update_one(
+            {"wallet_address": wallet},
+            {"$set": update_data}
+        )
+    
+    updated = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+    return updated
+
 @api_router.get("/tiers")
 async def get_tiers():
     """Get available subscription tiers"""
