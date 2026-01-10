@@ -323,6 +323,22 @@ function AppContent() {
     return <AboutPage />;
   }
 
+  // Settings pages - no main layout
+  const settingsPages = ["/profile", "/contact", "/privacy", "/terms"];
+  if (settingsPages.includes(location.pathname)) {
+    return (
+      <>
+        <Routes>
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+        </Routes>
+        <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
+      </>
+    );
+  }
+
   // Redirect from root to dashboard (no welcome screen)
   if (location.pathname === "/") {
     navigate("/dashboard");
@@ -346,6 +362,10 @@ function AppContent() {
           <Route path="/play" element={<PlayTab />} />
           <Route path="/shop" element={<ShopTab />} />
           <Route path="/swap" element={<SwapTab />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/subscription/success" element={<SubscriptionSuccess />} />
           <Route path="/subscription/cancel" element={<Dashboard />} />
         </Routes>
