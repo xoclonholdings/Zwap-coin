@@ -11,6 +11,9 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
 import random
+from web3 import Web3
+import asyncio
+from functools import lru_cache
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
