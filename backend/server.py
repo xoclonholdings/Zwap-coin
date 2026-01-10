@@ -730,8 +730,16 @@ class UserRankResponse(BaseModel):
 
 def generate_username(wallet: str) -> str:
     """Generate username from wallet address"""
-    hash_num = int(wallet[2:10], 16) % 9999
-    return f"Zwapper#{str(hash_num).zfill(4)}"
+    try:
+        # Handle wallets with 0x prefix
+        if wallet.startswith("0x"):
+            hash_num = int(wallet[2:10], 16) % 9999
+        else:
+            # Fallback for non-standard addresses
+            hash_num = sum(ord(c) for c in wallet[:8]) % 9999
+        return f"Zwapper#{str(hash_num).zfill(4)}"
+    except (ValueError, IndexError):
+        return f"Zwapper#{str(abs(hash(wallet)) % 9999).zfill(4)}"
 
 @api_router.get("/leaderboard/stats")
 async def get_leaderboard_stats():
