@@ -3,8 +3,12 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import SplashScreen from "@/components/SplashScreen";
+import AboutPage from "@/components/AboutPage";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import WalletModal from "@/components/WalletModal";
+import AppHeader from "@/components/AppHeader";
+import NewsTicker from "@/components/NewsTicker";
 import Dashboard from "@/components/Dashboard";
 import MoveTab from "@/components/MoveTab";
 import PlayTab from "@/components/PlayTab";
@@ -23,11 +27,22 @@ export const useApp = () => useContext(AppContext);
 // ZWAP Logo URLs
 export const ZWAP_LOGO = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/8gvtmj56_Zwap_logo_full.png";
 export const ZWAP_BANG = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/ubzr4hka_Zwap_bang_3d.png";
+export const ZUPREME_LOGO = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/3x86eqay_image.png";
+
+// Crypto logos
+export const CRYPTO_LOGOS = {
+  BTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=029",
+  ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png?v=029",
+  SOL: "https://cryptologos.cc/logos/solana-sol-logo.png?v=029",
+  POL: "https://cryptologos.cc/logos/polygon-matic-logo.png?v=029",
+  USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png?v=029",
+  ZWAP: ZWAP_BANG,
+};
 
 // Tier configs
 export const TIERS = {
-  starter: { name: "Starter", games: ["zbrickles", "ztrivia"], dailyZptsCap: 20 },
-  plus: { name: "Plus", games: ["zbrickles", "ztrivia", "ztetris", "zslots"], dailyZptsCap: 30 }
+  starter: { name: "Starter", games: ["zbrickles", "ztrivia"], dailyZptsCap: 20, multiplier: 1.0 },
+  plus: { name: "Plus", games: ["zbrickles", "ztrivia", "ztetris", "zslots"], dailyZptsCap: 30, multiplier: 1.5 }
 };
 
 // API functions
@@ -173,8 +188,9 @@ function AppProvider({ children }) {
   const [walletAddress, setWalletAddress] = useState(null);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const savedWallet = localStorage.getItem("zwap_wallet");
@@ -193,7 +209,6 @@ function AppProvider({ children }) {
       const userData = await api.getUser(address);
       setUser(userData);
     } catch (error) {
-      // User not found, try to create
       try {
         const newUser = await api.connectWallet(address);
         setUser(newUser);
@@ -249,7 +264,7 @@ function AppProvider({ children }) {
     <AppContext.Provider value={{
       user, walletAddress, isWalletModalOpen, setIsWalletModalOpen,
       pendingAction, setPendingAction, connectWallet, disconnectWallet,
-      refreshUser, requireWallet, isLoading, initialized,
+      refreshUser, requireWallet, isLoading, initialized, showSplash, setShowSplash,
     }}>
       {children}
     </AppContext.Provider>
@@ -257,7 +272,7 @@ function AppProvider({ children }) {
 }
 
 function AppContent() {
-  const { walletAddress, isWalletModalOpen, setIsWalletModalOpen, pendingAction, setPendingAction, initialized } = useApp();
+  const { walletAddress, isWalletModalOpen, setIsWalletModalOpen, pendingAction, setPendingAction, initialized, showSplash, setShowSplash } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -273,7 +288,12 @@ function AppContent() {
     }
   }, [walletAddress, pendingAction, navigate, setPendingAction]);
 
-  // Wait for initialization before rendering
+  // Show splash screen
+  if (showSplash && location.pathname === "/") {
+    return <SplashScreen onEnter={() => setShowSplash(false)} />;
+  }
+
+  // Wait for initialization
   if (!initialized) {
     return (
       <div className="h-screen bg-[#0a0b1e] flex items-center justify-center">
@@ -282,6 +302,12 @@ function AppContent() {
     );
   }
 
+  // About page - no header/footer
+  if (location.pathname === "/about") {
+    return <AboutPage />;
+  }
+
+  // Welcome screen for non-connected users
   if (!walletAddress && location.pathname === "/") {
     return (
       <>
@@ -291,27 +317,41 @@ function AppContent() {
     );
   }
 
+  // Redirect connected users from root to dashboard
   if (walletAddress && location.pathname === "/") {
     navigate("/dashboard");
     return null;
   }
 
-  const showTabs = ["/dashboard", "/move", "/play", "/shop", "/swap"].includes(location.pathname);
+  const showLayout = ["/dashboard", "/move", "/play", "/shop", "/swap"].includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-[#0a0b1e] pb-20">
-      <Routes>
-        <Route path="/" element={<WelcomeScreen />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/move" element={<MoveTab />} />
-        <Route path="/play" element={<PlayTab />} />
-        <Route path="/shop" element={<ShopTab />} />
-        <Route path="/swap" element={<SwapTab />} />
-        <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-        <Route path="/subscription/cancel" element={<Dashboard />} />
-      </Routes>
+    <div className="min-h-screen bg-[#0a0b1e]">
+      {/* Persistent Header */}
+      {showLayout && <AppHeader />}
       
-      {showTabs && <TabNavigation />}
+      {/* Main content with padding for header/ticker/nav */}
+      <main className={showLayout ? "pt-14 pb-28" : ""}>
+        <Routes>
+          <Route path="/" element={<WelcomeScreen />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/move" element={<MoveTab />} />
+          <Route path="/play" element={<PlayTab />} />
+          <Route path="/shop" element={<ShopTab />} />
+          <Route path="/swap" element={<SwapTab />} />
+          <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+          <Route path="/subscription/cancel" element={<Dashboard />} />
+        </Routes>
+      </main>
+      
+      {/* News Ticker */}
+      {showLayout && <NewsTicker />}
+      
+      {/* Bottom Navigation */}
+      {showLayout && <TabNavigation />}
+      
+      {/* Wallet Modal */}
       <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
     </div>
   );
