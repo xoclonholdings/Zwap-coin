@@ -335,10 +335,10 @@ export default function PlayTab() {
   // Game selection screen
   if (!selectedGame) {
     return (
-      <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-4 pb-[72px] overflow-hidden" data-testid="play-tab">
-        <div className="text-center mb-4 flex-shrink-0">
-          <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-2">
-            <Gamepad2 className="w-6 h-6 text-purple-400" />
+      <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="play-tab">
+        <div className="text-center mb-4">
+          <div className="w-14 h-14 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-2">
+            <Gamepad2 className="w-7 h-7 text-purple-400" />
           </div>
           <h1 className="text-xl font-bold text-white">PLAY</h1>
           <p className="text-gray-400 text-xs">Earn ZWAP! + Z Points</p>
