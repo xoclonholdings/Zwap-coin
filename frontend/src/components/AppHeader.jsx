@@ -37,11 +37,11 @@ export default function AppHeader() {
   };
 
   const settingsItems = [
-    { icon: User, label: "Profile", action: () => {} },
-    { icon: Mail, label: "Contact", action: () => window.open("mailto:support@zwap.app", "_blank") },
-    { icon: Lock, label: "Privacy Policy", action: () => window.open("/privacy", "_blank") },
-    { icon: FileText, label: "Terms of Use", action: () => window.open("/terms", "_blank") },
-    { icon: HelpCircle, label: "FAQs & Help", action: () => navigate("/about") },
+    { icon: User, label: "Profile", action: () => { setSettingsOpen(false); navigate("/profile"); } },
+    { icon: Mail, label: "Contact", action: () => { setSettingsOpen(false); navigate("/contact"); } },
+    { icon: Lock, label: "Privacy Policy", action: () => { setSettingsOpen(false); navigate("/privacy"); } },
+    { icon: FileText, label: "Terms of Use", action: () => { setSettingsOpen(false); navigate("/terms"); } },
+    { icon: HelpCircle, label: "FAQs & Help", action: () => { setSettingsOpen(false); navigate("/about"); } },
   ];
 
   return (
