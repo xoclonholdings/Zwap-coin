@@ -118,7 +118,7 @@ export default function MoveTab() {
           <Footprints className="w-8 h-8 text-cyan-400" />
         </div>
         <h1 className="text-2xl font-bold text-white">zWALK</h1>
-        <p className="text-gray-400 text-sm">Walk and Earn ZWAP!</p>
+        <p className="text-gray-400 text-sm">Move & Earn</p>
         {user?.tier === "plus" && (
           <span className="inline-flex items-center gap-1 text-yellow-400 text-xs mt-1">
             <Crown className="w-3 h-3" /> 1.5× Rewards
