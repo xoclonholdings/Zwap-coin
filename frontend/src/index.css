@@ -126,8 +126,35 @@ body {
   50% { box-shadow: 0 0 40px var(--zwap-cyan), 0 0 60px var(--zwap-cyan); }
 }
 
+@keyframes pulse-glow-purple {
+  0%, 100% { box-shadow: 0 0 20px rgba(153, 69, 255, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(153, 69, 255, 0.7), 0 0 60px rgba(153, 69, 255, 0.5); }
+}
+
+@keyframes pulse-glow-pink {
+  0%, 100% { box-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(236, 72, 153, 0.7), 0 0 60px rgba(236, 72, 153, 0.5); }
+}
+
+@keyframes pulse-glow-blue {
+  0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.7), 0 0 60px rgba(59, 130, 246, 0.5); }
+}
+
 .pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.pulse-glow-purple {
+  animation: pulse-glow-purple 2s ease-in-out infinite;
+}
+
+.pulse-glow-pink {
+  animation: pulse-glow-pink 2s ease-in-out infinite;
+}
+
+.pulse-glow-blue {
+  animation: pulse-glow-blue 2s ease-in-out infinite;
 }
 
 /* Float animation */
