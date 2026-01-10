@@ -15,10 +15,10 @@ export default function Dashboard() {
   const zptsProgress = user ? Math.min((user.daily_zpts_earned / tierConfig.dailyZptsCap) * 100, 100) : 0;
 
   const features = [
-    { id: "move", title: "MOVE", subtitle: "Walk & Earn", icon: Footprints, color: "cyan", path: "/move", stat: `${user?.total_steps?.toLocaleString() || 0} steps`, requiresWallet: true },
-    { id: "play", title: "PLAY", subtitle: "Games", icon: Gamepad2, color: "purple", path: "/play", stat: `${user?.games_played || 0} played`, requiresWallet: true },
-    { id: "shop", title: "SHOP", subtitle: "Zupreme", icon: ShoppingBag, color: "pink", path: "/shop", stat: "Browse items", requiresWallet: false },
-    { id: "swap", title: "SWAP", subtitle: "Exchange", icon: ArrowRightLeft, color: "blue", path: "/swap", stat: "Trade tokens", requiresWallet: true }
+    { id: "move", title: "MOVE", subtitle: "Move & Earn", icon: Footprints, color: "cyan", path: "/move", stat: `${user?.total_steps?.toLocaleString() || 0} steps`, requiresWallet: true },
+    { id: "play", title: "PLAY", subtitle: "Play & Earn", icon: Gamepad2, color: "purple", path: "/play", stat: `${user?.games_played || 0} played`, requiresWallet: true },
+    { id: "shop", title: "SHOP", subtitle: "Shop with ZWAP!", icon: ShoppingBag, color: "pink", path: "/shop", stat: "Browse items", requiresWallet: false },
+    { id: "swap", title: "SWAP", subtitle: "Swap your ZWAP!", icon: ArrowRightLeft, color: "blue", path: "/swap", stat: "Trade tokens", requiresWallet: true }
   ];
 
   const colorClasses = {
