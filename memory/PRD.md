@@ -2,112 +2,103 @@
 
 ## Original Problem Statement
 Build a cryptocurrency app for ZWAP! Coin with:
-- Tab for pedometer (MOVE) - Track real steps as faucet with tiered earning
-- Tab for games (PLAY) - Brickles-style tap game as faucet for earning ZWAP
-- Tab for marketplace (SHOP) - "Zupreme Imports" with digital items
-- Tab for crypto exchange (SWAP) - One tap swap for ZWAP to BTC, ETH, POL, SOL
+- Tab for pedometer (MOVE) - "Move & Earn"
+- Tab for games (PLAY) - "Play & Earn"
+- Tab for marketplace (SHOP) - "Shop with ZWAP!"
+- Tab for crypto exchange (SWAP) - "Swap your ZWAP!"
 
 **Tagline: "MOVE. PLAY. SWAP. SHOP."**
 
 ## Architecture
 
 ### Backend (FastAPI + MongoDB)
-- `server.py` - Main API with endpoints for users, games, shop, swap, subscriptions, leaderboard
+- `server.py` - All API endpoints
 
 ### Frontend (React + Tailwind + Framer Motion)
-- `App.js` - Main app with context, routing, API functions
-- `SplashScreen.jsx` - Animated splash with tagline
-- `Dashboard.jsx` - Main dashboard with feature grid
-- `AppHeader.jsx` - Persistent header with wallet/balances/profile
-- `NewsTicker.jsx` - Animated footer ticker with live leaderboard data
-- `FirstTimeUserPrompt.jsx` - Prompt for unconnected users
-- `MoveTab.jsx`, `PlayTab.jsx`, `ShopTab.jsx`, `SwapTab.jsx` - Main tabs
+- Splash → Dashboard flow (no Welcome page)
+- Persistent header with wallet connection
+- Animated footer ticker with live leaderboard
 
 ## What's Been Implemented
 
-### Phase 1 (2025-01-08)
-- [x] Wallet connection modal (MetaMask, Trust, Speed, Help)
-- [x] Dashboard with balance, progress, features
-- [x] MOVE tab - Real step tracking with DeviceMotion API
-- [x] PLAY tab - Brickles game with paddle/ball physics
-- [x] SHOP tab - Zupreme Imports marketplace
-- [x] SWAP tab - Exchange with live prices
-- [x] PWA Support - manifest.json, service worker
+### Core Features
+- [x] Wallet connection (MetaMask, Trust, Speed)
+- [x] Dashboard with feature grid
+- [x] MOVE tab - Step tracking
+- [x] PLAY tab - Games (zBrickles, zTrivia, zTetris, zSlots)
+- [x] SHOP tab - Zupreme Imports marketplace with carousel
+- [x] SWAP tab - Token exchange with live prices
+- [x] PWA Support
 
-### Phase 2 (2025-01-10)
-- [x] Z Points System - Game-only loyalty currency (1000 zPts = 1 ZWAP)
-- [x] Tiered Subscriptions - Starter (free) and Plus ($12.99/mo)
-- [x] 4 Games - zBrickles, zTrivia (Starter), zTetris, zSlots (Plus only)
-- [x] Dual Payment Shop - Pay with ZWAP! Coin or Z Points
-- [x] Stripe Integration - Plus subscription checkout
+### Token System
+- [x] ZWAP! Coin - Main reward token
+- [x] Z Points - Game-only loyalty currency (1000 zPts = 1 ZWAP)
+- [x] Daily Z Points Caps: **75 Starter / 150 Plus**
 
-### Phase 3 (2025-01-11) - UI Overhaul
-- [x] Animated Splash Screen - "MOVE. PLAY. SWAP. SHOP." tagline repositions under large logo
-- [x] Welcome Screen Removed - Splash goes directly to Dashboard
-- [x] First-Time User Prompt - Shows when unconnected users click interactive features
-- [x] AppHeader Redesign:
-  - Logo + "Connect Wallet" button on LEFT
-  - Balances + 👤 emoji profile badge on RIGHT
-  - All elements 2x larger with animated glows
-- [x] Contact Option - Added to User Settings (mailto:support@zwap.app)
-- [x] Shop Carousel - Zupreme Imports logo, category toolbar, carousel display
-- [x] Correct Logos - ZUPREME_LOGO and ZWAP_COIN updated
-- [x] Full Animation Pass - All elements have framer-motion glow/pulse effects
+### Subscriptions
+- [x] Starter tier (free) - 2 games, 75 zPts/day
+- [x] Plus tier ($12.99/mo) - 4 games, 150 zPts/day, 1.5x rewards
+- [x] Stripe checkout integration
 
-### Phase 4 (2025-01-11) - Leaderboard
-- [x] Leaderboard Backend API:
-  - GET /api/leaderboard/stats - Global stats (total users, ZWAP distributed, top earners)
-  - GET /api/leaderboard/{category} - Category leaderboards (steps, games, earned, zpts)
-  - GET /api/leaderboard/user/{wallet}/{category} - User rank (local, regional, global)
-- [x] NewsTicker Integration - Now fetches and displays live leaderboard data
-- [x] Dynamic username generation from wallet addresses
+### User Profile
+- [x] Editable username
+- [x] Editable avatar (emoji selection)
+- [x] Stats display (earned, steps, games, points)
+- [x] Tier benefits display
 
-## Key Assets
-- ZWAP_LOGO: Full logo with text (splash screen)
-- ZWAP_BANG: 3D bang icon (header)
-- ZWAP_COIN: Actual coin image (SWAP page prices)
-- ZUPREME_LOGO: Zupreme Imports store logo
+### Leaderboard
+- [x] Backend APIs for stats, rankings, user rank
+- [x] Live data in NewsTicker
+
+### Settings Pages
+- [x] Profile page (editable)
+- [x] Contact page
+- [x] Privacy Policy
+- [x] Terms of Use
+- [x] FAQs (About page)
+
+### UI/UX
+- [x] Animated splash screen
+- [x] Glowing icons on all tabs
+- [x] First-time user prompt
+- [x] "Get Started" button on About page
+
+## Current Status: SIMULATED
+
+⚠️ **Currently all transactions are simulated (MongoDB only)**:
+- Swap function updates database, not blockchain
+- Subscription money goes to Stripe test mode
+- ZWAP! Coin is not connected to real blockchain
+
+## To Make It Real
+
+### 1. Smart Contract Integration
+- Deploy ERC-20 token on Polygon
+- Replace MongoDB balances with on-chain reads
+- Sign real transactions with user wallets
+
+### 2. Stripe Production
+- Replace test keys with live keys
+- Set up webhook for subscription activation
+- Connect bank account for payouts
+
+### 3. Ads Integration
+- Google AdSense / AdMob
+- "Watch ad for bonus" feature
 
 ## Prioritized Backlog
 
-### P1 (High Priority)
-- [ ] Complete Stripe webhook processing
-- [ ] User profile page with full settings
+### P1 (Ready for Production)
+- [ ] Deploy ZWAP! token contract (needs contract details)
+- [ ] Switch to Stripe live mode (needs live keys)
+- [ ] Add ads integration
 
-### P2 (Medium Priority)
+### P2 (Feature Enhancements)
 - [ ] Implement zTetris and zSlots games
-- [ ] Monthly ZWAP and daily Z-Point reward caps enforcement
-- [ ] Add USDT to SWAP tab
+- [ ] Real DEX swap integration
+- [ ] Geolocation for local leaderboards
 
-### P3 (Nice to Have)
-- [ ] Higher tiers ($XHI token, Sustainer tier)
-- [ ] NFT rewards for achievements
+### P3 (Future)
+- [ ] Higher tiers ($XHI token, Sustainer)
+- [ ] NFT rewards
 - [ ] Referral system
-
-## API Endpoints
-
-### Leaderboard
-- `GET /api/leaderboard/stats` - Global stats for ticker
-- `GET /api/leaderboard/{category}?limit=10` - Top users by category
-- `GET /api/leaderboard/user/{wallet}/{category}` - User's rank
-
-### Users
-- `POST /api/users/connect` - Connect wallet / create user
-- `GET /api/users/{wallet}` - Get user profile
-
-### Games
-- `POST /api/games/result/{wallet}` - Submit game result
-- `GET /api/games/trivia/questions` - Get trivia questions
-
-### Shop
-- `GET /api/shop/items` - List all items
-- `POST /api/shop/purchase/{wallet}` - Purchase item
-
-### Swap
-- `GET /api/swap/prices` - Get live crypto prices
-- `POST /api/swap/execute/{wallet}` - Execute swap
-
-## Next Tasks
-1. Complete Stripe webhook processing for Plus activation
-2. Implement zTetris game
-3. Add geolocation for regional/local leaderboards
