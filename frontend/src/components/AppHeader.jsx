@@ -102,13 +102,22 @@ export default function AppHeader() {
           >
             <div className="text-right">
               <motion.p 
-                className="text-base text-cyan-400 font-bold leading-tight"
+                className="text-base text-cyan-400 font-bold leading-tight flex items-center gap-1"
                 animate={{ textShadow: ["0 0 5px rgba(0,245,255,0.3)", "0 0 15px rgba(0,245,255,0.6)", "0 0 5px rgba(0,245,255,0.3)"] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                {user?.zwap_balance?.toFixed(0) || 0}
+                {onchainBalance !== null ? (
+                  <>
+                    <Link2 className="w-3 h-3" />
+                    {onchainBalance.toFixed(2)}
+                  </>
+                ) : (
+                  user?.zwap_balance?.toFixed(0) || 0
+                )}
               </motion.p>
-              <p className="text-xs text-gray-500">ZWAP</p>
+              <p className="text-xs text-gray-500">
+                {onchainBalance !== null ? "ZWAP (on-chain)" : "ZWAP"}
+              </p>
             </div>
             <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-600 to-transparent" />
             <div className="text-right">
