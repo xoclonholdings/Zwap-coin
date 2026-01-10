@@ -399,8 +399,8 @@ export default function PlayTab() {
 
   // Active game or result screen
   return (
-    <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col px-4 pt-4 pb-[72px] overflow-hidden" data-testid="play-tab">
-      {/* Header */}
+    <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="play-tab">
+      {/* Sub-header for game view */}
       <div className="flex items-center mb-3 flex-shrink-0">
         <button onClick={() => { setSelectedGame(null); setIsPlaying(false); setGameResult(null); }} className="text-gray-400 mr-3">
           <ChevronLeft className="w-6 h-6" />
