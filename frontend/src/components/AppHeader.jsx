@@ -81,9 +81,10 @@ export default function AppHeader() {
                     {username.slice(-4)}
                   </button>
                 </SheetTrigger>
-                <SheetContent side="right" className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80">
+                <SheetContent side="right" className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80" aria-describedby="account-sheet-description">
                   <SheetHeader>
                     <SheetTitle className="text-white">Account</SheetTitle>
+                    <p id="account-sheet-description" className="sr-only">Manage your ZWAP! account settings and profile</p>
                   </SheetHeader>
                   
                   <div className="mt-6 space-y-6">
