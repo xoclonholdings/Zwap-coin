@@ -97,11 +97,11 @@ export default function SwapTab() {
     <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="swap-tab">
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2">
+        <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2 pulse-glow-blue">
           <ArrowRightLeft className="w-7 h-7 text-blue-400" />
         </div>
         <h1 className="text-xl font-bold text-white">SWAP</h1>
-        <p className="text-gray-400 text-xs">Exchange Tokens Instantly</p>
+        <p className="text-gray-400 text-xs">Swap your ZWAP!</p>
       </div>
 
       {/* Success Banner */}
