@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
-import WelcomeScreen from "@/components/WelcomeScreen";
 import WalletModal from "@/components/WalletModal";
 import AppHeader from "@/components/AppHeader";
 import NewsTicker from "@/components/NewsTicker";
