@@ -28,6 +28,16 @@ const API = `${BACKEND_URL}/api`;
 export const AppContext = createContext();
 export const useApp = () => useContext(AppContext);
 
+// ZWAP Contract Configuration (Polygon)
+export const ZWAP_CONTRACT = {
+  address: "0xe8898453af13b9496a6e8ada92c6efdaf4967a81",
+  network: "polygon",
+  chainId: 137,
+  symbol: "ZWAP",
+  decimals: 18,
+  name: "ZWAP Coin",
+};
+
 // ZWAP Logo URLs
 export const ZWAP_LOGO = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/8gvtmj56_Zwap_logo_full.png";
 export const ZWAP_BANG = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/ubzr4hka_Zwap_bang_3d.png";
