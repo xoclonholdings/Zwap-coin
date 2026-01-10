@@ -182,6 +182,17 @@ export const api = {
     const res = await fetch(`${API}/leaderboard/${category}?limit=${limit}`);
     return res.json();
   },
+  
+  getLeaderboardStats: async () => {
+    const res = await fetch(`${API}/leaderboard/stats`);
+    return res.json();
+  },
+  
+  getUserRank: async (walletAddress, category) => {
+    const res = await fetch(`${API}/leaderboard/user/${walletAddress}/${category}`);
+    if (!res.ok) return null;
+    return res.json();
+  },
 };
 
 function AppProvider({ children }) {
