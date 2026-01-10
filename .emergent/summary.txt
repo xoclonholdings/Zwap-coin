@@ -2,164 +2,162 @@
 The user wants to build a mobile-first cryptocurrency PWA called ZWAP! Coin.
 
 **PRODUCT REQUIREMENTS:**
-1.  **Core Tabs:**
-    *   **MOVE:** A pedometer that acts as a faucet for earning ZWAP! Coin.
-    *   **PLAY:** A section for games (zBrickles, zTrivia, zTetris, zSlots) that award ZWAP! Coin and Z Points.
-    *   **SHOP:** A marketplace (Zupreme Imports) where users can buy items with ZWAP! Coin or Z Points.
-    *   **SWAP:** A crypto exchange to swap ZWAP! Coin with BTC, ETH, POL, SOL.
-2.  **Token Ecosystem:**
-    *   **ZWAP! Coin ():** The main reward token.
-    *   **Z Points (zPts):** A game-only loyalty currency, convertible to ZWAP (1000 zPts = 1 ZWAP).
-3.  **User Tiers (Subscriptions):**
-    *   **Starter (Free):** Access to 2 games (zBrickles, zTrivia), with daily reward caps.
-    *   **Plus (2.99/mo):** Access to all 4 games, higher reward caps, and other bonuses. Stripe integration is required.
-4.  **UI/UX:**
-    *   An animated splash screen on app launch.
-    *   A persistent header on all pages containing the app logo, user balances (ZWAP & Z-Points), and a clickable user profile badge.
-    *   A persistent footer containing a news/info/leaderboard ticker.
-    *   The main content area must be optimized for mobile to avoid scrolling.
-    *   Use of official brand logos for the app and third-party cryptocurrencies.
-5.  **Authentication:**
-    *   Wallet-based authentication using WalletConnect (MetaMask, Trust Wallet, Speed Wallet). User account is created upon wallet connection.
+1.  **Core Tabs:** MOVE (pedometer faucet), PLAY (games), SHOP (marketplace), SWAP (crypto exchange).
+2.  **Token Ecosystem:** ZWAP! Coin () as the main token and Z Points (zPts) as a loyalty currency.
+3.  **User Tiers:** A free Starter tier and a paid Plus tier (2.99/mo) with more features, requiring Stripe integration.
+4.  **UI/UX:** An animated splash screen, a persistent header (logo, balances, profile), and a persistent footer (news ticker).
+5.  **Authentication:** Wallet-based authentication via WalletConnect.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application using FastAPI, React, and MongoDB. The initial MVP is built, including the four main tabs, wallet connection, and PWA configuration. A subsequent update added the Z-Points system, user tiers (Starter and Plus), and game-locking based on tier. The shop supports dual-currency payments. A major UI overhaul is currently in progress to add a persistent header, footer, and animated splash screen.
+A full-stack application (FastAPI, React, MongoDB) with the core MVP features implemented. The app has undergone a significant UI overhaul, now featuring a persistent header and footer, an animated splash screen, and a consistent layout across all tabs. The Z-Points system, user tiers, and game-locking are functional. The backend includes live leaderboard APIs that are connected to the frontend news ticker. User profiles are now editable (username and avatar). The system has the official ZWAP! token contract address and its Solidity source code, but balances and swaps are still simulated in the database.
 
 **Last working item**:
--   **Last item agent was working:** The agent was in the middle of a major UI/UX overhaul. It had created the new , , , and  components. It had updated  to orchestrate the new layout and refactored the , , , and  to remove their individual headers. The last pending action was to apply the same refactoring to the  component.
+-   **Last item agent was working:** The agent was working on clarifying the details of the user's cryptocurrency token. It successfully identified that the address  is the official ZWAP token contract on the Polygon network. The agent also received the  source code from the user and was preparing to integrate it.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Frontend testing agent
+-   **Which testing method agent to use?** both
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1 (P0):** The  component has not been updated to use the new global header, causing an inconsistent UI.
-
-    -   **Attempted fixes:** None yet. The agent was just about to start this step.
+-   **Issue 1 (P1): AboutPage is not scrollable**
+    -   **Attempted fixes:** None. The agent noticed the issue via screenshot but did not address it.
     -   **Next debug checklist:**
-        1.  Use  to remove the old header section from .
-        2.  Ensure the remaining content in the component is correctly structured to render within the new global layout.
-    -   **Why fix this issue and what will be achieved with the fix?** To complete the UI refactoring task, ensuring all pages have a consistent look and feel with the new persistent header and footer.
-    -   **Status:** IN PROGRESS
+        1.  Inspect the CSS for .
+        2.  Remove any  or fixed height properties () that prevent scrolling.
+        3.  Ensure the main container allows for vertical scrolling ().
+    -   **Why fix this issue and what will be achieved with the fix?** To allow users to see all content on the What is ZWAP!? page, including the Get Started button at the bottom.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** frontend
     -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1 (P0): Complete the UI/UX Overhaul**
-    -   **Where to resume:** Update  to remove its local header. After this, restart the frontend and backend services to apply all the recent changes for the UI overhaul.
-    -   **What will be achieved with this?** The application will have the user-requested layout: an animated splash screen, a persistent header with balances, a persistent ticker footer, and all main pages will render correctly within this new structure.
+-   **Task 1 (P0): Begin Real ZWAP! Token Integration**
+    -   **Where to resume:** The agent has the contract address and source code. The next step is to update the backend () and frontend () to read the user's ZWAP balance directly from the Polygon blockchain using the contract address, replacing the mocked database value.
+    -   **What will be achieved with this?** The app will display the user's actual, on-chain ZWAP! Coin balance, a critical step toward making the application a true crypto wallet.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** both
     -   **Blocked on something:** None
 
 **Upcoming and Future Tasks**
+
 -   **Upcoming Tasks:**
-    -   **(P0) Test the UI/UX Overhaul:** Once the code changes are complete, run comprehensive frontend tests (screenshots, testing agent) to verify the new splash screen, header, footer, and updated page layouts work as expected without regressions.
-    -   **(P1) Implement User Profile Settings:** Create a new page/modal accessible from the profile badge in the header. This should display user info, privacy agreements, terms of use, FAQs, etc.
-    -   **(P1) Implement Leaderboard Logic:** The backend needs to be updated to track and serve leaderboard data (local, regional, global ranks). The frontend  component needs to be updated to display this data.
+    -   **(P0) Verify Contract on PolygonScan:** Use the  file to publicly verify the token contract on PolygonScan. This builds trust and transparency.
+    -   **(P1) Implement Real Token Swaps:** Based on the user's architecture proposal, implement real swaps. The recommended approach is to build the logic in the Python backend, which will call DEX aggregators like 1inch or Li.Fi, and expose a simple API for the React frontend.
+    -   **(P1) Implement Stripe Subscription Webhooks:** Complete the Stripe integration by implementing the  endpoint to automatically update a user's  in the database to Plus after a successful payment.
+    -   **(P1) Implement ZWAP! Faucet/Reward Distribution:** Create a backend mechanism for the treasury wallet to send real ZWAP! tokens to users as rewards for in-app activities.
+    -   **(P2) Implement Ad Integration:** Integrate an ad service like Google AdSense or AdMob to display ads in the app.
 -   **Future Tasks:**
-    -   **(P1) Implement Full Stripe Subscription:** Fully integrate Stripe to handle the  Plus subscription checkout and use webhooks to update user tiers in the database.
-    -   **(P1) Implement Progressive Game Difficulty:** Enhance the game logic in  to make games harder as the user plays more.
-    -   **(P2) Add New Games:** Implement the  and  games and logic to unlock them for Plus tier users.
-    -   **(P2) Implement Reward Caps:** Enforce the monthly ZWAP and daily Z-Point earning limits per tier in the backend.
+    -   **(P1) Progressive Game Difficulty:** Make games harder as users play more.
+    -   **(P2) Add New Games:** Implement  and .
+    -   **(P2) Implement Reward Caps:** Enforce the earning limits for ZWAP and Z-Points per tier.
     -   **(P2) Add USDT to SWAP tab.**
-    -   **(P3) Implement higher tiers ( token, Sustainer tier, etc.) as detailed in the whitepaper.**
+    -   **(P3) Implement higher tiers** (Sustainer tier, etc.).
 
 **Completed work in this session**
--   Mobile-first, no-scroll UI optimization across all tabs.
--   PWA Support:  and  created and linked.
--   Z-Points System: Implemented as a secondary, game-only currency.
--   Tiered Subscriptions: Starter and Plus tiers created on the backend; UI reflects tier status.
--   Game Gating:  now locks/unlocks games based on the user's subscription tier.
--   Shop Update: Marketplace now shows dual-currency pricing (ZWAP & Z-Points).
--   Bug Fix (Backend): Resolved a database validation error for shop items.
--   Bug Fix (Frontend): Fixed a wallet state persistence issue on page refresh.
--   UI Overhaul (In Progress): Created , , , and  components.
+-   **UI/UX Overhaul & Fixes:**
+    -   Completed a major UI overhaul, including fixing the NewsTicker, swapping logos, adjusting splash screen animations, and resizing header elements.
+    -   Updated all tab-specific taglines (Move & Earn, Play & Earn, etc.).
+    -   Added glowing icons to all main pages for a consistent, dynamic feel.
+    -   Fixed animation looping issues on the Shop page's product carousel.
+-   **Core Flow Changes:**
+    -   Removed the , streamlining the user flow from splash page directly to the dashboard.
+    -   Implemented a  modal to guide new, unconnected users.
+    -   Corrected the  layout to place the Connect Wallet button on the left and changed the profile badge to a 👤 emoji.
+-   **Backend & Features:**
+    -   Implemented backend endpoints and frontend UI for users to edit their profile username and avatar.
+    -   Implemented and connected a live  API to the .
+    -   Updated the daily Z-Point earning caps to 75 (Starter) and 150 (Plus) on both frontend and backend.
+    -   Created placeholder pages and routes for all Settings menu options (Profile, Contact, Privacy, Terms).
 
 **Earlier issues found/mentioned but not fixed**
-None. All previously identified issues were resolved.
+-   **Issue 1: AboutPage is not scrollable** (Details listed in All Pending/In progress Issue list).
 
 **Known issue recurrence from previous fork**
-None.
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, MongoDB (via ), Pydantic
+-   **Backend:** FastAPI, MongoDB (), Pydantic
 -   **Frontend:** React, Tailwind CSS, shadcn/ui
--   **Blockchain:** WalletConnect, ethers.js
+-   **Blockchain:** WalletConnect, ethers.js, **Polygon PoS** (for the ZWAP token)
 -   **Deployment:** PWA (Progressive Web App)
--   **Payments:** Stripe (planned for subscriptions)
 
 **key DB schema**
 -   **users**: 
 -   **shop_items**: 
 
 **changes in tech stack**
--   , ,  were added for WalletConnect v2 integration.
--    Python library was added to the backend for subscription management.
+-   No new dependencies were installed, but the next steps will require heavy use of  (frontend) and/or  (backend) for blockchain interaction.
 
 **All files of reference**
--   **/app/backend/server.py**: Contains all API logic for users, games, shop, and subscriptions.
--   **/app/frontend/src/App.js**: Main frontend component managing routing, global state (user, wallet), and the new persistent layout.
--   **/app/frontend/src/components/AppHeader.jsx**: The new persistent header component.
--   **/app/frontend/src/components/NewsTicker.jsx**: The new persistent footer ticker component.
--   **/app/frontend/src/components/SplashScreen.jsx**: The new animated splash screen shown on app launch.
--   **/app/frontend/src/components/AboutPage.jsx**: The What is ZWAP!? informational page.
--   **/app/frontend/public/manifest.json**: PWA configuration file.
+-   **/app/backend/server.py**: Main API file, updated with leaderboard, profile editing, and new tier caps.
+-   **/app/frontend/src/App.js**: Core frontend logic, updated with new routes, constants for the ZWAP token, and API functions.
+-   **/app/frontend/src/components/AppHeader.jsx**: Overhauled to reflect the new design and layout.
+-   **/app/frontend/src/components/ProfilePage.jsx**: New component to allow users to edit their profile.
+-   **/app/memory/ZWAPCoin_Optimized.sol**: The Solidity source code for the ZWAP token, provided by the user.
 
 **Areas that need refactoring**:
-The primary refactoring is currently in progress. All main page components (, , , etc.) are being modified to remove their individual headers and rely on the new global . This work needs to be completed and verified.
+-   The  component is now unused and should be deleted to clean up the codebase.
+-   The  component is purely a UI mock. It needs to be refactored to either integrate a third-party widget (e.g., Li.Fi) or be connected to the custom backend swap service once it's built.
 
 **key api endpoints**
--   : Get or create a user profile based on wallet address.
--   : Submit results from a game to earn rewards.
--   : Retrieve all items available in the marketplace.
--   : Fetch live prices for cryptocurrencies for the SWAP tab.
--   : Get details of available subscription tiers.
--   : Endpoint to initiate a Stripe subscription.
--   : Endpoint to receive and process Stripe events.
+-   : Returns global app statistics for the news ticker.
+-   : Returns ranked users for a specific category.
+-   : Updates a user's username and avatar URL.
+-   : Initiates a Stripe payment for the Plus tier.
+-   : (To be implemented) Handles updates from Stripe.
 
 **Critical Info for New Agent**
-You are in the middle of a significant UI overhaul. Do not start new features until this is complete. The immediate next step is to update  to remove its local header. After that, you must restart the services and thoroughly test the entire application's new layout, including the splash screen, persistent header/footer, and all main pages, to ensure there are no visual or functional regressions. The user has explicitly requested the zWheel BONUS section on the dashboard be removed and replaced by the new  footer.
+-   **Blockchain is the priority.** The immediate task is to move from a simulated app to a real one. Use the contract address () and the provided Solidity code () to integrate real on-chain balance reading.
+-   The user has provided a detailed architecture for a custom swap feature using 1inch and Li.Fi. You should propose a plan to implement this (backend-first approach is recommended) or suggest a simpler widget-based alternative for faster deployment.
+-   The user has requested ad integration. You should gather requirements on ad types (e.g., banner, rewarded video) and propose a solution (e.g., Google AdMob/AdSense).
+-   The Stripe integration is incomplete. The webhook for processing successful payments needs to be built to make subscriptions functional.
 
 **documents and test reports created in this job**
 -   /app/memory/PRD.md
--   /app/test_reports/iteration_1.json
--   /app/test_reports/iteration_2.json
+-   /app/memory/ZWAPCoin_Optimized.sol
+-   /app/test_reports/iteration_3.json
+-   /app/test_reports/iteration_4.json
+-   /app/test_reports/iteration_5.json
+-   /app/test_reports/iteration_6.json
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User (msg 190):** Provided detailed specs for the persistent header, splash screen animations, and What is ZWAP? page. Confirmed leaderboard scope.
-2.  **User (msg 185):** Requested analysis on faucet sustainability, specified a major UI overhaul (persistent header/footer ticker, remove wheel bonus), requested an animated splash screen, and an explanation page.
-3.  **Agent (msg 184):** Finished implementing Z-Points and Tiers.
-4.  **Agent (msg 182):** Updated PRD.
-5.  **Agent (msg 181):** Confirmed wallet persistence fix and successful redirection after connection.
-6.  **User (msg 111):** Confirmed tier name (Starter), free games (zBricks, zTrivia), Z-Point caps, and conversion rate (1000 zPts = 1 ZWAP).
-7.  **Agent (msg 110):** Asked for clarification on the Free tier name, games for that tier, and Z-Point conversion rate.
-8.  **User (msg 109):** Prioritized implementing Z-Points and a two-tier system (Starter/Plus). Specified games for each tier and confirmed Stripe integration for the Plus tier at 2.99/mo.
-9.  **Agent (msg 108):** Asked clarifying questions based on the whitepaper about tokens, tiers, games, and reward caps.
-10. **User (msg 107):** Provided the ZWAP! whitepaper text.
+1.  **User (latest):** Provided the  source file for contract verification.
+2.  **User:** Clarified that the previously provided address is the Treasury Wallet, not the contract address. (This was a point of confusion).
+3.  **User:** Answered agent questions, confirming they want to proceed with real balance display and will set up their Stripe account.
+4.  **User:** Uploaded an image containing a wallet address, which was later identified as the ZWAP token contract address.
+5.  **User:** Asked if their pre-written  architecture is necessary for implementing real swaps.
+6.  **User:** Provided a large set of UI and feature requests, including fixing layouts, updating taglines, completing settings pages, and making the app more animated.
+7.  **User:** Requested several UI fixes for the NewsTicker, logos, splash screen, and header layout.
+8.  **User:** Confirmed a series of UI updates were good and asked to proceed.
+9.  **User:** Approved the initial plan to fix the  component and run tests.
+10. **Agent:** Finalized understanding of the contract vs. treasury wallet and was ready to proceed with integration.
 
 **Project Health Check:**
--   **Broken:** The UI is in a partially refactored state. The  component is still using an old layout, which will clash with the new persistent header. The app will likely have visual bugs until the refactoring is complete and services are restarted.
--   **Mocked:** Leaderboard stats and the full Stripe subscription flow are mocked/not yet implemented.
+-   **Broken:** The  has a non-critical scrolling bug.
+-   **Mocked:** The core crypto functionalities—user balances and token swaps—are still simulated in the database and do not interact with the blockchain. Stripe subscriptions are in test mode and not fully automated.
 
 **3rd Party Integrations**
 -   **WalletConnect:** Integrated for user authentication.
--   **Stripe:** Backend library installed, and API endpoints created for subscription checkout, but the full payment flow is not yet implemented or tested. The playbook indicates a system-provided key should be used.
--   **CoinGecko:** An external API is being called (implicitly) to fetch live crypto prices for the SWAP tab.
+-   **Stripe:** Backend library is installed, but the full subscription lifecycle (webhooks) is pending. No user-provided key needed for now (uses test keys).
+-   **CoinGecko:** Used for fetching live crypto prices in the SWAP tab.
+-   **1inch / Li.Fi:** Planned for swap functionality but not yet integrated.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES
+-   **Testing agent used after significant changes:** YES (used multiple times to verify UI overhauls).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** []
--   **Known regressions:** None currently known, but the ongoing UI refactor is high-risk for introducing new ones.
+-   **Known regressions:** None.
 
 **Credentials to test flow:**
-No username/password is required. Testing is done by connecting a crypto wallet via the WalletConnect modal.
+-   Connect any crypto wallet (e.g., MetaMask) configured for the Polygon (PoS) network. No username/password is required.
 
 **What agent forgot to execute**
-The agent was mid-task. It needs to complete the final step of the UI refactoring, which is to update  to remove its local header. Following that, a service restart and comprehensive testing of the new UI are required.</analysis>
+-   The agent did not fix the scrolling issue on the  after observing it in a screenshot.
+-   The agent did not delete the now-obsolete  file.
+-   The user's request to make *every* element feel more animated and innovative was only partially addressed with glow effects; a more comprehensive pass on animations is still pending.</analysis>
