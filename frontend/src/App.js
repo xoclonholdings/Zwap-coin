@@ -11,14 +11,24 @@ import PlayTab from "@/components/PlayTab";
 import ShopTab from "@/components/ShopTab";
 import SwapTab from "@/components/SwapTab";
 import TabNavigation from "@/components/TabNavigation";
+import SubscriptionSuccess from "@/components/SubscriptionSuccess";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // App Context
 export const AppContext = createContext();
-
 export const useApp = () => useContext(AppContext);
+
+// ZWAP Logo URLs
+export const ZWAP_LOGO = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/8gvtmj56_Zwap_logo_full.png";
+export const ZWAP_BANG = "https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/ubzr4hka_Zwap_bang_3d.png";
+
+// Tier configs
+export const TIERS = {
+  starter: { name: "Starter", games: ["zbrickles", "ztrivia"], dailyZptsCap: 20 },
+  plus: { name: "Plus", games: ["zbrickles", "ztrivia", "ztetris", "zslots"], dailyZptsCap: 30 }
+};
 
 // API functions
 export const api = {
@@ -46,19 +56,48 @@ export const api = {
     return res.json();
   },
   
-  claimGameRewards: async (walletAddress, score, blocksDestroyed) => {
-    const res = await fetch(`${API}/faucet/game/${walletAddress}`, {
+  submitGameResult: async (walletAddress, gameType, score, level = 1, blocksDestroyed = 0) => {
+    const res = await fetch(`${API}/games/result/${walletAddress}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ score, blocks_destroyed: blocksDestroyed }),
+      body: JSON.stringify({ game_type: gameType, score, level, blocks_destroyed: blocksDestroyed }),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || "Game submission failed");
+    }
+    return res.json();
+  },
+  
+  getTriviaQuestions: async (count = 5, difficulty = 1) => {
+    const res = await fetch(`${API}/games/trivia/questions?count=${count}&difficulty=${difficulty}`);
+    return res.json();
+  },
+  
+  checkTriviaAnswer: async (questionId, answer, timeTaken) => {
+    const res = await fetch(`${API}/games/trivia/answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question_id: questionId, answer, time_taken: timeTaken }),
     });
     return res.json();
   },
   
   scratchToWin: async (walletAddress) => {
-    const res = await fetch(`${API}/faucet/scratch/${walletAddress}`, {
+    const res = await fetch(`${API}/faucet/scratch/${walletAddress}`, { method: "POST" });
+    return res.json();
+  },
+  
+  convertZptsToZwap: async (walletAddress, zptsAmount) => {
+    const res = await fetch(`${API}/zpts/convert/${walletAddress}`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zpts_amount: zptsAmount }),
     });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || "Conversion failed");
+    }
     return res.json();
   },
   
@@ -67,11 +106,11 @@ export const api = {
     return res.json();
   },
   
-  purchaseItem: async (walletAddress, itemId) => {
+  purchaseItem: async (walletAddress, itemId, paymentType = "zwap") => {
     const res = await fetch(`${API}/shop/purchase/${walletAddress}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ item_id: itemId }),
+      body: JSON.stringify({ item_id: itemId, payment_type: paymentType }),
     });
     if (!res.ok) {
       const error = await res.json();
@@ -97,6 +136,36 @@ export const api = {
     }
     return res.json();
   },
+  
+  createSubscription: async (originUrl) => {
+    const res = await fetch(`${API}/subscription/checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ origin_url: originUrl }),
+    });
+    return res.json();
+  },
+  
+  getSubscriptionStatus: async (sessionId) => {
+    const res = await fetch(`${API}/subscription/status/${sessionId}`);
+    return res.json();
+  },
+  
+  activateSubscription: async (walletAddress, sessionId) => {
+    const res = await fetch(`${API}/subscription/activate/${walletAddress}?session_id=${sessionId}`, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || "Activation failed");
+    }
+    return res.json();
+  },
+  
+  getLeaderboard: async (category, limit = 10) => {
+    const res = await fetch(`${API}/leaderboard/${category}?limit=${limit}`);
+    return res.json();
+  },
 };
 
 function AppProvider({ children }) {
@@ -106,7 +175,6 @@ function AppProvider({ children }) {
   const [pendingAction, setPendingAction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check for existing wallet connection on mount
   useEffect(() => {
     const savedWallet = localStorage.getItem("zwap_wallet");
     if (savedWallet) {
@@ -121,8 +189,7 @@ function AppProvider({ children }) {
       const userData = await api.getUser(address);
       setUser(userData);
     } catch (error) {
-      // If user doesn't exist, connect wallet will create them
-      console.log("User not found, will create on connect");
+      console.log("User not found");
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +203,7 @@ function AppProvider({ children }) {
       setWalletAddress(address);
       localStorage.setItem("zwap_wallet", address);
       setIsWalletModalOpen(false);
-      toast.success("Wallet connected successfully!");
+      toast.success("Wallet connected!");
       return userData;
     } catch (error) {
       toast.error("Failed to connect wallet");
@@ -154,9 +221,7 @@ function AppProvider({ children }) {
   };
 
   const refreshUser = async () => {
-    if (walletAddress) {
-      await loadUser(walletAddress);
-    }
+    if (walletAddress) await loadUser(walletAddress);
   };
 
   const requireWallet = (action) => {
@@ -169,21 +234,11 @@ function AppProvider({ children }) {
   };
 
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        walletAddress,
-        isWalletModalOpen,
-        setIsWalletModalOpen,
-        pendingAction,
-        setPendingAction,
-        connectWallet,
-        disconnectWallet,
-        refreshUser,
-        requireWallet,
-        isLoading,
-      }}
-    >
+    <AppContext.Provider value={{
+      user, walletAddress, isWalletModalOpen, setIsWalletModalOpen,
+      pendingAction, setPendingAction, connectWallet, disconnectWallet,
+      refreshUser, requireWallet, isLoading,
+    }}>
       {children}
     </AppContext.Provider>
   );
@@ -194,28 +249,18 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Handle pending action after wallet connect
   useEffect(() => {
     if (walletAddress && pendingAction) {
       setPendingAction(null);
-      // Navigate based on pending action
       switch (pendingAction) {
-        case "swap":
-          navigate("/swap");
-          break;
-        case "earn":
-          navigate("/move");
-          break;
-        case "shop":
-          navigate("/shop");
-          break;
-        default:
-          navigate("/dashboard");
+        case "swap": navigate("/swap"); break;
+        case "earn": navigate("/move"); break;
+        case "shop": navigate("/shop"); break;
+        default: navigate("/dashboard");
       }
     }
   }, [walletAddress, pendingAction, navigate, setPendingAction]);
 
-  // Show welcome screen if not connected
   if (!walletAddress && location.pathname === "/") {
     return (
       <>
@@ -225,7 +270,6 @@ function AppContent() {
     );
   }
 
-  // If connected but on root, redirect to dashboard
   if (walletAddress && location.pathname === "/") {
     navigate("/dashboard");
     return null;
@@ -242,6 +286,8 @@ function AppContent() {
         <Route path="/play" element={<PlayTab />} />
         <Route path="/shop" element={<ShopTab />} />
         <Route path="/swap" element={<SwapTab />} />
+        <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+        <Route path="/subscription/cancel" element={<Dashboard />} />
       </Routes>
       
       {showTabs && <TabNavigation />}
