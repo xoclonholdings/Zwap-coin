@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useApp, api, CRYPTO_LOGOS, ZWAP_BANG } from "@/App";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRightLeft, ArrowDown, RefreshCw, Loader2, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRightLeft, ExternalLink, RefreshCw, Info, AlertTriangle, Shield } from "lucide-react";
+
+/**
+ * COMPLIANCE NOTE:
+ * This tab does NOT process any swaps internally.
+ * All swap functionality redirects to external third-party services.
+ * The app only displays prices and provides links - no transactions occur here.
+ */
 
 const TOKEN_CONFIG = {
   ZWAP: { name: "ZWAP!", color: "text-cyan-400", bgColor: "bg-cyan-500/20" },
@@ -15,12 +21,7 @@ const TOKEN_CONFIG = {
 };
 
 const TokenIcon = ({ token, size = "md" }) => {
-  const sizeClasses = {
-    sm: "w-5 h-5",
-    md: "w-8 h-8",
-    lg: "w-10 h-10"
-  };
-  
+  const sizeClasses = { sm: "w-5 h-5", md: "w-8 h-8", lg: "w-10 h-10" };
   return (
     <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-800 flex items-center justify-center`}>
       <img 
@@ -33,16 +34,37 @@ const TokenIcon = ({ token, size = "md" }) => {
   );
 };
 
+// External swap service options
+const EXTERNAL_SWAP_SERVICES = [
+  {
+    name: "Jumper Exchange",
+    description: "Cross-chain swaps via Li.Fi",
+    url: "https://jumper.exchange/",
+    logo: "🌉",
+    recommended: true,
+  },
+  {
+    name: "1inch",
+    description: "DEX aggregator on Polygon",
+    url: "https://app.1inch.io/#/137/simple/swap/MATIC/",
+    logo: "🦄",
+    recommended: false,
+  },
+  {
+    name: "Uniswap",
+    description: "Popular decentralized exchange",
+    url: "https://app.uniswap.org/swap",
+    logo: "🦊",
+    recommended: false,
+  },
+];
+
 export default function SwapTab() {
-  const { user, walletAddress, refreshUser } = useApp();
+  const { user, walletAddress, onchainBalance } = useApp();
   const [prices, setPrices] = useState({});
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
-  const [fromToken, setFromToken] = useState("ZWAP");
-  const [toToken, setToToken] = useState("ETH");
-  const [fromAmount, setFromAmount] = useState("");
-  const [toAmount, setToAmount] = useState("");
-  const [isSwapping, setIsSwapping] = useState(false);
-  const [swapSuccess, setSwapSuccess] = useState(null);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
 
   const tokens = ["ZWAP", "BTC", "ETH", "POL", "SOL"];
 
@@ -52,75 +74,88 @@ export default function SwapTab() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (fromAmount && prices[fromToken] && prices[toToken]) {
-      const fromValue = parseFloat(fromAmount) * prices[fromToken];
-      const result = (fromValue * 0.99) / prices[toToken];
-      setToAmount(result.toFixed(8));
-    } else { setToAmount(""); }
-  }, [fromAmount, fromToken, toToken, prices]);
-
   const loadPrices = async () => {
     try { setPrices(await api.getPrices()); }
     catch (error) { console.error("Failed to load prices"); }
     finally { setIsLoadingPrices(false); }
   };
 
-  const handleSwapTokens = () => {
-    setFromToken(toToken); setToToken(fromToken);
-    setFromAmount(""); setToAmount("");
-  };
-
-  const handleMaxAmount = () => {
-    if (fromToken === "ZWAP" && user?.zwap_balance) setFromAmount(user.zwap_balance.toString());
-  };
-
-  const handleSwap = async () => {
-    if (!fromAmount || parseFloat(fromAmount) <= 0) { toast.error("Enter valid amount"); return; }
-    if (fromToken === "ZWAP" && parseFloat(fromAmount) > (user?.zwap_balance || 0)) { toast.error("Insufficient balance"); return; }
-
-    setIsSwapping(true);
-    try {
-      const result = await api.executeSwap(walletAddress, fromToken, toToken, parseFloat(fromAmount));
-      setSwapSuccess(result);
-      await refreshUser();
-      toast.success("Swap completed!");
-      setFromAmount(""); setToAmount("");
-    } catch (error) { toast.error(error.message || "Swap failed"); }
-    finally { setIsSwapping(false); }
-  };
-
   const formatPrice = (p) => p >= 1000 ? p.toLocaleString(undefined, { maximumFractionDigits: 0 }) : p >= 1 ? p.toFixed(2) : p.toFixed(4);
-  const getRate = () => prices[fromToken] && prices[toToken] ? (prices[fromToken] / prices[toToken]).toFixed(6) : "—";
+
+  const handleExternalSwap = (service) => {
+    setSelectedService(service);
+    setShowDisclaimer(true);
+  };
+
+  const confirmExternalRedirect = () => {
+    if (selectedService) {
+      window.open(selectedService.url, '_blank', 'noopener,noreferrer');
+      toast.success(`Opening ${selectedService.name}...`);
+    }
+    setShowDisclaimer(false);
+    setSelectedService(null);
+  };
 
   return (
     <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="swap-tab">
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2 pulse-glow-blue">
+        <motion.div 
+          className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2"
+          animate={{ 
+            boxShadow: [
+              "0 0 10px rgba(59,130,246,0.3)",
+              "0 0 20px rgba(59,130,246,0.5)",
+              "0 0 10px rgba(59,130,246,0.3)"
+            ]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
           <ArrowRightLeft className="w-7 h-7 text-blue-400" />
-        </div>
+        </motion.div>
         <h1 className="text-xl font-bold text-white">SWAP</h1>
-        <p className="text-gray-400 text-xs">Swap your ZWAP!</p>
+        <p className="text-gray-400 text-xs">External Exchange Portal</p>
       </div>
 
-      {/* Success Banner */}
-      {swapSuccess && (
-        <div className="glass-card p-3 mb-4 border-green-500/30 bg-green-500/10 rounded-xl">
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-green-400" />
-            <p className="text-green-400 text-xs flex-1">
-              {swapSuccess.from_amount} {swapSuccess.from_token} → {swapSuccess.to_amount.toFixed(6)} {swapSuccess.to_token}
-            </p>
-            <Button size="sm" variant="ghost" onClick={() => setSwapSuccess(null)} className="text-gray-400 h-6 px-2">✕</Button>
+      {/* Compliance Notice */}
+      <motion.div 
+        className="glass-card p-3 mb-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-start gap-2">
+          <Info className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-gray-300">
+            Swaps are processed by <span className="text-yellow-400">external third-party services</span>. 
+            This app does not process, custody, or control any transactions.
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Your Balances (Read-Only Display) */}
+      <div className="glass-card p-4 mb-4 rounded-xl">
+        <div className="flex items-center gap-2 mb-3">
+          <Shield className="w-4 h-4 text-cyan-400" />
+          <span className="text-gray-400 text-xs">Your Reward Balances (Read-Only)</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-lg bg-gray-800/50">
+            <p className="text-xs text-gray-500 mb-1">In-App Rewards</p>
+            <p className="text-lg font-bold text-cyan-400">{user?.zwap_balance?.toFixed(2) || "0.00"} ZWAP</p>
+            <p className="text-[10px] text-gray-500">Earned from activities</p>
+          </div>
+          <div className="p-3 rounded-lg bg-gray-800/50">
+            <p className="text-xs text-gray-500 mb-1">Linked Wallet</p>
+            <p className="text-lg font-bold text-cyan-400">{onchainBalance?.toFixed(2) || "—"} ZWAP</p>
+            <p className="text-[10px] text-gray-500">On-chain balance</p>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Price Ticker */}
+      {/* Live Prices (Information Only) */}
       <div className="glass-card p-3 mb-4 rounded-xl">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-gray-400 text-xs">Live Prices</span>
+          <span className="text-gray-400 text-xs">Live Market Prices</span>
           <Button size="sm" variant="ghost" onClick={loadPrices} className="text-cyan-400 h-6 p-0" disabled={isLoadingPrices}>
             <RefreshCw className={`w-3 h-3 ${isLoadingPrices ? 'animate-spin' : ''}`} />
           </Button>
@@ -136,121 +171,100 @@ export default function SwapTab() {
         </div>
       </div>
 
-      {/* Swap Card */}
-      <div className="glass-card p-4 flex-1 rounded-xl">
-        {/* From */}
-        <div className="mb-3">
-          <div className="flex justify-between text-xs mb-2">
-            <span className="text-gray-400">From</span>
-            {fromToken === "ZWAP" && (
-              <span className="text-gray-400">
-                Balance: <span className="text-cyan-400">{user?.zwap_balance?.toFixed(0) || "0"}</span>
-              </span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Select value={fromToken} onValueChange={setFromToken}>
-              <SelectTrigger className="w-28 bg-[#141530] border-gray-700 h-12" data-testid="from-token">
-                <div className="flex items-center gap-2">
-                  <TokenIcon token={fromToken} size="sm" />
-                  <span>{fromToken}</span>
+      {/* External Swap Services */}
+      <div className="flex-1">
+        <h3 className="text-white font-semibold text-sm mb-3 flex items-center gap-2">
+          <ExternalLink className="w-4 h-4 text-blue-400" />
+          External Swap Services
+        </h3>
+        <div className="space-y-3">
+          {EXTERNAL_SWAP_SERVICES.map((service, i) => (
+            <motion.button
+              key={service.name}
+              onClick={() => handleExternalSwap(service)}
+              className={`w-full p-4 rounded-xl border transition-all text-left ${
+                service.recommended 
+                  ? 'border-blue-500/50 bg-blue-500/10' 
+                  : 'border-gray-700 bg-gray-800/30 hover:border-blue-500/30'
+              }`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{service.logo}</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-semibold">{service.name}</p>
+                    {service.recommended && (
+                      <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full">Recommended</span>
+                    )}
+                  </div>
+                  <p className="text-gray-400 text-xs">{service.description}</p>
                 </div>
-              </SelectTrigger>
-              <SelectContent className="bg-[#141530] border-gray-700">
-                {tokens.filter(t => t !== toToken).map(token => (
-                  <SelectItem key={token} value={token}>
-                    <div className="flex items-center gap-2">
-                      <TokenIcon token={token} size="sm" />
-                      <span>{token}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex-1 relative">
-              <Input 
-                data-testid="from-amount" 
-                type="number" 
-                placeholder="0" 
-                value={fromAmount} 
-                onChange={(e) => setFromAmount(e.target.value)} 
-                className="bg-[#141530] border-gray-700 text-white text-right pr-14 h-12 text-lg" 
-              />
-              {fromToken === "ZWAP" && (
-                <Button size="sm" variant="ghost" onClick={handleMaxAmount} className="absolute right-2 top-1/2 -translate-y-1/2 text-cyan-400 text-xs h-7 px-2">
-                  MAX
-                </Button>
-              )}
-            </div>
-          </div>
+                <ExternalLink className="w-4 h-4 text-gray-500" />
+              </div>
+            </motion.button>
+          ))}
         </div>
-
-        {/* Arrow */}
-        <div className="flex justify-center my-2">
-          <Button variant="ghost" size="icon" onClick={handleSwapTokens} className="w-10 h-10 rounded-full bg-[#141530] border border-gray-700 hover:border-cyan-500" data-testid="swap-direction">
-            <ArrowDown className="w-5 h-5 text-cyan-400" />
-          </Button>
-        </div>
-
-        {/* To */}
-        <div className="mb-4">
-          <div className="text-xs mb-2 text-gray-400">To</div>
-          <div className="flex gap-2">
-            <Select value={toToken} onValueChange={setToToken}>
-              <SelectTrigger className="w-28 bg-[#141530] border-gray-700 h-12" data-testid="to-token">
-                <div className="flex items-center gap-2">
-                  <TokenIcon token={toToken} size="sm" />
-                  <span>{toToken}</span>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-[#141530] border-gray-700">
-                {tokens.filter(t => t !== fromToken).map(token => (
-                  <SelectItem key={token} value={token}>
-                    <div className="flex items-center gap-2">
-                      <TokenIcon token={token} size="sm" />
-                      <span>{token}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input 
-              data-testid="to-amount" 
-              type="text" 
-              placeholder="0" 
-              value={toAmount} 
-              readOnly 
-              className="flex-1 bg-[#141530] border-gray-700 text-white text-right h-12 text-lg" 
-            />
-          </div>
-        </div>
-
-        {/* Rate & Fee */}
-        <div className="text-xs text-gray-400 mb-4 p-3 bg-gray-800/50 rounded-lg">
-          <div className="flex justify-between">
-            <span>Rate</span>
-            <span className="text-white">1 {fromToken} = {getRate()} {toToken}</span>
-          </div>
-          <div className="flex justify-between mt-1">
-            <span>Fee</span>
-            <span className="text-white">1%</span>
-          </div>
-        </div>
-
-        {/* Swap Button */}
-        <Button 
-          data-testid="execute-swap" 
-          onClick={handleSwap} 
-          disabled={isSwapping || !fromAmount || parseFloat(fromAmount) <= 0}
-          className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-500"
-        >
-          {isSwapping ? (
-            <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Swapping...</>
-          ) : (
-            <><ArrowRightLeft className="w-5 h-5 mr-2" />Swap</>
-          )}
-        </Button>
       </div>
+
+      {/* Disclaimer Footer */}
+      <div className="mt-4 p-3 rounded-lg bg-gray-800/30 border border-gray-700">
+        <p className="text-[10px] text-gray-500 text-center">
+          ⚠️ External services have their own terms. ZWAP! does not control or guarantee third-party transactions.
+          Cryptocurrency values fluctuate. Only swap what you can afford to risk.
+        </p>
+      </div>
+
+      {/* Confirmation Dialog */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <motion.div 
+            className="bg-[#0f1029] border border-blue-500/30 rounded-2xl p-6 max-w-sm w-full"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-3">
+                <AlertTriangle className="w-6 h-6 text-yellow-400" />
+              </div>
+              <h3 className="text-white font-bold text-lg mb-2">Leaving ZWAP! App</h3>
+              <p className="text-gray-400 text-sm">
+                You're about to open <span className="text-blue-400">{selectedService?.name}</span>, an external third-party service.
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-3 mb-4">
+              <p className="text-xs text-gray-400">
+                • Transactions occur outside this app<br/>
+                • We do not control external services<br/>
+                • Review all details before confirming<br/>
+                • Connect your wallet on the external site
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => { setShowDisclaimer(false); setSelectedService(null); }}
+                className="flex-1 border-gray-600"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmExternalRedirect}
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Continue
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
