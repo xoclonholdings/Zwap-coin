@@ -95,11 +95,11 @@ export default function MoveTab() {
     setIsClaiming(true);
     try {
       const result = await api.claimStepRewards(walletAddress, steps);
-      toast.success(result.message);
+      toast.success("Rewards recorded to your account!");
       await refreshUser();
       setSteps(0);
       setPotentialReward(0);
-    } catch (error) { toast.error("Failed to claim"); }
+    } catch (error) { toast.error("Failed to record rewards"); }
     finally { setIsClaiming(false); }
   };
 
