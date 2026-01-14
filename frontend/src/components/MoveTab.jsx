@@ -150,14 +150,14 @@ export default function MoveTab() {
         </Button>
       </div>
 
-      {/* Claim */}
+      {/* Record Rewards */}
       <Button
         data-testid="claim-steps"
         onClick={handleClaim}
         disabled={steps === 0 || isClaiming || isTracking}
         className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-cyan-500 to-purple-500 mb-4"
       >
-        {isClaiming ? "Claiming..." : `Claim ${potentialReward.toFixed(2)} ZWAP`}
+        {isClaiming ? "Recording..." : `Record ${potentialReward.toFixed(2)} ZWAP`}
       </Button>
 
       {/* Tier System */}
