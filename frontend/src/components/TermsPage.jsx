@@ -41,11 +41,13 @@ The App operates on blockchain technology and requires a compatible cryptocurren
     },
     {
       title: "5. ZWAP! Coin and Z Points",
-      content: `• ZWAP! Coin is a utility token within our ecosystem
+      content: `• ZWAP! Coin is an earned reward token within our ecosystem
 • Z Points are non-transferable loyalty credits
-• Token values may fluctuate
-• Rewards are subject to daily and monthly caps
-• We reserve the right to modify reward rates`
+• Reward values may fluctuate based on market conditions
+• Rewards are subject to daily and monthly earning limits
+• In-app rewards must be claimed to your external wallet to access on-chain
+• We reserve the right to modify reward rates
+• All swaps and exchanges occur via external third-party services`
     },
     {
       title: "6. Subscriptions",
