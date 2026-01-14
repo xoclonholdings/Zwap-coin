@@ -70,10 +70,12 @@ The App operates on blockchain technology and requires a compatible cryptocurren
     },
     {
       title: "8. Intellectual Property",
-      content: `• All content, trademarks, and IP belong to XOCLON HOLDINGS INC.
+      content: `• All content, trademarks, and IP are owned by Zupreme Imports LLC
+• Operated by Gratia Dei Unlimited
+• Held by XOCLON Holdings Inc
 • You may not copy, modify, or distribute our content
 • User-generated content remains yours but you grant us a license to use it
-• ZWAP! branding may not be used without permission`
+• ZWAP!™️ branding may not be used without permission`
     },
     {
       title: "9. Disclaimer of Warranties",
