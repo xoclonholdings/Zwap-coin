@@ -195,7 +195,7 @@ export default function AppHeader() {
                 {walletAddress && (
                   <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider">Balances</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">Reward Balances</p>
                       <a 
                         href={getPolygonScanUrl(walletAddress)} 
                         target="_blank" 
@@ -211,14 +211,14 @@ export default function AppHeader() {
                           {onchainBalance !== null ? onchainBalance.toFixed(2) : "—"}
                         </p>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
-                          <Link2 className="w-3 h-3" /> On-Chain ZWAP
+                          <Link2 className="w-3 h-3" /> Linked Wallet
                         </p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-cyan-400/70">
                           {user?.zwap_balance?.toFixed(2) || 0}
                         </p>
-                        <p className="text-xs text-gray-500">In-App ZWAP</p>
+                        <p className="text-xs text-gray-500">In-App Rewards</p>
                       </div>
                       <div>
                         <p className="text-lg font-bold text-purple-400">
@@ -233,6 +233,11 @@ export default function AppHeader() {
                         <p className="text-xs text-gray-500">Total Earned</p>
                       </div>
                     </div>
+                    
+                    {/* Read-only notice */}
+                    <p className="text-[10px] text-gray-600 text-center mt-3 pt-2 border-t border-gray-800">
+                      View only • Claim to wallet coming soon
+                    </p>
                     
                     {/* ZWAP Contract Link */}
                     <div className="mt-3 pt-3 border-t border-cyan-500/20">
