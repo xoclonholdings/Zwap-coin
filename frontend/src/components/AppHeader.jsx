@@ -104,7 +104,7 @@ export default function AppHeader() {
                 )}
               </motion.p>
               <p className="text-xs text-gray-500">
-                {onchainBalance !== null ? "ZWAP (on-chain)" : "ZWAP"}
+                {onchainBalance !== null ? "ZWAP (linked)" : "ZWAP"}
               </p>
             </div>
             <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-600 to-transparent" />
