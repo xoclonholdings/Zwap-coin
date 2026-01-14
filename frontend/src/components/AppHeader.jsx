@@ -120,11 +120,11 @@ export default function AppHeader() {
             </div>
           </motion.div>
 
-          {/* Profile Badge - 👤 emoji */}
+          {/* Profile Badge with Settings Indicator */}
           <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
             <SheetTrigger asChild>
               <motion.button
-                className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/30"
+                className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/30 relative"
                 data-testid="profile-badge"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
@@ -138,15 +138,23 @@ export default function AppHeader() {
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 👤
+                {/* Settings indicator dot */}
+                <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#0a0b1e] rounded-full flex items-center justify-center">
+                  <motion.span 
+                    className="w-3 h-3 bg-cyan-400 rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </span>
               </motion.button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80" aria-describedby="account-sheet-description">
+            <SheetContent side="right" className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80 overflow-y-auto" aria-describedby="account-sheet-description">
               <SheetHeader>
                 <SheetTitle className="text-white">Account</SheetTitle>
                 <p id="account-sheet-description" className="sr-only">Manage your ZWAP! account settings and profile</p>
               </SheetHeader>
               
-              <div className="mt-6 space-y-6">
+              <div className="mt-6 space-y-6 pb-8">
                 {/* User Info */}
                 <div className="flex items-center gap-3">
                   <motion.div 
