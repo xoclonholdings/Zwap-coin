@@ -72,23 +72,6 @@ export default function AppHeader() {
             }}
             transition={{ duration: 2, repeat: Infinity }}
           />
-
-          {/* Connect Wallet Button - on left side when not connected */}
-          {!walletAddress && (
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button
-                onClick={() => setIsWalletModalOpen(true)}
-                className="h-12 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-base font-semibold shadow-lg shadow-cyan-500/30"
-                data-testid="connect-wallet-btn"
-              >
-                <Wallet className="w-5 h-5 mr-2" />
-                Connect Wallet
-              </Button>
-            </motion.div>
-          )}
         </div>
 
         {/* Right side - Balances + Profile Badge */}
