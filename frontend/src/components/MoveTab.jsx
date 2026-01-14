@@ -132,7 +132,7 @@ export default function MoveTab() {
         <h2 className="text-5xl font-bold neon-text" data-testid="step-counter">{steps.toLocaleString()}</h2>
         <div className="flex items-center justify-center gap-2 text-cyan-400 mt-2">
           <Coins className="w-4 h-4" />
-          <span className="text-lg font-semibold">{potentialReward.toFixed(2)} ZWAP pending</span>
+          <span className="text-lg font-semibold">{potentialReward.toFixed(2)} ZWAP earned</span>
         </div>
       </div>
 
