@@ -34,8 +34,8 @@ export default function AboutPage() {
         <span>Back</span>
       </motion.button>
 
-      {/* Hero Section - Reduced spacing */}
-      <section className="relative min-h-[60vh] flex flex-col items-center justify-center px-6 pt-12 pb-8">
+      {/* Hero Section */}
+      <section className="relative min-h-[50vh] flex flex-col items-center justify-center px-6 pt-16 pb-8">
         {/* Background effects */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div 
@@ -50,53 +50,36 @@ export default function AboutPage() {
           />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 text-center max-w-4xl mx-auto"
-        >
-          {/* Logo - Larger */}
+        <div className="relative z-10 text-center max-w-4xl mx-auto">
+          {/* Logo - Immediately visible */}
           <motion.img
             src={ZWAP_BANG}
             alt="ZWAP!"
             className="h-32 sm:h-44 mx-auto mb-4"
-            initial={{ scale: 0.8, opacity: 0 }}
             animate={{ 
-              scale: 1, 
-              opacity: 1,
               filter: [
                 "drop-shadow(0 0 20px rgba(0,245,255,0.4))",
                 "drop-shadow(0 0 40px rgba(0,245,255,0.7))",
                 "drop-shadow(0 0 20px rgba(0,245,255,0.4))"
               ]
             }}
-            transition={{ delay: 0.2, duration: 2, repeat: Infinity }}
+            transition={{ duration: 2, repeat: Infinity }}
           />
 
-          {/* Headline */}
-          <motion.h1
-            className="text-3xl sm:text-4xl font-extrabold mb-3 leading-tight"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          {/* Headline - Immediately visible */}
+          <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 leading-tight">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
               CRYPTO-POWERED
             </span>
             <br />
             <span className="text-white">LIFESTYLE & GAMEFI</span>
-          </motion.h1>
+          </h1>
 
-          {/* Subtitle */}
-          <motion.p
-            className="text-gray-400 text-base sm:text-lg max-w-xl mx-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
+          {/* Subtitle - Immediately visible */}
+          <p className="text-gray-400 text-base sm:text-lg max-w-xl mx-auto">
             Turn everyday movement and gameplay into real, spendable value.
-          </motion.p>
-        </motion.div>
+          </p>
+        </div>
       </section>
 
       {/* Token Section - MOVED UP (was below "How it works") */}
