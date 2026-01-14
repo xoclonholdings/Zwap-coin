@@ -1,7 +1,7 @@
 # ZWAP! Coin App - Product Requirements Document
 
 ## Original Problem Statement
-Build a cryptocurrency app for ZWAP! Coin with:
+Build a cryptocurrency rewards app for ZWAP! Coin with:
 - Tab for pedometer (MOVE) - "Move & Earn"
 - Tab for games (PLAY) - "Play & Earn"
 - Tab for marketplace (SHOP) - "Shop with ZWAP!"
@@ -9,123 +9,165 @@ Build a cryptocurrency app for ZWAP! Coin with:
 
 **Tagline: "MOVE. PLAY. SWAP. SHOP."**
 
+---
+
+## Compliance Architecture (Apple/Google)
+
+### Current State ✅
+- Users earn ZWAP tokens in-app via games and step tracking
+- All balances stored in backend database (MongoDB)
+- "Claiming" updates DB only - no on-chain transactions
+- Wallets linked for read-only display only
+- Swaps occur via embedded external services (iframe)
+
+### Compliance Rules
+1. App observes, displays, and tracks rewards only
+2. App NEVER moves crypto internally
+3. All on-chain actions are user-initiated externally
+4. Copy does not imply financial ownership inside app
+5. Swaps/conversions happen via third-party services
+6. Wallet display is read-only
+7. No transaction signing occurs in-app
+
+### Platform-Safe Language
+- ❌ Avoid: "portfolio", "your funds", "instant exchange", "profit", "real trading"
+- ✅ Use: "earned rewards", "claim to wallet", "linked wallet", "external swap"
+
+---
+
 ## Architecture
 
 ### Backend (FastAPI + MongoDB + Web3.py)
 - `server.py` - All API endpoints
-- Polygon RPC integration via Alchemy
+- Polygon RPC integration via Alchemy (read-only)
+- No transaction signing/sending from backend
 
 ### Frontend (React + Tailwind + Framer Motion)
-- Splash → Dashboard flow (no Welcome page)
+- Splash → Dashboard flow
 - Persistent header with wallet connection
-- Animated footer ticker with live leaderboard
-- On-chain balance display in header
+- SWAP tab with embedded external services (iframe)
+- Compliant copy throughout
+
+### ZWAP Contract (Polygon)
+```
+Address: 0xe8898453af13b9496a6e8ada92c6efdaf4967a81
+Network: Polygon PoS (Chain ID: 137)
+Symbol: ZWAP
+Decimals: 18
+Total Supply: 30,000,000,000
+```
+
+---
 
 ## What's Been Implemented
 
 ### Core Features
-- [x] Wallet connection (MetaMask, Trust, Speed)
+- [x] Wallet connection (WalletConnect - read-only)
 - [x] Dashboard with feature grid
-- [x] MOVE tab - Step tracking
-- [x] PLAY tab - Games (zBrickles, zTrivia, zTetris, zSlots)
-- [x] SHOP tab - Zupreme Imports marketplace with carousel
-- [x] SWAP tab - Token exchange with live prices
+- [x] MOVE tab - Step tracking with rewards
+- [x] PLAY tab - Games (zBrickles, zTrivia)
+- [x] SHOP tab - Marketplace with carousel
+- [x] SWAP tab - **Embedded external swap services**
 - [x] PWA Support
 
 ### Token System
-- [x] ZWAP! Coin - Main reward token
-- [x] Z Points - Game-only loyalty currency (1000 zPts = 1 ZWAP)
-- [x] Daily Z Points Caps: **75 Starter / 150 Plus**
+- [x] ZWAP! Coin - Main reward token (in-app tracking)
+- [x] Z Points - Game-only loyalty currency
+- [x] Daily earning caps enforced
 
-### Subscriptions
-- [x] Starter tier (free) - 2 games, 75 zPts/day
-- [x] Plus tier ($12.99/mo) - 4 games, 150 zPts/day, 1.5x rewards
-- [x] Stripe checkout integration
-
-### User Profile
-- [x] Editable username
-- [x] Editable avatar (emoji selection)
-- [x] Stats display (earned, steps, games, points)
-- [x] Tier benefits display
-
-### Leaderboard
-- [x] Backend APIs for stats, rankings, user rank
-- [x] Live data in NewsTicker
-
-### Settings Pages
-- [x] Profile page (editable)
-- [x] Contact page
-- [x] Privacy Policy
-- [x] Terms of Use
-- [x] FAQs (About page)
+### Compliance Updates (Jan 2025)
+- [x] SwapTab rewritten - Uses embedded iframe for external services
+- [x] Language updated - "Reward Balances", "Linked Wallet", "In-App Rewards"
+- [x] "Record Rewards" replaces "Claim" for in-app actions
+- [x] Read-only notices added to balance displays
+- [x] Terms of Use updated with compliant language
+- [x] Compliance constants file created
 
 ### UI/UX
 - [x] Animated splash screen
 - [x] Glowing icons on all tabs
-- [x] First-time user prompt
-- [x] "Get Started" button on About page
-- [x] AboutPage scrolling fixed (Jan 10, 2025)
+- [x] Profile badge with settings indicator
+- [x] Scrollable sidebar
+- [x] AboutPage scrolling fixed
 
-### Blockchain Integration (Jan 10, 2025)
-- [x] **REAL ZWAP Token Contract Connected** on Polygon
-  - Contract Address: `0xe8898453af13b9496a6e8ada92c6efdaf4967a81`
-  - Network: Polygon Mainnet (Chain ID: 137)
-  - Symbol: ZWAP
-  - Decimals: 18
-  - Total Supply: 30,000,000,000 (30 billion)
-- [x] `/api/blockchain/contract-info` - Returns verified contract data
-- [x] `/api/blockchain/balance/{wallet}` - Returns REAL on-chain balance
-- [x] On-chain balance display in AppHeader
-- [x] Alchemy RPC integration configured
+---
 
-## Current Status: HYBRID (Partial Real Integration)
+## Feature Details
 
-### REAL (On-Chain):
-✅ ZWAP token balance reading from Polygon blockchain
-✅ Contract info verification
-✅ Wallet connection via WalletConnect
+### SWAP Tab (Compliant Design)
+```
+User Flow:
+1. User opens SWAP tab
+2. Sees reward balances (read-only display)
+3. Sees live prices (information only)
+4. Chooses external service (Jumper, 1inch, QuickSwap)
+5. Service opens in embedded iframe
+6. User connects wallet IN the external service
+7. User completes swap via third-party
+8. User closes embedded window, returns to app
+```
 
-### STILL SIMULATED:
-⚠️ In-app ZWAP balance (database only, not synced with chain)
-⚠️ Swap execution (updates database, not real DEX)
-⚠️ Subscription money (Stripe test mode)
-⚠️ Reward distribution (no on-chain transfers yet)
+**Compliance:**
+- App does NOT process transactions
+- External service handles all wallet connections
+- Clear labeling: "External Service • Swaps processed externally"
+- No signing occurs in ZWAP! app code
+
+### Future: Claim to Wallet
+```
+Planned Flow:
+1. User taps "Claim to Wallet"
+2. App shows claim amount and destination
+3. User confirms in their wallet app (external)
+4. Treasury wallet sends tokens on-chain
+5. Transaction confirmed, balances updated
+```
+
+**Key:** User must sign externally. App never initiates transactions.
+
+---
 
 ## Prioritized Backlog
 
-### P0 (Immediate Next Steps)
-- [ ] Verify ZWAP contract on PolygonScan using ZWAPCoin_Optimized.sol
-- [ ] Implement real token swaps (1inch/Li.Fi backend integration)
-- [ ] Stripe webhook for automatic tier upgrades
-- [ ] Ad integration (rewarded video between game rounds)
+### P0 (Ready for Store Submission)
+- [x] Compliant SWAP tab (embedded external services)
+- [x] Compliant language throughout app
+- [x] Read-only wallet display
+- [ ] Final compliance review
+- [ ] App Store metadata preparation
 
-### P1 (Ready for Production)
-- [ ] ZWAP faucet/reward distribution (treasury wallet sends real tokens)
-- [ ] Switch to Stripe live mode
-- [ ] Sync on-chain and in-app balances
+### P1 (Post-Launch)
+- [ ] Claim to Wallet feature (external signing)
+- [ ] Stripe webhook for subscriptions
+- [ ] Ad integration (rewarded video)
+- [ ] Native app builds (Capacitor)
 
-### P2 (Feature Enhancements)
-- [ ] Implement zTetris and zSlots games (full gameplay)
-- [ ] Real DEX swap integration (custom backend with 1inch)
-- [ ] Geolocation for local leaderboards
-- [ ] Progressive game difficulty
+### P2 (Future)
+- [ ] Real token distribution from treasury
+- [ ] Additional games
+- [ ] Higher subscription tiers
 
-### P3 (Future)
-- [ ] Higher tiers ($XHI token, Sustainer)
-- [ ] NFT rewards
-- [ ] Referral system
-- [ ] Add USDT to SWAP tab
+---
 
-## Key Technical Details
+## Ownership Structure
 
-### ZWAP Contract
-```
-Address: 0xe8898453af13b9496a6e8ada92c6efdaf4967a81
-Network: Polygon PoS (Chain ID: 137)
-Owner/Deployer: 0x85EaDbB165cf4c8202d33562DfaeeA0b632B0849
-Solidity Source: /app/memory/ZWAPCoin_Optimized.sol
-```
+**ZWAP!™️** is a Web3 asset:
+- Owned by: **Zupreme Imports LLC**
+- Operated by: **Gratia Dei Unlimited**
+- Held by: **XOCLON Holdings Inc**
 
-### Environment Configuration
-- Backend: `/app/backend/.env` contains `POLYGON_RPC_URL` (Alchemy)
-- Frontend: Uses `REACT_APP_BACKEND_URL` for API calls
+---
+
+## Key Files
+
+### Compliance
+- `/app/frontend/src/constants/compliance.js` - Platform-safe language constants
+
+### Components
+- `/app/frontend/src/components/SwapTab.jsx` - Embedded external swap
+- `/app/frontend/src/components/AppHeader.jsx` - Compliant balance display
+- `/app/frontend/src/components/MoveTab.jsx` - "Record Rewards" language
+- `/app/frontend/src/components/TermsPage.jsx` - Updated legal terms
+
+### Backend
+- `/app/backend/server.py` - All API endpoints (no tx signing)
