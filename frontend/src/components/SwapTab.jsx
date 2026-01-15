@@ -73,13 +73,23 @@ const TOKENS = {
 };
 
 const TokenIcon = ({ token, size = "md" }) => {
-  const sizeClasses = { sm: "w-6 h-6", md: "w-8 h-8", lg: "w-10 h-10" };
+  const sizeClasses = { sm: "w-7 h-7", md: "w-9 h-9", lg: "w-11 h-11" };
+  const imgSizes = { sm: "w-5 h-5", md: "w-7 h-7", lg: "w-9 h-9" };
+  
   return (
-    <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-800 flex items-center justify-center`}>
-      {CRYPTO_LOGOS[token] ? (
-        <img src={CRYPTO_LOGOS[token]} alt={token} className="w-full h-full object-contain p-1" />
+    <div className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-800 flex items-center justify-center p-1`}>
+      {TOKEN_LOGOS[token] ? (
+        <img 
+          src={TOKEN_LOGOS[token]} 
+          alt={token} 
+          className={`${imgSizes[size]} object-contain`}
+          onError={(e) => { 
+            e.target.style.display = 'none'; 
+            e.target.parentElement.innerHTML = `<span class="text-xs font-bold text-white">${token?.slice(0,2)}</span>`;
+          }}
+        />
       ) : (
-        <span className="text-xs font-bold">{token?.slice(0, 2)}</span>
+        <span className="text-xs font-bold text-white">{token?.slice(0, 2)}</span>
       )}
     </div>
   );
