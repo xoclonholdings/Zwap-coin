@@ -19,6 +19,7 @@ import ProfilePage from "@/components/ProfilePage";
 import ContactPage from "@/components/ContactPage";
 import PrivacyPage from "@/components/PrivacyPage";
 import TermsPage from "@/components/TermsPage";
+import AdminPanel from "@/components/AdminPanel";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
