@@ -99,11 +99,10 @@ export default function AboutPage() {
           </motion.h2>
 
           <div className="grid sm:grid-cols-2 gap-6">
+            {/* ZWAP! COIN - Always visible, no initial animation hiding */}
             <motion.div
               className="p-6 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent"
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1 }}
               whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(0,245,255,0.2)" }}
             >
               <motion.div
@@ -115,9 +114,13 @@ export default function AboutPage() {
                   ]
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4"
+                className="w-14 h-14 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4 overflow-hidden"
               >
-                <Coins className="w-6 h-6 text-cyan-400" />
+                <img 
+                  src={ZWAP_COIN_LOGO} 
+                  alt="ZWAP! Coin" 
+                  className="w-12 h-12 object-contain"
+                />
               </motion.div>
               <h3 className="text-xl font-bold text-cyan-400 mb-2">ZWAP! COIN</h3>
               <p className="text-gray-400 text-sm mb-4">
@@ -131,11 +134,10 @@ export default function AboutPage() {
               </div>
             </motion.div>
 
+            {/* Z POINTS - Always visible */}
             <motion.div
               className="p-6 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-transparent"
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1 }}
               whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(153,69,255,0.2)" }}
             >
               <motion.div
@@ -147,9 +149,9 @@ export default function AboutPage() {
                   ]
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4"
+                className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4"
               >
-                <Zap className="w-6 h-6 text-purple-400" />
+                <Zap className="w-8 h-8 text-purple-400" />
               </motion.div>
               <h3 className="text-xl font-bold text-purple-400 mb-2">Z POINTS</h3>
               <p className="text-gray-400 text-sm mb-4">
@@ -158,7 +160,7 @@ export default function AboutPage() {
               </p>
               <div className="text-xs text-gray-500">
                 • Game-only rewards<br />
-                • Daily caps: 20-30 zPts<br />
+                • Daily caps: 75-150 zPts<br />
                 • Exclusive shop items
               </div>
             </motion.div>
