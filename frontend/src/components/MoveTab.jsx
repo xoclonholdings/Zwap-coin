@@ -150,15 +150,25 @@ export default function MoveTab() {
         </Button>
       </div>
 
-      {/* Record Rewards */}
-      <Button
-        data-testid="claim-steps"
-        onClick={handleClaim}
-        disabled={steps === 0 || isClaiming || isTracking}
-        className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-cyan-500 to-purple-500 mb-4"
-      >
-        {isClaiming ? "Recording..." : `Record ${potentialReward.toFixed(2)} ZWAP`}
-      </Button>
+      {/* Record Rewards - Requires wallet connection */}
+      {walletAddress ? (
+        <Button
+          data-testid="claim-steps"
+          onClick={handleClaim}
+          disabled={steps === 0 || isClaiming || isTracking}
+          className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-cyan-500 to-purple-500 mb-4"
+        >
+          {isClaiming ? "Recording..." : `Claim ${potentialReward.toFixed(2)} ZWAP`}
+        </Button>
+      ) : (
+        <Button
+          data-testid="connect-to-claim"
+          onClick={() => toast.info("Connect your wallet to claim rewards")}
+          className="w-full h-14 text-lg font-semibold bg-gray-700 mb-4"
+        >
+          Connect Wallet to Claim
+        </Button>
+      )}
 
       {/* Tier System */}
       <div className="glass-card p-4 flex-1 rounded-xl">
