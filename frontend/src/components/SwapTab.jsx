@@ -280,7 +280,7 @@ export default function SwapTab() {
         {/* Header Bar */}
         <div className={`flex items-center justify-between bg-gray-900 border-b border-gray-700 ${isFullscreen ? 'px-4 py-2' : 'px-3 py-2 rounded-t-xl'}`}>
           <div className="flex items-center gap-2">
-            <span className="text-xl">{activeService.logo}</span>
+            <ServiceLogo service={activeService} size="sm" />
             <div>
               <p className="text-white font-semibold text-sm">{activeService.name}</p>
               <p className="text-gray-500 text-[10px]">External Service • Pre-filled with your swap details</p>
