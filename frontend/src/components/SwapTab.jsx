@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useApp, api, CRYPTO_LOGOS } from "@/App";
+import { useApp, api } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
