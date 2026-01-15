@@ -234,9 +234,9 @@ export default function AppHeader() {
                       </div>
                     </div>
                     
-                    {/* Read-only notice */}
+                    {/* Balance notice */}
                     <p className="text-[10px] text-gray-600 text-center mt-3 pt-2 border-t border-gray-800">
-                      View only • Claim to wallet coming soon
+                      Balances update in real-time
                     </p>
                     
                     {/* ZWAP Contract Link */}
