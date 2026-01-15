@@ -95,6 +95,27 @@ const TokenIcon = ({ token, size = "md" }) => {
   );
 };
 
+// Service logo component with fallback
+const ServiceLogo = ({ service, size = "md" }) => {
+  const [useFallback, setUseFallback] = React.useState(false);
+  const sizeClasses = { sm: "w-8 h-8", md: "w-10 h-10", lg: "w-12 h-12" };
+  
+  if (useFallback) {
+    return <span className="text-2xl">{service.fallbackLogo}</span>;
+  }
+  
+  return (
+    <div className={`${sizeClasses[size]} rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center`}>
+      <img 
+        src={service.logo} 
+        alt={service.name}
+        className="w-full h-full object-contain p-1.5"
+        onError={() => setUseFallback(true)}
+      />
+    </div>
+  );
+};
+
 // Build pre-filled URLs for each aggregator
 const buildSwapUrl = (service, fromToken, toToken, amount) => {
   const from = TOKENS[fromToken];
