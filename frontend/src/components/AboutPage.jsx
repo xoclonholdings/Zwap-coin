@@ -2,7 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ZWAP_BANG } from "@/App";
-import { ArrowLeft, Footprints, Gamepad2, ArrowRightLeft, ShoppingBag, Coins, Zap, Shield } from "lucide-react";
+import { ArrowLeft, Footprints, Gamepad2, ArrowRightLeft, ShoppingBag, Zap, Shield } from "lucide-react";
+
+// ZWAP Coin logo
+const ZWAP_COIN_LOGO = "https://customer-assets.emergentagent.com/job_zwap-coin-mobile/artifacts/zbcxii5n_D53F824E-1DBA-4963-86D4-4D4E73400DE1.png";
 
 export default function AboutPage() {
   const navigate = useNavigate();
