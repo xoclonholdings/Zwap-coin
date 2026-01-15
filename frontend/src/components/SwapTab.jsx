@@ -13,6 +13,26 @@ import { ArrowRightLeft, X, RefreshCw, Info, Shield, Maximize2, Minimize2, Chevr
  * The embedded service handles all wallet connections and signing.
  */
 
+// Official token logos
+const TOKEN_LOGOS = {
+  ZWAP: "https://customer-assets.emergentagent.com/job_zwap-coin-mobile/artifacts/zbcxii5n_D53F824E-1DBA-4963-86D4-4D4E73400DE1.png",
+  MATIC: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+  USDC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+  USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+  WETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  BTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+  SOL: "https://cryptologos.cc/logos/solana-sol-logo.png",
+  POL: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+};
+
+// Swap service logos
+const SERVICE_LOGOS = {
+  jumper: "https://jumper.exchange/favicon.ico",
+  "1inch": "https://app.1inch.io/assets/images/logo.png",
+  quickswap: "https://quickswap.exchange/logo_circle.png",
+};
+
 // Token configurations with contract addresses on Polygon
 const TOKENS = {
   ZWAP: { 
