@@ -236,7 +236,22 @@ export default function AboutPage() {
               }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <Shield className="w-14 h-14 text-cyan-400 mx-auto mb-4" />
+              {/* Shield is secret admin login - triple tap to access */}
+              <Shield 
+                className="w-14 h-14 text-cyan-400 mx-auto mb-4 cursor-pointer" 
+                onClick={() => {
+                  // Track taps for secret access
+                  const now = Date.now();
+                  const lastTap = window._adminTapTime || 0;
+                  const tapCount = (now - lastTap < 500) ? (window._adminTapCount || 0) + 1 : 1;
+                  window._adminTapTime = now;
+                  window._adminTapCount = tapCount;
+                  if (tapCount >= 3) {
+                    window._adminTapCount = 0;
+                    navigate("/admin");
+                  }
+                }}
+              />
             </motion.div>
             <h2 className="text-xl sm:text-2xl font-bold mb-3">
               <span className="text-cyan-400">BUILT</span>{" "}
