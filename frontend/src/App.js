@@ -390,6 +390,11 @@ function AppContent() {
     );
   }
 
+  // Admin panel - completely separate
+  if (location.pathname === "/admin") {
+    return <AdminPanel />;
+  }
+
   // Settings pages - no main layout
   const settingsPages = ["/profile", "/contact", "/privacy", "/terms"];
   if (settingsPages.includes(location.pathname)) {
