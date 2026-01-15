@@ -445,7 +445,7 @@ export default function SwapTab() {
               whileTap={{ scale: fromAmount ? 0.98 : 1 }}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl">{service.logo}</span>
+                <ServiceLogo service={service} size="md" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-white font-semibold text-sm">{service.name}</p>
