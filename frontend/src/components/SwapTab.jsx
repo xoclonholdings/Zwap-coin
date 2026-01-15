@@ -123,14 +123,15 @@ const buildSwapUrl = (service, fromToken, toToken, amount) => {
   }
 };
 
-// External swap services
+// External swap services with official branding
 const SWAP_SERVICES = [
   {
     id: "jumper",
     name: "Jumper Exchange",
     description: "Cross-chain swaps via Li.Fi",
     baseUrl: "https://jumper.exchange/?fromChain=137&toChain=137",
-    logo: "🌉",
+    logo: "https://jumper.exchange/jumper-icon.svg",
+    fallbackLogo: "🌉",
     recommended: true,
   },
   {
@@ -138,7 +139,8 @@ const SWAP_SERVICES = [
     name: "1inch",
     description: "Best rates via DEX aggregation",
     baseUrl: "https://app.1inch.io/#/137/simple/swap/MATIC/",
-    logo: "🦄",
+    logo: "https://app.1inch.io/assets/images/logo.svg",
+    fallbackLogo: "🦄",
     recommended: false,
   },
   {
@@ -146,7 +148,8 @@ const SWAP_SERVICES = [
     name: "QuickSwap",
     description: "Native Polygon DEX",
     baseUrl: "https://quickswap.exchange/#/swap",
-    logo: "⚡",
+    logo: "https://quickswap.exchange/logo_circle.png",
+    fallbackLogo: "⚡",
     recommended: false,
   },
 ];
