@@ -8,14 +8,49 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Wallet, HelpCircle, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Wallet, HelpCircle, Loader2, X, Maximize2, Minimize2 } from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
-// Wallet icons
+// Wallet providers configuration
+const WALLET_PROVIDERS = [
+  {
+    id: "metamask",
+    name: "MetaMask",
+    color: "#F6851B",
+    icon: "🦊",
+    description: "Popular browser & mobile wallet",
+    // Deep link / Universal link
+    mobileUrl: "https://metamask.app.link/dapp/",
+    webUrl: "https://metamask.io/download/",
+    checkInstalled: () => typeof window !== 'undefined' && window.ethereum?.isMetaMask,
+  },
+  {
+    id: "trust",
+    name: "Trust Wallet",
+    color: "#3375BB",
+    icon: "🛡️",
+    description: "Secure mobile wallet",
+    mobileUrl: "https://link.trustwallet.com/open_url?coin_id=966&url=",
+    webUrl: "https://trustwallet.com/download",
+    checkInstalled: () => typeof window !== 'undefined' && (window.trustwallet || window.ethereum?.isTrust),
+  },
+  {
+    id: "walletconnect",
+    name: "WalletConnect",
+    color: "#3B99FC",
+    icon: "🔗",
+    description: "Connect any mobile wallet",
+    // WalletConnect web interface
+    connectUrl: "https://walletconnect.com/",
+  },
+];
+
+// Wallet icon component
 const WalletIcon = ({ color, children }) => (
   <div 
-    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg"
-    style={{ background: color }}
+    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+    style={{ background: color + "20" }}
   >
     {children}
   </div>
@@ -25,161 +60,131 @@ export default function WalletModal({ open, onOpenChange }) {
   const { connectWallet } = useApp();
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState(null);
-  const [error, setError] = useState(null);
-  const [hasMetaMask, setHasMetaMask] = useState(false);
-  const [hasTrustWallet, setHasTrustWallet] = useState(false);
+  const [embeddedUrl, setEmbeddedUrl] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Check for installed wallets on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setHasMetaMask(typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask);
-      setHasTrustWallet(typeof window.trustwallet !== 'undefined' || 
-        (typeof window.ethereum !== 'undefined' && window.ethereum.isTrust));
-    }
-  }, [open]);
+  // Check if running on mobile
+  const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-  const handleConnect = async (walletType) => {
+  const handleConnect = async (wallet) => {
     setIsConnecting(true);
-    setConnectingWallet(walletType);
-    setError(null);
+    setConnectingWallet(wallet.id);
     
     try {
-      let address = null;
-      
-      if (walletType === "metamask") {
-        if (typeof window.ethereum !== "undefined") {
-          try {
-            // Request account access
-            const accounts = await window.ethereum.request({ 
-              method: "eth_requestAccounts" 
-            });
-            
-            if (accounts && accounts.length > 0) {
-              address = accounts[0];
-              
-              // Switch to Polygon network
-              try {
-                await window.ethereum.request({
-                  method: 'wallet_switchEthereumChain',
-                  params: [{ chainId: '0x89' }], // Polygon chainId
+      // Check if wallet is installed (browser extension)
+      if (wallet.checkInstalled && wallet.checkInstalled()) {
+        // Direct connection via injected provider
+        const provider = wallet.id === 'trust' 
+          ? (window.trustwallet || window.ethereum)
+          : window.ethereum;
+          
+        try {
+          const accounts = await provider.request({ method: "eth_requestAccounts" });
+          if (accounts && accounts.length > 0) {
+            // Switch to Polygon
+            try {
+              await provider.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x89' }],
+              });
+            } catch (switchError) {
+              if (switchError.code === 4902) {
+                await provider.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [{
+                    chainId: '0x89',
+                    chainName: 'Polygon Mainnet',
+                    nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+                    rpcUrls: ['https://polygon-rpc.com'],
+                    blockExplorerUrls: ['https://polygonscan.com'],
+                  }],
                 });
-              } catch (switchError) {
-                // If Polygon not added, add it
-                if (switchError.code === 4902) {
-                  await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
-                      chainId: '0x89',
-                      chainName: 'Polygon Mainnet',
-                      nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
-                      rpcUrls: ['https://polygon-rpc.com'],
-                      blockExplorerUrls: ['https://polygonscan.com'],
-                    }],
-                  });
-                }
               }
             }
-          } catch (err) {
-            if (err.code === 4001) {
-              setError("Connection rejected. Please approve the connection in MetaMask.");
-            } else {
-              setError("Failed to connect to MetaMask. Please try again.");
-            }
-            console.error("MetaMask error:", err);
+            
+            await connectWallet(accounts[0]);
+            toast.success(`Connected: ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`);
+            onOpenChange(false);
+            setIsConnecting(false);
+            return;
           }
-        } else {
-          setError("MetaMask not detected. Please install MetaMask extension.");
-          window.open("https://metamask.io/download/", "_blank");
-        }
-      } 
-      
-      else if (walletType === "trust") {
-        // Check for Trust Wallet
-        const trustProvider = window.trustwallet || 
-          (window.ethereum?.isTrust ? window.ethereum : null);
-        
-        if (trustProvider) {
-          try {
-            const accounts = await trustProvider.request({ 
-              method: "eth_requestAccounts" 
-            });
-            if (accounts && accounts.length > 0) {
-              address = accounts[0];
-            }
-          } catch (err) {
-            if (err.code === 4001) {
-              setError("Connection rejected. Please approve in Trust Wallet.");
-            } else {
-              setError("Failed to connect to Trust Wallet.");
-            }
-          }
-        } else {
-          setError("Trust Wallet not detected. Please open this app in Trust Wallet browser.");
-          // Deep link to Trust Wallet
-          const dappUrl = encodeURIComponent(window.location.href);
-          window.location.href = `https://link.trustwallet.com/open_url?coin_id=60&url=${dappUrl}`;
-        }
-      }
-      
-      else if (walletType === "walletconnect") {
-        // For WalletConnect, we'll use a QR code modal approach
-        try {
-          // Dynamic import to avoid SSR issues
-          const { createWeb3Modal } = await import('@web3modal/wagmi/react');
-          // Open the Web3Modal
-          // For now, show instructions
-          setError("WalletConnect: Scan QR code with your mobile wallet app.");
-          toast.info("Opening WalletConnect...");
-          
-          // Fallback: Open WalletConnect directly
-          window.open("https://walletconnect.com/", "_blank");
         } catch (err) {
-          setError("WalletConnect setup needed. Please use MetaMask or Trust Wallet.");
+          console.error("Direct connection error:", err);
         }
       }
       
-      // If we got an address, connect
-      if (address) {
-        await connectWallet(address);
-        toast.success(`Connected: ${address.slice(0, 6)}...${address.slice(-4)}`);
-        onOpenChange(false);
+      // If not installed or direct connection failed, open embedded/external
+      if (wallet.id === "walletconnect") {
+        // Open WalletConnect in embedded view
+        setEmbeddedUrl("https://walletconnect.com/");
+      } else if (isMobile && wallet.mobileUrl) {
+        // On mobile, use deep link
+        const currentUrl = encodeURIComponent(window.location.href);
+        window.location.href = wallet.mobileUrl + currentUrl;
+      } else {
+        // On desktop without extension, show download page in embedded
+        setEmbeddedUrl(wallet.webUrl);
       }
       
     } catch (error) {
       console.error("Wallet connection error:", error);
-      setError("Connection failed. Please try again.");
-    } finally {
-      setIsConnecting(false);
-      setConnectingWallet(null);
+      toast.error("Connection failed. Please try again.");
     }
+    
+    setIsConnecting(false);
+    setConnectingWallet(null);
   };
 
-  const wallets = [
-    {
-      id: "metamask",
-      name: "MetaMask",
-      color: "#F6851B",
-      icon: "🦊",
-      installed: hasMetaMask,
-      description: hasMetaMask ? "Detected" : "Popular browser wallet",
-    },
-    {
-      id: "trust",
-      name: "Trust Wallet",
-      color: "#3375BB",
-      icon: "🛡️",
-      installed: hasTrustWallet,
-      description: hasTrustWallet ? "Detected" : "Mobile wallet",
-    },
-    {
-      id: "walletconnect",
-      name: "WalletConnect",
-      color: "#3B99FC",
-      icon: "🔗",
-      installed: true,
-      description: "Connect any wallet via QR",
-    },
-  ];
+  const closeEmbedded = () => {
+    setEmbeddedUrl(null);
+    setIsFullscreen(false);
+  };
+
+  // If embedded view is active
+  if (embeddedUrl) {
+    return (
+      <div className={`fixed inset-0 z-50 bg-[#0a0b1e] flex flex-col ${isFullscreen ? '' : 'p-4'}`}>
+        {/* Header */}
+        <div className={`flex items-center justify-between bg-gray-900 border-b border-gray-700 ${isFullscreen ? 'px-4 py-2' : 'px-3 py-2 rounded-t-xl'}`}>
+          <div className="flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-cyan-400" />
+            <div>
+              <p className="text-white font-semibold text-sm">Connect Wallet</p>
+              <p className="text-gray-500 text-[10px]">Sign in or download wallet</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setIsFullscreen(!isFullscreen)} className="p-2 text-gray-400 hover:text-white">
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+            <button onClick={closeEmbedded} className="p-2 text-gray-400 hover:text-red-400">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Embedded Content */}
+        <div className={`flex-1 bg-white ${isFullscreen ? '' : 'rounded-b-xl overflow-hidden'}`}>
+          <iframe
+            src={embeddedUrl}
+            title="Wallet Connection"
+            className="w-full h-full border-0"
+            allow="clipboard-write; clipboard-read"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
+          />
+        </div>
+
+        {/* Bottom Notice */}
+        {!isFullscreen && (
+          <div className="bg-gray-900 px-3 py-2 rounded-b-xl border-t border-gray-700 mt-1">
+            <p className="text-[10px] text-gray-500 text-center">
+              After connecting in your wallet app, return here to continue
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -190,59 +195,57 @@ export default function WalletModal({ open, onOpenChange }) {
             Connect Wallet
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            Connect your wallet to save progress and earn rewards on Polygon network.
+            Connect your wallet to save progress and earn rewards on Polygon.
           </DialogDescription>
         </DialogHeader>
-
-        {/* Error Message */}
-        {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-400">{error}</p>
-          </div>
-        )}
         
         <div className="space-y-3 mt-4">
-          {wallets.map((wallet) => (
-            <Button
-              key={wallet.id}
-              data-testid={`wallet-${wallet.id}`}
-              onClick={() => handleConnect(wallet.id)}
-              disabled={isConnecting}
-              className="w-full wallet-btn h-16 flex items-center justify-start gap-4 bg-[#141530] hover:bg-[#1a1b40] text-white"
-              variant="ghost"
-            >
-              <WalletIcon color={wallet.color}>{wallet.icon}</WalletIcon>
-              <div className="flex-1 text-left">
-                <div className="font-medium flex items-center gap-2">
-                  {wallet.name}
-                  {wallet.installed && wallet.id !== "walletconnect" && (
-                    <CheckCircle2 className="w-4 h-4 text-green-400" />
-                  )}
+          {WALLET_PROVIDERS.map((wallet) => {
+            const isInstalled = wallet.checkInstalled?.();
+            
+            return (
+              <motion.button
+                key={wallet.id}
+                data-testid={`wallet-${wallet.id}`}
+                onClick={() => handleConnect(wallet)}
+                disabled={isConnecting}
+                className="w-full h-16 flex items-center gap-4 px-4 bg-[#141530] hover:bg-[#1a1b40] rounded-xl transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <WalletIcon color={wallet.color}>{wallet.icon}</WalletIcon>
+                <div className="flex-1 text-left">
+                  <div className="font-medium text-white flex items-center gap-2">
+                    {wallet.name}
+                    {isInstalled && (
+                      <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                        Installed
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">{wallet.description}</div>
                 </div>
-                <div className="text-xs text-gray-500">{wallet.description}</div>
-              </div>
-              {isConnecting && connectingWallet === wallet.id && (
-                <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
-              )}
-            </Button>
-          ))}
+                {isConnecting && connectingWallet === wallet.id && (
+                  <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+                )}
+              </motion.button>
+            );
+          })}
           
+          {/* Help option */}
           <div className="border-t border-gray-800 pt-4 mt-4">
-            <Button
-              data-testid="wallet-help"
-              onClick={() => window.open("https://metamask.io/download/", "_blank")}
-              className="w-full wallet-btn h-14 flex items-center justify-start gap-4 bg-[#141530]/50 hover:bg-[#1a1b40] text-gray-400 hover:text-white"
-              variant="ghost"
+            <button
+              onClick={() => setEmbeddedUrl("https://metamask.io/download/")}
+              className="w-full h-14 flex items-center gap-4 px-4 bg-[#141530]/50 hover:bg-[#1a1b40] rounded-xl text-gray-400 hover:text-white transition-colors"
             >
-              <div className="w-10 h-10 rounded-xl bg-gray-700/50 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-gray-700/50 flex items-center justify-center">
                 <HelpCircle className="w-5 h-5" />
               </div>
               <div className="text-left">
                 <div className="font-medium">I need a wallet</div>
-                <div className="text-xs text-gray-500">Get MetaMask (free)</div>
+                <div className="text-xs text-gray-500">Get started with MetaMask</div>
               </div>
-            </Button>
+            </button>
           </div>
 
           {/* Network Info */}
