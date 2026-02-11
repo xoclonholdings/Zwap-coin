@@ -13,7 +13,7 @@ export default function MoveTab() {
   const lastAcceleration = useRef({ x: 0, y: 0, z: 0 });
 
   const tierConfig = TIERS[user?.tier || "starter"];
-  const multiplier = tierConfig.multiplier;
+  const multiplier = tierConfig?.multiplier || 1;
 
   const calculateRewards = (stepCount) => {
     let base;
@@ -33,6 +33,7 @@ export default function MoveTab() {
 
     let stepBuffer = 0;
     let lastStepTime = 0;
+    let intervalFallback;
 
     const handleMotion = (event) => {
       const { x, y, z } = event.accelerationIncludingGravity || event.acceleration || {};
@@ -42,35 +43,44 @@ export default function MoveTab() {
       const deltaY = Math.abs(y - lastAcceleration.current.y);
       const deltaZ = Math.abs(z - lastAcceleration.current.z);
       const magnitude = Math.sqrt(deltaX ** 2 + deltaY ** 2 + deltaZ ** 2);
-      
+
       const now = Date.now();
       if (magnitude > 1.2 && now - lastStepTime > 300) {
         stepBuffer++;
         lastStepTime = now;
-        if (stepBuffer >= 1) {
-          setSteps(prev => prev + stepBuffer);
-          stepBuffer = 0;
-        }
+        setSteps(prev => prev + stepBuffer);
+        stepBuffer = 0;
       }
+
       lastAcceleration.current = { x: x || 0, y: y || 0, z: z || 0 };
     };
 
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission().then(permission => {
-        if (permission === 'granted') window.addEventListener('devicemotion', handleMotion);
-        else {
-          const interval = setInterval(() => setSteps(prev => prev + Math.floor(Math.random() * 3) + 1), 1000);
-          return () => clearInterval(interval);
-        }
-      }).catch(console.error);
-    } else if (typeof DeviceMotionEvent !== 'undefined') {
-      window.addEventListener('devicemotion', handleMotion);
-    } else {
-      const interval = setInterval(() => setSteps(prev => prev + Math.floor(Math.random() * 5) + 1), 800);
-      return () => clearInterval(interval);
-    }
+    const setupMotion = () => {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(permission => {
+            if (permission === 'granted') {
+              window.addEventListener('devicemotion', handleMotion);
+            } else {
+              // fallback interval if permission denied
+              intervalFallback = setInterval(() => setSteps(prev => prev + Math.floor(Math.random() * 3) + 1), 1000);
+            }
+          })
+          .catch(console.error);
+      } else if (typeof DeviceMotionEvent !== 'undefined') {
+        window.addEventListener('devicemotion', handleMotion);
+      } else {
+        // non-mobile fallback
+        intervalFallback = setInterval(() => setSteps(prev => prev + Math.floor(Math.random() * 5) + 1), 800);
+      }
+    };
 
-    return () => window.removeEventListener('devicemotion', handleMotion);
+    setupMotion();
+
+    return () => {
+      window.removeEventListener('devicemotion', handleMotion);
+      if (intervalFallback) clearInterval(intervalFallback);
+    };
   }, [isTracking]);
 
   const handleStartStop = async () => {
@@ -80,27 +90,37 @@ export default function MoveTab() {
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
         try {
           const permission = await DeviceMotionEvent.requestPermission();
-          if (permission !== 'granted') { toast.error("Motion permission required"); return; }
-        } catch (error) { console.error(error); }
+          if (permission !== 'granted') {
+            toast.error("Motion permission required");
+            return;
+          }
+        } catch (error) {
+          console.error(error);
+        }
       }
       setIsTracking(true);
       toast.success("Tracking started!");
     }
   };
 
-  const handleReset = () => { setSteps(0); setPotentialReward(0); };
+  const handleReset = () => {
+    setSteps(0);
+    setPotentialReward(0);
+  };
 
   const handleClaim = async () => {
     if (steps === 0) return;
     setIsClaiming(true);
     try {
-      const result = await api.claimStepRewards(walletAddress, steps);
+      await api.claimStepRewards(walletAddress, steps);
       toast.success("Rewards recorded to your account!");
       await refreshUser();
-      setSteps(0);
-      setPotentialReward(0);
-    } catch (error) { toast.error("Failed to record rewards"); }
-    finally { setIsClaiming(false); }
+      handleReset();
+    } catch (error) {
+      toast.error("Failed to record rewards");
+    } finally {
+      setIsClaiming(false);
+    }
   };
 
   const tiers = [
