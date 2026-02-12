@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useApp, api } from "@/App";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,53 +12,60 @@ export default function SubscriptionSuccess() {
   const [status, setStatus] = useState("checking"); // checking, activating, success, error
   const [attempts, setAttempts] = useState(0);
 
+  // Poll payment status
+  const pollPaymentStatus = useCallback(
+    async (sessionId, attempt = 0) => {
+      if (attempt >= 5) {
+        setStatus("error");
+        return;
+      }
+      try {
+        const result = await api.getSubscriptionStatus(sessionId);
+
+        if (result.payment_status === "paid") {
+          setStatus("activating");
+          await activateSubscription(sessionId);
+        } else if (result.status === "expired") {
+          setStatus("error");
+        } else {
+          // Continue polling
+          setAttempts(attempt + 1);
+          setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
+        }
+      } catch (error) {
+        console.error("Error checking status:", error);
+        setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
+      }
+    },
+    [walletAddress]
+  );
+
+  // Activate subscription
+  const activateSubscription = useCallback(
+    async (sessionId) => {
+      try {
+        await api.activateSubscription(walletAddress, sessionId);
+        await refreshUser();
+        setStatus("success");
+        toast.success("Plus subscription activated!");
+      } catch (error) {
+        console.error("Activation error:", error);
+        setStatus("error");
+        toast.error(error?.message || "Activation failed");
+      }
+    },
+    [walletAddress, refreshUser]
+  );
+
+  // On mount, start polling
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
     if (!sessionId) {
       setStatus("error");
       return;
     }
-
     pollPaymentStatus(sessionId);
-  }, [searchParams]);
-
-  const pollPaymentStatus = async (sessionId, attempt = 0) => {
-    if (attempt >= 5) {
-      setStatus("error");
-      return;
-    }
-
-    try {
-      const result = await api.getSubscriptionStatus(sessionId);
-      
-      if (result.payment_status === "paid") {
-        setStatus("activating");
-        await activateSubscription(sessionId);
-      } else if (result.status === "expired") {
-        setStatus("error");
-      } else {
-        // Continue polling
-        setAttempts(attempt + 1);
-        setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
-      }
-    } catch (error) {
-      console.error("Error checking status:", error);
-      setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
-    }
-  };
-
-  const activateSubscription = async (sessionId) => {
-    try {
-      await api.activateSubscription(walletAddress, sessionId);
-      await refreshUser();
-      setStatus("success");
-      toast.success("Plus subscription activated!");
-    } catch (error) {
-      console.error("Activation error:", error);
-      setStatus("error");
-      toast.error(error.message || "Activation failed");
-    }
-  };
+  }, [searchParams, pollPaymentStatus]);
 
   return (
     <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col items-center justify-center p-6">
@@ -85,7 +92,7 @@ export default function SubscriptionSuccess() {
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Welcome to Plus! 🎉</h2>
           <p className="text-gray-400 mb-6">You now have access to all premium features</p>
-          
+
           <div className="glass-card p-4 mb-6 text-left">
             <div className="flex items-center gap-2 mb-3">
               <Crown className="w-5 h-5 text-yellow-400" />
@@ -100,7 +107,10 @@ export default function SubscriptionSuccess() {
             </ul>
           </div>
 
-          <Button onClick={() => navigate("/dashboard")} className="bg-cyan-500 hover:bg-cyan-600">
+          <Button
+            onClick={() => navigate("/dashboard")}
+            className="bg-cyan-500 hover:bg-cyan-600"
+          >
             Go to Dashboard
           </Button>
         </div>
@@ -113,7 +123,11 @@ export default function SubscriptionSuccess() {
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
           <p className="text-gray-400 mb-6">We couldn't process your subscription</p>
-          <Button onClick={() => navigate("/dashboard")} variant="outline" className="border-gray-600">
+          <Button
+            onClick={() => navigate("/dashboard")}
+            variant="outline"
+            className="border-gray-600"
+          >
             Return to Dashboard
           </Button>
         </div>
