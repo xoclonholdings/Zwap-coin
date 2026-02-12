@@ -12,37 +12,15 @@ export default function SubscriptionSuccess() {
   const [status, setStatus] = useState("checking"); // checking, activating, success, error
   const [attempts, setAttempts] = useState(0);
 
-  // 1️⃣ Wrap pollPaymentStatus in useCallback so ESLint knows it's stable
-  const pollPaymentStatus = useCallback(
-    async (sessionId, attempt = 0) => {
-      if (attempt >= 5) {
-        setStatus("error");
-        return;
-      }
-      try {
-        const result = await api.getSubscriptionStatus(sessionId);
+  // ---------------------------
+  // Stable function definitions
+  // ---------------------------
 
-        if (result.payment_status === "paid") {
-          setStatus("activating");
-          await activateSubscription(sessionId);
-        } else if (result.status === "expired") {
-          setStatus("error");
-        } else {
-          setAttempts(attempt + 1);
-          setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
-        }
-      } catch (error) {
-        console.error("Error checking status:", error);
-        setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
-      }
-    },
-    [walletAddress] // any values referenced inside must be included
-  );
-
-  // 2️⃣ Wrap activateSubscription in useCallback as well
+  // 1️⃣ Wrap activateSubscription in useCallback
   const activateSubscription = useCallback(
     async (sessionId) => {
       try {
+        setStatus("activating");
         await api.activateSubscription(walletAddress, sessionId);
         await refreshUser();
         setStatus("success");
@@ -56,7 +34,37 @@ export default function SubscriptionSuccess() {
     [walletAddress, refreshUser]
   );
 
-  // 3️⃣ useEffect now lists pollPaymentStatus, so ESLint warning disappears
+  // 2️⃣ Wrap pollPaymentStatus in useCallback and include activateSubscription in deps
+  const pollPaymentStatus = useCallback(
+    async (sessionId, attempt = 0) => {
+      if (attempt >= 5) {
+        setStatus("error");
+        return;
+      }
+
+      try {
+        const result = await api.getSubscriptionStatus(sessionId);
+
+        if (result.payment_status === "paid") {
+          await activateSubscription(sessionId); // ✅ stable reference
+        } else if (result.status === "expired") {
+          setStatus("error");
+        } else {
+          setAttempts(attempt + 1);
+          setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
+        }
+      } catch (error) {
+        console.error("Error checking status:", error);
+        setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
+      }
+    },
+    [activateSubscription] // ✅ added missing dependency
+  );
+
+  // ---------------------------
+  // Effects
+  // ---------------------------
+
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
     if (!sessionId) {
@@ -65,6 +73,10 @@ export default function SubscriptionSuccess() {
     }
     pollPaymentStatus(sessionId);
   }, [searchParams, pollPaymentStatus]);
+
+  // ---------------------------
+  // Render
+  // ---------------------------
 
   return (
     <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col items-center justify-center p-6">
