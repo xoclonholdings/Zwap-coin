@@ -12,7 +12,7 @@ export default function SubscriptionSuccess() {
   const [status, setStatus] = useState("checking"); // checking, activating, success, error
   const [attempts, setAttempts] = useState(0);
 
-  // Poll payment status
+  // 1️⃣ Wrap pollPaymentStatus in useCallback so ESLint knows it's stable
   const pollPaymentStatus = useCallback(
     async (sessionId, attempt = 0) => {
       if (attempt >= 5) {
@@ -28,7 +28,6 @@ export default function SubscriptionSuccess() {
         } else if (result.status === "expired") {
           setStatus("error");
         } else {
-          // Continue polling
           setAttempts(attempt + 1);
           setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
         }
@@ -37,10 +36,10 @@ export default function SubscriptionSuccess() {
         setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
       }
     },
-    [walletAddress]
+    [walletAddress] // any values referenced inside must be included
   );
 
-  // Activate subscription
+  // 2️⃣ Wrap activateSubscription in useCallback as well
   const activateSubscription = useCallback(
     async (sessionId) => {
       try {
@@ -57,7 +56,7 @@ export default function SubscriptionSuccess() {
     [walletAddress, refreshUser]
   );
 
-  // On mount, start polling
+  // 3️⃣ useEffect now lists pollPaymentStatus, so ESLint warning disappears
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
     if (!sessionId) {
