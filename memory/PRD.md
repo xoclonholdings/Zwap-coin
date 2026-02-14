@@ -171,3 +171,55 @@ Planned Flow:
 
 ### Backend
 - `/app/backend/server.py` - All API endpoints (no tx signing)
+- `/app/backend/admin_routes.py` - Admin panel endpoints (users, treasury, games, marketplace, swap, account settings)
+
+### Admin Panel
+- `/app/frontend/src/components/AdminPanel.jsx` - Full admin panel frontend
+- Access: `/admin` route, triggered by triple-tapping shield icon on About page
+- Login: Admin API key (default from env: `ADMIN_API_KEY`)
+- Sections: Dashboard, Users, Treasury, Games, Marketplace, Swap Config, Settings, Account
+- Account Settings (Completed Dec 2025):
+  - Change admin key (stored as SHA-256 hash in `admin_settings` collection)
+  - Update admin email and notification preferences  
+  - Dual authentication: env var key OR database-stored hash key
+  - Last login and key change timestamps tracked
+
+---
+
+## Admin Panel DB Collections
+- `admin_settings` - Admin credentials and preferences (`_id: "admin"`)
+- `admin_logs` - Audit trail of all admin actions
+- `system_config` - System-wide settings (maintenance mode, claim limits)
+- `game_configs` - Per-game configuration
+- `swap_configs` - Per-token swap settings
+- `rewards_ledger` - Immutable rewards audit trail
+
+---
+
+## Completed Work (Dec 2025)
+- [x] Admin Account Settings - Change key, email, notifications
+- [x] Dual admin auth (env var + DB hash)
+- [x] Full admin panel with 8 sections
+- [x] Codebase imported from GitHub repo
+
+## Prioritized Remaining Tasks
+
+### P0 (Critical)
+- [ ] Real on-chain ZWAP token claims (treasury → user wallet)
+- [ ] Final compliance review
+
+### P1 (High)
+- [ ] Stripe webhook automation for subscription upgrades
+- [ ] Anti-cheat system (GPS spoofing/bot detection)
+- [ ] Ad integration (web-compatible, not Unity Ads)
+
+### P2 (Medium)  
+- [ ] Progressive game difficulty
+- [ ] New games: zTetris, zSlots
+- [ ] Reward caps enforcement per tier
+- [ ] Add USDT to SWAP tab
+- [ ] Higher tiers (Sustainer)
+
+### P3 (Backlog)
+- [ ] Native app builds (Capacitor)
+- [ ] App Store metadata
