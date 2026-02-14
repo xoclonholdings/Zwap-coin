@@ -588,6 +588,177 @@ const SwapConfigSection = () => {
   );
 };
 
+// Account Section
+const AccountSection = () => {
+  const [settings, setSettings] = useState({ admin_email: "", notification_enabled: true, two_factor_enabled: false });
+  const [keyForm, setKeyForm] = useState({ current_key: "", new_key: "", confirm_key: "" });
+  const [loading, setLoading] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [changingKey, setChangingKey] = useState(false);
+
+  useEffect(() => { loadSettings(); }, []);
+
+  const loadSettings = async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.get("/account/settings");
+      setSettings(data);
+    } catch { toast.error("Failed to load account settings"); }
+    setLoading(false);
+  };
+
+  const saveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await adminApi.put("/account/settings", {
+        admin_email: settings.admin_email,
+        notification_enabled: settings.notification_enabled,
+        two_factor_enabled: settings.two_factor_enabled,
+      });
+      toast.success("Settings saved");
+    } catch { toast.error("Failed to save settings"); }
+    setSavingSettings(false);
+  };
+
+  const changeKey = async () => {
+    if (keyForm.new_key !== keyForm.confirm_key) {
+      toast.error("New keys don't match");
+      return;
+    }
+    if (keyForm.new_key.length < 12) {
+      toast.error("New key must be at least 12 characters");
+      return;
+    }
+    setChangingKey(true);
+    try {
+      const res = await fetch(`${API}/admin/account/change-key`, {
+        method: "POST",
+        headers: { ...adminApi.headers(), "Content-Type": "application/json" },
+        body: JSON.stringify({ current_key: keyForm.current_key, new_key: keyForm.new_key }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed");
+      localStorage.setItem("zwap_admin_key", keyForm.new_key);
+      toast.success("Admin key changed successfully");
+      setKeyForm({ current_key: "", new_key: "", confirm_key: "" });
+      loadSettings();
+    } catch (e) { toast.error(e.message || "Failed to change key"); }
+    setChangingKey(false);
+  };
+
+  if (loading) return <div className="text-gray-400 text-center py-8">Loading account settings...</div>;
+
+  return (
+    <div className="space-y-6">
+      <h2 data-testid="account-settings-title" className="text-xl font-bold text-white">Account Settings</h2>
+
+      {/* Change Admin Key */}
+      <div data-testid="change-key-section" className="p-5 rounded-xl border border-red-500/30 bg-red-500/5 space-y-4">
+        <h3 className="text-white font-semibold flex items-center gap-2">
+          <Lock className="w-5 h-5 text-red-400" />
+          Change Admin Key
+        </h3>
+        <p className="text-gray-400 text-sm">Your key is securely hashed. After changing, you will need to use the new key to log in.</p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-gray-400 text-sm block mb-1">Current Key</label>
+            <Input
+              data-testid="current-key-input"
+              type="password"
+              placeholder="Enter current admin key"
+              value={keyForm.current_key}
+              onChange={(e) => setKeyForm({ ...keyForm, current_key: e.target.value })}
+              className="bg-gray-800 border-gray-700"
+            />
+          </div>
+          <div>
+            <label className="text-gray-400 text-sm block mb-1">New Key (min 12 characters)</label>
+            <Input
+              data-testid="new-key-input"
+              type="password"
+              placeholder="Enter new admin key"
+              value={keyForm.new_key}
+              onChange={(e) => setKeyForm({ ...keyForm, new_key: e.target.value })}
+              className="bg-gray-800 border-gray-700"
+            />
+          </div>
+          <div>
+            <label className="text-gray-400 text-sm block mb-1">Confirm New Key</label>
+            <Input
+              data-testid="confirm-key-input"
+              type="password"
+              placeholder="Confirm new admin key"
+              value={keyForm.confirm_key}
+              onChange={(e) => setKeyForm({ ...keyForm, confirm_key: e.target.value })}
+              className="bg-gray-800 border-gray-700"
+            />
+          </div>
+          <Button
+            data-testid="change-key-button"
+            onClick={changeKey}
+            disabled={changingKey || !keyForm.current_key || !keyForm.new_key || !keyForm.confirm_key}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            <Lock className="w-4 h-4 mr-2" /> {changingKey ? "Changing..." : "Change Admin Key"}
+          </Button>
+        </div>
+        {settings.key_last_changed && (
+          <p className="text-gray-500 text-xs">Key last changed: {new Date(settings.key_last_changed).toLocaleString()}</p>
+        )}
+      </div>
+
+      {/* Admin Email & Notifications */}
+      <div data-testid="email-settings-section" className="p-5 rounded-xl border border-gray-700 bg-gray-800/30 space-y-4">
+        <h3 className="text-white font-semibold flex items-center gap-2">
+          <Bell className="w-5 h-5 text-cyan-400" />
+          Admin Email & Notifications
+        </h3>
+        <div>
+          <label className="text-gray-400 text-sm block mb-1">Admin Email</label>
+          <Input
+            data-testid="admin-email-input"
+            type="email"
+            placeholder="admin@example.com"
+            value={settings.admin_email || ""}
+            onChange={(e) => setSettings({ ...settings, admin_email: e.target.value })}
+            className="bg-gray-800 border-gray-700"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-white text-sm">Email Notifications</p>
+            <p className="text-gray-500 text-xs">Receive alerts for suspicious activity</p>
+          </div>
+          <button
+            data-testid="notification-toggle"
+            onClick={() => setSettings({ ...settings, notification_enabled: !settings.notification_enabled })}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              settings.notification_enabled ? "bg-green-500/20 text-green-400" : "bg-gray-700 text-gray-400"
+            }`}
+          >
+            {settings.notification_enabled ? "Enabled" : "Disabled"}
+          </button>
+        </div>
+        <Button
+          data-testid="save-settings-button"
+          onClick={saveSettings}
+          disabled={savingSettings}
+          className="bg-cyan-600 hover:bg-cyan-700"
+        >
+          <Save className="w-4 h-4 mr-2" /> {savingSettings ? "Saving..." : "Save Settings"}
+        </Button>
+      </div>
+
+      {/* Session Info */}
+      {settings.last_login && (
+        <div className="p-4 rounded-xl border border-gray-700 bg-gray-800/30">
+          <p className="text-gray-400 text-sm">Last login: <span className="text-white">{new Date(settings.last_login).toLocaleString()}</span></p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Settings Section
 const SettingsSection = () => {
   const [config, setConfig] = useState({});
