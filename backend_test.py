@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class ZWAPAPITester:
-    def __init__(self, base_url="https://zwap-coin-mobile.preview.emergentagent.com"):
+    def __init__(self, base_url="https://secure-admin-access-2.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.test_wallet = None
