@@ -812,30 +812,30 @@ async def update_admin_settings(settings: AdminSettings):
     
     return {"success": True}
 
-@admin_router.post("/account/change-key")
+@admin_router.post("/account/change-key", dependencies=[Depends(verify_admin)])
 async def change_admin_key(update: AdminKeyUpdate):
     """Change the admin API key"""
     from server import db
     import hashlib
     
-    # Verify current key
-    current_key = os.environ.get("ADMIN_API_KEY", "zwap-admin-secret-2025")
-    
-    # Check against env var or stored hash
+    # Verify current key against env var or stored hash
+    env_key = os.environ.get("ADMIN_API_KEY", "")
     settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
     stored_hash = settings.get("admin_key_hash")
-    
     current_hash = hashlib.sha256(update.current_key.encode()).hexdigest()
     
-    # Verify current key matches either env var or stored hash
-    if update.current_key != current_key and (not stored_hash or current_hash != stored_hash):
+    key_valid = False
+    if env_key and update.current_key == env_key:
+        key_valid = True
+    if stored_hash and current_hash == stored_hash:
+        key_valid = True
+    
+    if not key_valid:
         raise HTTPException(status_code=401, detail="Current key is incorrect")
     
-    # Validate new key
     if len(update.new_key) < 12:
         raise HTTPException(status_code=400, detail="New key must be at least 12 characters")
     
-    # Store new key hash in database
     new_hash = hashlib.sha256(update.new_key.encode()).hexdigest()
     
     await db.admin_settings.update_one(
@@ -853,34 +853,3 @@ async def change_admin_key(update: AdminKeyUpdate):
     })
     
     return {"success": True, "message": "Admin key updated successfully. Use your new key to login."}
-
-# Update verify_admin to check database hash
-async def verify_admin_v2(x_admin_key: str = Header(None)):
-    """Enhanced admin verification that checks both env var and stored hash"""
-    import hashlib
-    from server import db
-    
-    if not x_admin_key:
-        raise HTTPException(status_code=401, detail="Admin key required")
-    
-    # Check env var first
-    env_key = os.environ.get("ADMIN_API_KEY", "zwap-admin-secret-2025")
-    if x_admin_key == env_key:
-        return True
-    
-    # Check stored hash in database
-    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
-    stored_hash = settings.get("admin_key_hash")
-    
-    if stored_hash:
-        provided_hash = hashlib.sha256(x_admin_key.encode()).hexdigest()
-        if provided_hash == stored_hash:
-            # Update last login
-            await db.admin_settings.update_one(
-                {"_id": "admin"},
-                {"$set": {"last_login": datetime.now(timezone.utc)}},
-                upsert=True
-            )
-            return True
-    
-    raise HTTPException(status_code=401, detail="Invalid admin key")
