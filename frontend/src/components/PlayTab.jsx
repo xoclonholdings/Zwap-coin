@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useApp, api, TIERS } from "@/App";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Gamepad2, Play, Coins, Trophy, Lock, Crown, ChevronLeft, HelpCircle } from "lucide-react";
+import { Gamepad2, Play, Trophy, Lock, Crown, ChevronLeft, HelpCircle } from "lucide-react";
 
 // ============ GAME COMPONENTS ============
 
@@ -19,7 +19,6 @@ const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
     const width = canvas.width;
     const height = canvas.height;
 
-    // Difficulty increases with level
     const ballSpeed = 4 + level * 0.5;
     const brickRows = Math.min(4 + Math.floor(level / 2), 7);
 
@@ -71,8 +70,12 @@ const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
       if (game.ball.x <= game.ball.radius || game.ball.x >= width - game.ball.radius) game.ball.dx *= -1;
       if (game.ball.y <= game.ball.radius) game.ball.dy *= -1;
 
-      if (game.ball.y + game.ball.radius >= game.paddle.y && game.ball.y - game.ball.radius <= game.paddle.y + game.paddle.height &&
-          game.ball.x >= game.paddle.x && game.ball.x <= game.paddle.x + game.paddle.width) {
+      if (
+        game.ball.y + game.ball.radius >= game.paddle.y &&
+        game.ball.y - game.ball.radius <= game.paddle.y + game.paddle.height &&
+        game.ball.x >= game.paddle.x &&
+        game.ball.x <= game.paddle.x + game.paddle.width
+      ) {
         game.ball.dy = -Math.abs(game.ball.dy);
         const hitPos = (game.ball.x - game.paddle.x) / game.paddle.width;
         game.ball.dx = (ballSpeed + 2) * (hitPos - 0.5);
@@ -80,8 +83,12 @@ const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
 
       game.bricks.forEach(brick => {
         if (!brick.alive) return;
-        if (game.ball.x >= brick.x && game.ball.x <= brick.x + brick.width &&
-            game.ball.y - game.ball.radius <= brick.y + brick.height && game.ball.y + game.ball.radius >= brick.y) {
+        if (
+          game.ball.x >= brick.x &&
+          game.ball.x <= brick.x + brick.width &&
+          game.ball.y - game.ball.radius <= brick.y + brick.height &&
+          game.ball.y + game.ball.radius >= brick.y
+        ) {
           brick.alive = false;
           game.ball.dy *= -1;
           game.score += 10 + level * 2;
@@ -91,8 +98,15 @@ const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
 
       if (game.ball.y > height) {
         game.lives--;
-        if (game.lives <= 0) { game.isRunning = false; onGameEnd(game.score, game.blocksDestroyed, level); return; }
-        game.ball.x = width / 2; game.ball.y = height - 45; game.ball.dx = ballSpeed; game.ball.dy = -ballSpeed;
+        if (game.lives <= 0) {
+          game.isRunning = false;
+          onGameEnd(game.score, game.blocksDestroyed, level);
+          return;
+        }
+        game.ball.x = width / 2;
+        game.ball.y = height - 45;
+        game.ball.dx = ballSpeed;
+        game.ball.dy = -ballSpeed;
       }
 
       if (game.bricks.every(b => !b.alive)) {
@@ -124,7 +138,8 @@ const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = "#fff"; ctx.font = "12px 'Exo 2'";
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px 'Exo 2'";
       ctx.fillText(`Score: ${game.score} | Lvl: ${level}`, 8, 16);
       ctx.fillText(`❤️`.repeat(game.lives), width - 50, 16);
     };
@@ -143,10 +158,11 @@ const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
     };
   }, [isPlaying, level, onGameEnd]);
 
-  return <canvas ref={canvasRef} width={280} height={320} className="rounded-xl border border-cyan-500/30 mx-auto touch-none" data-testid="game-canvas" />;
+  return <canvas ref={canvasRef} width={280} height={320} className="rounded-xl border border-cyan-500/30 mx-auto touch-none" />;
 };
 
-// zTrivia Game
+// ============ FIXED TRIVIA GAME ============
+
 const TriviaGame = ({ onGameEnd, isPlaying }) => {
   const [questions, setQuestions] = useState([]);
   const [currentQ, setCurrentQ] = useState(0);
@@ -157,9 +173,34 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
   const [difficulty, setDifficulty] = useState(1);
   const startTimeRef = useRef(Date.now());
 
+  // Stable loadQuestions
+  const loadQuestions = useCallback(async () => {
+    try {
+      const qs = await api.getTriviaQuestions(5, difficulty);
+      setQuestions(qs);
+      setCurrentQ(0);
+      setScore(0);
+      setTimeLeft(30);
+      startTimeRef.current = Date.now();
+    } catch {
+      toast.error("Failed to load questions");
+    }
+  }, [difficulty]);
+
+  // Stable handleTimeout
+  const handleTimeout = useCallback(() => {
+    if (currentQ < questions.length - 1) {
+      setCurrentQ(c => c + 1);
+      setTimeLeft(30);
+      startTimeRef.current = Date.now();
+    } else {
+      onGameEnd(score, difficulty);
+    }
+  }, [currentQ, questions.length, score, difficulty, onGameEnd]);
+
   useEffect(() => {
     if (isPlaying) loadQuestions();
-  }, [isPlaying]);
+  }, [isPlaying, loadQuestions]);
 
   useEffect(() => {
     if (!isPlaying || showResult) return;
@@ -173,43 +214,20 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [isPlaying, currentQ, showResult]);
-
-  const loadQuestions = async () => {
-    try {
-      const qs = await api.getTriviaQuestions(5, difficulty);
-      setQuestions(qs);
-      setCurrentQ(0);
-      setScore(0);
-      setTimeLeft(30);
-      startTimeRef.current = Date.now();
-    } catch (error) {
-      toast.error("Failed to load questions");
-    }
-  };
-
-  const handleTimeout = () => {
-    if (currentQ < questions.length - 1) {
-      setCurrentQ(c => c + 1);
-      setTimeLeft(30);
-      startTimeRef.current = Date.now();
-    } else {
-      onGameEnd(score, difficulty);
-    }
-  };
+  }, [isPlaying, currentQ, showResult, handleTimeout]);
 
   const handleAnswer = async (answer) => {
     if (selectedAnswer) return;
     setSelectedAnswer(answer);
-    
+
     const timeTaken = (Date.now() - startTimeRef.current) / 1000;
     const result = await api.checkTriviaAnswer(questions[currentQ].id, answer, timeTaken);
-    
+
     setShowResult(true);
     if (result.correct) {
       const points = 1 + Math.round(result.time_bonus);
       setScore(s => s + points);
-      setDifficulty(d => Math.min(d + 1, 5)); // Increase difficulty on correct
+      setDifficulty(d => Math.min(d + 1, 5));
     }
 
     setTimeout(() => {
@@ -225,25 +243,20 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
     }, 1500);
   };
 
-  if (!questions.length) return <div className="flex items-center justify-center h-64"><div className="text-cyan-400">Loading...</div></div>;
+  if (!questions.length) return <div className="flex items-center justify-center h-64 text-cyan-400">Loading...</div>;
 
   const q = questions[currentQ];
 
   return (
     <div className="w-full max-w-sm mx-auto p-4" data-testid="trivia-game">
-      {/* Progress & Timer */}
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-gray-400 text-sm">Q{currentQ + 1}/{questions.length}</span>
-        <span className="text-cyan-400 font-bold">Score: {score}</span>
-        <span className={`font-mono ${timeLeft < 10 ? 'text-red-400' : 'text-gray-400'}`}>{timeLeft}s</span>
+      <div className="flex justify-between mb-4 text-sm">
+        <span>Q{currentQ + 1}/{questions.length}</span>
+        <span>Score: {score}</span>
+        <span className={`${timeLeft < 10 ? 'text-red-400' : 'text-gray-400'}`}>{timeLeft}s</span>
       </div>
 
-      {/* Question */}
-      <div className="glass-card p-4 mb-4 rounded-xl">
-        <p className="text-white text-center">{q.question}</p>
-      </div>
+      <div className="mb-4 text-white text-center">{q.question}</div>
 
-      {/* Options */}
       <div className="space-y-2">
         {q.options.map((opt, i) => (
           <button
@@ -290,7 +303,7 @@ export default function PlayTab() {
 
   const handleGameEnd = useCallback(async (score, blocksOrDifficulty, level = 1, cleared = false) => {
     setIsPlaying(false);
-    
+
     const gameType = selectedGame;
     const blocks = gameType === "zbrickles" ? blocksOrDifficulty : 0;
     const difficulty = gameType === "ztrivia" ? blocksOrDifficulty : level;
@@ -388,7 +401,6 @@ export default function PlayTab() {
           ))}
         </div>
 
-        {/* Tip */}
         <div className="mt-3 text-center text-xs text-gray-500 flex-shrink-0">
           <HelpCircle className="w-3 h-3 inline mr-1" />
           Games get harder = more rewards!
@@ -400,7 +412,6 @@ export default function PlayTab() {
   // Active game or result screen
   return (
     <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="play-tab">
-      {/* Sub-header for game view */}
       <div className="flex items-center mb-3 flex-shrink-0">
         <button onClick={() => { setSelectedGame(null); setIsPlaying(false); setGameResult(null); }} className="text-gray-400 mr-3">
           <ChevronLeft className="w-6 h-6" />
@@ -409,53 +420,26 @@ export default function PlayTab() {
         {selectedGame === "zbrickles" && <span className="ml-auto text-cyan-400 text-sm">Level {currentLevel}</span>}
       </div>
 
-      {/* Game Area */}
-      <div className="flex-1 flex items-center justify-center min-h-0">
-        {isPlaying ? (
-          selectedGame === "zbrickles" ? (
-            <BricklesGame onGameEnd={handleGameEnd} isPlaying={isPlaying} level={currentLevel} />
-          ) : selectedGame === "ztrivia" ? (
-            <TriviaGame onGameEnd={handleGameEnd} isPlaying={isPlaying} />
-          ) : (
-            <div className="text-gray-400">Coming soon...</div>
-          )
-        ) : gameResult ? (
-          <div className="w-full max-w-xs mx-auto text-center">
-            <Trophy className={`w-16 h-16 mx-auto mb-3 ${gameResult.cleared ? 'text-yellow-400' : 'text-gray-400'}`} />
-            <h2 className="text-xl font-bold text-white mb-1">{gameResult.cleared ? "Level Complete!" : "Game Over!"}</h2>
-            <p className="text-gray-400 text-sm mb-4">Score: {gameResult.score}</p>
-            
-            <div className="glass-card p-4 mb-4 rounded-xl">
-              <div className="flex justify-around">
-                <div className="text-center">
-                  <p className="text-cyan-400 text-xl font-bold">+{gameResult.zwap_earned?.toFixed(2)}</p>
-                  <p className="text-gray-400 text-xs">ZWAP</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-purple-400 text-xl font-bold">+{gameResult.zpts_earned}</p>
-                  <p className="text-gray-400 text-xs">zPts</p>
-                </div>
-              </div>
-              {gameResult.zpts_capped && (
-                <p className="text-yellow-400 text-xs mt-2">Daily zPts cap reached!</p>
-              )}
-            </div>
+      <div className="flex-1 flex flex-col justify-center items-center">
+        {isPlaying && selectedGame === "zbrickles" && (
+          <BricklesGame level={currentLevel} onGameEnd={handleGameEnd} isPlaying={isPlaying} />
+        )}
 
-            <div className="space-y-2">
-              <Button onClick={handlePlayAgain} className="w-full bg-purple-500 hover:bg-purple-600">
-                <Play className="w-4 h-4 mr-2" /> {gameResult.cleared ? `Play Level ${gameResult.nextLevel}` : "Play Again"}
-              </Button>
-              <Button onClick={handleClaim} variant="outline" className="w-full border-gray-600">
-                Back to Games
-              </Button>
+        {isPlaying && selectedGame === "ztrivia" && (
+          <TriviaGame onGameEnd={handleGameEnd} isPlaying={isPlaying} />
+        )}
+
+        {!isPlaying && gameResult && (
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <h2 className="text-white font-bold text-lg">Game Over!</h2>
+            <p className="text-gray-400 text-sm">Score: {gameResult.score}</p>
+            <p className="text-cyan-400 text-sm">zPts Earned: {gameResult.zpts_earned}</p>
+            <p className="text-purple-400 text-sm">zWAP Earned: {gameResult.zwap_earned}</p>
+
+            <div className="flex space-x-3 mt-2">
+              <Button onClick={handleClaim} className="bg-gray-700">Claim</Button>
+              <Button onClick={handlePlayAgain} className="bg-cyan-500 text-black">Play Again</Button>
             </div>
-          </div>
-        ) : (
-          <div className="text-center">
-            <span className="text-6xl mb-4 block">{games.find(g => g.id === selectedGame)?.icon}</span>
-            <Button onClick={() => setIsPlaying(true)} className="bg-purple-500 hover:bg-purple-600">
-              <Play className="w-4 h-4 mr-2" /> Start Game
-            </Button>
           </div>
         )}
       </div>
