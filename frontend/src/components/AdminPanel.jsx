@@ -958,6 +958,7 @@ export default function AdminPanel() {
           {activeSection === "marketplace" && <MarketplaceSection />}
           {activeSection === "swap" && <SwapConfigSection />}
           {activeSection === "settings" && <SettingsSection />}
+          {activeSection === "account" && <AccountSection />}
         </motion.div>
       </div>
     </div>
