@@ -912,6 +912,7 @@ export default function AdminPanel() {
     { id: "marketplace", label: "Marketplace", icon: ShoppingBag },
     { id: "swap", label: "Swap Config", icon: ArrowRightLeft },
     { id: "settings", label: "Settings", icon: Settings },
+    { id: "account", label: "Account", icon: Lock },
   ];
   
   return (
