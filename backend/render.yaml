@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: zwap-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        value: zwap_production
+      - key: CORS_ORIGINS
+        sync: false
+      - key: STRIPE_API_KEY
+        sync: false
+      - key: POLYGON_RPC_URL
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: TREASURY_WALLET
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.6"
