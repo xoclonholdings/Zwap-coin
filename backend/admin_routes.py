@@ -739,3 +739,128 @@ async def get_subscriptions(skip: int = 0, limit: int = 50):
     total = await db.users.count_documents({"tier": "plus"})
     
     return {"subscriptions": plus_users, "total": total}
+
+
+# ============ ADMIN ACCOUNT SETTINGS ============
+
+class AdminKeyUpdate(BaseModel):
+    current_key: str
+    new_key: str
+
+class AdminSettings(BaseModel):
+    admin_email: Optional[str] = None
+    notification_enabled: bool = True
+    two_factor_enabled: bool = False
+
+@admin_router.get("/account/settings", dependencies=[Depends(verify_admin)])
+async def get_admin_settings():
+    """Get admin account settings"""
+    from server import db
+    
+    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
+    settings.pop("_id", None)
+    settings.pop("admin_key_hash", None)  # Never expose key
+    
+    return {
+        "admin_email": settings.get("admin_email", ""),
+        "notification_enabled": settings.get("notification_enabled", True),
+        "two_factor_enabled": settings.get("two_factor_enabled", False),
+        "last_login": settings.get("last_login"),
+        "key_last_changed": settings.get("key_last_changed"),
+    }
+
+@admin_router.put("/account/settings", dependencies=[Depends(verify_admin)])
+async def update_admin_settings(settings: AdminSettings):
+    """Update admin account settings"""
+    from server import db
+    
+    await db.admin_settings.update_one(
+        {"_id": "admin"},
+        {"$set": {
+            "admin_email": settings.admin_email,
+            "notification_enabled": settings.notification_enabled,
+            "two_factor_enabled": settings.two_factor_enabled,
+            "updated_at": datetime.now(timezone.utc),
+        }},
+        upsert=True
+    )
+    
+    await db.admin_logs.insert_one({
+        "action": "admin_settings_update",
+        "timestamp": datetime.now(timezone.utc),
+    })
+    
+    return {"success": True}
+
+@admin_router.post("/account/change-key")
+async def change_admin_key(update: AdminKeyUpdate):
+    """Change the admin API key"""
+    from server import db
+    import hashlib
+    
+    # Verify current key
+    current_key = os.environ.get("ADMIN_API_KEY", "zwap-admin-secret-2025")
+    
+    # Check against env var or stored hash
+    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
+    stored_hash = settings.get("admin_key_hash")
+    
+    current_hash = hashlib.sha256(update.current_key.encode()).hexdigest()
+    
+    # Verify current key matches either env var or stored hash
+    if update.current_key != current_key and (not stored_hash or current_hash != stored_hash):
+        raise HTTPException(status_code=401, detail="Current key is incorrect")
+    
+    # Validate new key
+    if len(update.new_key) < 12:
+        raise HTTPException(status_code=400, detail="New key must be at least 12 characters")
+    
+    # Store new key hash in database
+    new_hash = hashlib.sha256(update.new_key.encode()).hexdigest()
+    
+    await db.admin_settings.update_one(
+        {"_id": "admin"},
+        {"$set": {
+            "admin_key_hash": new_hash,
+            "key_last_changed": datetime.now(timezone.utc),
+        }},
+        upsert=True
+    )
+    
+    await db.admin_logs.insert_one({
+        "action": "admin_key_changed",
+        "timestamp": datetime.now(timezone.utc),
+    })
+    
+    return {"success": True, "message": "Admin key updated successfully. Use your new key to login."}
+
+# Update verify_admin to check database hash
+async def verify_admin_v2(x_admin_key: str = Header(None)):
+    """Enhanced admin verification that checks both env var and stored hash"""
+    import hashlib
+    from server import db
+    
+    if not x_admin_key:
+        raise HTTPException(status_code=401, detail="Admin key required")
+    
+    # Check env var first
+    env_key = os.environ.get("ADMIN_API_KEY", "zwap-admin-secret-2025")
+    if x_admin_key == env_key:
+        return True
+    
+    # Check stored hash in database
+    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
+    stored_hash = settings.get("admin_key_hash")
+    
+    if stored_hash:
+        provided_hash = hashlib.sha256(x_admin_key.encode()).hexdigest()
+        if provided_hash == stored_hash:
+            # Update last login
+            await db.admin_settings.update_one(
+                {"_id": "admin"},
+                {"$set": {"last_login": datetime.now(timezone.utc)}},
+                upsert=True
+            )
+            return True
+    
+    raise HTTPException(status_code=401, detail="Invalid admin key")
