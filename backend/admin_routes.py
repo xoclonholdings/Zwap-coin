@@ -16,14 +16,34 @@ import os
 # Admin API Router
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
-# Admin authentication key (in production, use proper auth)
-ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "zwap-admin-secret-2025")
-
-# Dependency for admin authentication
+# Dependency for admin authentication - checks env var AND database-stored hash
 async def verify_admin(x_admin_key: str = Header(None)):
-    if x_admin_key != ADMIN_API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid admin key")
-    return True
+    import hashlib
+    from server import db
+    
+    if not x_admin_key:
+        raise HTTPException(status_code=401, detail="Admin key required")
+    
+    # Check env var first
+    env_key = os.environ.get("ADMIN_API_KEY", "")
+    if env_key and x_admin_key == env_key:
+        return True
+    
+    # Check stored hash in database
+    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
+    stored_hash = settings.get("admin_key_hash")
+    
+    if stored_hash:
+        provided_hash = hashlib.sha256(x_admin_key.encode()).hexdigest()
+        if provided_hash == stored_hash:
+            await db.admin_settings.update_one(
+                {"_id": "admin"},
+                {"$set": {"last_login": datetime.now(timezone.utc)}},
+                upsert=True
+            )
+            return True
+    
+    raise HTTPException(status_code=401, detail="Invalid admin key")
 
 # ============ ENUMS ============
 
