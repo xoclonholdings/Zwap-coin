@@ -4,14 +4,9 @@ uvicorn==0.25.0
 starlette==0.37.2
 anyio==4.12.0
 
-# ===== ASYNC HTTP / API CALLS =====
+# ===== ASYNC HTTP =====
 httpx==0.28.1
 aiohttp==3.13.3
-aiohappyeyeballs==2.6.1
-frozenlist==1.8.0
-yarl==1.22.0
-multidict==6.7.0
-sniffio==1.3.1
 
 # ===== DATABASE =====
 motor==3.3.1
@@ -20,8 +15,6 @@ pymongo==4.5.0
 # ===== DATA & VALIDATION =====
 pydantic==2.12.5
 python-dateutil==2.9.0.post0
-typing-inspection==0.4.2
-typing_extensions==4.15.0
 
 # ===== AUTH & SECURITY =====
 python-jose==3.5.0
@@ -31,33 +24,9 @@ passlib==1.7.4
 # ===== PAYMENT =====
 stripe==14.1.0
 
-# ===== UTILITIES =====
-uuid==1.30
-logging  # builtin
-os      # builtin
-datetime # builtin
-pathlib # builtin
-pillow==12.1.0
-
-# ===== LINTING / CODE QUALITY =====
-black==25.12.0
-flake8==7.3.0
-isort==7.0.0
-mypy==1.19.1
-pyflakes==3.4.0
-pycodestyle==2.14.0
-
-# ===== OTHER SUPPORTING LIBRARIES =====
+# ===== ENV =====
 python-dotenv==1.2.1
-requests==2.32.5
-certifi==2026.1.4
-idna==3.11
-charset-normalizer==3.4.4
-urllib3==2.6.2
-tzdata==2025.3
-pytz==2025.2
 
-# ===== OPTIONAL / STORAGE =====
+# ===== OPTIONAL (ONLY IF USED) =====
+pillow==12.1.0
 boto3==1.42.21
-botocore==1.42.21
-s3transfer==0.16.0
