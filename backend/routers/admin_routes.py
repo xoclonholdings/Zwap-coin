@@ -1,4 +1,4 @@
-# backend/routers/admin_routes.py
+# routers/admin_routes.py
 
 import os
 from typing import Any, Dict, Optional
@@ -7,15 +7,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 # 🔒 Direct service imports (no package aggregator)
-import backend.services.analytics_service as analytics_service
-import backend.services.config_service as config_service
-import backend.services.leaderboard_service as leaderboard_service
-import backend.services.marketplace_service as marketplace_service
-import backend.services.news_service as news_service
-import backend.services.reward_service as reward_service
-import backend.services.subscription_service as subscription_service
-import backend.services.swap_service as swap_service
-import backend.services.treasury_service as treasury_service
+import services.analytics_service as analytics_service
+import services.config_service as config_service
+import services.leaderboard_service as leaderboard_service
+import services.marketplace_service as marketplace_service
+import services.news_service as news_service
+import services.reward_service as reward_service
+import services.subscription_service as subscription_service
+import services.swap_service as swap_service
+import services.treasury_service as treasury_service
 
 # ===========================
 # ROUTER

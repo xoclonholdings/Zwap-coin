@@ -1,4 +1,4 @@
-# backend.server.server.py
+# server.server.py
 
 import os
 import logging
