@@ -60,16 +60,16 @@ logging.basicConfig(level=LOG_LEVEL, format="%(asctime)s - %(levelname)s - %(mes
 # ROUTERS (must match your actual folder: routers/)
 # Keep /api prefix behavior identical to original server.py
 # ===========================
-from backend.routers.admin_routes import router as admin_router
-from backend.routers.swap_routes import router as swap_router
-from backend.routers.shop_routes import router as shop_router
-from backend.routers.play_routes import router as play_router
-from backend.routers.move_routes import router as move_router
-from backend.routers.user_routes import router as user_router
-from backend.routers.learn_routes import router as learn_router
-from backend.routers.leaderboard_routes import router as leaderboard_router
-from backend.routers.news_routes import router as news_router
-from backend.routers.subscription_routes import router as subscription_router
+from routers.admin_routes import router as admin_router
+from routers.swap_routes import router as swap_router
+from routers.shop_routes import router as shop_router
+from routers.play_routes import router as play_router
+from routers.move_routes import router as move_router
+from routers.user_routes import router as user_router
+from routers.learn_routes import router as learn_router
+from routers.leaderboard_routes import router as leaderboard_router
+from routers.news_routes import router as news_router
+from routers.subscription_routes import router as subscription_router
 
 # Core feature routers
 api_router.include_router(admin_router)        # already /admin inside file
