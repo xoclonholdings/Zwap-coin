@@ -109,6 +109,52 @@ TIERS = {
 
 ZPTS_TO_ZWAP_RATE = 1000  # 1000 Z Points = 1 ZWAP
 
+# ============ ANTI-CHEAT: RATE LIMITING ============
+
+from collections import defaultdict
+import time as _time
+
+# In-memory rate limiter {wallet: {action: last_timestamp}}
+_rate_limits = defaultdict(dict)
+
+# Daily ZWAP tracking reset helper
+async def check_and_reset_daily_zwap(user: dict) -> dict:
+    """Reset daily ZWAP earned at midnight UTC"""
+    now = datetime.now(timezone.utc)
+    last_reset = user.get("last_zwap_reset")
+    if last_reset:
+        last_dt = datetime.fromisoformat(last_reset.replace('Z', '+00:00'))
+        if last_dt.date() < now.date():
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}}
+            )
+            user["daily_zwap_earned"] = 0.0
+    else:
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}}
+        )
+        user["daily_zwap_earned"] = 0.0
+    return user
+
+def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
+    """Returns True if rate-limited (too soon). False if OK."""
+    now = _time.time()
+    last = _rate_limits[wallet].get(action, 0)
+    if now - last < cooldown_seconds:
+        return True
+    _rate_limits[wallet][action] = now
+    return False
+
+# Anti-cheat constants
+STEP_CLAIM_COOLDOWN = 300   # 5 min between step claims
+GAME_RESULT_COOLDOWN = 20   # 20 sec between game submissions
+MAX_STEPS_PER_CLAIM = 50000
+MIN_STEPS_PER_CLAIM = 10
+MAX_GAME_SCORES = {"zbrickles": 5000, "ztrivia": 50, "ztetris": 10000, "zslots": 8000}
+DAILY_ZWAP_CAPS = {"starter": 500.0, "plus": 1500.0}
+
 # ============ MODELS ============
 
 class UserCreate(BaseModel):
