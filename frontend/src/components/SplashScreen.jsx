@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ZWAP_LOGO } from "@/App";
+import { useApp, ZWAP_LOGO } from "@/App";
 
 export default function SplashScreen({ onEnter }) {
   const [stage, setStage] = useState(0);
   const [showButtons, setShowButtons] = useState(false);
   const [taglineComplete, setTaglineComplete] = useState(false);
   const navigate = useNavigate();
+  const { walletAddress } = useApp();
 
   const words = ["MOVE.", "PLAY.", "SWAP.", "SHOP."];
 
