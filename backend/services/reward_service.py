@@ -1,31 +1,98 @@
+"""
+ZWAP! Reward Service Stubs
+===========================
+Service-layer function signatures for reward calculations.
+DO NOT implement reward math here — these are contract stubs only.
+Routes should call these; implementations come later.
+"""
+
 from typing import Dict
 
-async def adjust_reward(db, user_id: str, amount: float) -> Dict:
-    """
-    Adjusts rewards for a user. Manages append-only rewards ledger.
-    """
-    # Append to rewards ledger
-    await db.rewards.insert_one({
-        "user_id": user_id,
-        "amount": amount,
-        "timestamp": datetime.utcnow()
-    })
 
-    # Update user balance
-    await db.users.update_one(
-        {"_id": user_id},
-        {"$inc": {"zwap_balance": amount}}
-    )
-
-    return {"user_id": user_id, "adjusted": amount}
-
-async def get_reward_aggregates(db, user_id: str) -> Dict:
+async def calculate_play_reward(
+    game_type: str,
+    score: int,
+    level: int,
+    tier: str,
+) -> Dict:
     """
-    Aggregation queries for rewards.
+    Compute rewards for a completed game session.
+
+    Inputs:
+        game_type: "zbrickles" | "ztrivia" | "ztetris" | "zslots"
+        score:     Final score from the game
+        level:     Game difficulty level (1+)
+        tier:      "starter" | "plus"
+
+    Returns:
+        { "zwap": float, "zpts": int }
     """
-    pipeline = [
-        {"$match": {"user_id": user_id}},
-        {"$group": {"_id": "$user_id", "total_rewards": {"$sum": "$amount"}}}
-    ]
-    result = await db.rewards.aggregate(pipeline).to_list(length=1)
-    return result[0] if result else {"total_rewards": 0}
+    raise NotImplementedError("calculate_play_reward not yet implemented")
+
+
+async def calculate_move_reward(
+    steps: int,
+    tier: str,
+    daily_steps_so_far: int,
+) -> Dict:
+    """
+    Compute ZWAP earned from a step-tracking session.
+
+    Inputs:
+        steps:              Steps submitted in this session
+        tier:               "starter" | "plus"
+        daily_steps_so_far: Steps already submitted today (for cap enforcement)
+
+    Returns:
+        { "zwap": float }
+    """
+    raise NotImplementedError("calculate_move_reward not yet implemented")
+
+
+async def convert_zpts_to_zwap(
+    zpts_amount: int,
+    tier: str,
+) -> Dict:
+    """
+    Calculate ZWAP output for a zPts conversion.
+
+    Inputs:
+        zpts_amount: Number of zPts to convert
+        tier:        "starter" | "plus"
+
+    Returns:
+        { "zwap": float, "rate": float }
+    """
+    raise NotImplementedError("convert_zpts_to_zwap not yet implemented")
+
+
+async def get_tier_multipliers(tier: str) -> Dict:
+    """
+    Return all reward multipliers for a given tier.
+
+    Inputs:
+        tier: "starter" | "plus"
+
+    Returns:
+        { "move": float, "play": float, "cap": int }
+    """
+    raise NotImplementedError("get_tier_multipliers not yet implemented")
+
+
+async def enforce_daily_caps(
+    wallet_address: str,
+    tier: str,
+    earned_today: float,
+) -> Dict:
+    """
+    Check whether a user has hit their daily earning limit.
+
+    Inputs:
+        wallet_address: User's wallet
+        tier:           "starter" | "plus"
+        earned_today:   ZWAP or zPts already earned today
+
+    Returns:
+        { "capped": bool, "remaining": float }
+    """
+    raise NotImplementedError("enforce_daily_caps not yet implemented")
