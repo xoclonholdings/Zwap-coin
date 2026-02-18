@@ -427,6 +427,14 @@ export default function PlayTab() {
           <TriviaGame onGameEnd={handleGameEnd} isPlaying={isPlaying} />
         )}
 
+        {isPlaying && selectedGame === "ztetris" && (
+          <TetrisGame level={currentLevel} onGameEnd={handleGameEnd} isPlaying={isPlaying} />
+        )}
+
+        {isPlaying && selectedGame === "zslots" && (
+          <SlotsGame level={currentLevel} onGameEnd={handleGameEnd} isPlaying={isPlaying} />
+        )}
+
         {!isPlaying && gameResult && (
           <div className="flex flex-col items-center space-y-4 text-center">
             <h2 className="text-white font-bold text-lg">Game Over!</h2>
