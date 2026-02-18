@@ -334,6 +334,7 @@ export default function PlayTab() {
     setSelectedGame(gameId);
     setIsPlaying(true);
     setGameResult(null);
+    setCurrentLevel(Math.max(baseLevel, currentLevel));
   };
 
   // Game selection screen
