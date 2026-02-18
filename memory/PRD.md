@@ -165,9 +165,13 @@ Planned Flow:
 
 ### Components
 - `/app/frontend/src/components/SwapTab.jsx` - Embedded external swap
-- `/app/frontend/src/components/AppHeader.jsx` - Compliant balance display
+- `/app/frontend/src/components/AppHeader.jsx` - Compliant balance display, sidebar with Learn link
 - `/app/frontend/src/components/MoveTab.jsx` - "Record Rewards" language
 - `/app/frontend/src/components/TermsPage.jsx` - Updated legal terms
+- `/app/frontend/src/components/WalletPage.jsx` - Wallet onboarding with education content
+- `/app/frontend/src/components/LearnPage.jsx` - 6-module education section (accordion)
+- `/app/frontend/src/components/AboutPage.jsx` - Updated CTA with wallet-conditional routing
+- `/app/frontend/src/data/education.js` - Education knowledge spine (6 modules, trivia, ticker facts)
 
 ### Backend
 - `/app/backend/server.py` - All API endpoints (no tx signing)
@@ -201,6 +205,16 @@ Planned Flow:
 - [x] Dual admin auth (env var + DB hash)
 - [x] Full admin panel with 8 sections
 - [x] Codebase imported from GitHub repo
+- [x] Frontend Routing & Education Layer:
+  - Wallet-gated navigation (dashboard/move/play/shop/swap require wallet)
+  - WalletPage (/wallet) with crypto wallet education, privacy assurance, Learn hint
+  - LearnPage (/learn) with 6 accordion modules from education spine
+  - Learn accessible from User Badge sidebar (between Profile and Contact)
+  - AboutPage CTA: "Ready to Bridge Into the Future?" with conditional routing
+  - NewsTicker pulls "Did You Know?" facts from education spine
+  - Splash screen conditional routing (wallet → dashboard, no wallet → /wallet)
+  - Education spine powers: Learn section, Trivia, Ticker, Wallet page content
+- [x] Backend modular structure imported (routers/, services/) for future use
 
 ## Prioritized Remaining Tasks
 
