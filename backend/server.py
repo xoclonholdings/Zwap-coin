@@ -612,47 +612,73 @@ async def submit_game_result(wallet_address: str, game_data: GameResult):
         "message": f"Earned {zwap_to_add:.2f} ZWAP + {zpts_to_add} zPts!"
     }
 
+# ============ EDUCATION SPINE TRIVIA (SERVER-SIDE) ============
+
+EDUCATION_TRIVIA = [
+    {"id": "edu-crypto-1", "module": "What Is Cryptocurrency?", "question": "Is cryptocurrency physical or digital?", "options": ["Physical", "Digital", "Both", "Neither"], "answer": "Digital", "difficulty": 1},
+    {"id": "edu-crypto-2", "module": "What Is Cryptocurrency?", "question": "Does one bank control cryptocurrency?", "options": ["Yes", "No", "Sometimes", "Only in the US"], "answer": "No", "difficulty": 1},
+    {"id": "edu-crypto-3", "module": "What Is Cryptocurrency?", "question": "What keeps track of crypto transactions?", "options": ["A single bank", "A network of computers", "Paper receipts", "The government"], "answer": "A network of computers", "difficulty": 1},
+    {"id": "edu-chain-1", "module": "What Is a Blockchain?", "question": "What are transactions stored in?", "options": ["Files", "Blocks", "Folders", "Emails"], "answer": "Blocks", "difficulty": 1},
+    {"id": "edu-chain-2", "module": "What Is a Blockchain?", "question": "Can you erase a block once it is added?", "options": ["Yes", "No", "Only admins can", "After 24 hours"], "answer": "No", "difficulty": 1},
+    {"id": "edu-chain-3", "module": "What Is a Blockchain?", "question": "Why is it called a chain?", "options": ["It looks like a chain", "Because blocks are linked together", "It was invented by a chain company", "No reason"], "answer": "Because blocks are linked together", "difficulty": 2},
+    {"id": "edu-wallet-1", "module": "What Is a Crypto Wallet?", "question": "Does a wallet hold crypto physically?", "options": ["Yes", "No", "Only some wallets", "Only on phones"], "answer": "No", "difficulty": 1},
+    {"id": "edu-wallet-2", "module": "What Is a Crypto Wallet?", "question": "What does a wallet really store?", "options": ["Coins", "Keys", "Passwords", "Photos"], "answer": "Keys", "difficulty": 2},
+    {"id": "edu-wallet-3", "module": "What Is a Crypto Wallet?", "question": "Should you share your private key?", "options": ["Yes, with friends", "Never", "Only online", "Only with your bank"], "answer": "Never", "difficulty": 1},
+    {"id": "edu-zwap-1", "module": "What Is ZWAP?", "question": "How do you earn ZWAP?", "options": ["Buying it", "Walking and playing games", "Watching ads", "Signing up"], "answer": "Walking and playing games", "difficulty": 1},
+    {"id": "edu-zwap-2", "module": "What Is ZWAP?", "question": "Can you use ZWAP in the shop?", "options": ["Yes", "No", "Only on weekends", "Only with Plus"], "answer": "Yes", "difficulty": 1},
+    {"id": "edu-zwap-3", "module": "What Is ZWAP?", "question": "Is ZWAP a physical coin?", "options": ["Yes", "No, it is digital", "Sometimes", "Only in some countries"], "answer": "No, it is digital", "difficulty": 1},
+    {"id": "edu-zpts-1", "module": "What Are zPts?", "question": "Are zPts the same as ZWAP?", "options": ["Yes", "No", "They are similar", "Only on Plus tier"], "answer": "No", "difficulty": 1},
+    {"id": "edu-zpts-2", "module": "What Are zPts?", "question": "How many zPts equal 1 ZWAP?", "options": ["100", "500", "1000", "10000"], "answer": "1000", "difficulty": 2},
+    {"id": "edu-zpts-3", "module": "What Are zPts?", "question": "Do zPts live on the blockchain?", "options": ["Yes", "No, they are tracked in the app", "Sometimes", "Only for Plus users"], "answer": "No, they are tracked in the app", "difficulty": 2},
+    {"id": "edu-swap-1", "module": "What Is a Swap?", "question": "What does a swap do?", "options": ["Deletes crypto", "Exchanges one crypto for another", "Creates new crypto", "Sends crypto to a bank"], "answer": "Exchanges one crypto for another", "difficulty": 1},
+    {"id": "edu-swap-2", "module": "What Is a Swap?", "question": "Does the price stay the same all the time?", "options": ["Yes", "No, it changes", "Only on weekdays", "Only for ZWAP"], "answer": "No, it changes", "difficulty": 2},
+    {"id": "edu-swap-3", "module": "What Is a Swap?", "question": "Why is there a small fee?", "options": ["There is no fee", "To help support the system", "To pay the government", "It is a bug"], "answer": "To help support the system", "difficulty": 2},
+]
+
+# Session store: {session_id: {questions: [...], expires: timestamp}}
+_trivia_sessions = {}
+
 @api_router.get("/games/trivia/questions")
 async def get_trivia_questions(count: int = 5, difficulty: int = 1):
-    """Get trivia questions for the game"""
-    # Sample trivia questions (in production, fetch from DB)
-    all_questions = [
-        {"id": "q1", "question": "What is the largest cryptocurrency by market cap?", "options": ["Bitcoin", "Ethereum", "Solana", "Cardano"], "answer": "Bitcoin", "difficulty": 1},
-        {"id": "q2", "question": "Who created Bitcoin?", "options": ["Vitalik Buterin", "Satoshi Nakamoto", "Charles Hoskinson", "Gavin Wood"], "answer": "Satoshi Nakamoto", "difficulty": 1},
-        {"id": "q3", "question": "What does NFT stand for?", "options": ["New Financial Token", "Non-Fungible Token", "Network File Transfer", "Node Full Transaction"], "answer": "Non-Fungible Token", "difficulty": 1},
-        {"id": "q4", "question": "What blockchain does Ethereum use?", "options": ["Proof of Work", "Proof of Stake", "Delegated PoS", "Proof of Authority"], "answer": "Proof of Stake", "difficulty": 2},
-        {"id": "q5", "question": "What is a smart contract?", "options": ["Legal document", "Self-executing code", "Paper contract", "Bank agreement"], "answer": "Self-executing code", "difficulty": 2},
-        {"id": "q6", "question": "What year was Bitcoin created?", "options": ["2007", "2008", "2009", "2010"], "answer": "2009", "difficulty": 2},
-        {"id": "q7", "question": "What is DeFi short for?", "options": ["Decentralized Finance", "Digital Finance", "Distributed Files", "Default Interest"], "answer": "Decentralized Finance", "difficulty": 2},
-        {"id": "q8", "question": "What is gas in Ethereum?", "options": ["Fuel for cars", "Transaction fees", "Mining reward", "Token type"], "answer": "Transaction fees", "difficulty": 3},
-        {"id": "q9", "question": "What is a DAO?", "options": ["Digital Asset Order", "Decentralized Autonomous Organization", "Data Access Object", "Distributed App Operator"], "answer": "Decentralized Autonomous Organization", "difficulty": 3},
-        {"id": "q10", "question": "What is the max supply of Bitcoin?", "options": ["10 million", "21 million", "100 million", "Unlimited"], "answer": "21 million", "difficulty": 3},
-    ]
-    
-    # Filter by difficulty and randomize
-    filtered = [q for q in all_questions if q["difficulty"] <= difficulty + 1]
+    """Get trivia questions from the education spine — server-side validated"""
+    filtered = [q for q in EDUCATION_TRIVIA if q["difficulty"] <= difficulty + 1]
     selected = random.sample(filtered, min(count, len(filtered)))
-    
-    # Remove answers from response
-    return [{"id": q["id"], "question": q["question"], "options": q["options"], "difficulty": q["difficulty"]} for q in selected]
+
+    session_id = str(uuid.uuid4())
+    _trivia_sessions[session_id] = {
+        "questions": {q["id"]: q["answer"] for q in selected},
+        "expires": _time.time() + 600,  # 10 min session
+    }
+
+    # Clean expired sessions
+    now = _time.time()
+    expired = [k for k, v in _trivia_sessions.items() if v["expires"] < now]
+    for k in expired:
+        del _trivia_sessions[k]
+
+    return {
+        "session_id": session_id,
+        "questions": [
+            {"id": q["id"], "question": q["question"], "options": q["options"],
+             "difficulty": q["difficulty"], "module": q["module"]}
+            for q in selected
+        ]
+    }
 
 @api_router.post("/games/trivia/answer")
 async def check_trivia_answer(answer: TriviaAnswer):
-    """Check trivia answer"""
-    answers = {
-        "q1": "Bitcoin", "q2": "Satoshi Nakamoto", "q3": "Non-Fungible Token",
-        "q4": "Proof of Stake", "q5": "Self-executing code", "q6": "2009",
-        "q7": "Decentralized Finance", "q8": "Transaction fees",
-        "q9": "Decentralized Autonomous Organization", "q10": "21 million"
-    }
-    
-    correct = answers.get(answer.question_id) == answer.answer
-    # Bonus for fast answers
+    """Check trivia answer — server-side validation"""
+    # Look up answer in education spine
+    question = next((q for q in EDUCATION_TRIVIA if q["id"] == answer.question_id), None)
+    if not question:
+        return {"correct": False, "correct_answer": None, "time_bonus": 0}
+
+    correct = question["answer"] == answer.answer
     time_bonus = max(0, 1 - (answer.time_taken / 30)) if correct else 0
-    
+
     return {
         "correct": correct,
-        "correct_answer": answers.get(answer.question_id),
+        "correct_answer": question["answer"],
         "time_bonus": round(time_bonus, 2)
     }
 
