@@ -165,7 +165,7 @@ const BricklesGame = ({ onGameEnd, isPlaying, level }) => {
   return <canvas ref={canvasRef} width={280} height={320} className="rounded-xl border border-cyan-500/30 mx-auto touch-none" />;
 };
 
-// ============ FIXED TRIVIA GAME ============
+// ============ EDUCATION-POWERED TRIVIA GAME ============
 
 const TriviaGame = ({ onGameEnd, isPlaying }) => {
   const [questions, setQuestions] = useState([]);
@@ -175,28 +175,27 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [difficulty, setDifficulty] = useState(1);
-  const startTimeRef = useRef(Date.now());
 
-  // Stable loadQuestions
-  const loadQuestions = useCallback(async () => {
-    try {
-      const qs = await api.getTriviaQuestions(5, difficulty);
-      setQuestions(qs);
-      setCurrentQ(0);
-      setScore(0);
-      setTimeLeft(30);
-      startTimeRef.current = Date.now();
-    } catch {
-      toast.error("Failed to load questions");
-    }
-  }, [difficulty]);
+  // Generate questions from education spine
+  const loadQuestions = useCallback(() => {
+    const shuffled = [...allTrivia].sort(() => Math.random() - 0.5);
+    const picked = shuffled.slice(0, 5).map((t, i) => ({
+      id: `edu-${t.moduleId}-${i}`,
+      question: t.question,
+      options: t.options,
+      correctAnswer: t.answer,
+      module: t.moduleTitle,
+    }));
+    setQuestions(picked);
+    setCurrentQ(0);
+    setScore(0);
+    setTimeLeft(30);
+  }, []);
 
-  // Stable handleTimeout
   const handleTimeout = useCallback(() => {
     if (currentQ < questions.length - 1) {
       setCurrentQ(c => c + 1);
       setTimeLeft(30);
-      startTimeRef.current = Date.now();
     } else {
       onGameEnd(score, difficulty);
     }
@@ -207,30 +206,25 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
   }, [isPlaying, loadQuestions]);
 
   useEffect(() => {
-    if (!isPlaying || showResult) return;
+    if (!isPlaying || showResult || !questions.length) return;
     const timer = setInterval(() => {
       setTimeLeft(t => {
-        if (t <= 1) {
-          handleTimeout();
-          return 30;
-        }
+        if (t <= 1) { handleTimeout(); return 30; }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [isPlaying, currentQ, showResult, handleTimeout]);
+  }, [isPlaying, currentQ, showResult, handleTimeout, questions.length]);
 
-  const handleAnswer = async (answer) => {
+  const handleAnswer = (answer) => {
     if (selectedAnswer) return;
     setSelectedAnswer(answer);
-
-    const timeTaken = (Date.now() - startTimeRef.current) / 1000;
-    const result = await api.checkTriviaAnswer(questions[currentQ].id, answer, timeTaken);
-
     setShowResult(true);
-    if (result.correct) {
-      const points = 1 + Math.round(result.time_bonus);
-      setScore(s => s + points);
+
+    const correct = answer === questions[currentQ].correctAnswer;
+    if (correct) {
+      const timeBonus = Math.round(timeLeft / 10);
+      setScore(s => s + 1 + timeBonus);
       setDifficulty(d => Math.min(d + 1, 5));
     }
 
@@ -240,9 +234,8 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
       if (currentQ < questions.length - 1) {
         setCurrentQ(c => c + 1);
         setTimeLeft(30);
-        startTimeRef.current = Date.now();
       } else {
-        onGameEnd(score + (result.correct ? 1 : 0), difficulty);
+        onGameEnd(score + (correct ? 1 : 0), difficulty);
       }
     }, 1500);
   };
@@ -254,12 +247,13 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
   return (
     <div className="w-full max-w-sm mx-auto p-4" data-testid="trivia-game">
       <div className="flex justify-between mb-4 text-sm">
-        <span>Q{currentQ + 1}/{questions.length}</span>
-        <span>Score: {score}</span>
+        <span className="text-gray-400">Q{currentQ + 1}/{questions.length}</span>
+        <span className="text-purple-400 font-medium">Score: {score}</span>
         <span className={`${timeLeft < 10 ? 'text-red-400' : 'text-gray-400'}`}>{timeLeft}s</span>
       </div>
 
-      <div className="mb-4 text-white text-center">{q.question}</div>
+      <p className="text-gray-500 text-[10px] text-center mb-1">{q.module}</p>
+      <div className="mb-4 text-white text-center font-medium">{q.question}</div>
 
       <div className="space-y-2">
         {q.options.map((opt, i) => (
@@ -269,12 +263,12 @@ const TriviaGame = ({ onGameEnd, isPlaying }) => {
             disabled={!!selectedAnswer}
             className={`w-full p-3 rounded-xl text-left transition-all ${
               selectedAnswer === opt
-                ? showResult
-                  ? opt === selectedAnswer && selectedAnswer === q.correctAnswer
-                    ? 'bg-green-500/30 border-green-500'
-                    : 'bg-red-500/30 border-red-500'
-                  : 'bg-cyan-500/30 border-cyan-500'
-                : 'bg-[#141530] border-gray-700 hover:border-cyan-500/50'
+                ? opt === q.correctAnswer
+                  ? 'bg-green-500/30 border-green-500'
+                  : 'bg-red-500/30 border-red-500'
+                : selectedAnswer && opt === q.correctAnswer
+                  ? 'bg-green-500/20 border-green-500/50'
+                  : 'bg-[#141530] border-gray-700 hover:border-cyan-500/50'
             } border`}
           >
             <span className="text-white text-sm">{opt}</span>
