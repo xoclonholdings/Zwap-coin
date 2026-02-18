@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useApp, api, TIERS } from "@/App";
+import { useApp, TIERS } from "@/App";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Gamepad2, Play, Trophy, Lock, Crown, ChevronLeft, HelpCircle } from "lucide-react";

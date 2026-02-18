@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useApp, ZWAP_BANG, api, TIERS } from "@/App";
+import { useApp, ZWAP_BANG, TIERS } from "@/App";
+import api from "@/lib/api";
 import { ArrowLeft, Crown, Wallet, Trophy, Footprints, Gamepad2, ShoppingBag, Calendar, Edit2, Check, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

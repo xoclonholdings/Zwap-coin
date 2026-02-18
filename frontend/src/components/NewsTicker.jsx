@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useApp, api } from "@/App";
+import { useApp } from "@/App";
+import api from "@/lib/api";
 import { Trophy, TrendingUp, Newspaper, Lightbulb, Gift, Bell, Users } from "lucide-react";
 import { allDidYouKnow } from "@/data/education";
 

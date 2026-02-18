@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useApp, ZWAP_BANG, api, ZWAP_CONTRACT } from "@/App";
+import { useApp, ZWAP_BANG, ZWAP_CONTRACT } from "@/App";
+import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";

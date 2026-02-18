@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useApp, api, ZUPREME_LOGO } from "@/App";
+import { useApp, ZUPREME_LOGO } from "@/App";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";

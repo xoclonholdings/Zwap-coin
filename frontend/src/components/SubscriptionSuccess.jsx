@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useApp, api } from "@/App";
+import { useApp } from "@/App";
+import api from "@/lib/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Check, Loader2, Crown } from "lucide-react";
