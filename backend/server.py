@@ -251,11 +251,12 @@ async def get_crypto_prices():
                     "ETH": data.get("ethereum", {}).get("usd", 3500),
                     "POL": data.get("matic-network", {}).get("usd", 0.85),
                     "SOL": data.get("solana", {}).get("usd", 150),
+                    "USDT": 1.00,
                     "ZWAP": 0.01
                 }
     except Exception as e:
         logging.error(f"Error fetching prices: {e}")
-    return {"BTC": 65000, "ETH": 3500, "POL": 0.85, "SOL": 150, "ZWAP": 0.01}
+    return {"BTC": 65000, "ETH": 3500, "POL": 0.85, "SOL": 150, "USDT": 1.00, "ZWAP": 0.01}
 
 def calculate_step_rewards(steps: int, multiplier: float = 1.0) -> float:
     """Tiered earning system for steps"""
