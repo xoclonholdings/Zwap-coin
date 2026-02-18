@@ -537,61 +537,79 @@ async def claim_step_rewards(wallet_address: str, steps_data: StepsUpdate):
 async def submit_game_result(wallet_address: str, game_data: GameResult):
     """Submit game result and claim rewards (ZWAP + Z Points)"""
     wallet = wallet_address.lower()
+
+    # Anti-cheat: rate limit
+    if check_rate_limit(wallet, "game", GAME_RESULT_COOLDOWN):
+        raise HTTPException(status_code=429, detail="Submitting too fast. Wait a moment between games.")
+
+    # Anti-cheat: score sanity check
+    max_score = MAX_GAME_SCORES.get(game_data.game_type, 5000)
+    if game_data.score > max_score:
+        logging.warning(f"Anti-cheat flag: {wallet} submitted {game_data.game_type} score {game_data.score} (max {max_score})")
+        raise HTTPException(status_code=400, detail="Invalid score")
+
+    if game_data.score < 0 or game_data.level < 1:
+        raise HTTPException(status_code=400, detail="Invalid game data")
+
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    tier_config = get_user_tier_config(user.get("tier", "starter"))
-    
-    # Check if game is available for user's tier
+
+    tier = user.get("tier", "starter")
+    tier_config = get_user_tier_config(tier)
+
     if game_data.game_type not in tier_config["games"]:
         raise HTTPException(status_code=403, detail=f"Game not available in {tier_config['name']} tier")
-    
-    # Check daily Z Points cap
+
+    # Daily Z Points cap
     user = await check_and_reset_daily_zpts(user)
     daily_zpts = user.get("daily_zpts_earned", 0)
     zpts_cap = tier_config["daily_zpts_cap"]
-    
-    # Calculate rewards
+
+    # Daily ZWAP cap
+    user = await check_and_reset_daily_zwap(user)
+    daily_zwap = user.get("daily_zwap_earned", 0.0)
+    zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
+
     rewards = calculate_game_rewards(
-        game_data.game_type, 
-        game_data.score, 
-        game_data.level,
-        game_data.blocks_destroyed,
-        tier_config["zwap_multiplier"]
+        game_data.game_type, game_data.score, game_data.level,
+        game_data.blocks_destroyed, tier_config["zwap_multiplier"]
     )
-    
+
     # Cap Z Points to daily limit
-    zpts_to_add = min(rewards["zpts"], zpts_cap - daily_zpts)
-    if zpts_to_add < 0:
-        zpts_to_add = 0
-    
+    zpts_to_add = max(0, min(rewards["zpts"], zpts_cap - daily_zpts))
+    # Cap ZWAP to daily limit
+    zwap_to_add = max(0.0, min(rewards["zwap"], zwap_cap - daily_zwap))
+
     await db.users.update_one(
         {"wallet_address": wallet},
         {
             "$inc": {
-                "zwap_balance": rewards["zwap"],
+                "zwap_balance": zwap_to_add,
                 "zpts_balance": zpts_to_add,
                 "games_played": 1,
-                "total_earned": rewards["zwap"],
-                "daily_zpts_earned": zpts_to_add
+                "total_earned": zwap_to_add,
+                "daily_zpts_earned": zpts_to_add,
+                "daily_zwap_earned": zwap_to_add,
             }
         }
     )
-    
+
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    
+
     return {
         "game": game_data.game_type,
         "score": game_data.score,
         "level": game_data.level,
-        "zwap_earned": rewards["zwap"],
+        "zwap_earned": round(zwap_to_add, 2),
         "zpts_earned": zpts_to_add,
         "zpts_capped": zpts_to_add < rewards["zpts"],
+        "zwap_capped": zwap_to_add < rewards["zwap"],
         "daily_zpts_remaining": zpts_cap - updated_user.get("daily_zpts_earned", 0),
+        "daily_zwap_remaining": round(zwap_cap - updated_user.get("daily_zwap_earned", 0), 2),
         "new_zwap_balance": updated_user["zwap_balance"],
         "new_zpts_balance": updated_user["zpts_balance"],
-        "message": f"Earned {rewards['zwap']:.2f} ZWAP + {zpts_to_add} zPts!"
+        "message": f"Earned {zwap_to_add:.2f} ZWAP + {zpts_to_add} zPts!"
     }
 
 @api_router.get("/games/trivia/questions")
