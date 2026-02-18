@@ -20,6 +20,8 @@ import ContactPage from "@/components/ContactPage";
 import PrivacyPage from "@/components/PrivacyPage";
 import TermsPage from "@/components/TermsPage";
 import AdminPanel from "@/components/AdminPanel";
+import WalletPage from "@/components/WalletPage";
+import LearnPage from "@/components/LearnPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -362,9 +364,12 @@ function AppContent() {
     }
   }, [walletAddress, pendingAction, navigate, setPendingAction]);
 
-  // Show splash screen on root - goes to dashboard after
+  // Show splash screen on root - routes based on wallet state
   if (showSplash && location.pathname === "/") {
-    return <SplashScreen onEnter={() => { setShowSplash(false); navigate("/dashboard"); }} />;
+    return <SplashScreen onEnter={() => { 
+      setShowSplash(false); 
+      navigate(walletAddress ? "/dashboard" : "/wallet"); 
+    }} />;
   }
 
   // Wait for initialization
@@ -395,6 +400,21 @@ function AppContent() {
     return <AdminPanel />;
   }
 
+  // Wallet onboarding page - accessible without wallet
+  if (location.pathname === "/wallet") {
+    return (
+      <>
+        <WalletPage />
+        <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
+      </>
+    );
+  }
+
+  // Learn page - accessible without wallet
+  if (location.pathname === "/learn") {
+    return <LearnPage />;
+  }
+
   // Settings pages - no main layout
   const settingsPages = ["/profile", "/contact", "/privacy", "/terms"];
   if (settingsPages.includes(location.pathname)) {
@@ -411,9 +431,16 @@ function AppContent() {
     );
   }
 
-  // Redirect from root to dashboard (no welcome screen)
+  // Redirect from root
   if (location.pathname === "/") {
-    navigate("/dashboard");
+    navigate(walletAddress ? "/dashboard" : "/wallet");
+    return null;
+  }
+
+  // Wallet gate: protected routes require wallet connection
+  const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap"];
+  if (protectedRoutes.includes(location.pathname) && !walletAddress) {
+    navigate("/wallet");
     return null;
   }
 
