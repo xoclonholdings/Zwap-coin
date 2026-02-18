@@ -483,26 +483,51 @@ async def get_contract_info():
 async def claim_step_rewards(wallet_address: str, steps_data: StepsUpdate):
     """Claim ZWAP rewards for steps (no Z Points from walking)"""
     wallet = wallet_address.lower()
+
+    # Anti-cheat: rate limit
+    if check_rate_limit(wallet, "steps", STEP_CLAIM_COOLDOWN):
+        raise HTTPException(status_code=429, detail="Too many step claims. Please wait a few minutes.")
+
+    # Anti-cheat: sanity checks
+    if steps_data.steps < MIN_STEPS_PER_CLAIM:
+        raise HTTPException(status_code=400, detail=f"Minimum {MIN_STEPS_PER_CLAIM} steps required")
+    if steps_data.steps > MAX_STEPS_PER_CLAIM:
+        raise HTTPException(status_code=400, detail=f"Step count exceeds maximum ({MAX_STEPS_PER_CLAIM})")
+
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    tier_config = get_user_tier_config(user.get("tier", "starter"))
+
+    tier = user.get("tier", "starter")
+    tier_config = get_user_tier_config(tier)
+
+    # Daily ZWAP cap enforcement
+    user = await check_and_reset_daily_zwap(user)
+    daily_zwap = user.get("daily_zwap_earned", 0.0)
+    zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
+
+    if daily_zwap >= zwap_cap:
+        raise HTTPException(status_code=429, detail="Daily ZWAP earning limit reached. Come back tomorrow!")
+
     rewards = calculate_step_rewards(steps_data.steps, tier_config["zwap_multiplier"])
-    
+
+    # Cap rewards to remaining daily allowance
+    rewards = min(rewards, zwap_cap - daily_zwap)
+
     await db.users.update_one(
         {"wallet_address": wallet},
         {
-            "$inc": {"zwap_balance": rewards, "total_steps": steps_data.steps, "total_earned": rewards},
+            "$inc": {"zwap_balance": rewards, "total_steps": steps_data.steps, "total_earned": rewards, "daily_zwap_earned": rewards},
             "$set": {"daily_steps": steps_data.steps}
         }
     )
-    
+
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
     return {
         "steps_counted": steps_data.steps,
-        "rewards_earned": rewards,
+        "rewards_earned": round(rewards, 2),
         "new_balance": updated_user["zwap_balance"],
+        "daily_zwap_remaining": round(zwap_cap - updated_user.get("daily_zwap_earned", 0), 2),
         "message": f"Earned {rewards:.2f} ZWAP for {steps_data.steps} steps!"
     }
 
