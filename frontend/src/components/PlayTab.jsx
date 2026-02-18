@@ -280,6 +280,10 @@ export default function PlayTab() {
 
   const tierConfig = TIERS[user?.tier || "starter"];
   const isPlusUser = user?.tier === "plus";
+  const gamesPlayed = user?.games_played || 0;
+
+  // Progressive difficulty: level scales with total games played
+  const baseLevel = Math.min(Math.floor(gamesPlayed / 3) + 1, 10);
 
   const games = [
     { id: "zbrickles", name: "zBrickles", icon: "🧱", color: "cyan", description: "Break blocks!", locked: false },
