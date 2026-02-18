@@ -215,6 +215,23 @@ Planned Flow:
   - Splash screen conditional routing (wallet → dashboard, no wallet → /wallet)
   - Education spine powers: Learn section, Trivia, Ticker, Wallet page content
 - [x] Backend modular structure imported (routers/, services/) for future use
+- [x] API Client Refactor & Contract Prep:
+  - Centralized API client at src/lib/api.js (all endpoints + stubs)
+  - All 8 components updated to import from @/lib/api
+  - App.js cleaned — no inline fetch calls
+  - Stub endpoints log "[API] not implemented" with structured fallback responses
+  - API Contract Map at /app/docs/API_CONTRACT.md (full endpoint reference)
+- [x] Backend Service Stubs:
+  - reward_service.py: calculate_play_reward, calculate_move_reward, convert_zpts_to_zwap, get_tier_multipliers, enforce_daily_caps (all raise NotImplementedError)
+  - play_routes.py and move_routes.py import stubs for future delegation
+- [x] Education Spine → Trivia:
+  - TriviaGame pulls questions from education.js allTrivia (client-side)
+  - Shows module name above each question
+  - Client-side answer validation (server-side validation is contract-ready)
+- [x] Plus Games Built:
+  - zTetris: Canvas-based with 7 tetrominos, touch/keyboard controls, level progression
+  - zSlots: 3-reel slot machine, 10 spins/session, jackpot/pair scoring
+  - Both locked behind Plus tier with Lock icon + badge
 
 ## Prioritized Remaining Tasks
 
