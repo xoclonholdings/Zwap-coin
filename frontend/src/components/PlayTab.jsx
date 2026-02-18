@@ -4,6 +4,9 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Gamepad2, Play, Trophy, Lock, Crown, ChevronLeft, HelpCircle } from "lucide-react";
+import TetrisGame from "@/components/games/TetrisGame";
+import SlotsGame from "@/components/games/SlotsGame";
+import { allTrivia } from "@/data/education";
 
 // ============ GAME COMPONENTS ============
 
