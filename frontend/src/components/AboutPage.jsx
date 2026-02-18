@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ZWAP_BANG } from "@/App";
+import { useApp } from "@/App";
 import { ArrowLeft, Footprints, Gamepad2, ArrowRightLeft, ShoppingBag, Zap, Shield } from "lucide-react";
 
 // ZWAP Coin logo
@@ -9,6 +10,7 @@ const ZWAP_COIN_LOGO = "https://customer-assets.emergentagent.com/job_zwap-coin-
 
 export default function AboutPage() {
   const navigate = useNavigate();
+  const { walletAddress } = useApp();
 
   const features = [
     { icon: Footprints, title: "MOVE", desc: "Walk and earn ZWAP! Coin with our step tracker. The more you move, the more you earn.", color: "cyan" },
@@ -289,22 +291,30 @@ export default function AboutPage() {
       </section>
 
       {/* Get Started CTA */}
-      <section className="py-12 px-6 bg-[#050510]">
+      <section className="py-16 px-6 bg-[#050510]">
         <div className="max-w-lg mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-2xl font-bold text-white mb-4">Ready to Start Earning?</h2>
-            <p className="text-gray-400 mb-6">Join thousands of Zwappers earning crypto every day.</p>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              {walletAddress ? "Welcome Back, Zwapper" : "Ready to Bridge Into the Future?"}
+            </h2>
+            <p className="text-gray-400 mb-8 text-sm leading-relaxed max-w-md mx-auto">
+              {walletAddress 
+                ? "Your wallet is connected and your journey continues. Head back to the dashboard to keep earning."
+                : "If you are ready to be part of this innovation — a bridge to the future of cryptocurrency and Web3 — then connect your wallet and welcome to ZWAP!"
+              }
+            </p>
             <motion.button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate(walletAddress ? "/dashboard" : "/wallet")}
               className="px-10 py-4 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 rounded-full text-white shadow-[0_0_30px_rgba(0,245,255,0.4)] hover:shadow-[0_0_50px_rgba(0,245,255,0.6)] transition-all"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              data-testid="about-cta-button"
             >
-              Get Started
+              {walletAddress ? "Back to Dashboard" : "Begin Your Journey"}
             </motion.button>
           </motion.div>
         </div>
