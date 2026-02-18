@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp, api } from "@/App";
 import { Trophy, TrendingUp, Newspaper, Lightbulb, Gift, Bell, Users } from "lucide-react";
+import { allDidYouKnow } from "@/data/education";
 
 // Ticker content types
 const TICKER_TYPES = {
@@ -26,9 +27,11 @@ const staticContent = [
   
   // Tips & How-tos
   { type: "TIP", text: "Tip: Play games to earn Z Points - walking only gives ZWAP!" },
-  { type: "TIP", text: "Did you know? 1000 Z Points = 1 ZWAP in the shop" },
   { type: "TIP", text: "Pro tip: Higher game levels = better rewards!" },
   { type: "TIP", text: "FAQ: Swap fees are only 1% - lowest in the market!" },
+  
+  // Education "Did You Know?" facts from spine
+  ...allDidYouKnow.map((item) => ({ type: "TIP", text: `Did you know? ${item.fact}` })),
 ];
 
 export default function NewsTicker() {
