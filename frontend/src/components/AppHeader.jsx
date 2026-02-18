@@ -3,7 +3,7 @@ import { useApp, ZWAP_BANG, api, ZWAP_CONTRACT } from "@/App";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail, Link2, ExternalLink } from "lucide-react";
+import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail, Link2, ExternalLink, BookOpen } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -43,6 +43,7 @@ export default function AppHeader() {
 
   const settingsItems = [
     { icon: User, label: "Profile", action: () => { setSettingsOpen(false); navigate("/profile"); } },
+    { icon: BookOpen, label: "Learn", action: () => { setSettingsOpen(false); navigate("/learn"); } },
     { icon: Mail, label: "Contact", action: () => { setSettingsOpen(false); navigate("/contact"); } },
     { icon: Lock, label: "Privacy Policy", action: () => { setSettingsOpen(false); navigate("/privacy"); } },
     { icon: FileText, label: "Terms of Use", action: () => { setSettingsOpen(false); navigate("/terms"); } },
