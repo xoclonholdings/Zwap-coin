@@ -52,7 +52,7 @@ curl https://zwap-api.onrender.com/api/health
 - **Free tier sleeps after 15 min of inactivity.** First request after sleep takes ~30s to cold-start.
 - **MongoDB:** You need an external MongoDB. Use [MongoDB Atlas free tier](https://www.mongodb.com/atlas) — the connection string goes in `MONGO_URL`.
 - **CORS_ORIGINS:** Set this to your exact Netlify URL. For multiple origins, comma-separate them: `https://app1.netlify.app,https://app2.netlify.app`
-- **`emergentintegrations` package:** The build command includes the custom package index. This is required for Stripe checkout integration.
+
 
 ## Blueprint Deploy (Alternative)
 

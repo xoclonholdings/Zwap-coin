@@ -23,8 +23,13 @@ import AdminPanel from "@/components/AdminPanel";
 import WalletPage from "@/components/WalletPage";
 import LearnPage from "@/components/LearnPage";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+console.log("ZWAP LOCAL APP.JS LOADED");
+
+// Prefer env, but fall back to local dev backend
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
 const API = `${BACKEND_URL}/api`;
+
+console.log("ZWAP API BASE =", API);
 
 // App Context
 export const AppContext = createContext();
@@ -130,21 +135,26 @@ function AppProvider({ children }) {
   };
 
   const connectWallet = async (address) => {
-    try {
-      setIsLoading(true);
-      const userData = await api.connectWallet(address);
-      setUser(userData);
-      setWalletAddress(address);
-      localStorage.setItem("zwap_wallet", address);
-      setIsWalletModalOpen(false);
-      toast.success("Wallet connected!");
-      return userData;
-    } catch (error) {
-      toast.error("Failed to connect wallet");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  console.log("🔌 connectWallet called with:", address);
+
+  try {
+    setIsLoading(true);
+    const userData = await api.connectWallet(address);
+    console.log("✅ api.connectWallet response:", userData);
+
+    setUser(userData);
+    setWalletAddress(address);
+    localStorage.setItem("zwap_wallet", address);
+    setIsWalletModalOpen(false);
+    toast.success("Wallet connected!");
+    return userData;
+  } catch (error) {
+    console.error("❌ api.connectWallet failed:", error);
+    toast.error("Failed to connect wallet");
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
   };
 
   const disconnectWallet = () => {

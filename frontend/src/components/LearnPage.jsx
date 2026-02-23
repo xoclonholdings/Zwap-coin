@@ -76,7 +76,7 @@ function ModuleCard({ module, index }) {
                 <p className={`${colors.analogyText} text-sm italic`}>"{module.analogy}"</p>
               </div>
 
-              {/* Did You Know */}
+              {/* Did You Know? */}
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Did You Know?</p>
                 <ul className="space-y-1.5">

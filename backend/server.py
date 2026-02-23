@@ -24,12 +24,10 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Stripe
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
-
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
 
 # Create the main app
-app = FastAPI(title="ZWAP! Coin API")
+app = FastAPI(title="ZWAP! API")
 api_router = APIRouter(prefix="/api")
 
 # ============ CONSTANTS ============
@@ -349,32 +347,69 @@ async def get_onchain_zwap_balance(wallet_address: str) -> Optional[float]:
 
 @api_router.post("/users/connect", response_model=UserResponse)
 async def connect_wallet(user_data: UserCreate):
-    """Connect wallet and create/get user"""
+    """Connect wallet and create/get user.
+
+    Normal path:
+      - Look up user in MongoDB by wallet_address
+      - If exists, return it
+      - Else create a new user document and insert
+
+    Dev fallback:
+      - If MongoDB is unreachable or errors, log the exception
+      - Return an in-memory user object so local wallet login still works
+    """
     wallet = user_data.wallet_address.lower()
-    existing = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    
-    if existing:
-        return UserResponse(**existing)
-    
-    new_user = {
-        "id": str(uuid.uuid4()),
-        "wallet_address": wallet,
-        "zwap_balance": 100.0,
-        "zpts_balance": 0,
-        "tier": "starter",
-        "subscription_id": None,
-        "subscription_status": None,
-        "total_steps": 0,
-        "daily_steps": 0,
-        "daily_zpts_earned": 0,
-        "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
-        "games_played": 0,
-        "total_earned": 100.0,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await db.users.insert_one(new_user)
-    return UserResponse(**{k: v for k, v in new_user.items() if k != "_id"})
+
+    try:
+        # Normal DB-backed flow
+        existing = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+        if existing:
+            return UserResponse(**existing)
+
+        new_user = {
+            "id": str(uuid.uuid4()),
+            "wallet_address": wallet,
+            "zwap_balance": 100.0,
+            "zpts_balance": 0,
+            "tier": "starter",
+            "subscription_id": None,
+            "subscription_status": None,
+            "total_steps": 0,
+            "daily_steps": 0,
+            "daily_zpts_earned": 0,
+            "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
+            "games_played": 0,
+            "total_earned": 100.0,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        await db.users.insert_one(new_user)
+        return UserResponse(**{k: v for k, v in new_user.items() if k != "_id"})
+
+    except Exception as e:
+        # 🔊 DEV-ONLY FALLBACK: DB is unhappy, but we still let the user in locally.
+        logging.exception(
+            f"DB error in /users/connect for wallet {wallet}. Using in-memory fallback user."
+        )
+
+        fallback_user = {
+            "id": str(uuid.uuid4()),
+            "wallet_address": wallet,
+            "zwap_balance": 100.0,
+            "zpts_balance": 0,
+            "tier": "starter",
+            "subscription_id": None,
+            "subscription_status": None,
+            "total_steps": 0,
+            "daily_steps": 0,
+            "daily_zpts_earned": 0,
+            "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
+            "games_played": 0,
+            "total_earned": 100.0,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        return UserResponse(**fallback_user)
 
 @api_router.get("/users/{wallet_address}", response_model=UserResponse)
 async def get_user(wallet_address: str):

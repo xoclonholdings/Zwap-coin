@@ -5,6 +5,7 @@
  */
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+console.log("ZWAP API BASE =", API);
 
 // ---------------------------------------------------------------------------
 // Helpers
