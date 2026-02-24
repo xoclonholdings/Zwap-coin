@@ -37,8 +37,15 @@ self.addEventListener('activate', event => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', event => {
-  // Skip non-GET requests and API calls
-  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+  const url = new URL(event.request.url);
+
+  // 1) Ignore cross-origin requests (analytics, wallet providers, etc.)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // 2) Skip non-GET requests and API calls
+  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) {
     return;
   }
 
@@ -48,16 +55,19 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
+
         return fetch(event.request).then(response => {
           // Don't cache non-successful responses
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
+
           // Clone and cache
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, responseToCache);
           });
+
           return response;
         });
       })

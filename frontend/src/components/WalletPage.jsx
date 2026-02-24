@@ -151,31 +151,42 @@ export default function WalletPage() {
               <span className="absolute -top-1 -right-1 px-1 py-0.5 bg-purple-500 text-[8px] text-white rounded font-bold">TAP</span>
             </motion.div>
           </div>
-          <button
-            onClick={() => navigate("/learn")}
-            className="mt-3 text-purple-400 text-sm font-medium flex items-center gap-1 hover:text-purple-300 transition-colors"
-            data-testid="wallet-learn-link"
-          >
-            <BookOpen className="w-4 h-4" /> Preview the Learn section <ArrowRight className="w-3 h-3" />
-          </button>
-        </motion.div>
+                 </motion.div>
 
         {/* Connect CTA */}
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-        >
-          <Button
-            onClick={handleConnect}
-            data-testid="wallet-connect-button"
-            className="w-full py-6 text-lg font-bold bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 rounded-2xl shadow-[0_0_30px_rgba(0,245,255,0.3)] hover:shadow-[0_0_50px_rgba(0,245,255,0.5)] transition-all"
-          >
-            <Wallet className="w-5 h-5 mr-2" /> Connect Your Wallet
-          </Button>
-          <p className="text-gray-600 text-xs mt-3">WalletConnect supported. No private keys required.</p>
-        </motion.div>
+<motion.div
+  className="text-center"
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.35 }}
+>
+  <div className="flex flex-col sm:flex-row gap-3">
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => navigate("/learn")}
+      className="w-full sm:w-1/2 py-4 text-sm font-semibold"
+      data-testid="wallet-learn-button"
+    >
+      <BookOpen className="w-4 h-4 mr-2" />
+      Learn More
+    </Button>
+
+    <Button
+      type="button"
+      onClick={handleConnect}
+      data-testid="wallet-connect-button"
+      className="w-full sm:w-1/2 py-4 text-sm sm:text-base font-bold bg-gradient-to-r from-cyan-400 via-teal-400 to-purple-500 shadow-[0_0_25px_rgba(0,245,255,0.3)] hover:shadow-[0_0_50px_rgba(0,245,255,0.5)] transition-all"
+    >
+      <Wallet className="w-5 h-5 mr-2" />
+      Connect Wallet
+    </Button>
+  </div>
+
+  <p className="text-gray-600 text-xs mt-3">
+    WalletConnect supported. No private keys required.
+  </p>
+</motion.div>
       </div>
     </div>
   );

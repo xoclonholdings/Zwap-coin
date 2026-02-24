@@ -173,13 +173,14 @@ function AppProvider({ children }) {
   };
 
   const requireWallet = (action) => {
-    if (!walletAddress) {
-      setPendingAction(action);
-      setIsWalletModalOpen(true);
-      return false;
-    }
-    return true;
-  };
+  if (!walletAddress) {
+    setPendingAction(action);
+    // Go to /wallet with explicit connect intent
+    navigate("/wallet", { state: { autoConnect: true } });
+    return false;
+  }
+  return true;
+};
 
   return (
     <AppContext.Provider value={{
@@ -208,15 +209,30 @@ function AppContent() {
         default: navigate("/dashboard");
       }
     }
-  }, [walletAddress, pendingAction, navigate, setPendingAction]);
+  }, [walletAddress, pendingAction, navigate, setPendingAction]); 
+
 
   // Show splash screen on root - routes based on wallet state
   if (showSplash && location.pathname === "/") {
-    return <SplashScreen onEnter={() => { 
-      setShowSplash(false); 
-      navigate(walletAddress ? "/dashboard" : "/wallet"); 
-    }} />;
-  }
+  return (
+    <SplashScreen 
+      onEnter={() => { 
+        setShowSplash(false); 
+        if (walletAddress) {
+          navigate("/dashboard");
+        } else {
+          // Go to Before You Begin, and explicitly open the wallet modal
+          navigate("/wallet");
+          setIsWalletModalOpen(true);
+        }
+      }}
+      onWhatIsZwap={() => {
+        setShowSplash(false);
+        navigate("/about");
+      }}
+    />
+  );
+}
 
   // Wait for initialization
   if (!initialized) {
