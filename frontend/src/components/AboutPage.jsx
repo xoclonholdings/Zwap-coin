@@ -158,22 +158,6 @@ export default function AboutPage() {
               <h3 className="text-xl font-bold text-purple-400 mb-2">Z POINTS</h3>
               <p className="text-gray-400 text-sm mb-4">
                 Loyalty credits earned only from games. Use them for exclusive items, 
-                boosts, and special redemptions. Convert 1000 zPts to 1 ZWAP!
-              </p>
-              <div className="text-xs text-gray-500">
-                • Game-only rewards<br />
-                • Daily caps: 75-150 zPts<br />
-                • Exclusive shop items
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section - MOVED DOWN (was above token section) */}
-      <section className="py-12 px-6 bg-[#050510]">
-        <div className="max-w-4xl mx-auto">
-          <motion.h2
             className="text-2xl sm:text-3xl font-bold text-center mb-8"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -181,17 +165,26 @@ export default function AboutPage() {
           >
             <span className="text-gray-400">HOW IT</span>{" "}
             <span className="text-cyan-400">WORKS</span>
-          </motion.h2>
+          <motion.h2>
+
 
           <div className="grid sm:grid-cols-2 gap-4">
+
             {features.map((feature, i) => {
               const Icon = feature.icon;
+
               return (
+
                 <motion.div
+
                   key={i}
+
                   className="glass-card p-5 rounded-2xl"
+
                   initial={{ opacity: 0, y: 30 }}
+
                   whileInView={{ opacity: 1, y: 0 }}
+
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
                   whileHover={{ scale: 1.02, y: -5 }}
@@ -321,3 +314,5 @@ export default function AboutPage() {
     </div>
   );
 }
+
+
