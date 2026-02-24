@@ -260,8 +260,7 @@ export default function AboutPage() {
               <span className="text-white">FOR THE FUTURE</span>
             </h2>
             <p className="text-gray-400 max-w-xl mx-auto mb-6 text-sm">
-              ZWAP!™️ is a Web3 asset owned by <span className="text-cyan-400">Zupreme Imports LLC</span>, 
-              operated by <span className="text-purple-400">Gratia Dei Unlimited</span>, 
+              ZWAP!™️ is a Web3 asset owned by <span className="text-cyan-400">ZWAP LLC</span>, 
               held by <span className="text-white">XOCLON Holdings Inc</span>.
             </p>
             <div className="flex justify-center gap-4 text-xs text-gray-500">

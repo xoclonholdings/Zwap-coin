@@ -277,8 +277,8 @@ function AppContent() {
     return <LearnPage />;
   }
 
-  // Settings pages - no main layout
-  const settingsPages = ["/profile", "/contact", "/privacy", "/terms"];
+   // Settings + Admin pages - no main layout
+  const settingsPages = ["/profile", "/contact", "/privacy", "/terms", "/admin"];
   if (settingsPages.includes(location.pathname)) {
     return (
       <>
@@ -287,6 +287,7 @@ function AppContent() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
         <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
       </>

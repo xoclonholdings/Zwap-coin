@@ -14,15 +14,47 @@ const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
 // Admin API helper
 const adminApi = {
-  headers: () => ({ "X-Admin-Key": localStorage.getItem("zwap_admin_key") || "" }),
+  // Accept an explicit key; fall back to localStorage if not provided
+  headers: (key) => ({
+    "X-Admin-Key": key ?? localStorage.getItem("zwap_admin_key") ?? "",
+  }),
   
-  async get(endpoint) {
-    const res = await fetch(`${API}/admin${endpoint}`, { headers: this.headers() });
+  async get(endpoint, key) {
+    const res = await fetch(`${API}/admin${endpoint}`, { headers: this.headers(key) });
     if (!res.ok) throw new Error(res.status === 401 ? "Unauthorized" : "API Error");
     return res.json();
   },
   
-  async post(endpoint, data) {
+  async post(endpoint, data, key) {
+    const res = await fetch(`${API}/admin${endpoint}`, {
+      method: "POST",
+      headers: { ...this.headers(key), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("API Error");
+    return res.json();
+  },
+  
+  async put(endpoint, data, key) {
+    const res = await fetch(`${API}/admin${endpoint}`, {
+      method: "PUT",
+      headers: { ...this.headers(key), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("API Error");
+    return res.json();
+  },
+  
+  async delete(endpoint, key) {
+    const res = await fetch(`${API}/admin${endpoint}`, {
+      method: "DELETE",
+      headers: this.headers(key),
+    });
+    if (!res.ok) throw new Error("API Error");
+    return res.json();
+  },
+  
+async post(endpoint, data) {
     const res = await fetch(`${API}/admin${endpoint}`, {
       method: "POST",
       headers: { ...this.headers(), "Content-Type": "application/json" },
@@ -85,19 +117,25 @@ const AdminLogin = ({ onLogin }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
-  const handleLogin = async () => {
-    setLoading(true);
-    localStorage.setItem("zwap_admin_key", key);
-    try {
-      await adminApi.get("/dashboard");
-      onLogin();
-    } catch {
-      setError("Invalid admin key");
-      localStorage.removeItem("zwap_admin_key");
-    }
-    setLoading(false);
-  };
-  
+const handleLogin = async () => {
+  setLoading(true);
+  setError("");
+
+  // Save the key for future calls
+  localStorage.setItem("zwap_admin_key", key);
+
+  try {
+    // ⬇️ Send the typed key directly
+    await adminApi.get("/dashboard", key);
+    onLogin();
+  } catch {
+    setError("Invalid admin key");
+    localStorage.removeItem("zwap_admin_key");
+  }
+
+  setLoading(false);
+};
+
   return (
     <div className="min-h-screen bg-[#050510] flex items-center justify-center p-4">
       <motion.div 
