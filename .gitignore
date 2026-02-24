@@ -3,6 +3,7 @@
 # IDE and editors
 .idea/
 .vscode/
+emergent-main.js
 
 # Dependencies
 node_modules/
