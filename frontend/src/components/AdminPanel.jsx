@@ -493,66 +493,342 @@ const MarketplaceSection = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
-  
-  useEffect(() => { loadItems(); }, []);
-  
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
   const loadItems = async () => {
     setLoading(true);
     try {
       const data = await adminApi.get("/marketplace/items");
       setItems(data.items || []);
-    } catch { toast.error("Failed to load items"); }
-    setLoading(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load items");
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
+  const startNewItem = () => {
+    setEditingItem({
+      id: null,
+      name: "",
+      description: "",
+      image_url: "",
+      price_zwap: 0,
+      price_zpoints: 0,
+      max_quantity: "",
+      is_active: true,
+      category: "",
+    });
+  };
+
+  const startEditItem = (item) => {
+    setEditingItem({
+      id: item.id ?? item._id ?? null,
+      name: item.name ?? "",
+      description: item.description ?? "",
+      image_url: item.image_url ?? "",
+      price_zwap: item.price_zwap ?? 0,
+      price_zpoints: item.price_zpoints ?? 0,
+      max_quantity: item.max_quantity ?? "",
+      is_active: item.is_active ?? true,
+      category: item.category ?? "",
+    });
+  };
+
+  const handleFieldChange = (field, value) => {
+    setEditingItem((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!editingItem) return;
+
+    const payload = {
+      name: editingItem.name.trim(),
+      description: editingItem.description.trim(),
+      image_url: editingItem.image_url?.trim() || null,
+      price_zwap: Number(editingItem.price_zwap) || 0,
+      price_zpoints: Number(editingItem.price_zpoints) || 0,
+      max_quantity:
+        editingItem.max_quantity === "" || editingItem.max_quantity == null
+          ? null
+          : Number(editingItem.max_quantity),
+      is_active: !!editingItem.is_active,
+      category: editingItem.category?.trim() || null,
+    };
+
+    if (!payload.name) {
+      toast.error("Item name is required");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // New vs existing
+      if (editingItem.id) {
+        await adminApi.put(`/marketplace/items/${editingItem.id}`, payload);
+        toast.success("Item updated");
+      } else {
+        await adminApi.post("/marketplace/items", payload);
+        toast.success("Item created");
+      }
+
+      setEditingItem(null);
+      await loadItems();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save item");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const deleteItem = async (itemId) => {
-    if (!confirm("Delete this item?")) return;
+    if (!window.confirm("Delete this item?")) return;
     try {
       await adminApi.delete(`/marketplace/items/${itemId}`);
       toast.success("Item deleted");
       loadItems();
-    } catch { toast.error("Failed to delete item"); }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete item");
+    }
   };
-  
-  if (loading) return <div className="text-gray-400 text-center py-8">Loading marketplace...</div>;
-  
+
+  if (loading) {
+    return (
+      <div className="text-gray-400 text-center py-8">
+        Loading marketplace...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white">Marketplace Management</h2>
-        <Button className="bg-cyan-600 hover:bg-cyan-700">
+        <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={startNewItem}>
           <Plus className="w-4 h-4 mr-2" /> Add Item
         </Button>
       </div>
-      
+
+      {/* Editor */}
+      {editingItem && (
+        <div className="rounded-xl border border-cyan-900/40 bg-black/40 p-4 space-y-3">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-white font-semibold text-sm">
+              {editingItem.id ? "Edit Item" : "New Item"}
+            </h3>
+            <button
+              onClick={() => setEditingItem(null)}
+              className="text-gray-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Name</label>
+              <Input
+                value={editingItem.name}
+                onChange={(e) => handleFieldChange("name", e.target.value)}
+                placeholder="Item name"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Category</label>
+              <Input
+                value={editingItem.category}
+                onChange={(e) => handleFieldChange("category", e.target.value)}
+                placeholder="e.g. apparel, ebook, digital"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs text-gray-400">Description</label>
+              <textarea
+                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                rows={3}
+                value={editingItem.description}
+                onChange={(e) =>
+                  handleFieldChange("description", e.target.value)
+                }
+                placeholder="Short description shown in the app marketplace"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs text-gray-400">Image URL</label>
+              <Input
+                value={editingItem.image_url}
+                onChange={(e) =>
+                  handleFieldChange("image_url", e.target.value)
+                }
+                placeholder="https://..."
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Price (ZWAP)</label>
+              <Input
+                type="number"
+                min="0"
+                value={editingItem.price_zwap}
+                onChange={(e) =>
+                  handleFieldChange("price_zwap", e.target.value)
+                }
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Price (Z Points)</label>
+              <Input
+                type="number"
+                min="0"
+                value={editingItem.price_zpoints}
+                onChange={(e) =>
+                  handleFieldChange("price_zpoints", e.target.value)
+                }
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">
+                Max Quantity (optional)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                value={editingItem.max_quantity}
+                onChange={(e) =>
+                  handleFieldChange("max_quantity", e.target.value)
+                }
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Status</label>
+              <button
+                type="button"
+                onClick={() =>
+                  handleFieldChange("is_active", !editingItem.is_active)
+                }
+                className={`px-3 py-2 rounded-md text-xs font-medium border ${
+                  editingItem.is_active
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                    : "bg-gray-800 text-gray-400 border-gray-700"
+                }`}
+              >
+                {editingItem.is_active ? "Active" : "Inactive"}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-3">
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:text-white"
+              onClick={() => setEditingItem(null)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-cyan-600 hover:bg-cyan-700"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Item"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Items list */}
       <div className="grid gap-3">
         {items.length === 0 ? (
-          <div className="text-gray-400 text-center py-8">No marketplace items</div>
+          <div className="text-gray-400 text-center py-8">
+            No marketplace items
+          </div>
         ) : (
           items.map((item) => (
-            <div key={item.id || item.name} className="p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4">
+            <div
+              key={item.id || item._id || item.name}
+              className="p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4"
+            >
               <div className="w-16 h-16 rounded-xl bg-gray-700 overflow-hidden flex-shrink-0">
                 {item.image_url ? (
-                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <ShoppingBag className="w-6 h-6 text-gray-500" />
                   </div>
                 )}
               </div>
+
               <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold truncate">{item.name}</h3>
-                <p className="text-gray-400 text-sm truncate">{item.description}</p>
-                <div className="flex gap-3 mt-1">
-                  <span className="text-cyan-400 text-sm">{item.price_zwap} ZWAP</span>
-                  <span className="text-purple-400 text-sm">{item.price_zpoints} zPts</span>
+                <h3 className="text-white font-semibold truncate">
+                  {item.name}
+                </h3>
+                <p className="text-gray-400 text-sm truncate">
+                  {item.description}
+                </p>
+                <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                  <span className="text-cyan-400">
+                    {item.price_zwap} ZWAP
+                  </span>
+                  <span className="text-purple-400">
+                    {item.price_zpoints} zPts
+                  </span>
+                  {item.category && (
+                    <span className="text-gray-400">
+                      • {item.category}
+                    </span>
+                  )}
+                  {item.max_quantity != null && (
+                    <span className="text-gray-500">
+                      • max {item.max_quantity}
+                    </span>
+                  )}
+                  <span
+                    className={
+                      item.is_active
+                        ? "text-emerald-400"
+                        : "text-red-400"
+                    }
+                  >
+                    • {item.is_active ? "Active" : "Inactive"}
+                  </span>
                 </div>
               </div>
-              <div className="flex gap-1">
-                <button className="p-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white">
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => startEditItem(item)}
+                  className="p-2 rounded hover:bg-gray-700 text-gray-400 hover:text-cyan-400"
+                >
                   <Edit className="w-4 h-4" />
                 </button>
-                <button onClick={() => deleteItem(item.id)} className="p-2 rounded hover:bg-red-900/50 text-gray-400 hover:text-red-400">
+                <button
+                  onClick={() =>
+                    deleteItem(item.id || item._id)
+                  }
+                  className="p-2 rounded hover:bg-red-900/50 text-gray-400 hover:text-red-400"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>

@@ -3,20 +3,49 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ZWAP_BANG } from "@/App";
 import { useApp } from "@/App";
-import { ArrowLeft, Footprints, Gamepad2, ArrowRightLeft, ShoppingBag, Zap, Shield } from "lucide-react";
+import {
+  ArrowLeft,
+  Footprints,
+  Gamepad2,
+  ArrowRightLeft,
+  ShoppingBag,
+  Zap,
+  Shield,
+} from "lucide-react";
 
 // ZWAP Coin logo
-const ZWAP_COIN_LOGO = "https://customer-assets.emergentagent.com/job_zwap-coin-mobile/artifacts/zbcxii5n_D53F824E-1DBA-4963-86D4-4D4E73400DE1.png";
+const ZWAP_COIN_LOGO =
+  "https://customer-assets.emergentagent.com/job_zwap-coin-mobile/artifacts/zbcxii5n_D53F824E-1DBA-4963-86D4-4D4E73400DE1.png";
 
 export default function AboutPage() {
   const navigate = useNavigate();
   const { walletAddress } = useApp();
 
   const features = [
-    { icon: Footprints, title: "MOVE", desc: "Walk and earn ZWAP! Coin with our step tracker. The more you move, the more you earn.", color: "cyan" },
-    { icon: Gamepad2, title: "PLAY", desc: "Play games like zBrickles and zTrivia to earn ZWAP! and Z Points. Games get harder = more rewards!", color: "purple" },
-    { icon: ArrowRightLeft, title: "SWAP", desc: "One-tap exchange between ZWAP! and major cryptos like BTC, ETH, SOL, and POL.", color: "blue" },
-    { icon: ShoppingBag, title: "SHOP", desc: "Spend your earnings at Zupreme Imports. Merch, eBooks, tech, and exclusive drops.", color: "pink" },
+    {
+      icon: Footprints,
+      title: "MOVE",
+      desc: "Walk and earn ZWAP! Coin with our step tracker. The more you move, the more you earn.",
+      color: "cyan",
+    },
+    {
+      icon: Gamepad2,
+      title: "PLAY",
+      desc: "Play games like zBrickles and zTrivia to earn ZWAP! and Z Points. Games get harder = more rewards!",
+      color: "purple",
+    },
+    {
+      icon: ArrowRightLeft,
+      title: "SWAP",
+      desc: "One-tap exchange between ZWAP! and major cryptos like BTC, ETH, SOL, and POL.",
+      color: "blue",
+    },
+    {
+      icon: ShoppingBag,
+      title: "SHOP",
+      desc: "Spend your earnings at Zupreme Imports. Merch, eBooks, tech, and exclusive drops.",
+      color: "pink",
+    },
   ];
 
   const colorMap = {
@@ -43,12 +72,12 @@ export default function AboutPage() {
       <section className="relative min-h-[50vh] flex flex-col items-center justify-center px-6 pt-16 pb-8">
         {/* Background effects */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div 
+          <motion.div
             className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-cyan-500/15 rounded-full blur-[120px]"
             animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.25, 0.15] }}
             transition={{ duration: 4, repeat: Infinity }}
           />
-          <motion.div 
+          <motion.div
             className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/15 rounded-full blur-[120px]"
             animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.15, 0.2] }}
             transition={{ duration: 4, repeat: Infinity }}
@@ -61,12 +90,12 @@ export default function AboutPage() {
             src={ZWAP_BANG}
             alt="ZWAP!"
             className="h-32 sm:h-44 mx-auto mb-4"
-            animate={{ 
+            animate={{
               filter: [
                 "drop-shadow(0 0 20px rgba(0,245,255,0.4))",
                 "drop-shadow(0 0 40px rgba(0,245,255,0.7))",
-                "drop-shadow(0 0 20px rgba(0,245,255,0.4))"
-              ]
+                "drop-shadow(0 0 20px rgba(0,245,255,0.4))",
+              ],
             }}
             transition={{ duration: 2, repeat: Infinity }}
           />
@@ -105,33 +134,41 @@ export default function AboutPage() {
             <motion.div
               className="p-6 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent"
               animate={{ opacity: 1 }}
-              whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(0,245,255,0.2)" }}
+              whileHover={{
+                scale: 1.02,
+                boxShadow: "0 0 30px rgba(0,245,255,0.2)",
+              }}
             >
               <motion.div
-                animate={{ 
+                animate={{
                   boxShadow: [
                     "0 0 10px rgba(0,245,255,0.2)",
                     "0 0 20px rgba(0,245,255,0.4)",
-                    "0 0 10px rgba(0,245,255,0.2)"
-                  ]
+                    "0 0 10px rgba(0,245,255,0.2)",
+                  ],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="w-14 h-14 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4 overflow-hidden"
               >
-                <img 
-                  src={ZWAP_COIN_LOGO} 
-                  alt="ZWAP! Coin" 
+                <img
+                  src={ZWAP_COIN_LOGO}
+                  alt="ZWAP! Coin"
                   className="w-12 h-12 object-contain"
                 />
               </motion.div>
-              <h3 className="text-xl font-bold text-cyan-400 mb-2">ZWAP! COIN</h3>
+              <h3 className="text-xl font-bold text-cyan-400 mb-2">
+                ZWAP! COIN
+              </h3>
               <p className="text-gray-400 text-sm mb-4">
-                The main reward token. Earn it through walking, playing games, and faucet rewards. 
-                Spend it in the marketplace or swap for other crypto.
+                The main reward token. Earn it through walking, playing games,
+                and faucet rewards. Spend it in the marketplace or swap for
+                other crypto.
               </p>
               <div className="text-xs text-gray-500">
-                • Earned from zWALK + Games<br />
-                • Tradeable for BTC, ETH, SOL, POL<br />
+                • Earned from zWALK + Games
+                <br />
+                • Tradeable for BTC, ETH, SOL, POL
+                <br />
                 • Spendable at Zupreme Imports
               </div>
             </motion.div>
@@ -140,76 +177,145 @@ export default function AboutPage() {
             <motion.div
               className="p-6 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-transparent"
               animate={{ opacity: 1 }}
-              whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(153,69,255,0.2)" }}
+              whileHover={{
+                scale: 1.02,
+                boxShadow: "0 0 30px rgba(153,69,255,0.2)",
+              }}
             >
               <motion.div
-                animate={{ 
+                animate={{
                   boxShadow: [
                     "0 0 10px rgba(153,69,255,0.2)",
                     "0 0 20px rgba(153,69,255,0.4)",
-                    "0 0 10px rgba(153,69,255,0.2)"
-                  ]
+                    "0 0 10px rgba(153,69,255,0.2)",
+                  ],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4"
               >
                 <Zap className="w-8 h-8 text-purple-400" />
               </motion.div>
-              <h3 className="text-xl font-bold text-purple-400 mb-2">Z POINTS</h3>
+
+              <h3 className="text-xl font-bold text-purple-400 mb-2">
+                Z POINTS
+              </h3>
               <p className="text-gray-400 text-sm mb-4">
-                Loyalty credits earned only from games. Use them for exclusive items, 
+                Loyalty credits earned only from games. Use them for exclusive
+                items, multipliers, and deeper ecosystem perks as you play.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+           {/* How It Works Section */}
+      <section className="py-16 px-6 bg-[#050510] border-t border-cyan-900/40">
+        <div className="max-w-4xl mx-auto">
+          <motion.h2
             className="text-2xl sm:text-3xl font-bold text-center mb-8"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
             <span className="text-gray-400">HOW IT</span>{" "}
             <span className="text-cyan-400">WORKS</span>
-          <motion.h2>
-
+          </motion.h2>
 
           <div className="grid sm:grid-cols-2 gap-4">
+            <motion.div
+              className="p-4 rounded-xl bg-white/5 border border-cyan-900/40"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="text-white font-semibold mb-2 text-sm">
+                1. Learn & Explore
+              </h3>
+              <p className="text-gray-400 text-xs leading-relaxed">
+                Move through short, accessible modules that break down Web3
+                concepts into real-world, culturally grounded examples.
+              </p>
+            </motion.div>
 
-            {features.map((feature, i) => {
-              const Icon = feature.icon;
+            <motion.div
+              className="p-4 rounded-xl bg-white/5 border border-cyan-900/40"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="text-white font-semibold mb-2 text-sm">
+                2. Connect Your Wallet
+              </h3>
+              <p className="text-gray-400 text-xs leading-relaxed">
+                When you&apos;re ready, connect a self-custody wallet to start
+                earning, swapping, and collecting rewards inside the ZWAP!
+                ecosystem.
+              </p>
+            </motion.div>
 
-              return (
+            <motion.div
+              className="p-4 rounded-xl bg-white/5 border border-cyan-900/40"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="text-white font-semibold mb-2 text-sm">
+                3. Play, Move & Shop
+              </h3>
+              <p className="text-gray-400 text-xs leading-relaxed">
+                Earn by playing games, walking, and engaging with curated
+                marketplaces designed for real community value.
+              </p>
+            </motion.div>
 
-                <motion.div
-
-                  key={i}
-
-                  className="glass-card p-5 rounded-2xl"
-
-                  initial={{ opacity: 0, y: 30 }}
-
-                  whileInView={{ opacity: 1, y: 0 }}
-
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                >
-                  <motion.div 
-                    className={`w-10 h-10 rounded-xl ${colorMap[feature.color]} flex items-center justify-center mb-3`}
-                    animate={{ 
-                      boxShadow: [
-                        `0 0 10px rgba(0,0,0,0.1)`,
-                        `0 0 20px rgba(0,0,0,0.2)`,
-                        `0 0 10px rgba(0,0,0,0.1)`
-                      ]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </motion.div>
-                  <h3 className={`text-lg font-bold mb-2 ${colorMap[feature.color].split(" ")[0]}`}>
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-400 text-sm">{feature.desc}</p>
-                </motion.div>
-              );
-            })}
+            <motion.div
+              className="p-4 rounded-xl bg-white/5 border border-cyan-900/40"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="text-white font-semibold mb-2 text-sm">
+                4. Build Your Stack
+              </h3>
+              <p className="text-gray-400 text-xs leading-relaxed">
+                Convert your time and attention into digital assets you actually
+                own, with clear visibility into how value flows.
+              </p>
+            </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* Get Started CTA */}
+      <section className="py-16 px-6 bg-[#050510]">
+        <div className="max-w-lg mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-2xl font-bold text-white mb-4">
+              {walletAddress
+                ? "Welcome Back, Zwapper"
+                : "Ready to Bridge Into the Future?"}
+            </h2>
+            <p className="text-gray-400 mb-8 text-sm leading-relaxed max-w-md mx-auto">
+              {walletAddress
+                ? "Your wallet is connected and your journey continues. Head back to the dashboard to keep earning."
+                : "If you are ready to be part of this innovation — a bridge to the future of cryptocurrency and Web3 — then connect your wallet and welcome to ZWAP!"}
+            </p>
+            <motion.button
+              onClick={() =>
+                navigate(walletAddress ? "/dashboard" : "/wallet")
+              }
+              className="px-10 py-4 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 rounded-full text-white shadow-[0_0_30px_rgba(0,245,255,0.4)] hover:shadow-[0_0_50px_rgba(0,245,255,0.6)] transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              data-testid="about-cta-button"
+            >
+              {walletAddress ? "Back to Dashboard" : "Begin Your Journey"}
+            </motion.button>
+          </motion.div>
         </div>
       </section>
 
@@ -222,23 +328,25 @@ export default function AboutPage() {
             viewport={{ once: true }}
           >
             <motion.div
-              animate={{ 
+              animate={{
                 filter: [
                   "drop-shadow(0 0 10px rgba(0,245,255,0.3))",
                   "drop-shadow(0 0 25px rgba(0,245,255,0.5))",
-                  "drop-shadow(0 0 10px rgba(0,245,255,0.3))"
-                ]
+                  "drop-shadow(0 0 10px rgba(0,245,255,0.3))",
+                ],
               }}
               transition={{ duration: 2, repeat: Infinity }}
             >
               {/* Shield is secret admin login - triple tap to access */}
-              <Shield 
-                className="w-14 h-14 text-cyan-400 mx-auto mb-4 cursor-pointer" 
+              <Shield
+                className="w-14 h-14 text-cyan-400 mx-auto mb-4 cursor-pointer"
                 onClick={() => {
-                  // Track taps for secret access
                   const now = Date.now();
                   const lastTap = window._adminTapTime || 0;
-                  const tapCount = (now - lastTap < 500) ? (window._adminTapCount || 0) + 1 : 1;
+                  const tapCount =
+                    now - lastTap < 500
+                      ? (window._adminTapCount || 0) + 1
+                      : 1;
                   window._adminTapTime = now;
                   window._adminTapCount = tapCount;
                   if (tapCount >= 3) {
@@ -253,27 +361,36 @@ export default function AboutPage() {
               <span className="text-white">FOR THE FUTURE</span>
             </h2>
             <p className="text-gray-400 max-w-xl mx-auto mb-6 text-sm">
-              ZWAP!™️ is a Web3 asset owned by <span className="text-cyan-400">ZWAP LLC</span>, 
-              held by <span className="text-white">XOCLON Holdings Inc</span>.
+              ZWAP!™️ is a Web3 asset owned by{" "}
+              <span className="text-cyan-400">ZWAP LLC</span>, held by{" "}
+              <span className="text-white">XOCLON Holdings Inc</span>.
             </p>
             <div className="flex justify-center gap-4 text-xs text-gray-500">
-              <motion.span 
+              <motion.span
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 Polygon Network
               </motion.span>
               <span>•</span>
-              <motion.span 
+              <motion.span
                 animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: 0.3,
+                }}
               >
                 Multichain Ready
               </motion.span>
               <span>•</span>
-              <motion.span 
+              <motion.span
                 animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: 0.6,
+                }}
               >
                 30B Supply
               </motion.span>
@@ -281,38 +398,7 @@ export default function AboutPage() {
           </motion.div>
         </div>
       </section>
-
-      {/* Get Started CTA */}
-      <section className="py-16 px-6 bg-[#050510]">
-        <div className="max-w-lg mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl font-bold text-white mb-4">
-              {walletAddress ? "Welcome Back, Zwapper" : "Ready to Bridge Into the Future?"}
-            </h2>
-            <p className="text-gray-400 mb-8 text-sm leading-relaxed max-w-md mx-auto">
-              {walletAddress 
-                ? "Your wallet is connected and your journey continues. Head back to the dashboard to keep earning."
-                : "If you are ready to be part of this innovation — a bridge to the future of cryptocurrency and Web3 — then connect your wallet and welcome to ZWAP!"
-              }
-            </p>
-            <motion.button
-              onClick={() => navigate(walletAddress ? "/dashboard" : "/wallet")}
-              className="px-10 py-4 text-lg font-bold bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 rounded-full text-white shadow-[0_0_30px_rgba(0,245,255,0.4)] hover:shadow-[0_0_50px_rgba(0,245,255,0.6)] transition-all"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              data-testid="about-cta-button"
-            >
-              {walletAddress ? "Back to Dashboard" : "Begin Your Journey"}
-            </motion.button>
-          </motion.div>
-        </div>
-      </section>
     </div>
   );
 }
-
 
