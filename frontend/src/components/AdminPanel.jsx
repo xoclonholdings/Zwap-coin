@@ -499,18 +499,19 @@ const MarketplaceSection = () => {
     loadItems();
   }, []);
 
-  const loadItems = async () => {
-    setLoading(true);
-    try {
-      const data = await adminApi.get("/marketplace/items");
-      setItems(data.items || []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load items");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const loadItems = async () => {
+  setLoading(true);
+  try {
+    const data = await adminApi.get("/marketplace/items");
+    const loaded = Array.isArray(data) ? data : data.items || [];
+    setItems(loaded);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to load items");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const startNewItem = () => {
     setEditingItem({
@@ -519,7 +520,7 @@ const MarketplaceSection = () => {
       description: "",
       image_url: "",
       price_zwap: 0,
-      price_zpoints: 0,
+      price_zpts: 0,
       max_quantity: "",
       is_active: true,
       category: "",
@@ -533,7 +534,7 @@ const MarketplaceSection = () => {
       description: item.description ?? "",
       image_url: item.image_url ?? "",
       price_zwap: item.price_zwap ?? 0,
-      price_zpoints: item.price_zpoints ?? 0,
+      price_zpts: item.price_zpts ?? 0,
       max_quantity: item.max_quantity ?? "",
       is_active: item.is_active ?? true,
       category: item.category ?? "",
@@ -555,7 +556,7 @@ const MarketplaceSection = () => {
       description: editingItem.description.trim(),
       image_url: editingItem.image_url?.trim() || null,
       price_zwap: Number(editingItem.price_zwap) || 0,
-      price_zpoints: Number(editingItem.price_zpoints) || 0,
+      price_zpts: Number(editingItem.price_zpts) || 0,
       max_quantity:
         editingItem.max_quantity === "" || editingItem.max_quantity == null
           ? null
@@ -695,9 +696,9 @@ const MarketplaceSection = () => {
               <Input
                 type="number"
                 min="0"
-                value={editingItem.price_zpoints}
+                value={editingItem.price_zpts}
                 onChange={(e) =>
-                  handleFieldChange("price_zpoints", e.target.value)
+                  handleFieldChange("price_zpts", e.target.value)
                 }
               />
             </div>
@@ -792,7 +793,7 @@ const MarketplaceSection = () => {
                     {item.price_zwap} ZWAP
                   </span>
                   <span className="text-purple-400">
-                    {item.price_zpoints} zPts
+                    {item.price_zpts} zPts
                   </span>
                   {item.category && (
                     <span className="text-gray-400">
