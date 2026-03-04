@@ -793,7 +793,7 @@ const MarketplaceSection = () => {
                     {item.price_zwap} ZWAP
                   </span>
                   <span className="text-purple-400">
-                    {item.price_zpts} zPts
+  {item.price_zpts ?? item.price_zpoints ?? 0} zPts
                   </span>
                   {item.category && (
                     <span className="text-gray-400">
