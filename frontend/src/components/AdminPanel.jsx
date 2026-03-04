@@ -539,6 +539,7 @@ const MarketplaceSection = () => {
       max_quantity: "",
       is_active: true,
       category: "",
+subcategory: "",
     });
   };
 
@@ -556,6 +557,7 @@ const MarketplaceSection = () => {
     max_quantity: item.max_quantity ?? "",
     is_active: item.is_active ?? true,
     category: item.category ?? "",
+subcategory: item.subcategory ?? "",
   });
 };
 
@@ -581,6 +583,7 @@ const MarketplaceSection = () => {
           : Number(editingItem.max_quantity),
       is_active: !!editingItem.is_active,
       category: editingItem.category?.trim() || null,
+      subcategory: editingItem.subcategory || null,
     };
 
     if (!payload.name) {
@@ -675,16 +678,43 @@ const MarketplaceSection = () => {
       />
     </div>
   )}
+</<div className="space-y-1">
+  <label className="text-xs text-gray-400">Category</label>
+  <select
+    value={editingItem.category}
+    onChange={(e) => {
+      handleFieldChange("category", e.target.value);
+      handleFieldChange("subcategory", "");
+    }}
+    className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
+  >
+    <option value="">Select Category</option>
+    {Object.keys(CATEGORY_MAP).map((cat) => (
+      <option key={cat} value={cat}>
+        {cat.replace("_", " ")}
+      </option>
+    ))}
+  </select>
 </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-gray-400">Category</label>
-              <Input
-                value={editingItem.category}
-                onChange={(e) => handleFieldChange("category", e.target.value)}
-                placeholder="e.g. apparel, ebook, digital"
-              />
-            </div>
+<div className="space-y-1">
+  <label className="text-xs text-gray-400">Subcategory</label>
+  <select
+    value={editingItem.subcategory || ""}
+    onChange={(e) =>
+      handleFieldChange("subcategory", e.target.value)
+    }
+    className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
+    disabled={!editingItem.category}
+  >
+    <option value="">Select Subcategory</option>
+    {(CATEGORY_MAP[editingItem.category] || []).map((sub) => (
+      <option key={sub} value={sub}>
+        {sub.replace("_", " ")}
+      </option>
+    ))}
+  </select>
+</div>
 
             <div className="space-y-1 sm:col-span-2">
               <label className="text-xs text-gray-400">Description</label>
