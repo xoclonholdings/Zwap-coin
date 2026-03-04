@@ -556,7 +556,7 @@ const MarketplaceSection = () => {
       description: editingItem.description.trim(),
       image_url: editingItem.image_url?.trim() || null,
       price_zwap: Number(editingItem.price_zwap) || 0,
-      price_zpts: Number(editingItem.price_zpts) || 0,
+      price_zpoints: Number(editingItem.price_zpts) || 0,
       max_quantity:
         editingItem.max_quantity === "" || editingItem.max_quantity == null
           ? null
