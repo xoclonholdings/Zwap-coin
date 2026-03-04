@@ -525,18 +525,21 @@ const MarketplaceSection = () => {
   };
 
   const startEditItem = (item) => {
-    setEditingItem({
-      id: item.id ?? item._id ?? null,
-      name: item.name ?? "",
-      description: item.description ?? "",
-      image_url: item.image_url ?? "",
-      price_zwap: item.price_zwap ?? 0,
-      price_zpts: item.price_zpts ?? 0,
-      max_quantity: item.max_quantity ?? "",
-      is_active: item.is_active ?? true,
-      category: item.category ?? "",
-    });
-  };
+  setEditingItem({
+    id: item.id ?? item._id ?? null,
+    name: item.name ?? "",
+    description: item.description ?? "",
+    image_url: item.image_url ?? "",
+    price_zwap: item.price_zwap ?? 0,
+
+    // FIX: accept either DB field name
+    price_zpts: item.price_zpts ?? item.price_zpoints ?? 0,
+
+    max_quantity: item.max_quantity ?? "",
+    is_active: item.is_active ?? true,
+    category: item.category ?? "",
+  });
+};
 
   const handleFieldChange = (field, value) => {
     setEditingItem((prev) => ({
@@ -778,41 +781,46 @@ const MarketplaceSection = () => {
                 )}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold truncate">
-                  {item.name}
-                </h3>
-                <p className="text-gray-400 text-sm truncate">
-                  {item.description}
-                </p>
-                <div className="flex flex-wrap gap-3 mt-1 text-xs">
-                  <span className="text-cyan-400">
-                    {item.price_zwap} ZWAP
-                  </span>
-                  <span className="text-purple-400">
-  {item.price_zpts ?? item.price_zpoints ?? 0} zPts
-                  </span>
-                  {item.category && (
-                    <span className="text-gray-400">
-                      • {item.category}
-                    </span>
-                  )}
-                  {item.max_quantity != null && (
-                    <span className="text-gray-500">
-                      • max {item.max_quantity}
-                    </span>
-                  )}
-                  <span
-                    className={
-                      item.is_active
-                        ? "text-emerald-400"
-                        : "text-red-400"
-                    }
-                  >
-                    • {item.is_active ? "Active" : "Inactive"}
-                  </span>
-                </div>
-              </div>
+             <div className="flex-1 min-w-0">
+  <h3 className="text-white font-semibold truncate">
+    {item.name}
+  </h3>
+  <p className="text-gray-400 text-sm truncate">
+    {item.description}
+  </p>
+
+  <div className="flex flex-wrap gap-3 mt-1 text-xs">
+    <span className="text-cyan-400">
+      {item.price_zwap} ZWAP
+    </span>
+
+    <span className="text-purple-400">
+      {item.price_zpts ?? item.price_zpoints ?? 0} zPts
+    </span>
+
+    {item.category && (
+      <span className="text-gray-400">
+        • {item.category}
+      </span>
+    )}
+
+    {item.max_quantity != null && (
+      <span className="text-gray-500">
+        • max {item.max_quantity}
+      </span>
+    )}
+
+    <span
+      className={
+        (item.is_active ?? item.isActive ?? item.active ?? false)
+          ? "text-emerald-400"
+          : "text-red-400"
+      }
+    >
+      • {(item.is_active ?? item.isActive ?? item.active ?? false) ? "Active" : "Inactive"}
+    </span>
+  </div>
+</div>
 
               <div className="flex items-center gap-2">
                 <button
