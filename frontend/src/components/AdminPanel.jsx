@@ -636,15 +636,28 @@ const MarketplaceSection = () => {
             </button>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs text-gray-400">Name</label>
-              <Input
-                value={editingItem.name}
-                onChange={(e) => handleFieldChange("name", e.target.value)}
-                placeholder="Item name"
-              />
-            </div>
+          <div className="grid sm:grid-cols-2 gap-<div className="space-y-1 sm:col-span-2">
+  <label className="text-xs text-gray-400">Image URL</label>
+
+  <Input
+    value={editingItem.image_url}
+    onChange={(e) =>
+      handleFieldChange("image_url", e.target.value)
+    }
+    placeholder="https://..."
+  />
+
+  {/* Image Preview */}
+  {editingItem.image_url && (
+    <div className="mt-2 w-28 h-28 rounded-lg overflow-hidden border border-gray-700">
+      <img
+        src={editingItem.image_url}
+        alt="Preview"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  )}
+</div>
 
             <div className="space-y-1">
               <label className="text-xs text-gray-400">Category</label>
