@@ -495,6 +495,24 @@ const MarketplaceSection = () => {
   useEffect(() => {
     loadItems();
   }, []);
+  
+  const CATEGORY_MAP = {
+  audio_video: ["music", "video"],
+
+  merch: ["apparel", "accessories", "bundle"],
+
+  digital: ["ebook", "course", "gift_card", "ticket", "nft", "bundle"],
+
+  game_items: ["skins", "avatars", "boosts", "upgrades"],
+
+  electronics: ["equipment", "accessories"],
+
+  subscriptions: ["tier", "boost", "promo_code", "bundle"],
+
+  community: ["membership", "private_access", "event_pass"],
+
+  education: ["tutorial", "workshop", "guide"]
+};
 
  const loadItems = async () => {
   setLoading(true);
