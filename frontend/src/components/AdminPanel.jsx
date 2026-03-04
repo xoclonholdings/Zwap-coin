@@ -14,72 +14,69 @@ const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
 // Admin API helper
 const adminApi = {
-  // Accept an explicit key; fall back to localStorage if not provided
-  headers: (key) => ({
-    "X-Admin-Key": key ?? localStorage.getItem("zwap_admin_key") ?? "",
-  }),
-  
+  // Build headers (reads admin key from localStorage unless one is provided)
+  headers(key) {
+    return {
+      "X-Admin-Key": key ?? localStorage.getItem("zwap_admin_key") ?? "",
+      "Content-Type": "application/json",
+    };
+  },
+
   async get(endpoint, key) {
-    const res = await fetch(`${API}/admin${endpoint}`, { headers: this.headers(key) });
-    if (!res.ok) throw new Error(res.status === 401 ? "Unauthorized" : "API Error");
+    const res = await fetch(`${API}/admin${endpoint}`, {
+      method: "GET",
+      headers: this.headers(key),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`GET ${endpoint} failed: ${text}`);
+    }
+
     return res.json();
   },
-  
+
   async post(endpoint, data, key) {
     const res = await fetch(`${API}/admin${endpoint}`, {
       method: "POST",
-      headers: { ...this.headers(key), "Content-Type": "application/json" },
+      headers: this.headers(key),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("API Error");
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`POST ${endpoint} failed: ${text}`);
+    }
+
     return res.json();
   },
-  
+
   async put(endpoint, data, key) {
     const res = await fetch(`${API}/admin${endpoint}`, {
       method: "PUT",
-      headers: { ...this.headers(key), "Content-Type": "application/json" },
+      headers: this.headers(key),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("API Error");
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`PUT ${endpoint} failed: ${text}`);
+    }
+
     return res.json();
   },
-  
+
   async delete(endpoint, key) {
     const res = await fetch(`${API}/admin${endpoint}`, {
       method: "DELETE",
       headers: this.headers(key),
     });
-    if (!res.ok) throw new Error("API Error");
-    return res.json();
-  },
-  
-async post(endpoint, data) {
-    const res = await fetch(`${API}/admin${endpoint}`, {
-      method: "POST",
-      headers: { ...this.headers(), "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("API Error");
-    return res.json();
-  },
-  
-  async put(endpoint, data) {
-    const res = await fetch(`${API}/admin${endpoint}`, {
-      method: "PUT",
-      headers: { ...this.headers(), "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("API Error");
-    return res.json();
-  },
-  
-  async delete(endpoint) {
-    const res = await fetch(`${API}/admin${endpoint}`, {
-      method: "DELETE",
-      headers: this.headers(),
-    });
-    if (!res.ok) throw new Error("API Error");
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`DELETE ${endpoint} failed: ${text}`);
+    }
+
     return res.json();
   },
 };
