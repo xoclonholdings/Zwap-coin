@@ -14,6 +14,7 @@ import random
 from web3 import Web3
 import asyncio
 from functools import lru_cache
+import routers.wallet_routes as wallet_routes
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1184,6 +1185,8 @@ from admin_routes import admin_router
 api_router.include_router(admin_router)
 
 app.include_router(api_router)
+
+api_router.include_router(wallet_routes.router)
 
 app.add_middleware(
     CORSMiddleware,
