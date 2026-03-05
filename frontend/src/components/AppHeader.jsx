@@ -252,6 +252,14 @@ export default function AppHeader() {
                     <p className="text-[10px] text-gray-600 text-center mt-3 pt-2 border-t border-gray-800">
                       Balances update in real-time
                     </p>
+                    <Button
+  type="button"
+  onClick={() => setConvertOpen(true)}
+  className="w-full mt-3 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-200"
+  variant="outline"
+>
+  Convert zPts → ZWAP!
+</Button>
                     
                     {/* ZWAP Contract Link */}
                     <div className="mt-3 pt-3 border-t border-cyan-500/20">
