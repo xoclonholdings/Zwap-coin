@@ -31,7 +31,7 @@ export default function AppHeader() {
   const { user, walletAddress, setIsWalletModalOpen, disconnectWallet, onchainBalance } = useApp();
   const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
-
+  const [convertOpen, setConvertOpen] = useState(false);
   const username = generateUsername(walletAddress);
 
   const handleUpgrade = async () => {
@@ -122,6 +122,17 @@ export default function AppHeader() {
               <p className="text-xs text-gray-500">zPts</p>
             </div>
           </motion.div>
+          
+          <ConvertZptsModal
+  open={convertOpen}
+  onClose={() => setConvertOpen(false)}
+  walletAddress={walletAddress}
+  zptsBalance={user?.zpts_balance || 0}
+  onConverted={() => {
+    // Optional: if your app has a refreshUser() in context, call it here.
+    // Otherwise, the next normal user fetch cycle will reflect updated balances.
+  }}
+/>
 
           {/* Profile Badge with Settings Indicator */}
           <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
