@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail, Link2, ExternalLink, BookOpen } from "lucide-react";
-import ConvertZptsModal from "@/components/ConvertZptsModal";
+import ConvertZPtsModal from "@/components/ConvertZPtsModal";
 import {
   Sheet,
   SheetContent,
