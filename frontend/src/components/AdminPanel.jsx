@@ -657,9 +657,17 @@ subcategory: item.subcategory ?? "",
             </button>
           </div>
 
-          </div>
+          <div className="space-y-1 sm:col-span-2">
+  <label className="text-xs text-gray-400">Image URL</label>
 
-<div className="grid sm:grid-cols-2 gap-3">
+  <Input
+    value={editingItem.image_url}
+    onChange={(e) =>
+      handleFieldChange("image_url", e.target.value)
+    }
+    placeholder="https://..."
+  />
+</div>
 
   <div className="space-y-1 sm:col-span-2">
     <label className="text-xs text-gray-400">Image URL</label>
