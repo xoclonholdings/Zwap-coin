@@ -123,7 +123,7 @@ export default function AppHeader() {
             </div>
           </motion.div>
           
-          <ConvertZptsModal
+          <ConvertZPtsModal
   open={convertOpen}
   onClose={() => setConvertOpen(false)}
   walletAddress={walletAddress}
