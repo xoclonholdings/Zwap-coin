@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRightLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -104,14 +105,14 @@ export default function ConvertZPtsModal({ open, onClose, onConverted }) {
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm overflow-y-auto p-4">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm overflow-y-auto p-4">
       <div className="min-h-full flex items-start sm:items-center justify-center py-6 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 14, scale: 0.98 }}
-          className="w-full max-w-md max-h-[calc(100vh-3rem)] overflow-hidden rounded-2xl border border-cyan-900/40 bg-[#0a0b1e] text-white shadow-[0_0_60px_rgba(0,245,255,0.12)]"
+          className="relative w-full max-w-md max-h-[calc(100vh-3rem)] overflow-hidden rounded-2xl border border-cyan-900/40 bg-[#0a0b1e] text-white shadow-[0_0_60px_rgba(0,245,255,0.12)]"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
@@ -309,4 +310,6 @@ export default function ConvertZPtsModal({ open, onClose, onConverted }) {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 }
