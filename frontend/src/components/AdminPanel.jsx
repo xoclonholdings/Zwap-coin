@@ -642,7 +642,7 @@ subcategory: item.subcategory ?? "",
         </Button>
       </div>
 
-      {/* Editor */}
+            {/* Editor */}
       {editingItem && (
         <div className="rounded-xl border border-cyan-900/40 bg-black/40 p-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
@@ -657,99 +657,50 @@ subcategory: item.subcategory ?? "",
             </button>
           </div>
 
-          <div className="space-y-1 sm:col-span-2">
-  <label className="text-xs text-gray-400">Image URL</label>
-
-  <Input
-    value={editingItem.image_url}
-    onChange={(e) =>
-      handleFieldChange("image_url", e.target.value)
-    }
-    placeholder="https://..."
-  />
-</div>
-
-  <div className="space-y-1 sm:col-span-2">
-    <label className="text-xs text-gray-400">Image URL</label>
-
-    <Input
-      value={editingItem.image_url}
-      onChange={(e) =>
-        handleFieldChange("image_url", e.target.value)
-      }
-      placeholder="https://..."
-    />
-  </div>
-  {/* Image Preview */}
-  {editingItem.image_url && (
-    <div className="mt-2 w-28 h-28 rounded-lg overflow-hidden border border-gray-700">
-      <img
-        src={editingItem.image_url}
-        alt="Preview"
-        className="w-full h-full object-cover"
-      />
-    </div>
-  )}
-</<div className="space-y-1">
-  <label className="text-xs text-gray-400">Category</label>
-  <select
-    value={editingItem.category}
-    onChange={(e) => {
-      handleFieldChange("category", e.target.value);
-      handleFieldChange("subcategory", "");
-    }}
-    className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
-  >
-    <option value="">Select Category</option>
-    {Object.keys(CATEGORY_MAP).map((cat) => (
-      <option key={cat} value={cat}>
-        {cat.replace("_", " ")}
-      </option>
-    ))}
-  </select>
-</div>
-
-<div className="space-y-1">
-  <label className="text-xs text-gray-400">Subcategory</label>
-  <select
-    value={editingItem.subcategory || ""}
-    onChange={(e) =>
-      handleFieldChange("subcategory", e.target.value)
-    }
-    className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
-    disabled={!editingItem.category}
-  >
-    <option value="">Select Subcategory</option>
-    {(CATEGORY_MAP[editingItem.category] || []).map((sub) => (
-      <option key={sub} value={sub}>
-        {sub.replace("_", " ")}
-      </option>
-    ))}
-  </select>
-</div>
-
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs text-gray-400">Description</label>
-              <textarea
-                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                rows={3}
-                value={editingItem.description}
-                onChange={(e) =>
-                  handleFieldChange("description", e.target.value)
-                }
-                placeholder="Short description shown in the app marketplace"
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Name</label>
+              <Input
+                value={editingItem.name}
+                onChange={(e) => handleFieldChange("name", e.target.value)}
+                placeholder="Item name"
               />
             </div>
 
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs text-gray-400">Image URL</label>
-              <Input
-                value={editingItem.image_url}
-                onChange={(e) =>
-                  handleFieldChange("image_url", e.target.value)
-                }
-                placeholder="https://..."
-              />
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Category</label>
+              <select
+                value={editingItem.category}
+                onChange={(e) => {
+                  handleFieldChange("category", e.target.value);
+                  handleFieldChange("subcategory", "");
+                }}
+                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
+              >
+                <option value="">Select Category</option>
+                {Object.keys(CATEGORY_MAP).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Subcategory</label>
+              <select
+                value={editingItem.subcategory || ""}
+                onChange={(e) => handleFieldChange("subcategory", e.target.value)}
+                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
+                disabled={!editingItem.category}
+              >
+                <option value="">Select Subcategory</option>
+                {(CATEGORY_MAP[editingItem.category] || []).map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-1">
@@ -758,11 +709,41 @@ subcategory: item.subcategory ?? "",
                 type="number"
                 min="0"
                 value={editingItem.price_zwap}
-                onChange={(e) =>
-                  handleFieldChange("price_zwap", e.target.value)
-                }
+                onChange={(e) => handleFieldChange("price_zwap", e.target.value)}
               />
             </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs text-gray-400">Description</label>
+              <textarea
+                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                rows={3}
+                value={editingItem.description}
+                onChange={(e) => handleFieldChange("description", e.target.value)}
+                placeholder="Short description shown in the app marketplace"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs text-gray-400">Image URL</label>
+              <Input
+                value={editingItem.image_url}
+                onChange={(e) => handleFieldChange("image_url", e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+
+            {editingItem.image_url && (
+              <div className="sm:col-span-2">
+                <div className="mt-2 w-28 h-28 rounded-lg overflow-hidden border border-gray-700">
+                  <img
+                    src={editingItem.image_url}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="text-xs text-gray-400">Price (Z Points)</label>
@@ -770,9 +751,7 @@ subcategory: item.subcategory ?? "",
                 type="number"
                 min="0"
                 value={editingItem.price_zpts}
-                onChange={(e) =>
-                  handleFieldChange("price_zpts", e.target.value)
-                }
+                onChange={(e) => handleFieldChange("price_zpts", e.target.value)}
               />
             </div>
 
@@ -784,9 +763,7 @@ subcategory: item.subcategory ?? "",
                 type="number"
                 min="0"
                 value={editingItem.max_quantity}
-                onChange={(e) =>
-                  handleFieldChange("max_quantity", e.target.value)
-                }
+                onChange={(e) => handleFieldChange("max_quantity", e.target.value)}
               />
             </div>
 
@@ -794,9 +771,7 @@ subcategory: item.subcategory ?? "",
               <label className="text-xs text-gray-400">Status</label>
               <button
                 type="button"
-                onClick={() =>
-                  handleFieldChange("is_active", !editingItem.is_active)
-                }
+                onClick={() => handleFieldChange("is_active", !editingItem.is_active)}
                 className={`px-3 py-2 rounded-md text-xs font-medium border ${
                   editingItem.is_active
                     ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
