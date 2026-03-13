@@ -504,6 +504,13 @@ const MarketplaceSection = () => {
     education: ["tutorial", "workshop", "guide"],
   };
 
+  const FULFILLMENT_OPTIONS = [
+    { value: "none", label: "None" },
+    { value: "digital", label: "Digital Download" },
+    { value: "external", label: "External Link" },
+    { value: "manual", label: "Manual Fulfillment" },
+  ];
+
   useEffect(() => {
     loadItems();
   }, []);
@@ -543,6 +550,10 @@ const MarketplaceSection = () => {
       is_active: true,
       category: "",
       subcategory: "",
+      fulfillment_type: "none",
+      download_url: "",
+      external_url: "",
+      fulfillment_notes: "",
     });
   };
 
@@ -559,6 +570,10 @@ const MarketplaceSection = () => {
       is_active: item.is_active ?? item.isActive ?? item.active ?? true,
       category: item.category ?? "",
       subcategory: item.subcategory ?? "",
+      fulfillment_type: item.fulfillment_type ?? "none",
+      download_url: item.download_url ?? "",
+      external_url: item.external_url ?? "",
+      fulfillment_notes: item.fulfillment_notes ?? "",
     });
   };
 
@@ -567,10 +582,23 @@ const MarketplaceSection = () => {
       setImagePreviewError(false);
     }
 
-    setEditingItem((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setEditingItem((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+      };
+
+      if (field === "fulfillment_type") {
+        if (value !== "digital") {
+          next.download_url = "";
+        }
+        if (value !== "external") {
+          next.external_url = "";
+        }
+      }
+
+      return next;
+    });
   };
 
   const handleSave = async () => {
@@ -589,6 +617,10 @@ const MarketplaceSection = () => {
       is_active: !!editingItem.is_active,
       category: editingItem.category?.trim() || null,
       subcategory: editingItem.subcategory?.trim() || null,
+      fulfillment_type: editingItem.fulfillment_type || "none",
+      download_url: editingItem.download_url?.trim() || null,
+      external_url: editingItem.external_url?.trim() || null,
+      fulfillment_notes: editingItem.fulfillment_notes?.trim() || null,
     };
 
     if (!payload.name) {
@@ -723,6 +755,16 @@ const MarketplaceSection = () => {
               />
             </div>
 
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Price (zPts)</label>
+              <Input
+                type="number"
+                min="0"
+                value={editingItem.price_zpts}
+                onChange={(e) => handleFieldChange("price_zpts", e.target.value)}
+              />
+            </div>
+
             <div className="space-y-1 sm:col-span-2">
               <label className="text-xs text-gray-400">Description</label>
               <textarea
@@ -764,24 +806,60 @@ const MarketplaceSection = () => {
             )}
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Price (zPts)</label>
-              <Input
-                type="number"
-                min="0"
-                value={editingItem.price_zpts}
-                onChange={(e) => handleFieldChange("price_zpts", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-gray-400">
-                Max Quantity (optional)
-              </label>
+              <label className="text-xs text-gray-400">Max Quantity (optional)</label>
               <Input
                 type="number"
                 min="0"
                 value={editingItem.max_quantity}
                 onChange={(e) => handleFieldChange("max_quantity", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Fulfillment Type</label>
+              <select
+                value={editingItem.fulfillment_type || "none"}
+                onChange={(e) => handleFieldChange("fulfillment_type", e.target.value)}
+                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
+              >
+                {FULFILLMENT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {editingItem.fulfillment_type === "digital" && (
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-gray-400">Download URL</label>
+                <Input
+                  value={editingItem.download_url || ""}
+                  onChange={(e) => handleFieldChange("download_url", e.target.value)}
+                  placeholder="https://download-link..."
+                />
+              </div>
+            )}
+
+            {editingItem.fulfillment_type === "external" && (
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs text-gray-400">External URL</label>
+                <Input
+                  value={editingItem.external_url || ""}
+                  onChange={(e) => handleFieldChange("external_url", e.target.value)}
+                  placeholder="https://partner-link..."
+                />
+              </div>
+            )}
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs text-gray-400">Fulfillment Notes</label>
+              <textarea
+                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                rows={2}
+                value={editingItem.fulfillment_notes || ""}
+                onChange={(e) => handleFieldChange("fulfillment_notes", e.target.value)}
+                placeholder="Internal notes for how this item is delivered"
               />
             </div>
 
@@ -835,6 +913,7 @@ const MarketplaceSection = () => {
             const itemId = item.id || item._id || item.name;
             const itemPriceZpts = item.price_zpts ?? item.price_zpoints ?? 0;
             const itemIsActive = item.is_active ?? item.isActive ?? item.active ?? false;
+            const itemFulfillmentType = item.fulfillment_type ?? "none";
 
             return (
               <div
@@ -884,6 +963,10 @@ const MarketplaceSection = () => {
                         • {formatLabel(item.subcategory)}
                       </span>
                     )}
+
+                    <span className="text-blue-400">
+                      • {formatLabel(itemFulfillmentType)}
+                    </span>
 
                     {item.max_quantity != null && (
                       <span className="text-gray-500">
