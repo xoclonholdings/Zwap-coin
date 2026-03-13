@@ -35,8 +35,9 @@ def _normalize_item_payload(item: Dict[str, Any]) -> Dict[str, Any]:
         normalized["price_zwap"] = 0.0
 
     try:
-        # Keep the existing naming: price_zpts (not price_zpoints)
-        normalized["price_zpts"] = float(item.get("price_zpts") or 0)
+        # Keep the existing naming: price_zpts
+        zpts_raw = item.get("price_zpts", item.get("price_zpoints", 0))
+        normalized["price_zpts"] = float(zpts_raw or 0)
     except (TypeError, ValueError):
         normalized["price_zpts"] = 0.0
 
@@ -57,9 +58,28 @@ def _normalize_item_payload(item: Dict[str, Any]) -> Dict[str, Any]:
     else:
         normalized["is_active"] = bool(is_active)
 
-    # Category (nullable)
+    # Category / subcategory (nullable)
     category = (item.get("category") or "").strip()
     normalized["category"] = category or None
+
+    subcategory = (item.get("subcategory") or "").strip()
+    normalized["subcategory"] = subcategory or None
+
+    # Fulfillment fields
+    fulfillment_type = (item.get("fulfillment_type") or "none").strip().lower()
+    allowed_fulfillment_types = {"none", "digital", "external", "manual"}
+    normalized["fulfillment_type"] = (
+        fulfillment_type if fulfillment_type in allowed_fulfillment_types else "none"
+    )
+
+    download_url = (item.get("download_url") or "").strip()
+    normalized["download_url"] = download_url or None
+
+    external_url = (item.get("external_url") or "").strip()
+    normalized["external_url"] = external_url or None
+
+    fulfillment_notes = (item.get("fulfillment_notes") or "").strip()
+    normalized["fulfillment_notes"] = fulfillment_notes or None
 
     # Timestamps
     now = datetime.utcnow()
@@ -78,7 +98,6 @@ async def list_items(db) -> List[Dict[str, Any]]:
     cursor = db[COLLECTION_NAME].find()
     items: List[Dict[str, Any]] = []
     async for doc in cursor:
-        # Ensure a string 'id' field for admin UI
         if "_id" in doc:
             doc["id"] = str(doc["_id"])
         else:
@@ -95,7 +114,6 @@ async def create_item(db, item: Dict[str, Any]) -> Dict[str, Any]:
     if not payload.get("name"):
         raise HTTPException(status_code=400, detail="Item name is required")
 
-    # Use string IDs to stay compatible with existing purchase_item logic
     item_id = item.get("id") or str(uuid.uuid4())
     payload["_id"] = item_id
 
@@ -158,7 +176,6 @@ async def purchase_item(db, user_id: str, item_id: str, payment_type: str) -> Di
     if not user or not item:
         raise ValueError("Invalid user or item")
 
-    # NOTE: This expects price_zpts in the DB for zPts purchases.
     cost = item["price_zwap"] if payment_type == "ZWAP" else item["price_zpts"]
     balance_field = "zwap_balance" if payment_type == "ZWAP" else "zpts_balance"
 
