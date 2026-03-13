@@ -491,44 +491,47 @@ const MarketplaceSection = () => {
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [imagePreviewError, setImagePreviewError] = useState(false);
+
+  const CATEGORY_MAP = {
+    audio_video: ["music", "video"],
+    merch: ["apparel", "accessories", "bundle"],
+    digital: ["ebook", "course", "gift_card", "ticket", "nft", "bundle"],
+    game_items: ["skins", "avatars", "boosts", "upgrades"],
+    electronics: ["equipment", "accessories"],
+    subscriptions: ["tier", "boost", "promo_code", "bundle"],
+    community: ["membership", "private_access", "event_pass"],
+    education: ["tutorial", "workshop", "guide"],
+  };
 
   useEffect(() => {
     loadItems();
   }, []);
-  
-  const CATEGORY_MAP = {
-  audio_video: ["music", "video"],
 
-  merch: ["apparel", "accessories", "bundle"],
+  const formatLabel = (value) => {
+    if (!value) return "";
+    return value
+      .toString()
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
 
-  digital: ["ebook", "course", "gift_card", "ticket", "nft", "bundle"],
-
-  game_items: ["skins", "avatars", "boosts", "upgrades"],
-
-  electronics: ["equipment", "accessories"],
-
-  subscriptions: ["tier", "boost", "promo_code", "bundle"],
-
-  community: ["membership", "private_access", "event_pass"],
-
-  education: ["tutorial", "workshop", "guide"]
-};
-
- const loadItems = async () => {
-  setLoading(true);
-  try {
-    const data = await adminApi.get("/marketplace/items");
-    const loaded = Array.isArray(data) ? data : data.items || [];
-    setItems(loaded);
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to load items");
-  } finally {
-    setLoading(false);
-  }
-};
+  const loadItems = async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.get("/marketplace/items");
+      const loaded = Array.isArray(data) ? data : data.items || [];
+      setItems(loaded);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load items");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const startNewItem = () => {
+    setImagePreviewError(false);
     setEditingItem({
       id: null,
       name: "",
@@ -539,29 +542,31 @@ const MarketplaceSection = () => {
       max_quantity: "",
       is_active: true,
       category: "",
-subcategory: "",
+      subcategory: "",
     });
   };
 
   const startEditItem = (item) => {
-  setEditingItem({
-    id: item.id ?? item._id ?? null,
-    name: item.name ?? "",
-    description: item.description ?? "",
-    image_url: item.image_url ?? "",
-    price_zwap: item.price_zwap ?? 0,
-
-    // FIX: accept either DB field name
-    price_zpts: item.price_zpts ?? item.price_zpoints ?? 0,
-
-    max_quantity: item.max_quantity ?? "",
-    is_active: item.is_active ?? true,
-    category: item.category ?? "",
-subcategory: item.subcategory ?? "",
-  });
-};
+    setImagePreviewError(false);
+    setEditingItem({
+      id: item.id ?? item._id ?? null,
+      name: item.name ?? "",
+      description: item.description ?? "",
+      image_url: item.image_url ?? "",
+      price_zwap: item.price_zwap ?? 0,
+      price_zpts: item.price_zpts ?? item.price_zpoints ?? 0,
+      max_quantity: item.max_quantity ?? "",
+      is_active: item.is_active ?? item.isActive ?? item.active ?? true,
+      category: item.category ?? "",
+      subcategory: item.subcategory ?? "",
+    });
+  };
 
   const handleFieldChange = (field, value) => {
+    if (field === "image_url") {
+      setImagePreviewError(false);
+    }
+
     setEditingItem((prev) => ({
       ...prev,
       [field]: value,
@@ -583,7 +588,7 @@ subcategory: item.subcategory ?? "",
           : Number(editingItem.max_quantity),
       is_active: !!editingItem.is_active,
       category: editingItem.category?.trim() || null,
-      subcategory: editingItem.subcategory || null,
+      subcategory: editingItem.subcategory?.trim() || null,
     };
 
     if (!payload.name) {
@@ -593,7 +598,6 @@ subcategory: item.subcategory ?? "",
 
     setSaving(true);
     try {
-      // New vs existing
       if (editingItem.id) {
         await adminApi.put(`/marketplace/items/${editingItem.id}`, payload);
         toast.success("Item updated");
@@ -603,6 +607,7 @@ subcategory: item.subcategory ?? "",
       }
 
       setEditingItem(null);
+      setImagePreviewError(false);
       await loadItems();
     } catch (err) {
       console.error(err);
@@ -614,10 +619,11 @@ subcategory: item.subcategory ?? "",
 
   const deleteItem = async (itemId) => {
     if (!window.confirm("Delete this item?")) return;
+
     try {
       await adminApi.delete(`/marketplace/items/${itemId}`);
       toast.success("Item deleted");
-      loadItems();
+      await loadItems();
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete item");
@@ -642,7 +648,7 @@ subcategory: item.subcategory ?? "",
         </Button>
       </div>
 
-            {/* Editor */}
+      {/* Editor */}
       {editingItem && (
         <div className="rounded-xl border border-cyan-900/40 bg-black/40 p-4 space-y-3">
           <div className="flex items-center justify-between mb-2">
@@ -650,8 +656,12 @@ subcategory: item.subcategory ?? "",
               {editingItem.id ? "Edit Item" : "New Item"}
             </h3>
             <button
-              onClick={() => setEditingItem(null)}
+              onClick={() => {
+                setEditingItem(null);
+                setImagePreviewError(false);
+              }}
               className="text-gray-400 hover:text-white"
+              type="button"
             >
               <X className="w-4 h-4" />
             </button>
@@ -680,7 +690,7 @@ subcategory: item.subcategory ?? "",
                 <option value="">Select Category</option>
                 {Object.keys(CATEGORY_MAP).map((cat) => (
                   <option key={cat} value={cat}>
-                    {cat.replaceAll("_", " ")}
+                    {formatLabel(cat)}
                   </option>
                 ))}
               </select>
@@ -697,7 +707,7 @@ subcategory: item.subcategory ?? "",
                 <option value="">Select Subcategory</option>
                 {(CATEGORY_MAP[editingItem.category] || []).map((sub) => (
                   <option key={sub} value={sub}>
-                    {sub.replaceAll("_", " ")}
+                    {formatLabel(sub)}
                   </option>
                 ))}
               </select>
@@ -735,18 +745,26 @@ subcategory: item.subcategory ?? "",
 
             {editingItem.image_url && (
               <div className="sm:col-span-2">
-                <div className="mt-2 w-28 h-28 rounded-lg overflow-hidden border border-gray-700">
-                  <img
-                    src={editingItem.image_url}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <label className="text-xs text-gray-400 block mb-2">Image Preview</label>
+                {!imagePreviewError ? (
+                  <div className="w-28 h-28 rounded-lg overflow-hidden border border-gray-700 bg-gray-900">
+                    <img
+                      src={editingItem.image_url}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={() => setImagePreviewError(true)}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-xs text-red-400">
+                    Could not load image preview from this URL.
+                  </div>
+                )}
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Price (Z Points)</label>
+              <label className="text-xs text-gray-400">Price (zPts)</label>
               <Input
                 type="number"
                 min="0"
@@ -787,7 +805,10 @@ subcategory: item.subcategory ?? "",
             <Button
               variant="ghost"
               className="text-gray-400 hover:text-white"
-              onClick={() => setEditingItem(null)}
+              onClick={() => {
+                setEditingItem(null);
+                setImagePreviewError(false);
+              }}
               disabled={saving}
             >
               Cancel
@@ -810,84 +831,92 @@ subcategory: item.subcategory ?? "",
             No marketplace items
           </div>
         ) : (
-          items.map((item) => (
-            <div
-              key={item.id || item._id || item.name}
-              className="p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4"
-            >
-              <div className="w-16 h-16 rounded-xl bg-gray-700 overflow-hidden flex-shrink-0">
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ShoppingBag className="w-6 h-6 text-gray-500" />
+          items.map((item) => {
+            const itemId = item.id || item._id || item.name;
+            const itemPriceZpts = item.price_zpts ?? item.price_zpoints ?? 0;
+            const itemIsActive = item.is_active ?? item.isActive ?? item.active ?? false;
+
+            return (
+              <div
+                key={itemId}
+                className="p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4"
+              >
+                <div className="w-16 h-16 rounded-xl bg-gray-700 overflow-hidden flex-shrink-0">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ShoppingBag className="w-6 h-6 text-gray-500" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-semibold truncate">
+                    {item.name}
+                  </h3>
+
+                  <p className="text-gray-400 text-sm truncate">
+                    {item.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                    <span className="text-cyan-400">
+                      {item.price_zwap} ZWAP
+                    </span>
+
+                    <span className="text-purple-400">
+                      {itemPriceZpts} zPts
+                    </span>
+
+                    {item.category && (
+                      <span className="text-gray-400">
+                        • {formatLabel(item.category)}
+                      </span>
+                    )}
+
+                    {item.subcategory && (
+                      <span className="text-gray-500">
+                        • {formatLabel(item.subcategory)}
+                      </span>
+                    )}
+
+                    {item.max_quantity != null && (
+                      <span className="text-gray-500">
+                        • max {item.max_quantity}
+                      </span>
+                    )}
+
+                    <span className={itemIsActive ? "text-emerald-400" : "text-red-400"}>
+                      • {itemIsActive ? "Active" : "Inactive"}
+                    </span>
                   </div>
-                )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => startEditItem(item)}
+                    className="p-2 rounded hover:bg-gray-700 text-gray-400 hover:text-cyan-400"
+                    type="button"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => deleteItem(item.id || item._id)}
+                    className="p-2 rounded hover:bg-red-900/50 text-gray-400 hover:text-red-400"
+                    type="button"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-
-             <div className="flex-1 min-w-0">
-  <h3 className="text-white font-semibold truncate">
-    {item.name}
-  </h3>
-  <p className="text-gray-400 text-sm truncate">
-    {item.description}
-  </p>
-
-  <div className="flex flex-wrap gap-3 mt-1 text-xs">
-    <span className="text-cyan-400">
-      {item.price_zwap} ZWAP
-    </span>
-
-    <span className="text-purple-400">
-      {item.price_zpts ?? item.price_zpoints ?? 0} zPts
-    </span>
-
-    {item.category && (
-      <span className="text-gray-400">
-        • {item.category}
-      </span>
-    )}
-
-    {item.max_quantity != null && (
-      <span className="text-gray-500">
-        • max {item.max_quantity}
-      </span>
-    )}
-
-    <span
-      className={
-        (item.is_active ?? item.isActive ?? item.active ?? false)
-          ? "text-emerald-400"
-          : "text-red-400"
-      }
-    >
-      • {(item.is_active ?? item.isActive ?? item.active ?? false) ? "Active" : "Inactive"}
-    </span>
-  </div>
-</div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => startEditItem(item)}
-                  className="p-2 rounded hover:bg-gray-700 text-gray-400 hover:text-cyan-400"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() =>
-                    deleteItem(item.id || item._id)
-                  }
-                  className="p-2 rounded hover:bg-red-900/50 text-gray-400 hover:text-red-400"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
