@@ -106,6 +106,45 @@ async def list_items(db) -> List[Dict[str, Any]]:
     return items
 
 
+async def list_orders(db, limit: int = 100) -> List[Dict[str, Any]]:
+    """
+    Returns recent marketplace purchase records for admin use.
+    Joins in basic item and user display context when available.
+    """
+    safe_limit = max(1, min(int(limit or 100), 500))
+
+    cursor = (
+        db.purchases
+        .find()
+        .sort("timestamp", -1)
+        .limit(safe_limit)
+    )
+
+    orders: List[Dict[str, Any]] = []
+
+    async for doc in cursor:
+        item_id = doc.get("item_id")
+        user_id = doc.get("user_id")
+
+        item = await db[COLLECTION_NAME].find_one({"_id": item_id}) if item_id else None
+        user = await db.users.find_one({"_id": user_id}) if user_id else None
+
+        order = {
+            "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
+            "user_id": user_id,
+            "item_id": item_id,
+            "payment_type": doc.get("payment_type"),
+            "amount": doc.get("amount", 0),
+            "timestamp": doc.get("timestamp"),
+            "item_name": item.get("name") if item else None,
+            "item_image_url": item.get("image_url") if item else None,
+            "wallet_address": user.get("wallet_address") if user else None,
+            "username": user.get("username") if user else None,
+        }
+        orders.append(order)
+
+    return orders
+
 async def create_item(db, item: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a new marketplace item in the shop_items collection.
