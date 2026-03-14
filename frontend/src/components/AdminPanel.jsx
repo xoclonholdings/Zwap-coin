@@ -605,6 +605,9 @@ const UsersSection = () => {
     </motion.div>
   </div>
 )}
+    </div>
+  );
+};
 
 // Treasury Section
 const TreasurySection = () => {
