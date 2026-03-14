@@ -624,6 +624,18 @@ export default function SwapTab() {
           </div>
         </div>
       )}
+      
+            <div className="mb-4">
+        <Button
+          type="button"
+          onClick={() => openSwapService(SWAP_SERVICES[0])}
+          disabled={!fromAmount || parseFloat(fromAmount) <= 0}
+          className="w-full bg-cyan-600 hover:bg-cyan-700 text-white h-12 rounded-xl"
+        >
+          <ArrowRightLeft className="w-4 h-4 mr-2" />
+          Swap Now
+        </Button>
+      </div>
 
       {/* Swap Services */}
       <div className="flex-1">
