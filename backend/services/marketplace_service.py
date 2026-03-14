@@ -90,20 +90,29 @@ def _normalize_item_payload(item: Dict[str, Any]) -> Dict[str, Any]:
     return normalized
 
 
-async def list_items(db) -> List[Dict[str, Any]]:
+async def list_items(db) -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns all shop items for admin & marketplace.
-    Adds a stable 'id' field mirroring '_id' for the frontend.
+    Makes docs JSON-safe and returns the shape the frontend expects.
     """
     cursor = db[COLLECTION_NAME].find()
     items: List[Dict[str, Any]] = []
+
     async for doc in cursor:
-        if "_id" in doc:
-            doc["id"] = str(doc["_id"])
-        else:
-            doc["id"] = None
-        items.append(doc)
-    return items
+        safe_doc = dict(doc)
+
+        safe_doc["id"] = str(safe_doc.get("_id")) if safe_doc.get("_id") is not None else None
+        safe_doc.pop("_id", None)
+
+        if isinstance(safe_doc.get("created_at"), datetime):
+            safe_doc["created_at"] = safe_doc["created_at"].isoformat()
+
+        if isinstance(safe_doc.get("updated_at"), datetime):
+            safe_doc["updated_at"] = safe_doc["updated_at"].isoformat()
+
+        items.append(safe_doc)
+
+    return {"items": items}
 
 
 async def list_orders(db, limit: int = 100) -> List[Dict[str, Any]]:
