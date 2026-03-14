@@ -1528,41 +1528,47 @@ export default function AdminPanel() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050510]">
-      <header className="bg-[#0a0b1e] border-b border-gray-800 px-4 py-3 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-7 h-7 text-cyan-400" />
-            <div>
-              <h1 className="text-lg font-bold text-white">ZWAP! Admin</h1>
-              <p className="text-xs text-gray-500">Mission Control</p>
-            </div>
+  <div className="min-h-screen bg-[#050510]">
+    <header className="bg-[#0a0b1e] border-b border-gray-800 px-4 py-3 sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+
+        {/* Left side — Admin title */}
+        <div className="flex items-center gap-3">
+          <Shield className="w-7 h-7 text-cyan-400" />
+          <div>
+            <h1 className="text-lg font-bold text-white">ZWAP! Admin</h1>
+            <p className="text-xs text-gray-500">Mission Control</p>
           </div>
-         <div className="flex items-center gap-2">
-  <Button
-    size="sm"
-    variant="ghost"
-    onClick={() => setActiveSection("dashboard")}
-    className="text-gray-400 hover:text-white"
-  >
-    Dashboard
-  </Button>
-
-  <Button
-    size="sm"
-    variant="ghost"
-    onClick={() => {
-      localStorage.removeItem("zwap_admin_key");
-      setIsAuthenticated(false);
-    }}
-    className="text-gray-400 hover:text-white"
-  >
-    Logout
-  </Button>
-</div>
         </div>
-      </header>
 
+        {/* Right side — Navigation buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              window.location.href = "/";
+            }}
+            className="text-gray-400 hover:text-white"
+          >
+            Return to App
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              localStorage.removeItem("zwap_admin_key");
+              setIsAuthenticated(false);
+            }}
+            className="text-gray-400 hover:text-white"
+          >
+            Logout
+          </Button>
+        </div>
+
+      </div>
+    </header>
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         <div className="flex gap-2 mb-6 pb-4 border-b border-gray-800 overflow-x-auto">
           {sections.map((section) => (
