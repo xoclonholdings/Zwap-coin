@@ -130,12 +130,12 @@ for user in users:
 
     total = await db.users.count_documents(query)
 
-return {
-    "users": normalized_users,
-    "total": total,
-    "skip": skip,
-    "limit": limit,
-}
+    return {
+        "users": normalized_users,
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+    }
 
 
 @admin_router.get("/users/{wallet}/purchases")
