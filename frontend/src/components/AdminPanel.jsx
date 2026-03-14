@@ -493,6 +493,9 @@ const MarketplaceSection = () => {
   const [saving, setSaving] = useState(false);
   const [imagePreviewError, setImagePreviewError] = useState(false);
 
+const [orders, setOrders] = useState([]);
+const [ordersLoading, setOrdersLoading] = useState(true);
+
   const CATEGORY_MAP = {
     audio_video: ["music", "video"],
     merch: ["apparel", "accessories", "bundle"],
@@ -536,6 +539,20 @@ const MarketplaceSection = () => {
       setLoading(false);
     }
   };
+  
+  const loadOrders = async () => {
+  setOrdersLoading(true);
+  try {
+    const data = await adminApi.get("/marketplace/orders");
+    const loaded = Array.isArray(data) ? data : data.orders || [];
+    setOrders(loaded);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to load marketplace orders");
+  } finally {
+    setOrdersLoading(false);
+  }
+};
 
   const startNewItem = () => {
     setImagePreviewError(false);
@@ -1005,6 +1022,80 @@ const MarketplaceSection = () => {
     </div>
   );
 };
+
+      {/* Orders list */}
+      <div className="mt-8 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-white">Recent Orders</h3>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={loadOrders}
+            className="border-gray-700"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Orders
+          </Button>
+        </div>
+
+        {ordersLoading ? (
+          <div className="text-gray-400 text-center py-6">
+            Loading orders...
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-gray-400 text-center py-6 rounded-xl border border-gray-700 bg-gray-800/20">
+            No purchase history yet
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {orders.map((order) => (
+              <div
+                key={order.id || `${order.user_id}-${order.item_id}-${order.timestamp}`}
+                className="p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4"
+              >
+                <div className="w-14 h-14 rounded-xl bg-gray-700 overflow-hidden flex-shrink-0">
+                  {order.item_image_url ? (
+                    <img
+                      src={order.item_image_url}
+                      alt={order.item_name || "Order item"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-gray-500" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-white font-medium truncate">
+                    {order.item_name || order.item_id || "Unknown Item"}
+                  </h4>
+
+                  <div className="flex flex-wrap gap-3 mt-1 text-xs">
+                    <span className="text-cyan-400">
+                      {order.amount ?? 0} {order.payment_type || "—"}
+                    </span>
+
+                    {order.wallet_address && (
+                      <span className="text-gray-400 font-mono">
+                        • {order.wallet_address.slice(0, 8)}...{order.wallet_address.slice(-4)}
+                      </span>
+                    )}
+
+                    {order.timestamp && (
+                      <span className="text-gray-500">
+                        • {new Date(order.timestamp).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
 
 // Swap Config Section
 const SwapConfigSection = () => {
