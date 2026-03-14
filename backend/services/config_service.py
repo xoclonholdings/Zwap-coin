@@ -62,10 +62,44 @@ async def update_walk_to_earn_config(db, value):
 
 async def get_game_config(db):
     config = await get_config(db, "game_config")
-    print("GAME CONFIG RAW:", config)
 
+    # If no config exists yet, seed it with the real ZWAP games
     if not config:
-        return {"games": []}
+        default_games = {
+            "games": [
+                {
+                    "game_id": "zbrickles",
+                    "name": "ZBrickles",
+                    "enabled": True,
+                    "reward_rate": 1,
+                    "tier_required": "starter",
+                },
+                {
+                    "game_id": "ztrivia",
+                    "name": "ZTrivia",
+                    "enabled": True,
+                    "reward_rate": 1,
+                    "tier_required": "starter",
+                },
+                {
+                    "game_id": "ztetris",
+                    "name": "ZTetris",
+                    "enabled": True,
+                    "reward_rate": 1,
+                    "tier_required": "plus",
+                },
+                {
+                    "game_id": "zslots",
+                    "name": "ZSlots",
+                    "enabled": True,
+                    "reward_rate": 1,
+                    "tier_required": "plus",
+                },
+            ]
+        }
+
+        await update_config(db, "game_config", default_games)
+        return default_games
 
     value = config.get("value", {})
     games = value.get("games", [])
@@ -74,30 +108,6 @@ async def get_game_config(db):
         return {"games": games}
 
     return {"games": []}
-
-
-async def update_game_config(db, game_id, value):
-    config = await get_config(db, "game_config")
-
-    current_value = config.get("value", {}) if config else {}
-    current_games = current_value.get("games", [])
-
-    updated = False
-    new_games = []
-
-    for game in current_games:
-        if game.get("game_id") == game_id:
-            merged = {**game, **value}
-            merged["game_id"] = game_id
-            new_games.append(merged)
-            updated = True
-        else:
-            new_games.append(game)
-
-    if not updated:
-        new_games.append({"game_id": game_id, **value})
-
-    return await update_config(db, "game_config", {"games": new_games})
 
 
 async def update_game_config(db, game_id, value):
