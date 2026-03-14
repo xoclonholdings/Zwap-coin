@@ -1,47 +1,100 @@
-from typing import Dict
+from typing import Dict, List, Any
 
-FEE_RATE = 0.01  # Example fee rate
 
-async def get_prices(db) -> Dict:
-    """
-    Returns current swap prices from DB or external source.
-    """
-    cursor = db.swap_prices.find()
-    return {item["symbol"]: item["price"] async for item in cursor}
+CONFIG_KEY = "swap_config"
 
-async def execute_swap(db, w3, zwap_contract, user_id: str, from_token: str, to_token: str, amount: float) -> Dict:
-    """
-    Executes token swap, applies fee, updates balances, records swap.
-    """
-    prices = await get_prices(db)
-    if from_token not in prices or to_token not in prices:
-        raise ValueError("Invalid token symbols")
 
-    net_amount = amount * (1 - FEE_RATE)
-    converted_amount = net_amount * (prices[to_token] / prices[from_token])
+def _default_tokens() -> Dict[str, List[Dict[str, Any]]]:
+    return {
+        "tokens": [
+            {
+                "token_symbol": "ZWAP",
+                "enabled": True,
+                "external_url": "https://jumper.exchange",
+            },
+            {
+                "token_symbol": "MATIC",
+                "enabled": True,
+                "external_url": "https://jumper.exchange",
+            },
+            {
+                "token_symbol": "USDC",
+                "enabled": True,
+                "external_url": "https://jumper.exchange",
+            },
+            {
+                "token_symbol": "USDT",
+                "enabled": True,
+                "external_url": "https://jumper.exchange",
+            },
+            {
+                "token_symbol": "WETH",
+                "enabled": True,
+                "external_url": "https://jumper.exchange",
+            },
+            {
+                "token_symbol": "WBTC",
+                "enabled": True,
+                "external_url": "https://jumper.exchange",
+            },
+        ]
+    }
 
-    # Update user balances
-    await db.users.update_one(
-        {"_id": user_id},
-        {"$inc": {f"balances.{from_token}": -amount, f"balances.{to_token}": converted_amount}}
+
+async def get_swap_config(db) -> Dict[str, List[Dict[str, Any]]]:
+    config = await db.configs.find_one({"key": CONFIG_KEY})
+
+    if not config:
+        defaults = _default_tokens()
+        await db.configs.update_one(
+            {"key": CONFIG_KEY},
+            {"$set": {"value": defaults}},
+            upsert=True,
+        )
+        return defaults
+
+    value = config.get("value", {})
+    tokens = value.get("tokens", [])
+
+    if isinstance(tokens, list):
+        return {"tokens": tokens}
+
+    return {"tokens": []}
+
+
+async def update_swap_config(db, token_symbol: str, config: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    existing = await db.configs.find_one({"key": CONFIG_KEY})
+    current_value = existing.get("value", {}) if existing else {}
+    current_tokens = current_value.get("tokens", [])
+
+    updated = False
+    new_tokens = []
+
+    for token in current_tokens:
+        if token.get("token_symbol") == token_symbol:
+            merged = {**token, **config}
+            merged["token_symbol"] = token_symbol
+            new_tokens.append(merged)
+            updated = True
+        else:
+            new_tokens.append(token)
+
+    if not updated:
+        new_tokens.append(
+            {
+                "token_symbol": token_symbol,
+                "enabled": True,
+                "external_url": "https://jumper.exchange",
+                **config,
+            }
+        )
+
+    payload = {"tokens": new_tokens}
+
+    await db.configs.update_one(
+        {"key": CONFIG_KEY},
+        {"$set": {"value": payload}},
+        upsert=True,
     )
 
-    # Record swap
-    await db.swaps.insert_one({
-        "user_id": user_id,
-        "from_token": from_token,
-        "to_token": to_token,
-        "amount_in": amount,
-        "amount_out": converted_amount,
-        "fee": amount * FEE_RATE,
-        "timestamp": datetime.utcnow()
-    })
-
-    return {
-        "user_id": user_id,
-        "from_token": from_token,
-        "to_token": to_token,
-        "amount_in": amount,
-        "amount_out": converted_amount,
-        "fee": amount * FEE_RATE
-    }
+    return payload
