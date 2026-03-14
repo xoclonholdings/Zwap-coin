@@ -516,6 +516,7 @@ const MarketplaceSection = () => {
   const [imagePreviewError, setImagePreviewError] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+const [selectedOrder, setSelectedOrder] = useState(null);
 
   const CATEGORY_MAP = {
     audio_video: ["music", "video"],
