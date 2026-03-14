@@ -561,7 +561,6 @@ const UsersSection = () => {
           </div>
         </div>
       ))}
-    </div>
   ) : (
     <p className="text-gray-400 text-sm">No purchases</p>
   )}
