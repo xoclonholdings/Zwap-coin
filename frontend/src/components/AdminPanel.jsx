@@ -535,23 +535,36 @@ const UsersSection = () => {
               <div className="mt-4">
                 <h4 className="text-white font-semibold mb-2">Recent Purchases</h4>
 
-                {userPurchases.length > 0 ? (
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {selectedUser.purchases.map((purchase, i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between items-center bg-gray-800/40 rounded-lg px-3 py-2"
-                      >
-                        <div>
-                          <p className="text-white text-sm">
-                            {purchase.item_name || "Item"}
-                          </p>
-                          <p className="text-gray-400 text-xs">
-                            {purchase.timestamp
-                              ? new Date(purchase.timestamp).toLocaleString()
-                              : "No timestamp"}
-                          </p>
-                        </div>
+               {userPurchases.length > 0 ? (
+  <div className="space-y-2 max-h-40 overflow-y-auto">
+    {userPurchases.map((purchase, i) => (
+      <div
+        key={i}
+        className="flex justify-between items-center bg-gray-800/40 rounded-lg px-3 py-2"
+      >
+        <div>
+          <p className="text-white text-sm">
+            {purchase.item_name || "Item"}
+          </p>
+
+          <p className="text-gray-400 text-xs">
+            {purchase.timestamp
+              ? new Date(purchase.timestamp).toLocaleString()
+              : "No timestamp"}
+          </p>
+        </div>
+
+        <div className="text-right">
+          <p className="text-cyan-400 text-sm font-medium">
+            {purchase.amount || 0} {purchase.payment_type || ""}
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
+) : (
+  <p className="text-gray-400 text-sm">No purchases</p>
+)}
 
                         <div className="text-right">
                           <p className="text-cyan-400 text-sm font-medium">
