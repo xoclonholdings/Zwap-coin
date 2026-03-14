@@ -108,7 +108,7 @@ async def adjust_reward(
 @admin_router.get("/config/walk")
 async def get_walk_config(request: Request, _: None = Depends(verify_admin)):
     db = _get_db(request)
-    return await config_service.get_walk_config(db)
+    return await config_service.get_walk_to_earn_config(db)
 
 
 @admin_router.put("/config/walk")
@@ -118,7 +118,7 @@ async def update_walk_config(
     _: None = Depends(verify_admin),
 ):
     db = _get_db(request)
-    return await config_service.update_walk_config(db, 
+    return await config_service.update_walk_to_earn_config(db, config)
     
 # ===========================
 # CONFIG – GAMES
@@ -149,6 +149,7 @@ async def update_game_config(
 ):
     db = _get_db(request)
     return await config_service.update_game_config(db, game_id, config)
+    
 # ===========================
 # MARKETPLACE
 # ===========================
