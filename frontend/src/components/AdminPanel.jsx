@@ -463,6 +463,12 @@ const UsersSection = () => {
                   <p className="text-white capitalize">{selectedUser.tier || "starter"}</p>
                 </div>
                 <div className="p-3 bg-gray-800/50 rounded-lg">
+  <p className="text-xs text-gray-500">Status</p>
+  <p className={selectedUser.status === "suspended" ? "text-red-400 font-bold" : "text-green-400 font-bold"}>
+    {selectedUser.status || "active"}
+  </p>
+</div>
+                <div className="p-3 bg-gray-800/50 rounded-lg">
                   <p className="text-xs text-gray-500">ZWAP Balance</p>
                   <p className="text-cyan-400 font-bold">{selectedUser.zwap_balance?.toFixed(4) || "0"}</p>
                 </div>
