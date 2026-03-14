@@ -532,7 +532,7 @@ const UsersSection = () => {
                 </div>
               </div>
 
-              <div className="mt-4">
+<div className="mt-4">
   <p className="text-sm text-gray-400 mb-2">Recent Purchases</p>
 
   {userPurchases.length > 0 ? (
@@ -546,7 +546,6 @@ const UsersSection = () => {
             <p className="text-white text-sm">
               {purchase.item_name || "Item"}
             </p>
-
             <p className="text-gray-400 text-xs">
               {purchase.timestamp
                 ? new Date(purchase.timestamp).toLocaleString()
@@ -561,25 +560,11 @@ const UsersSection = () => {
           </div>
         </div>
       ))}
+    </div>
   ) : (
     <p className="text-gray-400 text-sm">No purchases</p>
   )}
 </div>
-
-                        <div className="text-right">
-                          <p className="text-cyan-400 text-sm font-medium">
-                            {purchase.amount || 0} {purchase.payment_type || ""}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 text-sm">No purchases</p>
-                )}
-              </div>
-            </div>
-
             <div className="flex gap-3 mt-4">
               {selectedUser.status === "suspended" ? (
                 <Button
