@@ -1181,7 +1181,7 @@ async def health():
     return {"status": "healthy", "service": "zwap-api"}
 
 # Include admin routes
-from admin_routes import admin_router
+from routers.admin_routes import admin_router
 api_router.include_router(admin_router)
 
 app.include_router(api_router)
