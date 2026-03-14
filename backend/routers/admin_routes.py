@@ -127,7 +127,7 @@ async def update_walk_config(
 @admin_router.get("/config/games")
 async def get_game_config(request: Request, _: None = Depends(verify_admin)):
     db = _get_db(request)
-    return await config_service.get_games_config(db)
+    return await config_service.get_game_config(db)
 
 
 @admin_router.put("/config/games/{game_id}")
@@ -139,8 +139,6 @@ async def update_game_config(
 ):
     db = _get_db(request)
     return await config_service.update_game_config(db, game_id, config)
-
-
 # ===========================
 # MARKETPLACE
 # ===========================
