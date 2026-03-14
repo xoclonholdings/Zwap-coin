@@ -1040,7 +1040,7 @@ const [selectedOrder, setSelectedOrder] = useState(null);
         )}
       </div>
 
-      <div className="mt-8 space-y-3">
+            <div className="mt-8 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Recent Orders</h3>
           <Button
@@ -1065,12 +1065,12 @@ const [selectedOrder, setSelectedOrder] = useState(null);
         ) : (
           <div className="grid gap-3">
             {orders.map((order) => (
-  <button
-    type="button"
-    key={order.id || `${order.user_id}-${order.item_id}-${order.timestamp}`}
-    onClick={() => setSelectedOrder(order)}
-    className="w-full text-left p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4 hover:bg-gray-800/50 transition-colors"
-  >
+              <button
+                type="button"
+                key={order.id || `${order.user_id}-${order.item_id}-${order.timestamp}`}
+                onClick={() => setSelectedOrder(order)}
+                className="w-full text-left p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4 hover:bg-gray-800/50 transition-colors"
+              >
                 <div className="w-14 h-14 rounded-xl bg-gray-700 overflow-hidden flex-shrink-0">
                   {order.item_image_url ? (
                     <img
@@ -1101,6 +1101,12 @@ const [selectedOrder, setSelectedOrder] = useState(null);
                       </span>
                     )}
 
+                    {order.username && (
+                      <span className="text-gray-400">
+                        • {order.username}
+                      </span>
+                    )}
+
                     {order.timestamp && (
                       <span className="text-gray-500">
                         • {new Date(order.timestamp).toLocaleString()}
@@ -1108,13 +1114,13 @@ const [selectedOrder, setSelectedOrder] = useState(null);
                     )}
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
-    </div>
-          {selectedOrder && (
+
+      {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <motion.div
             className="bg-[#0f1029] border border-gray-700 rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
@@ -1193,8 +1199,8 @@ const [selectedOrder, setSelectedOrder] = useState(null);
           </motion.div>
         </div>
       )}
+    </div>
   );
-};
 
 // Swap Config Section
 const SwapConfigSection = () => {
