@@ -160,6 +160,47 @@ async def adjust_reward(
         is_deduction=payload.is_deduction,
     )
 
+# ===========================
+# CONFIG – SYSTEM
+# ===========================
+@admin_router.get("/config/system")
+async def get_system_config(request: Request, _: None = Depends(verify_admin)):
+    db = _get_db(request)
+
+    config = await db.configs.find_one({"key": "system_config"})
+
+    if not config:
+        default_config = {
+            "maintenance_mode": False,
+            "claims_paused": False,
+        }
+
+        await db.configs.update_one(
+            {"key": "system_config"},
+            {"$set": {"value": default_config}},
+            upsert=True,
+        )
+
+        return default_config
+
+    return config.get("value", {})
+
+
+@admin_router.put("/config/system")
+async def update_system_config(
+    config: Dict[str, Any],
+    request: Request,
+    _: None = Depends(verify_admin),
+):
+    db = _get_db(request)
+
+    await db.configs.update_one(
+        {"key": "system_config"},
+        {"$set": {"value": config}},
+        upsert=True,
+    )
+
+    return config
 
 # ===========================
 # CONFIG – WALK
