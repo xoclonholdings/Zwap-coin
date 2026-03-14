@@ -159,7 +159,6 @@ const buildSwapUrl = (service, fromToken, toToken, amount) => {
   // but we're currently passing human amount to the service query string where supported.
   // const amountWei = amount ? (parseFloat(amount) * Math.pow(10, from?.decimals || 18)).toString() : "";
 
-  switch (service.id) {
     case "jumper": {
       // Jumper Exchange URL format (Polygon -> Polygon)
       // Uses token addresses; amount is human-readable.
