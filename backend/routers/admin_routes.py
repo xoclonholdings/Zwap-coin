@@ -125,7 +125,7 @@ async def update_walk_config(
 # CONFIG – GAMES
 # ===========================
 @admin_router.get("/config/games")
-async def get_games_config(request: Request, _: None = Depends(verify_admin)):
+async def get_game_config(request: Request, _: None = Depends(verify_admin)):
     db = _get_db(request)
     return await config_service.get_games_config(db)
 
