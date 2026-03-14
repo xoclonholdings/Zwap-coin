@@ -313,6 +313,14 @@ const UsersSection = () => {
       toast.error("Failed to unsuspend user");
     }
   };
+  const loadUserPurchases = async (wallet) => {
+  try {
+    const data = await adminApi.get(`/users/${wallet}/purchases`);
+    setUserPurchases(data.purchases || []);
+  } catch {
+    setUserPurchases([]);
+  }
+};
 
   return (
     <div className="space-y-4">
@@ -413,6 +421,7 @@ const UsersSection = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedUser(user);
+                           loadUserPurchases(user.wallet_address);
                         }}
                         className="p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
                       >
@@ -526,7 +535,7 @@ const UsersSection = () => {
               <div className="mt-4">
                 <h4 className="text-white font-semibold mb-2">Recent Purchases</h4>
 
-                {selectedUser.purchases && selectedUser.purchases.length > 0 ? (
+                {userPurchases.length > 0 ? (
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {selectedUser.purchases.map((purchase, i) => (
                       <div
