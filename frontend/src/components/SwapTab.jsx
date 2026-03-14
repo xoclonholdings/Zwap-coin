@@ -515,15 +515,20 @@ export default function SwapTab() {
           </div>
           <div className="flex justify-between mt-1 px-1">
             <span className="text-xs text-gray-500">≈ ${fromUsd}</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (fromToken === "ZWAP") {
-                  setFromAmount(user?.zwap_balance?.toString() || "0");
-                } else {
-                  toast.message("Max is only wired for ZWAP balance right now.");
-                }
-              }}
+           <button
+  type="button"
+  onClick={() => {
+    if (fromToken === "ZWAP") {
+      if (!user || user.zwap_balance === undefined) {
+        toast.error("Wallet balance unavailable");
+        return;
+      }
+
+      setFromAmount(String(user.zwap_balance));
+    } else {
+      toast.message("Max currently supported for ZWAP only.");
+    }
+  }}
               className="text-xs text-cyan-400 hover:text-cyan-300"
             >
               Max: {fromToken === "ZWAP" ? user?.zwap_balance?.toFixed(2) || "0" : "—"}
