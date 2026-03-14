@@ -1,10 +1,12 @@
 from typing import Dict
 
+
 async def get_config(db, key: str) -> Dict:
     """
     Retrieves system config by key.
     """
     return await db.configs.find_one({"key": key})
+
 
 async def update_config(db, key: str, value) -> Dict:
     """
@@ -17,15 +19,19 @@ async def update_config(db, key: str, value) -> Dict:
     )
     return {"key": key, "value": value}
 
+
 # Walk-to-earn and game-specific config helpers
 async def get_walk_to_earn_config(db):
     return await get_config(db, "walk_to_earn")
 
+
 async def update_walk_to_earn_config(db, value):
     return await update_config(db, "walk_to_earn", value)
 
+
 async def get_game_config(db):
     config = await get_config(db, "game_config")
+    print("GAME CONFIG RAW:", config)
 
     if not config:
         return {"games": []}
@@ -37,6 +43,7 @@ async def get_game_config(db):
         return {"games": games}
 
     return {"games": []}
+
 
 async def update_game_config(db, game_id, value):
     config = await get_config(db, "game_config")
