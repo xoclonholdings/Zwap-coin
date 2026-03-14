@@ -154,8 +154,6 @@ const jumperTokenParam = (tokenKey) => {
 // Build pre-filled URLs for each aggregator
 const buildSwapUrl = (service, fromToken, toToken, amount) => {
   switch (service.id) {
-  const from = TOKENS[fromToken];
-  const to = TOKENS[toToken];
 
   // NOTE: Keeping this for future potential uses; some services accept amount in base units,
   // but we're currently passing human amount to the service query string where supported.
