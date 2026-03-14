@@ -117,7 +117,7 @@ async def admin_list_users(
         },
     ).skip(skip).limit(limit).to_list(length=limit)
 
-    normalized_users = []
+        normalized_users = []
     for user in users:
         normalized_users.append(
             {
