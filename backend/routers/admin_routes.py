@@ -229,7 +229,7 @@ async def analytics_overview(
 async def treasury_status(request: Request, _: None = Depends(verify_admin)):
     db = _get_db(request)
     w3, zwap_contract = _get_chain(request)
-    return await treasury_service.get_status(db, w3, zwap_contract)
+    return await treasury_service.get_treasury_status(db, w3, zwap_contract)
 
 
 # ===========================
