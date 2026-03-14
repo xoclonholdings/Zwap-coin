@@ -128,7 +128,7 @@ for user in users:
         }
     )
 
-total = await db.users.count_documents(query)
+     total = await db.users.count_documents(query)
 
 return {
     "users": normalized_users,
