@@ -115,18 +115,18 @@ async def admin_list_users(
         },
     ).skip(skip).limit(limit).to_list(length=limit)
 
-    normalized_users = []
-for user in users:
-    normalized_users.append(
-        {
-            "wallet_address": user.get("wallet_address"),
-            "username": user.get("custom_username") or user.get("username") or "—",
-            "tier": user.get("tier", "starter"),
-            "zwap_balance": user.get("zwap_balance", 0),
-            "zpts_balance": user.get("zpts_balance", 0),
-            "status": user.get("status", "active"),
-        }
-    )
+        normalized_users = []
+    for user in users:
+        normalized_users.append(
+            {
+                "wallet_address": user.get("wallet_address"),
+                "username": user.get("custom_username") or user.get("username") or "—",
+                "tier": user.get("tier", "starter"),
+                "zwap_balance": user.get("zwap_balance", 0),
+                "zpts_balance": user.get("zpts_balance", 0),
+                "status": user.get("status", "active"),
+            }
+        )
 
     total = await db.users.count_documents(query)
 
