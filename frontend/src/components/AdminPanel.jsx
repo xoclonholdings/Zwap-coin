@@ -345,42 +345,90 @@ const UsersSection = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {users.map((user) => (
-                <tr key={user.wallet_address} className="hover:bg-gray-800/50">
-                  <td className="px-4 py-3 text-sm text-white font-mono">
-                    {user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-4)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-300">{user.username || "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${user.tier === "plus" ? "bg-purple-500/20 text-purple-400" : "bg-gray-700 text-gray-400"}`}>
-                      {user.tier || "starter"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-cyan-400 font-medium">{user.zwap_balance?.toFixed(2) || "0"}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${user.status === "suspended" ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"}`}>
-                      {user.status || "active"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1">
-                      <button onClick={() => setSelectedUser(user)} className="p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {user.status === "suspended" ? (
-                        <button onClick={() => unsuspendUser(user.wallet_address)} className="p-1.5 rounded hover:bg-green-900/50 text-gray-400 hover:text-green-400">
-                          <Play className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <button onClick={() => suspendUser(user.wallet_address)} className="p-1.5 rounded hover:bg-red-900/50 text-gray-400 hover:text-red-400">
-                          <Ban className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {users.map((user) => (
+    <tr
+      key={user.wallet_address}
+      className="hover:bg-gray-800/50 cursor-pointer"
+      onClick={() => setSelectedUser(user)}
+    >
+      <td className="px-4 py-3 text-sm text-white font-mono">
+        {user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-4)}
+      </td>
+
+      <td className="px-4 py-3 text-sm text-gray-300">
+        {user.username || "—"}
+      </td>
+
+      <td className="px-4 py-3">
+        <span
+          className={`px-2 py-0.5 rounded text-xs font-medium ${
+            user.tier === "plus"
+              ? "bg-purple-500/20 text-purple-400"
+              : "bg-gray-700 text-gray-400"
+          }`}
+        >
+          {user.tier || "starter"}
+        </span>
+      </td>
+
+      <td className="px-4 py-3 text-sm text-cyan-400 font-medium">
+        {user.zwap_balance?.toFixed(2) || "0"}
+      </td>
+
+      <td className="px-4 py-3">
+        <span
+          className={`px-2 py-0.5 rounded text-xs font-medium ${
+            user.status === "suspended"
+              ? "bg-red-500/20 text-red-400"
+              : "bg-green-500/20 text-green-400"
+          }`}
+        >
+          {user.status || "active"}
+        </span>
+      </td>
+
+      <td className="px-4 py-3">
+        <div className="flex gap-1">
+
+          {/* View User */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedUser(user);
+            }}
+            className="p-1.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+
+          {/* Suspend / Unsuspend */}
+          {user.status === "suspended" ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                unsuspendUser(user.wallet_address);
+              }}
+              className="p-1.5 rounded hover:bg-green-900/50 text-gray-400 hover:text-green-400"
+            >
+              <Play className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                suspendUser(user.wallet_address);
+              }}
+              className="p-1.5 rounded hover:bg-red-900/50 text-gray-400 hover:text-red-400"
+            >
+              <Ban className="w-4 h-4" />
+            </button>
+          )}
+
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
           </table>
         </div>
         {loading && <div className="p-8 text-center text-gray-400">Loading users...</div>}
