@@ -62,6 +62,9 @@ async def dashboard(request: Request, _: None = Depends(verify_admin)):
     treasury = await treasury_service.get_treasury_status(db, w3, zwap_contract)
     analytics = await analytics_service.get_overview(db)
 
+    print("DASHBOARD TREASURY:", treasury)
+    print("DASHBOARD ANALYTICS:", analytics)
+
     leaderboard = await leaderboard_service.get_global_stats_and_top(
         db, category="earned", limit=50
     )
@@ -74,7 +77,6 @@ async def dashboard(request: Request, _: None = Depends(verify_admin)):
         "leaderboard": leaderboard,
         "news": news,
     }
-
 # ===========================
 # USERS
 # ===========================
