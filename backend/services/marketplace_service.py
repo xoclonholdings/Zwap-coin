@@ -115,10 +115,10 @@ async def list_items(db) -> Dict[str, List[Dict[str, Any]]]:
     return {"items": items}
 
 
-async def list_orders(db, limit: int = 100) -> List[Dict[str, Any]]:
+async def list_orders(db, limit: int = 100) -> Dict[str, List[Dict[str, Any]]]:
     """
     Returns recent marketplace purchase records for admin use.
-    Joins in basic item and user display context when available.
+    Supports multiple purchase record shapes already used in the app.
     """
     safe_limit = max(1, min(int(limit or 100), 500))
 
@@ -132,28 +132,61 @@ async def list_orders(db, limit: int = 100) -> List[Dict[str, Any]]:
     orders: List[Dict[str, Any]] = []
 
     async for doc in cursor:
-        item_id = doc.get("item_id")
+        raw_id = doc.get("_id")
         user_id = doc.get("user_id")
+        user_wallet = doc.get("user_wallet")
+        item_id = doc.get("item_id")
 
-        item = await db[COLLECTION_NAME].find_one({"_id": item_id}) if item_id else None
-        user = await db.users.find_one({"_id": user_id}) if user_id else None
+        # Support both old and new item lookup shapes
+        item = None
+        if item_id:
+            item = await db[COLLECTION_NAME].find_one({"_id": item_id})
+            if not item:
+                item = await db[COLLECTION_NAME].find_one({"id": item_id})
+
+        # Support both user_id-based and wallet-based purchase records
+        user = None
+        if user_id:
+            user = await db.users.find_one({"_id": user_id})
+            if not user:
+                user = await db.users.find_one({"id": user_id})
+
+        if not user and user_wallet:
+            user = await db.users.find_one({"wallet_address": user_wallet.lower()})
+
+        timestamp = doc.get("timestamp") or doc.get("purchased_at")
+        if isinstance(timestamp, datetime):
+            timestamp = timestamp.isoformat()
+
+        amount = doc.get("amount")
+        if amount is None:
+            amount = doc.get("price", 0)
+
+        payment_type = doc.get("payment_type")
+        if payment_type is None:
+            payment_type = doc.get("currency", "zwap")
 
         order = {
-            "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
-            "user_id": user_id,
+            "id": str(raw_id) if raw_id is not None else doc.get("id"),
+            "user_id": user_id or user.get("id") if user else None,
             "item_id": item_id,
-            "payment_type": doc.get("payment_type"),
-            "amount": doc.get("amount", 0),
-            "timestamp": doc.get("timestamp"),
-            "item_name": item.get("name") if item else None,
-            "item_image_url": item.get("image_url") if item else None,
-            "wallet_address": user.get("wallet_address") if user else None,
-            "username": user.get("username") if user else None,
+            "payment_type": payment_type,
+            "amount": amount,
+            "timestamp": timestamp,
+            "item_name": doc.get("item_name") or (item.get("name") if item else None),
+            "item_image_url": doc.get("item_image_url") or (item.get("image_url") if item else None),
+            "wallet_address": user_wallet or (user.get("wallet_address") if user else None),
+            "username": (
+                doc.get("username")
+                or (user.get("custom_username") if user else None)
+                or (user.get("username") if user else None)
+            ),
         }
+
         orders.append(order)
 
-    return orders
-
+    return {"orders": orders}
+    
 async def create_item(db, item: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a new marketplace item in the shop_items collection.
