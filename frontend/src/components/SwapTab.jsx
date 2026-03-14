@@ -13,6 +13,7 @@ import {
   Minimize2,
   ChevronDown,
   ArrowDown,
+  RefreshCw,
 } from "lucide-react";
 
 /**
@@ -243,11 +244,12 @@ export default function SwapTab() {
   const [showFromTokens, setShowFromTokens] = useState(false);
   const [showToTokens, setShowToTokens] = useState(false);
 
-  // Embedded browser state
+    // Embedded browser state
   const [activeService, setActiveService] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [externalSwapNotice, setExternalSwapNotice] = useState(null);
+  
   useEffect(() => {
     loadPrices();
     const interval = setInterval(loadPrices, 30000);
@@ -270,29 +272,24 @@ export default function SwapTab() {
     setToToken(temp);
   };
 
-  const openSwapService = (service) => {
-  const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
+    const openSwapService = (service) => {
+    const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
 
-  if (!service.iframeSupported) {
-    window.open(url, "_blank", "noopener,noreferrer");
-    toast.success(`${service.name} opened in a new tab`);
-    return;
-  }
-
-  setIsLoading(true);
-  setActiveService({ ...service, url });
-  setTimeout(() => setIsLoading(false), 2000);
-};
-
-  const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
-  setIsLoading(true);
-  setActiveService({ ...service, url });
-  setTimeout(() => setIsLoading(false), 2000);
-};
+    if (!service.iframeSupported) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      setExternalSwapNotice({
+        serviceName: service.name,
+        fromToken,
+        toToken,
+        fromAmount,
+        url,
+      });
+      toast.success(`${service.name} opened in a new tab`);
+      return;
+    }
 
     setIsLoading(true);
     setActiveService({ ...service, url });
-    // Some services load slower; we keep the overlay for a short moment
     setTimeout(() => setIsLoading(false), 2000);
   };
 
@@ -568,6 +565,67 @@ export default function SwapTab() {
           </div>
         </div>
       </div>
+      
+            {externalSwapNotice && (
+        <div className="mb-4 space-y-2">
+          <div className="p-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-white font-semibold text-sm">
+                  {externalSwapNotice.serviceName} opened in a new tab
+                </p>
+                <p className="text-gray-400 text-xs mt-1">
+                  Complete your swap there, then return here and refresh your wallet balance.
+                </p>
+                <p className="text-cyan-400 text-xs mt-2">
+                  {externalSwapNotice.fromAmount || "0"} {externalSwapNotice.fromToken} →{" "}
+                  {externalSwapNotice.toToken}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setExternalSwapNotice(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-gray-700 text-white"
+              onClick={async () => {
+                try {
+                  await loadPrices();
+                  toast.success("Swap data refreshed");
+                } catch {
+                  toast.error("Failed to refresh");
+                }
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-gray-300"
+              onClick={() => {
+                if (externalSwapNotice?.url) {
+                  window.open(externalSwapNotice.url, "_blank", "noopener,noreferrer");
+                }
+              }}
+            >
+              Open Again
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Swap Services */}
       <div className="flex-1">
