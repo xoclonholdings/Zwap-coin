@@ -640,12 +640,23 @@ export default function SwapTab() {
       )}
       
             <div className="mb-4">
-        <Button
-          type="button"
-          onClick={() => openSwapService(SWAP_SERVICES[0])}
-          disabled={!fromAmount || parseFloat(fromAmount) <= 0}
-          className="w-full bg-cyan-600 hover:bg-cyan-700 text-white h-12 rounded-xl"
-        >
+       <Button
+  type="button"
+  onClick={() => {
+    const bestService = SWAP_SERVICES.find(
+      (service) => service.id === "quickswap"
+    );
+
+    if (!bestService) {
+      toast.error("No in-app swap service available");
+      return;
+    }
+
+    openSwapService(bestService);
+  }}
+  disabled={!fromAmount || parseFloat(fromAmount) <= 0}
+  className="w-full bg-cyan-600 hover:bg-cyan-700 text-white h-12 rounded-xl"
+>
           <ArrowRightLeft className="w-4 h-4 mr-2" />
           Swap Now
         </Button>
