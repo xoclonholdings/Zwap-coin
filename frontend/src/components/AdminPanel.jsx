@@ -274,6 +274,7 @@ const UsersSection = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [userPurchases, setUserPurchases] = useState([]);
 
   useEffect(() => {
     loadUsers();
