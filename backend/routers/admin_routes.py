@@ -116,26 +116,72 @@ async def admin_list_users(
     ).skip(skip).limit(limit).to_list(length=limit)
 
     normalized_users = []
-    for user in users:
-        normalized_users.append(
+for user in users:
+    normalized_users.append(
+        {
+            "wallet_address": user.get("wallet_address"),
+            "username": user.get("custom_username") or user.get("username") or "—",
+            "tier": user.get("tier", "starter"),
+            "zwap_balance": user.get("zwap_balance", 0),
+            "zpts_balance": user.get("zpts_balance", 0),
+            "status": user.get("status", "active"),
+        }
+    )
+
+total = await db.users.count_documents(query)
+
+return {
+    "users": normalized_users,
+    "total": total,
+    "skip": skip,
+    "limit": limit,
+}
+
+
+@admin_router.get("/users/{wallet}/purchases")
+async def admin_user_purchases(
+    wallet: str,
+    request: Request,
+    limit: int = 20,
+    _: None = Depends(verify_admin),
+):
+    db = _get_db(request)
+
+    purchases = await db.purchases.find(
+        {"user_wallet": wallet},
+        {
+            "_id": 0,
+            "item_id": 1,
+            "amount": 1,
+            "currency": 1,
+            "timestamp": 1,
+        },
+    ).sort("timestamp", -1).limit(limit).to_list(length=limit)
+
+    item_ids = [p.get("item_id") for p in purchases if p.get("item_id")]
+    items_map = {}
+
+    if item_ids:
+        items = await db.shop_items.find(
+            {"_id": {"$in": item_ids}},
+            {"_id": 1, "name": 1},
+        ).to_list(length=len(item_ids))
+
+        items_map = {item["_id"]: item.get("name", "Item") for item in items}
+
+    normalized_purchases = []
+    for purchase in purchases:
+        normalized_purchases.append(
             {
-                "wallet_address": user.get("wallet_address"),
-                "username": user.get("custom_username") or user.get("username") or "—",
-                "tier": user.get("tier", "starter"),
-                "zwap_balance": user.get("zwap_balance", 0),
-                "zpts_balance": user.get("zpts_balance", 0),
-                "status": user.get("status", "active"),
+                "item_id": purchase.get("item_id"),
+                "item_name": items_map.get(purchase.get("item_id"), "Item"),
+                "amount": purchase.get("amount", 0),
+                "payment_type": purchase.get("currency", "ZWAP"),
+                "timestamp": purchase.get("timestamp"),
             }
         )
 
-    total = await db.users.count_documents(query)
-
-    return {
-        "users": normalized_users,
-        "total": total,
-        "skip": skip,
-        "limit": limit,
-    }
+    return {"purchases": normalized_purchases}
 
 # ===========================
 # REWARD ADJUSTMENT
