@@ -58,7 +58,7 @@ async def dashboard(request: Request, _: None = Depends(verify_admin)):
     db = _get_db(request)
     w3, zwap_contract = _get_chain(request)
 
-    treasury = await treasury_service.get_status(db, w3, zwap_contract)
+    treasury = await treasury_service.get_treasury_status(db, w3, zwap_contract)
     analytics = await analytics_service.get_overview(db)
 
     leaderboard = await leaderboard_service.get_global_stats_and_top(
