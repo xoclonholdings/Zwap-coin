@@ -77,6 +77,8 @@ async def dashboard(request: Request, _: None = Depends(verify_admin)):
         "leaderboard": leaderboard,
         "news": news,
     }
+
+
 # ===========================
 # USERS
 # ===========================
@@ -115,7 +117,7 @@ async def admin_list_users(
         },
     ).skip(skip).limit(limit).to_list(length=limit)
 
-        normalized_users = []
+    normalized_users = []
     for user in users:
         normalized_users.append(
             {
@@ -183,6 +185,7 @@ async def admin_user_purchases(
 
     return {"purchases": normalized_purchases}
 
+
 # ===========================
 # REWARD ADJUSTMENT
 # ===========================
@@ -208,6 +211,7 @@ async def adjust_reward(
         reason=payload.reason,
         is_deduction=payload.is_deduction,
     )
+
 
 # ===========================
 # CONFIG – SYSTEM
@@ -251,6 +255,7 @@ async def update_system_config(
 
     return config
 
+
 # ===========================
 # CONFIG – WALK
 # ===========================
@@ -268,7 +273,8 @@ async def update_walk_config(
 ):
     db = _get_db(request)
     return await config_service.update_walk_to_earn_config(db, config)
-    
+
+
 # ===========================
 # CONFIG – GAMES
 # ===========================
@@ -298,7 +304,8 @@ async def update_game_config(
 ):
     db = _get_db(request)
     return await config_service.update_game_config(db, game_id, config)
-    
+
+
 # ===========================
 # MARKETPLACE
 # ===========================
@@ -338,6 +345,7 @@ async def delete_marketplace_item(
     db = _get_db(request)
     return await marketplace_service.delete_item(db, item_id)
 
+
 @admin_router.get("/marketplace/orders")
 async def list_marketplace_orders(
     request: Request,
@@ -346,6 +354,7 @@ async def list_marketplace_orders(
 ):
     db = _get_db(request)
     return await marketplace_service.list_orders(db, limit=limit)
+
 
 # ===========================
 # SWAP CONFIG
@@ -394,21 +403,34 @@ async def treasury_status(request: Request, _: None = Depends(verify_admin)):
 # NEWS
 # ===========================
 @admin_router.get("/news")
-async def admin_list_news(request: Request, limit: int = 50, _: None = Depends(verify_admin)):
+async def admin_list_news(
+    request: Request,
+    limit: int = 50,
+    _: None = Depends(verify_admin),
+):
     db = _get_db(request)
     return await news_service.list_news(db, limit=limit)
 
 
 @admin_router.post("/news")
-async def admin_create_news(item: Dict[str, Any], request: Request, _: None = Depends(verify_admin)):
+async def admin_create_news(
+    item: Dict[str, Any],
+    request: Request,
+    _: None = Depends(verify_admin),
+):
     db = _get_db(request)
     return await news_service.create_news(db, item)
 
 
 @admin_router.delete("/news/{news_id}")
-async def admin_delete_news(news_id: str, request: Request, _: None = Depends(verify_admin)):
+async def admin_delete_news(
+    news_id: str,
+    request: Request,
+    _: None = Depends(verify_admin),
+):
     db = _get_db(request)
     return await news_service.delete_news(db, news_id)
+
 
 # ===========================
 # ACCOUNT
@@ -512,6 +534,7 @@ async def change_admin_key(
     )
 
     return {"success": True, "message": "Admin key changed successfully"}
+
 
 # ===========================
 # SUBSCRIPTIONS
