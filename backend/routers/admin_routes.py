@@ -118,9 +118,8 @@ async def update_walk_config(
     _: None = Depends(verify_admin),
 ):
     db = _get_db(request)
-    return await config_service.update_walk_config(db, config)
-
-
+    return await config_service.update_walk_config(db, 
+    
 # ===========================
 # CONFIG – GAMES
 # ===========================
@@ -128,6 +127,17 @@ async def update_walk_config(
 async def get_game_config(request: Request, _: None = Depends(verify_admin)):
     db = _get_db(request)
     return await config_service.get_game_config(db)
+
+
+@admin_router.post("/config/games/{game_id}/toggle")
+async def toggle_game_config(
+    game_id: str,
+    enabled: bool,
+    request: Request,
+    _: None = Depends(verify_admin),
+):
+    db = _get_db(request)
+    return await config_service.update_game_config(db, game_id, {"enabled": enabled})
 
 
 @admin_router.put("/config/games/{game_id}")
