@@ -231,7 +231,7 @@ const SWAP_SERVICES = [
   },
 ];
 export default function SwapTab() {
-  const { user } = useApp();
+  const { user, fetchUser } = useApp();
   const [prices, setPrices] = useState({});
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
 
@@ -601,13 +601,18 @@ export default function SwapTab() {
               variant="outline"
               className="border-gray-700 text-white"
               onClick={async () => {
-                try {
-                  await loadPrices();
-                  toast.success("Swap data refreshed");
-                } catch {
-                  toast.error("Failed to refresh");
-                }
-              }}
+  try {
+    await loadPrices();
+
+    if (typeof fetchUser === "function") {
+      await fetchUser();
+    }
+
+    toast.success("Swap data refreshed");
+  } catch {
+    toast.error("Failed to refresh");
+  }
+}}
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
