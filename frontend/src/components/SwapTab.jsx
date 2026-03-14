@@ -153,6 +153,7 @@ const jumperTokenParam = (tokenKey) => {
 
 // Build pre-filled URLs for each aggregator
 const buildSwapUrl = (service, fromToken, toToken, amount) => {
+  switch (service.id) {
   const from = TOKENS[fromToken];
   const to = TOKENS[toToken];
 
@@ -361,7 +362,7 @@ export default function SwapTab() {
     </div>
   );
 
-  // If a service is active, show embedded browser
+  // If an iframe-supported service is active, show embedded browser
   if (activeService) {
     return (
       <div
