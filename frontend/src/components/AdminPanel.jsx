@@ -1538,17 +1538,28 @@ export default function AdminPanel() {
               <p className="text-xs text-gray-500">Mission Control</p>
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              localStorage.removeItem("zwap_admin_key");
-              setIsAuthenticated(false);
-            }}
-            className="text-gray-400 hover:text-white"
-          >
-            Logout
-          </Button>
+         <div className="flex items-center gap-2">
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={() => setActiveSection("dashboard")}
+    className="text-gray-400 hover:text-white"
+  >
+    Dashboard
+  </Button>
+
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={() => {
+      localStorage.removeItem("zwap_admin_key");
+      setIsAuthenticated(false);
+    }}
+    className="text-gray-400 hover:text-white"
+  >
+    Logout
+  </Button>
+</div>
         </div>
       </header>
 
