@@ -201,13 +201,14 @@ const buildSwapUrl = (service, fromToken, toToken, amount) => {
 // External swap services with official branding
 const SWAP_SERVICES = [
   {
-    id: "jumper",
-    name: "Jumper Exchange",
-    description: "Cross-chain swaps via Li.Fi",
-    baseUrl: "https://jumper.exchange/?fromChain=137&toChain=137",
-    logo: "https://jumper.exchange/jumper-icon.svg",
-    fallbackLogo: "🌉",
+    id: "quickswap",
+    name: "QuickSwap",
+    description: "Native Polygon DEX",
+    baseUrl: "https://quickswap.exchange/#/swap",
+    logo: "https://quickswap.exchange/logo_circle.png",
+    fallbackLogo: "⚡",
     recommended: true,
+    iframeSupported: true,
   },
   {
     id: "1inch",
@@ -217,18 +218,19 @@ const SWAP_SERVICES = [
     logo: "https://app.1inch.io/assets/images/logo.svg",
     fallbackLogo: "🦄",
     recommended: false,
+    iframeSupported: false,
   },
   {
-    id: "quickswap",
-    name: "QuickSwap",
-    description: "Native Polygon DEX",
-    baseUrl: "https://quickswap.exchange/#/swap",
-    logo: "https://quickswap.exchange/logo_circle.png",
-    fallbackLogo: "⚡",
+    id: "jumper",
+    name: "Jumper Exchange",
+    description: "Cross-chain swaps via Li.Fi",
+    baseUrl: "https://jumper.exchange/?fromChain=137&toChain=137",
+    logo: "https://jumper.exchange/jumper-icon.svg",
+    fallbackLogo: "🌉",
     recommended: false,
+    iframeSupported: false,
   },
 ];
-
 export default function SwapTab() {
   const { user } = useApp();
   const [prices, setPrices] = useState({});
@@ -269,14 +271,24 @@ export default function SwapTab() {
   };
 
   const openSwapService = (service) => {
-    const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
+  const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
 
-    // Guard: prevent opening when invalid amount
-    const amt = parseFloat(fromAmount);
-    if (!fromAmount || Number.isNaN(amt) || amt <= 0) {
-      toast.error("Enter an amount to swap");
-      return;
-    }
+  if (!service.iframeSupported) {
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast.success(`${service.name} opened in a new tab`);
+    return;
+  }
+
+  setIsLoading(true);
+  setActiveService({ ...service, url });
+  setTimeout(() => setIsLoading(false), 2000);
+};
+
+  const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
+  setIsLoading(true);
+  setActiveService({ ...service, url });
+  setTimeout(() => setIsLoading(false), 2000);
+};
 
     setIsLoading(true);
     setActiveService({ ...service, url });
