@@ -74,6 +74,65 @@ async def dashboard(request: Request, _: None = Depends(verify_admin)):
         "news": news,
     }
 
+# ===========================
+# USERS
+# ===========================
+@admin_router.get("/users")
+async def admin_list_users(
+    request: Request,
+    skip: int = 0,
+    limit: int = 50,
+    search: Optional[str] = None,
+    _: None = Depends(verify_admin),
+):
+    db = _get_db(request)
+
+    query = {}
+
+    if search:
+        query = {
+            "$or": [
+                {"wallet_address": {"$regex": search, "$options": "i"}},
+                {"custom_username": {"$regex": search, "$options": "i"}},
+                {"username": {"$regex": search, "$options": "i"}},
+            ]
+        }
+
+    users = await db.users.find(
+        query,
+        {
+            "_id": 0,
+            "wallet_address": 1,
+            "custom_username": 1,
+            "username": 1,
+            "tier": 1,
+            "zwap_balance": 1,
+            "zpts_balance": 1,
+            "status": 1,
+        },
+    ).skip(skip).limit(limit).to_list(length=limit)
+
+    normalized_users = []
+    for user in users:
+        normalized_users.append(
+            {
+                "wallet_address": user.get("wallet_address"),
+                "username": user.get("custom_username") or user.get("username") or "—",
+                "tier": user.get("tier", "starter"),
+                "zwap_balance": user.get("zwap_balance", 0),
+                "zpts_balance": user.get("zpts_balance", 0),
+                "status": user.get("status", "active"),
+            }
+        )
+
+    total = await db.users.count_documents(query)
+
+    return {
+        "users": normalized_users,
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+    }
 
 # ===========================
 # REWARD ADJUSTMENT
