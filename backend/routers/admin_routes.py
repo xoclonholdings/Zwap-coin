@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+from datetime import datetime
 
 # 🔒 Direct service imports (no package aggregator)
 import services.analytics_service as analytics_service
