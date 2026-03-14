@@ -25,7 +25,38 @@ async def update_walk_to_earn_config(db, value):
     return await update_config(db, "walk_to_earn", value)
 
 async def get_game_config(db):
-    return await get_config(db, "game_config")
+    config = await get_config(db, "game_config")
 
-async def update_game_config(db, value):
-    return await update_config(db, "game_config", value)
+    if not config:
+        return {"games": []}
+
+    value = config.get("value", {})
+    games = value.get("games", [])
+
+    if isinstance(games, list):
+        return {"games": games}
+
+    return {"games": []}
+
+async def update_game_config(db, game_id, value):
+    config = await get_config(db, "game_config")
+
+    current_value = config.get("value", {}) if config else {}
+    current_games = current_value.get("games", [])
+
+    updated = False
+    new_games = []
+
+    for game in current_games:
+        if game.get("game_id") == game_id:
+            merged = {**game, **value}
+            merged["game_id"] = game_id
+            new_games.append(merged)
+            updated = True
+        else:
+            new_games.append(game)
+
+    if not updated:
+        new_games.append({"game_id": game_id, **value})
+
+    return await update_config(db, "game_config", {"games": new_games})
