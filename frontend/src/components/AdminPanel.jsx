@@ -478,9 +478,39 @@ const UsersSection = () => {
                 </div>
               </div>
             </div>
-            <Button onClick={() => setSelectedUser(null)} className="w-full mt-4 bg-gray-700 hover:bg-gray-600">
-              Close
-            </Button>
+            <div className="flex gap-3 mt-4">
+
+  {selectedUser.status === "suspended" ? (
+    <Button
+      className="bg-green-600 hover:bg-green-700"
+      onClick={() => {
+        unsuspendUser(selectedUser.wallet_address)
+        setSelectedUser(null)
+      }}
+    >
+      Unsuspend User
+    </Button>
+  ) : (
+    <Button
+      className="bg-red-600 hover:bg-red-700"
+      onClick={() => {
+        suspendUser(selectedUser.wallet_address)
+        setSelectedUser(null)
+      }}
+    >
+      Suspend User
+    </Button>
+  )}
+
+  <Button
+    variant="outline"
+    onClick={() => setSelectedUser(null)}
+    className="border-gray-700"
+  >
+    Close
+  </Button>
+
+</div>
           </motion.div>
         </div>
       )}
