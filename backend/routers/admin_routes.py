@@ -180,6 +180,14 @@ async def delete_marketplace_item(
     db = _get_db(request)
     return await marketplace_service.delete_item(db, item_id)
 
+@admin_router.get("/marketplace/orders")
+async def list_marketplace_orders(
+    request: Request,
+    limit: int = 100,
+    _: None = Depends(verify_admin),
+):
+    db = _get_db(request)
+    return await marketplace_service.list_orders(db, limit=limit)
 
 # ===========================
 # SWAP CONFIG
