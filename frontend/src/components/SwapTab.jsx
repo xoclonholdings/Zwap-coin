@@ -639,7 +639,7 @@ export default function SwapTab() {
 
       {/* Swap Services */}
       <div className="flex-1">
-        <h3 className="text-white font-semibold text-sm mb-3">Choose Exchange</h3>
+        <h3 className="text-white font-semibold text-sm mb-3">Other Exchange Options</h3>
         <div className="space-y-2">
           {SWAP_SERVICES.map((service, i) => (
             <motion.button
