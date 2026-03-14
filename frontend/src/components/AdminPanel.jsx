@@ -1065,10 +1065,12 @@ const [selectedOrder, setSelectedOrder] = useState(null);
         ) : (
           <div className="grid gap-3">
             {orders.map((order) => (
-              <div
-                key={order.id || `${order.user_id}-${order.item_id}-${order.timestamp}`}
-                className="p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4"
-              >
+  <button
+    type="button"
+    key={order.id || `${order.user_id}-${order.item_id}-${order.timestamp}`}
+    onClick={() => setSelectedOrder(order)}
+    className="w-full text-left p-4 rounded-xl border border-gray-700 bg-gray-800/30 flex items-center gap-4 hover:bg-gray-800/50 transition-colors"
+  >
                 <div className="w-14 h-14 rounded-xl bg-gray-700 overflow-hidden flex-shrink-0">
                   {order.item_image_url ? (
                     <img
@@ -1112,6 +1114,85 @@ const [selectedOrder, setSelectedOrder] = useState(null);
         )}
       </div>
     </div>
+          {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <motion.div
+            className="bg-[#0f1029] border border-gray-700 rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold text-lg">Order Details</h3>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-400 hover:text-white"
+                type="button"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-800/50 rounded-lg">
+                <p className="text-xs text-gray-500">Item</p>
+                <p className="text-white">{selectedOrder.item_name || "Unknown item"}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-gray-800/50 rounded-lg">
+                  <p className="text-xs text-gray-500">Amount</p>
+                  <p className="text-cyan-400 font-bold">
+                    {selectedOrder.amount || 0} {selectedOrder.payment_type || "—"}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-gray-800/50 rounded-lg">
+                  <p className="text-xs text-gray-500">Username</p>
+                  <p className="text-white">{selectedOrder.username || "—"}</p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-gray-800/50 rounded-lg">
+                <p className="text-xs text-gray-500">Wallet Address</p>
+                <p className="text-white font-mono text-sm break-all">
+                  {selectedOrder.wallet_address || "—"}
+                </p>
+              </div>
+
+              <div className="p-3 bg-gray-800/50 rounded-lg">
+                <p className="text-xs text-gray-500">Order ID</p>
+                <p className="text-white font-mono text-sm break-all">
+                  {selectedOrder.id || "—"}
+                </p>
+              </div>
+
+              <div className="p-3 bg-gray-800/50 rounded-lg">
+                <p className="text-xs text-gray-500">Item ID</p>
+                <p className="text-white font-mono text-sm break-all">
+                  {selectedOrder.item_id || "—"}
+                </p>
+              </div>
+
+              <div className="p-3 bg-gray-800/50 rounded-lg">
+                <p className="text-xs text-gray-500">Timestamp</p>
+                <p className="text-white">
+                  {selectedOrder.timestamp
+                    ? new Date(selectedOrder.timestamp).toLocaleString()
+                    : "—"}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setSelectedOrder(null)}
+              className="w-full mt-4 bg-gray-700 hover:bg-gray-600"
+              type="button"
+            >
+              Close
+            </Button>
+          </motion.div>
+        </div>
+      )}
   );
 };
 
