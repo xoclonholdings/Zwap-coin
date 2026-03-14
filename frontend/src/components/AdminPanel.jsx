@@ -377,7 +377,10 @@ const UsersSection = () => {
                 <tr
                   key={user.wallet_address}
                   className="hover:bg-gray-800/50 cursor-pointer"
-                  onClick={() => setSelectedUser(user)}
+                  onClick={() => {
+  setSelectedUser(user);
+  loadUserPurchases(user.wallet_address);
+}}
                 >
                   <td className="px-4 py-3 text-sm text-white font-mono">
                     {user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-4)}
@@ -467,141 +470,141 @@ const UsersSection = () => {
       </div>
 
       {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <motion.div
-            className="bg-[#0f1029] border border-gray-700 rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-bold text-lg">User Details</h3>
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <p className="text-xs text-gray-500">Wallet Address</p>
-                <p className="text-white font-mono text-sm break-all">
-                  {selectedUser.wallet_address}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-gray-800/50 rounded-lg">
-                  <p className="text-xs text-gray-500">Username</p>
-                  <p className="text-white">{selectedUser.username || "Not set"}</p>
-                </div>
-
-                <div className="p-3 bg-gray-800/50 rounded-lg">
-                  <p className="text-xs text-gray-500">Tier</p>
-                  <p className="text-white capitalize">
-                    {selectedUser.tier || "starter"}
-                  </p>
-                </div>
-
-                <div className="p-3 bg-gray-800/50 rounded-lg">
-                  <p className="text-xs text-gray-500">Status</p>
-                  <p
-                    className={
-                      selectedUser.status === "suspended"
-                        ? "text-red-400 font-bold"
-                        : "text-green-400 font-bold"
-                    }
-                  >
-                    {selectedUser.status || "active"}
-                  </p>
-                </div>
-
-                <div className="p-3 bg-gray-800/50 rounded-lg">
-                  <p className="text-xs text-gray-500">ZWAP Balance</p>
-                  <p className="text-cyan-400 font-bold">
-                    {selectedUser.zwap_balance?.toFixed(4) || "0"}
-                  </p>
-                </div>
-
-                <div className="p-3 bg-gray-800/50 rounded-lg">
-                  <p className="text-xs text-gray-500">Z Points</p>
-                  <p className="text-purple-400 font-bold">
-                    {selectedUser.zpts_balance || "0"}
-                  </p>
-                </div>
-              </div>
-
-<div className="mt-4">
-  <p className="text-sm text-gray-400 mb-2">Recent Purchases</p>
-
-  {userPurchases.length > 0 ? (
-    <div className="space-y-2 max-h-40 overflow-y-auto">
-      {userPurchases.map((purchase, i) => (
-        <div
-          key={i}
-          className="flex justify-between items-center bg-gray-800/40 rounded-lg px-3 py-2"
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+    <motion.div
+      className="bg-[#0f1029] border border-gray-700 rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-white font-bold text-lg">User Details</h3>
+        <button
+          onClick={() => setSelectedUser(null)}
+          className="text-gray-400 hover:text-white"
+          type="button"
         >
-          <div>
-            <p className="text-white text-sm">
-              {purchase.item_name || "Item"}
-            </p>
-            <p className="text-gray-400 text-xs">
-              {purchase.timestamp
-                ? new Date(purchase.timestamp).toLocaleString()
-                : "No timestamp"}
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div className="p-3 bg-gray-800/50 rounded-lg">
+          <p className="text-xs text-gray-500">Wallet Address</p>
+          <p className="text-white font-mono text-sm break-all">
+            {selectedUser.wallet_address}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 bg-gray-800/50 rounded-lg">
+            <p className="text-xs text-gray-500">Username</p>
+            <p className="text-white">{selectedUser.username || "Not set"}</p>
+          </div>
+
+          <div className="p-3 bg-gray-800/50 rounded-lg">
+            <p className="text-xs text-gray-500">Tier</p>
+            <p className="text-white capitalize">
+              {selectedUser.tier || "starter"}
             </p>
           </div>
 
-          <div className="text-right">
-            <p className="text-cyan-400 text-sm font-medium">
-              {purchase.amount || 0} {purchase.payment_type || ""}
+          <div className="p-3 bg-gray-800/50 rounded-lg">
+            <p className="text-xs text-gray-500">Status</p>
+            <p
+              className={
+                selectedUser.status === "suspended"
+                  ? "text-red-400 font-bold"
+                  : "text-green-400 font-bold"
+              }
+            >
+              {selectedUser.status || "active"}
+            </p>
+          </div>
+
+          <div className="p-3 bg-gray-800/50 rounded-lg">
+            <p className="text-xs text-gray-500">ZWAP Balance</p>
+            <p className="text-cyan-400 font-bold">
+              {selectedUser.zwap_balance?.toFixed(4) || "0"}
+            </p>
+          </div>
+
+          <div className="p-3 bg-gray-800/50 rounded-lg">
+            <p className="text-xs text-gray-500">Z Points</p>
+            <p className="text-purple-400 font-bold">
+              {selectedUser.zpts_balance || "0"}
             </p>
           </div>
         </div>
-      ))}
-    </div>
-  ) : (
-    <p className="text-gray-400 text-sm">No purchases</p>
-  )}
-</div>
-            <div className="flex gap-3 mt-4">
-              {selectedUser.status === "suspended" ? (
-                <Button
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={() => {
-                    unsuspendUser(selectedUser.wallet_address);
-                    setSelectedUser(null);
-                  }}
-                >
-                  Unsuspend User
-                </Button>
-              ) : (
-                <Button
-                  className="bg-red-600 hover:bg-red-700"
-                  onClick={() => {
-                    suspendUser(selectedUser.wallet_address);
-                    setSelectedUser(null);
-                  }}
-                >
-                  Suspend User
-                </Button>
-              )}
 
-              <Button
-                variant="outline"
-                onClick={() => setSelectedUser(null)}
-                className="border-gray-700"
-              >
-                Close
-              </Button>
+        <div className="mt-4">
+          <p className="text-sm text-gray-400 mb-2">Recent Purchases</p>
+
+          {userPurchases.length > 0 ? (
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {userPurchases.map((purchase, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center bg-gray-800/40 rounded-lg px-3 py-2"
+                >
+                  <div>
+                    <p className="text-white text-sm">
+                      {purchase.item_name || "Item"}
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      {purchase.timestamp
+                        ? new Date(purchase.timestamp).toLocaleString()
+                        : "No timestamp"}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-cyan-400 text-sm font-medium">
+                      {purchase.amount || 0} {purchase.payment_type || ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </motion.div>
+          ) : (
+            <p className="text-gray-400 text-sm">No purchases</p>
+          )}
         </div>
-      )}
-    </div>
-  );
-};
+      </div>
+
+      <div className="flex gap-3 mt-4">
+        {selectedUser.status === "suspended" ? (
+          <Button
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => {
+              unsuspendUser(selectedUser.wallet_address);
+              setSelectedUser(null);
+            }}
+          >
+            Unsuspend User
+          </Button>
+        ) : (
+          <Button
+            className="bg-red-600 hover:bg-red-700"
+            onClick={() => {
+              suspendUser(selectedUser.wallet_address);
+              setSelectedUser(null);
+            }}
+          >
+            Suspend User
+          </Button>
+        )}
+
+        <Button
+          variant="outline"
+          onClick={() => setSelectedUser(null)}
+          className="border-gray-700"
+        >
+          Close
+        </Button>
+      </div>
+    </motion.div>
+  </div>
+)}
 
 // Treasury Section
 const TreasurySection = () => {
