@@ -271,8 +271,12 @@ export default function SwapTab() {
   };
 
     const openSwapService = (service) => {
-    const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
+  if (fromToken === toToken) {
+    toast.error("Select two different tokens");
+    return;
+  }
 
+  const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
     if (!service.iframeSupported) {
       window.open(url, "_blank", "noopener,noreferrer");
       setExternalSwapNotice({
