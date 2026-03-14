@@ -7,7 +7,7 @@ async def get_dau(db) -> int:
     Returns daily active users.
     """
     pipeline = [
-        {"$match": {"last_active": {"$gte": datetime.utcnow().date()}}},
+        {"$match": {"last_active": {"$gte": datetime.utcnow()}}},
         {"$group": {"_id": None, "dau": {"$sum": 1}}},
     ]
     result = await db.users.aggregate(pipeline).to_list(length=1)
