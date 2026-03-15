@@ -151,19 +151,21 @@ async def admin_user_purchases(
     db = _get_db(request)
 
     purchases = await db.purchases.find(
-    {"user_wallet": wallet},
-    {
-    "id": purchase.get("id"),
-    "item_id": item_id,
-    "item_name": purchase.get("item_name") or items_map.get(str(item_id), "Item"),
-    "amount": purchase.get("price", 0),
-    "payment_type": purchase.get("currency", "zwap"),
-    "timestamp": purchase.get("purchased_at"),
-    "refunded": purchase.get("refunded", False),
-    "refunded_at": purchase.get("refunded_at"),
-    "refunded_by": purchase.get("refunded_by"),
-},
-).sort("purchased_at", -1).limit(limit).to_list(length=limit)
+        {"user_wallet": wallet},
+        {
+            "_id": 0,
+            "id": 1,
+            "item_id": 1,
+            "item_name": 1,
+            "price": 1,
+            "currency": 1,
+            "purchased_at": 1,
+            "refunded": 1,
+            "refunded_at": 1,
+            "refunded_by": 1,
+        },
+    ).sort("purchased_at", -1).limit(limit).to_list(length=limit)
+
     item_ids = [p.get("item_id") for p in purchases if p.get("item_id")]
     items_map: Dict[str, str] = {}
 
@@ -179,22 +181,22 @@ async def admin_user_purchases(
         }
 
     normalized_purchases = []
-for purchase in purchases:
-    item_id = purchase.get("item_id")
+    for purchase in purchases:
+        item_id = purchase.get("item_id")
 
-    normalized_purchases.append(
-        {
-            "id": purchase.get("id"),
-            "item_id": item_id,
-            "item_name": purchase.get("item_name") or items_map.get(str(item_id), "Item"),
-            "amount": purchase.get("price", 0),
-            "payment_type": purchase.get("currency", "zwap"),
-            "timestamp": purchase.get("purchased_at"),
-            "refunded": purchase.get("refunded", False),
-            "refunded_at": purchase.get("refunded_at"),
-            "refunded_by": purchase.get("refunded_by"),
-        }
-    )
+        normalized_purchases.append(
+            {
+                "id": purchase.get("id"),
+                "item_id": item_id,
+                "item_name": purchase.get("item_name") or items_map.get(str(item_id), "Item"),
+                "amount": purchase.get("price", 0),
+                "payment_type": purchase.get("currency", "zwap"),
+                "timestamp": purchase.get("purchased_at"),
+                "refunded": purchase.get("refunded", False),
+                "refunded_at": purchase.get("refunded_at"),
+                "refunded_by": purchase.get("refunded_by"),
+            }
+        )
 
     return {"purchases": normalized_purchases}
 
@@ -368,6 +370,7 @@ async def list_marketplace_orders(
     db = _get_db(request)
     return await marketplace_service.list_orders(db, limit=limit)
 
+
 @admin_router.post("/purchases/{purchase_id}/refund")
 async def refund_purchase(
     purchase_id: str,
@@ -394,7 +397,7 @@ async def refund_purchase(
 
     await db.users.update_one(
         {"wallet_address": wallet},
-        {"$inc": {balance_field: price}}
+        {"$inc": {balance_field: price}},
     )
 
     await db.purchases.update_one(
@@ -415,7 +418,8 @@ async def refund_purchase(
         "amount_refunded": price,
         "currency": currency,
     }
-    
+
+
 # ===========================
 # SWAP CONFIG
 # ===========================
