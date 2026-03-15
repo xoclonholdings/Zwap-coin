@@ -229,15 +229,21 @@ async def update_item(db, item_id: str, item: Dict[str, Any]) -> Dict[str, Any]:
     doc["id"] = str(doc["_id"])
     return doc
 
-
 async def delete_item(db, item_id: str) -> Dict[str, Any]:
     """
     Delete an item completely from the marketplace.
+    Supports both legacy 'id' and new '_id' schema.
     """
     if not item_id:
         raise HTTPException(status_code=400, detail="Missing item id")
 
+    # Try deleting by _id first
     result = await db[COLLECTION_NAME].delete_one({"_id": item_id})
+
+    # If not found, try legacy schema
+    if result.deleted_count == 0:
+        result = await db[COLLECTION_NAME].delete_one({"id": item_id})
+
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
