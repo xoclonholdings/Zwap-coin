@@ -151,16 +151,16 @@ async def admin_user_purchases(
     db = _get_db(request)
 
     purchases = await db.purchases.find(
-        {"user_wallet": wallet},
-        {
-            "_id": 0,
-            "item_id": 1,
-            "amount": 1,
-            "currency": 1,
-            "timestamp": 1,
-        },
-    ).sort("timestamp", -1).limit(limit).to_list(length=limit)
-
+    {"user_wallet": wallet},
+    {
+        "_id": 0,
+        "item_id": 1,
+        "item_name": 1,
+        "price": 1,
+        "currency": 1,
+        "purchased_at": 1,
+    },
+).sort("purchased_at", -1).limit(limit).to_list(length=limit)
     item_ids = [p.get("item_id") for p in purchases if p.get("item_id")]
     items_map: Dict[str, str] = {}
 
