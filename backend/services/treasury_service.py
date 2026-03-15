@@ -12,18 +12,12 @@ async def get_treasury_status(db, w3, zwap_contract) -> Dict:
 
     treasury_wallet = "0x102a5301c56cFCf4F02bEA3184Bdb44b731375E0"
     contract_address = "0xE8898453Af13B9496a6E8ADA92C6efDAF4967A81"
-    
+
     native_balance = 0
     token_balance = 0
     web3_connected = bool(w3 and w3.is_connected())
-    contract_address = None
 
-    if zwap_contract is not None:
-        try:
-            contract_address = zwap_contract.address
-        except Exception:
-            contract_address = None
-
+    # Native balance
     if web3_connected:
         try:
             native_balance_wei = w3.eth.get_balance(treasury_wallet)
@@ -31,6 +25,7 @@ async def get_treasury_status(db, w3, zwap_contract) -> Dict:
         except Exception:
             native_balance = 0
 
+        # Token balance
         try:
             if zwap_contract is not None:
                 token_balance_raw = zwap_contract.functions.balanceOf(treasury_wallet).call()
