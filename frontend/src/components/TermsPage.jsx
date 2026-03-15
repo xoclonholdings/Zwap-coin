@@ -72,8 +72,7 @@ The App operates on blockchain technology and requires a compatible cryptocurren
     },
     {
       title: "8. Intellectual Property",
-      content: `• All content, trademarks, and IP are owned by Zupreme Imports LLC
-• Operated by Gratia Dei Unlimited
+      content: `• All content, trademarks, and IP are owned by ZWAP LLC
 • Held by XOCLON Holdings Inc
 • You may not copy, modify, or distribute our content
 • User-generated content remains yours but you grant us a license to use it
@@ -106,7 +105,7 @@ Cryptocurrency investments carry risk. Only invest what you can afford to lose.`
     },
     {
       title: "12. Governing Law",
-      content: `These terms shall be governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to its conflict of law provisions.`
+      content: `These terms shall be governed by and construed in accordance with the laws of the State of Ohio, United States, without regard to its conflict of law provisions.`
     }
   ];
 
