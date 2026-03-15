@@ -15,6 +15,7 @@ from web3 import Web3
 import asyncio
 from functools import lru_cache
 import routers.wallet_routes as wallet_routes
+import stripe
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -26,6 +27,7 @@ db = client[os.environ['DB_NAME']]
 
 # Stripe
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
+stripe.api_key = STRIPE_API_KEY
 
 # Create the main app
 app = FastAPI(title="ZWAP! API")
