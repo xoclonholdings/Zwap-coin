@@ -30,11 +30,42 @@ export default function ProfilePage() {
 
   const tierConfig = TIERS[user?.tier || "starter"];
 
+  const adjectives = [
+    "Nova",
+    "Pixel",
+    "Quantum",
+    "Echo",
+    "Neon",
+    "Solar",
+    "Cyber",
+    "Hyper",
+    "Shadow",
+    "Turbo",
+  ];
+
+  const nouns = [
+    "Runner",
+    "Walker",
+    "Strider",
+    "Pilot",
+    "Glider",
+    "Breaker",
+    "Phantom",
+    "Rider",
+    "Explorer",
+    "Voyager",
+  ];
+
   const generateUsername = (wallet) => {
     if (!wallet) return "Guest";
-    const hash = wallet.slice(2, 10);
-    const num = parseInt(hash, 16) % 9999;
-    return `Zwapper#${num.toString().padStart(4, "0")}`;
+
+    const seed = parseInt(wallet.slice(2, 10), 16);
+
+    const adjIndex = Math.abs(seed) % adjectives.length;
+    const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
+    const num = Math.abs(seed) % 999;
+
+    return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
   };
 
   const displayName = user?.custom_username || generateUsername(walletAddress);
@@ -248,11 +279,15 @@ export default function ProfilePage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Reward Multiplier</span>
-              <span className="text-cyan-400 font-bold">{tierConfig.multiplier}x</span>
+              <span className="text-cyan-400 font-bold">
+                {tierConfig.multiplier}x
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Daily Z Points Cap</span>
-              <span className="text-purple-400 font-bold">{tierConfig.dailyZptsCap}</span>
+              <span className="text-purple-400 font-bold">
+                {tierConfig.dailyZptsCap}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Games Unlocked</span>
