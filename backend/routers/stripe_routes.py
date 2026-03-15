@@ -89,5 +89,15 @@ async def stripe_webhook(request: Request):
                     "stripe_session_id": session["id"],
                     "payment_status": "paid",
                 })
+                
+                await db.user_inventory.insert_one({
+                    "user_wallet": wallet_address,
+                    "item_id": item_id,
+                    "item_name": item.get("name", "Item"),
+                    "granted_at": datetime.now(timezone.utc).isoformat(),
+                    "source": "stripe",
+                    "stripe_session_id": session["id"],
+                    "active": True,
+                })
 
     return {"status": "received"}
