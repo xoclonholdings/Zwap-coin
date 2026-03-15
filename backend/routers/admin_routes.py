@@ -1,13 +1,13 @@
 # routers/admin_routes.py
 
 import os
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from datetime import datetime
 
-# 🔒 Direct service imports (no package aggregator)
+# Direct service imports
 import services.analytics_service as analytics_service
 import services.config_service as config_service
 import services.leaderboard_service as leaderboard_service
@@ -17,6 +17,7 @@ import services.reward_service as reward_service
 import services.subscription_service as subscription_service
 import services.swap_service as swap_service
 import services.treasury_service as treasury_service
+
 
 # ===========================
 # ROUTER
@@ -92,7 +93,7 @@ async def admin_list_users(
 ):
     db = _get_db(request)
 
-    query = {}
+    query: Dict[str, Any] = {}
 
     if search:
         query = {
@@ -117,7 +118,7 @@ async def admin_list_users(
         },
     ).skip(skip).limit(limit).to_list(length=limit)
 
-        normalized_users = []
+    normalized_users = []
     for user in users:
         normalized_users.append(
             {
@@ -161,7 +162,7 @@ async def admin_user_purchases(
     ).sort("timestamp", -1).limit(limit).to_list(length=limit)
 
     item_ids = [p.get("item_id") for p in purchases if p.get("item_id")]
-    items_map = {}
+    items_map: Dict[str, str] = {}
 
     if item_ids:
         items = await db.shop_items.find(
@@ -169,16 +170,20 @@ async def admin_user_purchases(
             {"_id": 1, "name": 1},
         ).to_list(length=len(item_ids))
 
-        items_map = {item["_id"]: item.get("name", "Item") for item in items}
+        items_map = {
+            str(item.get("_id")): item.get("name", "Item")
+            for item in items
+        }
 
     normalized_purchases = []
     for purchase in purchases:
+        item_id = purchase.get("item_id")
         normalized_purchases.append(
             {
-                "item_id": purchase.get("item_id"),
-                "item_name": items_map.get(purchase.get("item_id"), "Item"),
+                "item_id": item_id,
+                "item_name": items_map.get(str(item_id), "Item"),
                 "amount": purchase.get("amount", 0),
-                "payment_type": purchase.get("currency", "ZWAP"),
+                "payment_type": purchase.get("currency", "zwap"),
                 "timestamp": purchase.get("timestamp"),
             }
         )
