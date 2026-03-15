@@ -153,13 +153,16 @@ async def admin_user_purchases(
     purchases = await db.purchases.find(
     {"user_wallet": wallet},
     {
-        "_id": 0,
-        "item_id": 1,
-        "item_name": 1,
-        "price": 1,
-        "currency": 1,
-        "purchased_at": 1,
-    },
+    "id": purchase.get("id"),
+    "item_id": item_id,
+    "item_name": purchase.get("item_name") or items_map.get(str(item_id), "Item"),
+    "amount": purchase.get("price", 0),
+    "payment_type": purchase.get("currency", "zwap"),
+    "timestamp": purchase.get("purchased_at"),
+    "refunded": purchase.get("refunded", False),
+    "refunded_at": purchase.get("refunded_at"),
+    "refunded_by": purchase.get("refunded_by"),
+},
 ).sort("purchased_at", -1).limit(limit).to_list(length=limit)
     item_ids = [p.get("item_id") for p in purchases if p.get("item_id")]
     items_map: Dict[str, str] = {}
