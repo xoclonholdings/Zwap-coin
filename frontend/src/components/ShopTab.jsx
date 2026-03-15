@@ -42,6 +42,36 @@ export default function ShopTab() {
     } catch (error) { toast.error(error.message || "Purchase failed"); }
     finally { setIsPurchasing(false); }
   };
+  
+  const handleStripeCheckout = async () => {
+  if (!selectedItem) return;
+
+  setIsPurchasing(true);
+  try {
+    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/stripe/create-checkout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        item_id: selectedItem.id,
+        wallet_address: walletAddress,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.url) {
+      throw new Error(data?.detail || "Failed to create Stripe checkout session");
+    }
+
+    window.location.href = data.url;
+  } catch (error) {
+    toast.error(error.message || "Stripe checkout failed");
+  } finally {
+    setIsPurchasing(false);
+  }
+};
 
   const handleCloseDialog = () => { 
     setSelectedItem(null); 
@@ -289,25 +319,43 @@ export default function ShopTab() {
                 </div>
               </div>
 
-              <Button
-                data-testid="confirm-purchase"
-                onClick={handlePurchase}
-                disabled={
-                  isPurchasing || 
-                  (selectedItem.plus_only && user?.tier !== "plus") ||
-                  (paymentType === "zwap" && !canAffordZwap(selectedItem.price_zwap)) ||
-                  (paymentType === "zpts" && !canAffordZpts(selectedItem.price_zpts))
-                }
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-500"
-              >
-                {isPurchasing ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
-                ) : (selectedItem.plus_only && user?.tier !== "plus") ? (
-                  "Plus Required"
-                ) : (
-                  "Confirm Purchase"
-                )}
-              </Button>
+              <div className="space-y-3">
+  <Button
+    data-testid="confirm-purchase"
+    onClick={handlePurchase}
+    disabled={
+      isPurchasing ||
+      (selectedItem.plus_only && user?.tier !== "plus") ||
+      (paymentType === "zwap" && !canAffordZwap(selectedItem.price_zwap)) ||
+      (paymentType === "zpts" && !canAffordZpts(selectedItem.price_zpts))
+    }
+    className="w-full bg-gradient-to-r from-pink-500 to-purple-500"
+  >
+    {isPurchasing ? (
+      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+    ) : (selectedItem.plus_only && user?.tier !== "plus") ? (
+      "Plus Required"
+    ) : (
+      "Confirm Purchase"
+    )}
+  </Button>
+
+  <Button
+    type="button"
+    onClick={handleStripeCheckout}
+    disabled={isPurchasing || (selectedItem.plus_only && user?.tier !== "plus")}
+    variant="outline"
+    className="w-full border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
+  >
+    {isPurchasing ? (
+      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redirecting...</>
+    ) : (selectedItem.plus_only && user?.tier !== "plus") ? (
+      "Plus Required"
+    ) : (
+      "Pay with Card"
+    )}
+  </Button>
+</div>
             </>
           )}
         </DialogContent>
