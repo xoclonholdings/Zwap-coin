@@ -171,6 +171,7 @@ class UserResponse(BaseModel):
     wallet_address: str
     zwap_balance: float = 0.0
     zpts_balance: int = 0
+    daily_streak: int = 0
     tier: str = "starter"
     subscription_id: Optional[str] = None
     subscription_status: Optional[str] = None
@@ -384,6 +385,7 @@ async def connect_wallet(user_data: UserCreate):
             "total_steps": 0,
             "daily_steps": 0,
             "daily_zpts_earned": 0,
+            "daily_streak": 0,
             "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
             "games_played": 0,
             "total_earned": 100.0,
@@ -394,7 +396,7 @@ async def connect_wallet(user_data: UserCreate):
         return UserResponse(**{k: v for k, v in new_user.items() if k != "_id"})
 
     except Exception as e:
-        # 🔊 DEV-ONLY FALLBACK: DB is unhappy, but we still let the user in locally.
+        # DEV-ONLY FALLBACK: DB is unhappy, but we still let the user in locally.
         logging.exception(
             f"DB error in /users/connect for wallet {wallet}. Using in-memory fallback user."
         )
@@ -410,6 +412,7 @@ async def connect_wallet(user_data: UserCreate):
             "total_steps": 0,
             "daily_steps": 0,
             "daily_zpts_earned": 0,
+            "daily_streak": 0,
             "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
             "games_played": 0,
             "total_earned": 100.0,
@@ -458,7 +461,7 @@ async def update_profile(wallet_address: str, profile: ProfileUpdate):
 async def get_tiers():
     """Get available subscription tiers"""
     return TIERS
-
+    
 # ============ BLOCKCHAIN ENDPOINTS ============
 
 @api_router.get("/blockchain/balance/{wallet_address}")
