@@ -14,10 +14,10 @@ export default function PlusPage() {
       >
         <Crown className="mx-auto mb-4 text-yellow-400" size={40} />
 
-        <h1 className="text-3xl font-bold mb-2">ZWAP Plus</h1>
+        <h1 className="text-3xl font-bold mb-2">ZWAP! Plus</h1>
 
         <p className="text-muted-foreground mb-6">
-          Upgrade your ZWAP experience with premium rewards and creator tools.
+          Upgrade your ZWAP! experience with premium rewards and creator tools.
         </p>
 
         <div className="text-4xl font-bold mb-6">
