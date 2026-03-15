@@ -152,8 +152,7 @@ Planned Flow:
 ## Ownership Structure
 
 **ZWAP!™️** is a Web3 asset:
-- Owned by: **Zupreme Imports LLC**
-- Operated by: **Gratia Dei Unlimited**
+- Owned by: **ZWAP LLC**
 - Held by: **XOCLON Holdings Inc**
 
 ---
