@@ -740,7 +740,11 @@ const UsersSection = () => {
 const TreasurySection = () => {
   const [treasury, setTreasury] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [sendForm, setSendForm] = useState({ to: "", amount: "" });
+  const [sending, setSending] = useState(false);
+  const [lastTxHash, setLastTxHash] = useState("");
+  const [txError, setTxError] = useState("");
+  
   useEffect(() => {
     loadTreasury();
   }, []);
@@ -769,6 +773,37 @@ const TreasurySection = () => {
       toast.error("Action failed");
     }
   };
+  
+  const sendZwap = async () => {
+  if (!sendForm.to || !sendForm.amount) {
+    toast.error("Destination wallet and amount are required");
+    return;
+  }
+
+  setSending(true);
+  setTxError("");
+  setLastTxHash("");
+
+  try {
+    const result = await adminApi.post("/treasury/send", {
+      to: sendForm.to.trim(),
+      amount: Number(sendForm.amount),
+    });
+
+    toast.success("ZWAP sent successfully");
+    setLastTxHash(result.tx_hash || "");
+    setSendForm({ to: "", amount: "" });
+    await loadTreasury();
+  } catch (err) {
+    console.error(err);
+    const message =
+      err?.message || "Failed to send ZWAP";
+    setTxError(message);
+    toast.error("Failed to send ZWAP");
+  } finally {
+    setSending(false);
+  }
+};
 
   if (loading) {
     return <div className="text-gray-400 text-center py-8">Loading treasury data...</div>;
@@ -845,6 +880,62 @@ const TreasurySection = () => {
           </div>
         </div>
       </div>
+      
+      <div className="p-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 space-y-4">
+  <h3 className="text-white font-semibold flex items-center gap-2">
+    <ArrowRightLeft className="w-5 h-5 text-cyan-400" />
+    Send ZWAP
+  </h3>
+
+  <div className="grid md:grid-cols-2 gap-4">
+    <div>
+      <label className="text-gray-400 text-sm block mb-1">Destination Wallet</label>
+      <Input
+        value={sendForm.to}
+        onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
+        placeholder="0x..."
+        className="bg-gray-800 border-gray-700"
+      />
+    </div>
+
+    <div>
+      <label className="text-gray-400 text-sm block mb-1">Amount</label>
+      <Input
+        type="number"
+        min="0"
+        step="any"
+        value={sendForm.amount}
+        onChange={(e) => setSendForm({ ...sendForm, amount: e.target.value })}
+        placeholder="Amount of ZWAP"
+        className="bg-gray-800 border-gray-700"
+      />
+    </div>
+  </div>
+
+  <div className="flex flex-wrap gap-3 items-center">
+    <Button
+      onClick={sendZwap}
+      disabled={sending || !sendForm.to || !sendForm.amount}
+      className="bg-cyan-600 hover:bg-cyan-700"
+    >
+      <ArrowRightLeft className="w-4 h-4 mr-2" />
+      {sending ? "Sending..." : "Send ZWAP"}
+    </Button>
+  </div>
+
+  {lastTxHash && (
+    <div className="p-3 bg-gray-900/50 rounded-lg">
+      <p className="text-xs text-gray-500">Last Transaction Hash</p>
+      <p className="text-cyan-400 font-mono text-sm break-all">{lastTxHash}</p>
+    </div>
+  )}
+
+  {txError && (
+    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+      <p className="text-red-400 text-sm break-all">{txError}</p>
+    </div>
+  )}
+</div>
 
       <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5">
         <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
