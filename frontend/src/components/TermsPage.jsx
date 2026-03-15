@@ -160,7 +160,7 @@ Cryptocurrency investments carry risk. Only invest what you can afford to lose.`
           transition={{ delay: 0.5 }}
         >
           <p className="text-gray-400 text-sm">
-            Questions? Contact us at <a href="mailto:legal@zwap.app" className="text-purple-400 hover:underline">legal@zwap.app</a>
+            Questions? Contact us at <a href="mailto:app@zwap.online" className="text-purple-400 hover:underline">app@zwap.online</a>
           </p>
         </motion.div>
       </div>
