@@ -1,10 +1,22 @@
 import React, { useState } from "react";
 import { useApp, ZWAP_BANG, ZWAP_CONTRACT } from "@/App";
-import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet, User, LogOut, FileText, HelpCircle, Lock, ChevronRight, Crown, Mail, Link2, ExternalLink, BookOpen } from "lucide-react";
+import {
+  Wallet,
+  User,
+  LogOut,
+  FileText,
+  HelpCircle,
+  Lock,
+  ChevronRight,
+  Crown,
+  Mail,
+  Link2,
+  ExternalLink,
+  BookOpen,
+} from "lucide-react";
 import ConvertZPtsModal from "@/components/ConvertZPtsModal";
 import {
   Sheet,
@@ -14,55 +26,109 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-// Generate username from wallet
-const generateUsername = (wallet) => {
-  if (!wallet) return "Guest";
-  const hash = wallet.slice(2, 10);
-  const num = parseInt(hash, 16) % 9999;
-  return `Zwapper#${num.toString().padStart(4, '0')}`;
-};
-
 // PolygonScan URL helper
 const getPolygonScanUrl = (address, type = "address") => {
   return `https://polygonscan.com/${type}/${address}`;
 };
 
 export default function AppHeader() {
-  const { user, walletAddress, setIsWalletModalOpen, disconnectWallet, onchainBalance } = useApp();
+  const {
+    user,
+    walletAddress,
+    setIsWalletModalOpen,
+    disconnectWallet,
+    onchainBalance,
+  } = useApp();
+
   const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
-  const username = generateUsername(walletAddress);
+
+  const username =
+    user?.custom_username ||
+    (walletAddress
+      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+      : "Guest");
+
+  const initials =
+    (walletAddress ? username : "Guest")
+      .replace(/[^a-zA-Z0-9 ]/g, "")
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("") || "Z";
 
   const settingsItems = [
-    { icon: User, label: "Profile", action: () => { setSettingsOpen(false); navigate("/profile"); } },
-    { icon: BookOpen, label: "Learn", action: () => { setSettingsOpen(false); navigate("/learn"); } },
-    { icon: Mail, label: "Contact", action: () => { setSettingsOpen(false); navigate("/contact"); } },
-    { icon: Lock, label: "Privacy Policy", action: () => { setSettingsOpen(false); navigate("/privacy"); } },
-    { icon: FileText, label: "Terms of Use", action: () => { setSettingsOpen(false); navigate("/terms"); } },
-    { icon: HelpCircle, label: "FAQs & Help", action: () => { setSettingsOpen(false); navigate("/about"); } },
+    {
+      icon: User,
+      label: "Profile",
+      action: () => {
+        setSettingsOpen(false);
+        navigate("/profile");
+      },
+    },
+    {
+      icon: BookOpen,
+      label: "Learn",
+      action: () => {
+        setSettingsOpen(false);
+        navigate("/learn");
+      },
+    },
+    {
+      icon: Mail,
+      label: "Contact",
+      action: () => {
+        setSettingsOpen(false);
+        navigate("/contact");
+      },
+    },
+    {
+      icon: Lock,
+      label: "Privacy Policy",
+      action: () => {
+        setSettingsOpen(false);
+        navigate("/privacy");
+      },
+    },
+    {
+      icon: FileText,
+      label: "Terms of Use",
+      action: () => {
+        setSettingsOpen(false);
+        navigate("/terms");
+      },
+    },
+    {
+      icon: HelpCircle,
+      label: "FAQs & Help",
+      action: () => {
+        setSettingsOpen(false);
+        navigate("/about");
+      },
+    },
   ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#0a0b1e]/95 backdrop-blur-lg border-b border-cyan-500/20">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
-        {/* Left side - Logo + Connect Wallet Button */}
+        {/* Left side - Logo */}
         <div className="flex items-center gap-3">
-          {/* Logo */}
-          <motion.img 
-            src={ZWAP_BANG} 
-            alt="ZWAP!" 
-            className="h-14 cursor-pointer" 
+          <motion.img
+            src={ZWAP_BANG}
+            alt="ZWAP!"
+            className="h-14 cursor-pointer"
             onClick={() => navigate("/dashboard")}
             data-testid="header-logo"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            animate={{ 
+            animate={{
               filter: [
                 "drop-shadow(0 0 8px rgba(0,245,255,0.3))",
                 "drop-shadow(0 0 16px rgba(0,245,255,0.5))",
-                "drop-shadow(0 0 8px rgba(0,245,255,0.3))"
-              ]
+                "drop-shadow(0 0 8px rgba(0,245,255,0.3))",
+              ],
             }}
             transition={{ duration: 2, repeat: Infinity }}
           />
@@ -70,22 +136,28 @@ export default function AppHeader() {
 
         {/* Right side - Balances + Profile Badge */}
         <div className="flex items-center gap-3">
-          {/* Balances - always visible */}
-          <motion.div 
+          {/* Balances */}
+          <motion.div
             className="flex items-center gap-3"
-            animate={{ 
+            animate={{
               boxShadow: [
                 "0 0 10px rgba(0,245,255,0.1)",
                 "0 0 20px rgba(0,245,255,0.2)",
-                "0 0 10px rgba(0,245,255,0.1)"
-              ]
+                "0 0 10px rgba(0,245,255,0.1)",
+              ],
             }}
             transition={{ duration: 3, repeat: Infinity }}
           >
             <div className="text-right">
-              <motion.p 
+              <motion.p
                 className="text-base text-cyan-400 font-bold leading-tight flex items-center gap-1"
-                animate={{ textShadow: ["0 0 5px rgba(0,245,255,0.3)", "0 0 15px rgba(0,245,255,0.6)", "0 0 5px rgba(0,245,255,0.3)"] }}
+                animate={{
+                  textShadow: [
+                    "0 0 5px rgba(0,245,255,0.3)",
+                    "0 0 15px rgba(0,245,255,0.6)",
+                    "0 0 5px rgba(0,245,255,0.3)",
+                  ],
+                }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 {onchainBalance !== null ? (
@@ -101,11 +173,19 @@ export default function AppHeader() {
                 {onchainBalance !== null ? "ZWAP (linked)" : "ZWAP"}
               </p>
             </div>
+
             <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-600 to-transparent" />
+
             <div className="text-right">
-              <motion.p 
+              <motion.p
                 className="text-base text-purple-400 font-bold leading-tight"
-                animate={{ textShadow: ["0 0 5px rgba(153,69,255,0.3)", "0 0 15px rgba(153,69,255,0.6)", "0 0 5px rgba(153,69,255,0.3)"] }}
+                animate={{
+                  textShadow: [
+                    "0 0 5px rgba(153,69,255,0.3)",
+                    "0 0 15px rgba(153,69,255,0.6)",
+                    "0 0 5px rgba(153,69,255,0.3)",
+                  ],
+                }}
                 transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               >
                 {user?.zpts_balance || 0}
@@ -113,17 +193,14 @@ export default function AppHeader() {
               <p className="text-xs text-gray-500">zPts</p>
             </div>
           </motion.div>
-          
+
           <ConvertZPtsModal
-  open={convertOpen}
-  onClose={() => setConvertOpen(false)}
-  walletAddress={walletAddress}
-  zptsBalance={user?.zpts_balance || 0}
-  onConverted={() => {
-    // Optional: if your app has a refreshUser() in context, call it here.
-    // Otherwise, the next normal user fetch cycle will reflect updated balances.
-  }}
-/>
+            open={convertOpen}
+            onClose={() => setConvertOpen(false)}
+            walletAddress={walletAddress}
+            zptsBalance={user?.zpts_balance || 0}
+            onConverted={() => {}}
+          />
 
           {/* Profile Badge with Settings Indicator */}
           <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -137,113 +214,107 @@ export default function AppHeader() {
                   boxShadow: [
                     "0 0 15px rgba(0,245,255,0.3)",
                     "0 0 30px rgba(0,245,255,0.5)",
-                    "0 0 15px rgba(0,245,255,0.3)"
-                  ]
+                    "0 0 15px rgba(0,245,255,0.3)",
+                  ],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                {(walletAddress ? username : "Guest")
-                  .replace(/[^a-zA-Z0-9 ]/g, "")
-                  .split(" ")
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((p) => p[0])
-                  .join("") || "Z"}
+                {initials}
 
-      {/* Settings indicator dot */}
-      <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#0a0b1e] rounded-full flex items-center justify-center">
-        <motion.span
-          className="w-3 h-3 bg-cyan-400 rounded-full"
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-      </span>
-    </motion.button>
-  </SheetTrigger>
+                <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#0a0b1e] rounded-full flex items-center justify-center">
+                  <motion.span
+                    className="w-3 h-3 bg-cyan-400 rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </span>
+              </motion.button>
+            </SheetTrigger>
 
-  <SheetContent
-    side="right"
-    className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80 overflow-y-auto"
-    aria-describedby="account-sheet-description"
-  >
-    <SheetHeader>
-      <SheetTitle className="text-white">Account</SheetTitle>
-      <p id="account-sheet-description" className="sr-only">
-        Manage your ZWAP! account settings and profile
-      </p>
-    </SheetHeader>
+            <SheetContent
+              side="right"
+              className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80 overflow-y-auto"
+              aria-describedby="account-sheet-description"
+            >
+              <SheetHeader>
+                <SheetTitle className="text-white">Account</SheetTitle>
+                <p id="account-sheet-description" className="sr-only">
+                  Manage your ZWAP! account settings and profile
+                </p>
+              </SheetHeader>
 
-    <div className="mt-6 space-y-6 pb-8">
-      {/* User Info */}
-      <div className="flex items-center gap-3">
-        <motion.div
-          className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold uppercase border ${
-            user?.tier === "plus"
-              ? "bg-gradient-to-br from-yellow-400/30 via-amber-500/20 to-orange-500/30 border-yellow-400/40 text-yellow-200"
-              : "bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border-cyan-400/30 text-white"
-          }`}
-          animate={{
-            boxShadow:
-              user?.tier === "plus"
-                ? [
-                    "0 0 10px rgba(250,204,21,0.25)",
-                    "0 0 20px rgba(251,191,36,0.4)",
-                    "0 0 10px rgba(250,204,21,0.25)"
-                  ]
-                : [
-                    "0 0 10px rgba(0,245,255,0.3)",
-                    "0 0 20px rgba(0,245,255,0.5)",
-                    "0 0 10px rgba(0,245,255,0.3)"
-                  ]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          {(walletAddress ? username : "Guest")
-            .replace(/[^a-zA-Z0-9 ]/g, "")
-            .split(" ")
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((p) => p[0])
-            .join("") || "Z"}
-        </motion.div>
+              <div className="mt-6 space-y-6 pb-8">
+                {/* User Info */}
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold uppercase border ${
+                      user?.tier === "plus"
+                        ? "bg-gradient-to-br from-yellow-400/30 via-amber-500/20 to-orange-500/30 border-yellow-400/40 text-yellow-200"
+                        : "bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border-cyan-400/30 text-white"
+                    }`}
+                    animate={{
+                      boxShadow:
+                        user?.tier === "plus"
+                          ? [
+                              "0 0 10px rgba(250,204,21,0.25)",
+                              "0 0 20px rgba(251,191,36,0.4)",
+                              "0 0 10px rgba(250,204,21,0.25)",
+                            ]
+                          : [
+                              "0 0 10px rgba(0,245,255,0.3)",
+                              "0 0 20px rgba(0,245,255,0.5)",
+                              "0 0 10px rgba(0,245,255,0.3)",
+                            ],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    {initials}
+                  </motion.div>
 
-        <div>
-          <p className="text-white font-semibold">{walletAddress ? username : "Guest"}</p>
-          {walletAddress ? (
-            <p className="text-gray-500 text-xs">
-              {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-            </p>
-          ) : (
-            <p className="text-gray-500 text-xs">Not connected</p>
-          )}
+                  <div>
+                    <p className="text-white font-semibold">
+                      {walletAddress ? username : "Guest"}
+                    </p>
 
-          <div className="flex items-center gap-1 mt-1">
-            {user?.tier === "plus" ? (
-              <span className="text-xs text-yellow-400 flex items-center gap-1">
-                <Crown className="w-3 h-3" /> Plus Member
-              </span>
-            ) : (
-              <span className="text-xs text-gray-500">
-                {walletAddress ? "Starter" : "Connect to save progress"}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-                {/* Balance Details (when connected) */}
+                    {walletAddress ? (
+                      <p className="text-gray-500 text-xs">
+                        {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+                      </p>
+                    ) : (
+                      <p className="text-gray-500 text-xs">Not connected</p>
+                    )}
+
+                    <div className="flex items-center gap-1 mt-1">
+                      {user?.tier === "plus" ? (
+                        <span className="text-xs text-yellow-400 flex items-center gap-1">
+                          <Crown className="w-3 h-3" /> Plus Member
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-500">
+                          {walletAddress ? "Starter" : "Connect to save progress"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Balance Details */}
                 {walletAddress && (
                   <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider">Reward Balances</p>
-                      <a 
-                        href={getPolygonScanUrl(walletAddress)} 
-                        target="_blank" 
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">
+                        Reward Balances
+                      </p>
+                      <a
+                        href={getPolygonScanUrl(walletAddress)}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-cyan-400 flex items-center gap-1 hover:text-cyan-300 transition-colors"
                       >
                         View on PolygonScan <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-lg font-bold text-cyan-400">
@@ -253,18 +324,21 @@ export default function AppHeader() {
                           <Link2 className="w-3 h-3" /> Linked Wallet
                         </p>
                       </div>
+
                       <div>
                         <p className="text-lg font-bold text-cyan-400/70">
                           {user?.zwap_balance?.toFixed(2) || 0}
                         </p>
                         <p className="text-xs text-gray-500">In-App Rewards</p>
                       </div>
+
                       <div>
                         <p className="text-lg font-bold text-purple-400">
                           {user?.zpts_balance || 0}
                         </p>
                         <p className="text-xs text-gray-500">Z Points</p>
                       </div>
+
                       <div>
                         <p className="text-lg font-bold text-green-400">
                           {user?.total_earned?.toFixed(0) || 0}
@@ -272,28 +346,27 @@ export default function AppHeader() {
                         <p className="text-xs text-gray-500">Total Earned</p>
                       </div>
                     </div>
-                    
-                    {/* Balance notice */}
+
                     <p className="text-[10px] text-gray-600 text-center mt-3 pt-2 border-t border-gray-800">
                       Balances update in real-time
                     </p>
-                   <Button
-  type="button"
-  onClick={() => {
-    setSettingsOpen(false);
-    setTimeout(() => setConvertOpen(true), 150);
-  }}
-  className="w-full mt-3 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-200"
-  variant="outline"
->
-  Convert zPts → ZWAP!
-</Button>
-                    
-                    {/* ZWAP Contract Link */}
+
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setSettingsOpen(false);
+                        setTimeout(() => setConvertOpen(true), 150);
+                      }}
+                      className="w-full mt-3 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-200"
+                      variant="outline"
+                    >
+                      Convert zPts → ZWAP!
+                    </Button>
+
                     <div className="mt-3 pt-3 border-t border-cyan-500/20">
-                      <a 
-                        href={getPolygonScanUrl(ZWAP_CONTRACT.address, "token")} 
-                        target="_blank" 
+                      <a
+                        href={getPolygonScanUrl(ZWAP_CONTRACT.address, "token")}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-gray-500 flex items-center gap-1 hover:text-cyan-400 transition-colors"
                       >
@@ -303,10 +376,13 @@ export default function AppHeader() {
                   </div>
                 )}
 
-                {/* Connect Wallet Banner (if not connected) */}
+                {/* Connect Wallet Banner */}
                 {!walletAddress && (
                   <motion.button
-                    onClick={() => { setIsWalletModalOpen(true); setSettingsOpen(false); }}
+                    onClick={() => {
+                      setIsWalletModalOpen(true);
+                      setSettingsOpen(false);
+                    }}
                     className="w-full p-4 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-left"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -316,13 +392,14 @@ export default function AppHeader() {
                         <p className="text-cyan-400 font-semibold flex items-center gap-2">
                           <Wallet className="w-4 h-4" /> Connect Wallet
                         </p>
-                        <p className="text-gray-400 text-xs">Save progress & earn rewards</p>
+                        <p className="text-gray-400 text-xs">
+                          Save progress & earn rewards
+                        </p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-cyan-400" />
                     </div>
                   </motion.button>
                 )}
-
 
                 {/* Settings Menu */}
                 <div className="space-y-1">
@@ -342,10 +419,14 @@ export default function AppHeader() {
                   })}
                 </div>
 
-                {/* Disconnect (only if connected) */}
+                {/* Disconnect */}
                 {walletAddress && (
                   <motion.button
-                    onClick={() => { disconnectWallet(); setSettingsOpen(false); navigate("/dashboard"); }}
+                    onClick={() => {
+                      disconnectWallet();
+                      setSettingsOpen(false);
+                      navigate("/dashboard");
+                    }}
                     className="w-full flex items-center gap-3 p-3 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
                     whileHover={{ x: 5 }}
                   >
