@@ -1027,18 +1027,6 @@ async def stripe_webhook(request: Request):
 @api_router.get("/shop/items", response_model=List[ShopItem])
 async def get_shop_items():
     """Get all shop items"""
-    count = await db.shop_items.count_documents({})
-    if count == 0:
-        items = [
-            {"id": str(uuid.uuid4()), "name": "ZWAP! Hoodie", "description": "Premium cotton hoodie with glowing ZWAP! logo", "price_zwap": 500, "price_zpts": 3000, "image_url": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400", "category": "apparel", "in_stock": True, "plus_only": False},
-            {"id": str(uuid.uuid4()), "name": "Crypto Cap", "description": "Adjustable cap with embroidered crypto symbols", "price_zwap": 200, "price_zpts": 1500, "image_url": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400", "category": "apparel", "in_stock": True, "plus_only": False},
-            {"id": str(uuid.uuid4()), "name": "TLDR eBook", "description": "Self-Help Simplified™ digital guide", "price_zwap": 50, "price_zpts": 499, "image_url": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400", "category": "ebooks", "in_stock": True, "plus_only": False},
-            {"id": str(uuid.uuid4()), "name": "NFT Art Print", "description": "Limited edition digital art print", "price_zwap": 1000, "price_zpts": 5000, "image_url": "https://images.unsplash.com/photo-1634986666676-ec8fd927c23d?w=400", "category": "collectibles", "in_stock": True, "plus_only": False},
-            {"id": str(uuid.uuid4()), "name": "Smartwatch Band", "description": "Premium wearable band for fitness tracking", "price_zwap": 800, "price_zpts": 5000, "image_url": "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=400", "category": "tech", "in_stock": True, "plus_only": True},
-            {"id": str(uuid.uuid4()), "name": "ZWAP! Sticker Pack", "description": "Set of 10 holographic stickers", "price_zwap": 30, "price_zpts": 250, "image_url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", "category": "accessories", "in_stock": True, "plus_only": False},
-            {"id": str(uuid.uuid4()), "name": "Game Boost Pack", "description": "2x rewards for 24 hours", "price_zwap": 100, "price_zpts": 800, "image_url": "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=400", "category": "boosts", "in_stock": True, "plus_only": False},
-        ]
-        await db.shop_items.insert_many(items)
 
     items = await db.shop_items.find({}, {"_id": 0}).to_list(100)
     return [ShopItem(**item) for item in items]
