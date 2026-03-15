@@ -74,7 +74,7 @@ ERC20_ABI = [
         "name": "totalSupply",
         "outputs": [{"name": "", "type": "uint256"}],
         "type": "function"
-    }
+    },
     
     {
     "constant": False,
