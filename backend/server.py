@@ -119,7 +119,7 @@ TIERS = {
     },
     "plus": {
         "name": "Plus",
-        "price": 12.99,
+        "price": 9.99,
         "zwap_multiplier": 1.5,
         "daily_zpts_cap": 150,
         "monthly_zwap_cap": 219375,
@@ -923,7 +923,7 @@ async def create_subscription_checkout(request: Request, sub_request: Subscripti
     cancel_url = f"{sub_request.origin_url}/subscription/cancel"
 
     checkout_request = CheckoutSessionRequest(
-        amount=12.99,
+        amount=9.99,
         currency="usd",
         success_url=success_url,
         cancel_url=cancel_url,
@@ -935,7 +935,7 @@ async def create_subscription_checkout(request: Request, sub_request: Subscripti
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
         "session_id": session.session_id,
-        "amount": 12.99,
+        "amount": 9.99,
         "currency": "usd",
         "metadata": {"tier": "plus", "type": "subscription"},
         "payment_status": "pending",
