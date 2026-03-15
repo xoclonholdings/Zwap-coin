@@ -123,7 +123,7 @@ Note: Blockchain transactions cannot be deleted due to the nature of distributed
           transition={{ delay: 0.5 }}
         >
           <p className="text-gray-400 text-sm">
-            Questions? Contact us at <a href="mailto:privacy@zwap.app" className="text-cyan-400 hover:underline">privacy@zwap.app</a>
+            Questions? Contact us at <a href="mailto:app@zwap.online" className="text-cyan-400 hover:underline">app@zwap.online</a>
           </p>
         </motion.div>
       </div>
