@@ -101,7 +101,7 @@ async def list_items(db) -> Dict[str, List[Dict[str, Any]]]:
     async for doc in cursor:
         safe_doc = dict(doc)
 
-        safe_doc["id"] = str(safe_doc.get("_id")) if safe_doc.get("_id") is not None else None
+        safe_doc["id"] = str(safe_doc.get("id") or safe_doc.get("_id")) if (safe_doc.get("id") or safe_doc.get("_id")) is not None else None
         safe_doc.pop("_id", None)
 
         if isinstance(safe_doc.get("created_at"), datetime):
