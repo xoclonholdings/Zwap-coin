@@ -112,6 +112,16 @@ TIERS = {
     }
 }
 
+DAILY_REWARD_TABLE = {
+    1: 10,
+    2: 15,
+    3: 20,
+    4: 25,
+    5: 30,
+    6: 35,
+    7: 50,
+}
+
 ZPTS_TO_ZWAP_RATE = 1000  # 1000 Z Points = 1 ZWAP
 
 # ============ ANTI-CHEAT: RATE LIMITING ============
@@ -279,39 +289,48 @@ def calculate_step_rewards(steps: int, multiplier: float = 1.0) -> float:
 
 def calculate_game_rewards(game_type: str, score: int, level: int, blocks: int = 0, multiplier: float = 1.0) -> dict:
     """Calculate ZWAP and Z Points rewards for games with progressive difficulty"""
-    # Base rewards scale with level difficulty
-    difficulty_multiplier = 1 + (level - 1) * 0.1  # Harder levels = slightly more reward
-    
+
+    difficulty_multiplier = 1 + (level - 1) * 0.1
+
     if game_type == "zbrickles":
-        base_zwap = min(blocks * 0.5 + (score / 100), 50)  # Cap per game
-        base_zpts = min(blocks + (score // 50), 10)  # Cap Z Points
+        base_zwap = min(blocks * 0.5 + (score / 100), 50)
+        base_zpts = min(blocks + (score // 50), 10)
+
     elif game_type == "ztrivia":
-        base_zwap = min(score * 0.5, 30)  # Per correct answer
+        base_zwap = min(score * 0.5, 30)
         base_zpts = min(score * 2, 8)
+
     elif game_type == "ztetris":
         base_zwap = min((score / 100) + (level * 2), 75)
         base_zpts = min((score // 100) + level, 12)
+
     elif game_type == "zslots":
         base_zwap = min(score * 0.3, 40)
         base_zpts = min(score // 10, 8)
+
     else:
         base_zwap = 0
         base_zpts = 0
-    
+
     return {
         "zwap": round(base_zwap * difficulty_multiplier * multiplier, 2),
         "zpts": int(base_zpts * difficulty_multiplier)
     }
 
+def get_daily_reward(streak: int) -> int:
+    """Return zPts reward based on streak day"""
+    if streak > 7:
+        streak = 7
+    return DAILY_REWARD_TABLE.get(streak, 10)
+
 async def check_and_reset_daily_zpts(user: dict) -> dict:
     """Check if daily Z Points should be reset"""
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zpts_reset")
-    
+
     if last_reset:
         last_reset_dt = datetime.fromisoformat(last_reset.replace('Z', '+00:00'))
         if last_reset_dt.date() < now.date():
-            # Reset daily Z Points
             await db.users.update_one(
                 {"id": user["id"]},
                 {"$set": {"daily_zpts_earned": 0, "last_zpts_reset": now.isoformat()}}
@@ -322,7 +341,7 @@ async def check_and_reset_daily_zpts(user: dict) -> dict:
             {"id": user["id"]},
             {"$set": {"last_zpts_reset": now.isoformat()}}
         )
-    
+
     return user
 
 def get_user_tier_config(tier: str) -> dict:
@@ -333,19 +352,16 @@ async def get_onchain_zwap_balance(wallet_address: str) -> Optional[float]:
     if not zwap_contract or not w3:
         logging.warning("Web3 not connected, cannot fetch on-chain balance")
         return None
-    
+
     try:
-        # Run blocking Web3 call in thread pool
         loop = asyncio.get_event_loop()
         checksum_address = Web3.to_checksum_address(wallet_address)
-        
-        # Get balance (blocking call)
+
         balance_wei = await loop.run_in_executor(
-            None, 
+            None,
             zwap_contract.functions.balanceOf(checksum_address).call
         )
-        
-        # Convert from wei (18 decimals) to human readable
+
         balance = balance_wei / (10 ** ZWAP_DECIMALS)
         return balance
     except Exception as e:
@@ -370,7 +386,6 @@ async def connect_wallet(user_data: UserCreate):
     wallet = user_data.wallet_address.lower()
 
     try:
-        # Normal DB-backed flow
         existing = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
         if existing:
             return UserResponse(**existing)
@@ -387,7 +402,7 @@ async def connect_wallet(user_data: UserCreate):
             "daily_steps": 0,
             "daily_zpts_earned": 0,
             "daily_streak": 0,
-            "last_daily_claim": None
+            "last_daily_claim": None,
             "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
             "games_played": 0,
             "total_earned": 100.0,
@@ -398,7 +413,6 @@ async def connect_wallet(user_data: UserCreate):
         return UserResponse(**{k: v for k, v in new_user.items() if k != "_id"})
 
     except Exception as e:
-        # DEV-ONLY FALLBACK: DB is unhappy, but we still let the user in locally.
         logging.exception(
             f"DB error in /users/connect for wallet {wallet}. Using in-memory fallback user."
         )
@@ -415,7 +429,7 @@ async def connect_wallet(user_data: UserCreate):
             "daily_steps": 0,
             "daily_zpts_earned": 0,
             "daily_streak": 0,
-            "last_daily_claim": None
+            "last_daily_claim": None,
             "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
             "games_played": 0,
             "total_earned": 100.0,
@@ -433,6 +447,95 @@ async def get_user(wallet_address: str):
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(**user)
 
+@api_router.get("/rewards/status/{wallet_address}")
+async def get_daily_reward_status(wallet_address: str):
+    wallet = wallet_address.lower()
+
+    user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    streak = user.get("daily_streak", 0)
+    last_claim = user.get("last_daily_claim")
+    now = datetime.now(timezone.utc)
+
+    can_claim = True
+
+    if not last_claim:
+        projected_streak = 1
+    else:
+        last_claim_dt = datetime.fromisoformat(last_claim.replace("Z", "+00:00"))
+        elapsed = now - last_claim_dt
+
+        if elapsed < timedelta(hours=24):
+            can_claim = False
+            projected_streak = streak
+        elif elapsed < timedelta(hours=48):
+            projected_streak = streak + 1
+        else:
+            projected_streak = 1
+
+    next_reward = get_daily_reward(projected_streak)
+
+    return {
+        "daily_streak": streak,
+        "can_claim": can_claim,
+        "next_reward_zpts": next_reward,
+        "last_daily_claim": last_claim
+    }
+
+@api_router.post("/rewards/daily/{wallet_address}")
+async def claim_daily_reward(wallet_address: str):
+    wallet = wallet_address.lower()
+
+    user = await db.users.find_one({"wallet_address": wallet})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.now(timezone.utc)
+    streak = user.get("daily_streak", 0)
+    last_claim = user.get("last_daily_claim")
+
+    if last_claim:
+        last_claim_dt = datetime.fromisoformat(last_claim.replace("Z", "+00:00"))
+        elapsed = now - last_claim_dt
+
+        if elapsed < timedelta(hours=24):
+            raise HTTPException(status_code=400, detail="Daily reward already claimed")
+
+        if elapsed < timedelta(hours=48):
+            new_streak = streak + 1
+        else:
+            new_streak = 1
+    else:
+        new_streak = 1
+
+    reward_amount = get_daily_reward(new_streak)
+
+    await db.users.update_one(
+        {"wallet_address": wallet},
+        {
+            "$set": {
+                "daily_streak": new_streak,
+                "last_daily_claim": now.isoformat()
+            },
+            "$inc": {
+                "zpts_balance": reward_amount
+            }
+        }
+    )
+
+    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+
+    return {
+        "success": True,
+        "daily_streak": updated_user.get("daily_streak", new_streak),
+        "reward_zpts": reward_amount,
+        "new_zpts_balance": updated_user.get("zpts_balance", 0),
+        "last_daily_claim": updated_user.get("last_daily_claim"),
+        "message": f"Claimed {reward_amount} zPts daily reward"
+    }
+
 class ProfileUpdate(BaseModel):
     username: Optional[str] = None
     avatar_url: Optional[str] = None
@@ -444,19 +547,19 @@ async def update_profile(wallet_address: str, profile: ProfileUpdate):
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     update_data = {}
     if profile.username:
         update_data["custom_username"] = profile.username
     if profile.avatar_url:
         update_data["avatar_url"] = profile.avatar_url
-    
+
     if update_data:
         await db.users.update_one(
             {"wallet_address": wallet},
             {"$set": update_data}
         )
-    
+
     updated = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
     return updated
 
@@ -464,7 +567,7 @@ async def update_profile(wallet_address: str, profile: ProfileUpdate):
 async def get_tiers():
     """Get available subscription tiers"""
     return TIERS
-    
+
 # ============ BLOCKCHAIN ENDPOINTS ============
 
 @api_router.get("/blockchain/balance/{wallet_address}")
@@ -479,7 +582,7 @@ async def get_blockchain_balance(wallet_address: str):
                 "error": "Unable to fetch on-chain balance",
                 "connected": w3.is_connected() if w3 else False
             }
-        
+
         return {
             "wallet_address": wallet_address,
             "onchain_balance": balance,
@@ -499,16 +602,15 @@ async def get_contract_info():
             "connected": False,
             "error": "Web3 not connected"
         }
-    
+
     try:
         loop = asyncio.get_event_loop()
-        
-        # Get token info
+
         symbol = await loop.run_in_executor(None, zwap_contract.functions.symbol().call)
         decimals = await loop.run_in_executor(None, zwap_contract.functions.decimals().call)
         total_supply_wei = await loop.run_in_executor(None, zwap_contract.functions.totalSupply().call)
         total_supply = total_supply_wei / (10 ** decimals)
-        
+
         return {
             "connected": True,
             "contract_address": ZWAP_CONTRACT_ADDRESS,
@@ -533,11 +635,9 @@ async def claim_step_rewards(wallet_address: str, steps_data: StepsUpdate):
     """Claim ZWAP rewards for steps (no Z Points from walking)"""
     wallet = wallet_address.lower()
 
-    # Anti-cheat: rate limit
     if check_rate_limit(wallet, "steps", STEP_CLAIM_COOLDOWN):
         raise HTTPException(status_code=429, detail="Too many step claims. Please wait a few minutes.")
 
-    # Anti-cheat: sanity checks
     if steps_data.steps < MIN_STEPS_PER_CLAIM:
         raise HTTPException(status_code=400, detail=f"Minimum {MIN_STEPS_PER_CLAIM} steps required")
     if steps_data.steps > MAX_STEPS_PER_CLAIM:
@@ -550,7 +650,6 @@ async def claim_step_rewards(wallet_address: str, steps_data: StepsUpdate):
     tier = user.get("tier", "starter")
     tier_config = get_user_tier_config(tier)
 
-    # Daily ZWAP cap enforcement
     user = await check_and_reset_daily_zwap(user)
     daily_zwap = user.get("daily_zwap_earned", 0.0)
     zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
@@ -559,14 +658,17 @@ async def claim_step_rewards(wallet_address: str, steps_data: StepsUpdate):
         raise HTTPException(status_code=429, detail="Daily ZWAP earning limit reached. Come back tomorrow!")
 
     rewards = calculate_step_rewards(steps_data.steps, tier_config["zwap_multiplier"])
-
-    # Cap rewards to remaining daily allowance
     rewards = min(rewards, zwap_cap - daily_zwap)
 
     await db.users.update_one(
         {"wallet_address": wallet},
         {
-            "$inc": {"zwap_balance": rewards, "total_steps": steps_data.steps, "total_earned": rewards, "daily_zwap_earned": rewards},
+            "$inc": {
+                "zwap_balance": rewards,
+                "total_steps": steps_data.steps,
+                "total_earned": rewards,
+                "daily_zwap_earned": rewards
+            },
             "$set": {"daily_steps": steps_data.steps}
         }
     )
@@ -587,14 +689,14 @@ async def submit_game_result(wallet_address: str, game_data: GameResult):
     """Submit game result and claim rewards (ZWAP + Z Points)"""
     wallet = wallet_address.lower()
 
-    # Anti-cheat: rate limit
     if check_rate_limit(wallet, "game", GAME_RESULT_COOLDOWN):
         raise HTTPException(status_code=429, detail="Submitting too fast. Wait a moment between games.")
 
-    # Anti-cheat: score sanity check
     max_score = MAX_GAME_SCORES.get(game_data.game_type, 5000)
     if game_data.score > max_score:
-        logging.warning(f"Anti-cheat flag: {wallet} submitted {game_data.game_type} score {game_data.score} (max {max_score})")
+        logging.warning(
+            f"Anti-cheat flag: {wallet} submitted {game_data.game_type} score {game_data.score} (max {max_score})"
+        )
         raise HTTPException(status_code=400, detail="Invalid score")
 
     if game_data.score < 0 or game_data.level < 1:
@@ -610,24 +712,23 @@ async def submit_game_result(wallet_address: str, game_data: GameResult):
     if game_data.game_type not in tier_config["games"]:
         raise HTTPException(status_code=403, detail=f"Game not available in {tier_config['name']} tier")
 
-    # Daily Z Points cap
     user = await check_and_reset_daily_zpts(user)
     daily_zpts = user.get("daily_zpts_earned", 0)
     zpts_cap = tier_config["daily_zpts_cap"]
 
-    # Daily ZWAP cap
     user = await check_and_reset_daily_zwap(user)
     daily_zwap = user.get("daily_zwap_earned", 0.0)
     zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
 
     rewards = calculate_game_rewards(
-        game_data.game_type, game_data.score, game_data.level,
-        game_data.blocks_destroyed, tier_config["zwap_multiplier"]
+        game_data.game_type,
+        game_data.score,
+        game_data.level,
+        game_data.blocks_destroyed,
+        tier_config["zwap_multiplier"]
     )
 
-    # Cap Z Points to daily limit
     zpts_to_add = max(0, min(rewards["zpts"], zpts_cap - daily_zpts))
-    # Cap ZWAP to daily limit
     zwap_to_add = max(0.0, min(rewards["zwap"], zwap_cap - daily_zwap))
 
     await db.users.update_one(
@@ -684,7 +785,6 @@ EDUCATION_TRIVIA = [
     {"id": "edu-swap-3", "module": "What Is a Swap?", "question": "Why is there a small fee?", "options": ["There is no fee", "To help support the system", "To pay the government", "It is a bug"], "answer": "To help support the system", "difficulty": 2},
 ]
 
-# Session store: {session_id: {questions: [...], expires: timestamp}}
 _trivia_sessions = {}
 
 @api_router.get("/games/trivia/questions")
@@ -696,10 +796,9 @@ async def get_trivia_questions(count: int = 5, difficulty: int = 1):
     session_id = str(uuid.uuid4())
     _trivia_sessions[session_id] = {
         "questions": {q["id"]: q["answer"] for q in selected},
-        "expires": _time.time() + 600,  # 10 min session
+        "expires": _time.time() + 600,
     }
 
-    # Clean expired sessions
     now = _time.time()
     expired = [k for k, v in _trivia_sessions.items() if v["expires"] < now]
     for k in expired:
@@ -708,8 +807,13 @@ async def get_trivia_questions(count: int = 5, difficulty: int = 1):
     return {
         "session_id": session_id,
         "questions": [
-            {"id": q["id"], "question": q["question"], "options": q["options"],
-             "difficulty": q["difficulty"], "module": q["module"]}
+            {
+                "id": q["id"],
+                "question": q["question"],
+                "options": q["options"],
+                "difficulty": q["difficulty"],
+                "module": q["module"]
+            }
             for q in selected
         ]
     }
@@ -717,7 +821,6 @@ async def get_trivia_questions(count: int = 5, difficulty: int = 1):
 @api_router.post("/games/trivia/answer")
 async def check_trivia_answer(answer: TriviaAnswer):
     """Check trivia answer — server-side validation"""
-    # Look up answer in education spine
     question = next((q for q in EDUCATION_TRIVIA if q["id"] == answer.question_id), None)
     if not question:
         return {"correct": False, "correct_answer": None, "time_bonus": 0}
@@ -738,16 +841,16 @@ async def scratch_to_win(wallet_address: str):
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     won = random.random() < 0.3
     amount = random.choice([5, 10, 25, 50, 100]) if won else 0
-    
+
     if won:
         await db.users.update_one(
             {"wallet_address": wallet},
             {"$inc": {"zwap_balance": amount, "total_earned": amount}}
         )
-    
+
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
     return {
         "won": won,
@@ -765,22 +868,22 @@ async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsReq
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     if user.get("zpts_balance", 0) < convert_data.zpts_amount:
         raise HTTPException(status_code=400, detail="Insufficient Z Points")
-    
+
     if convert_data.zpts_amount < ZPTS_TO_ZWAP_RATE:
         raise HTTPException(status_code=400, detail=f"Minimum {ZPTS_TO_ZWAP_RATE} zPts required")
-    
+
     zwap_amount = convert_data.zpts_amount / ZPTS_TO_ZWAP_RATE
-    
+
     await db.users.update_one(
         {"wallet_address": wallet},
         {
             "$inc": {"zpts_balance": -convert_data.zpts_amount, "zwap_balance": zwap_amount}
         }
     )
-    
+
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
     return {
         "zpts_converted": convert_data.zpts_amount,
@@ -797,12 +900,12 @@ async def create_subscription_checkout(request: Request, sub_request: Subscripti
     """Create Stripe checkout session for Plus subscription"""
     host_url = str(request.base_url).rstrip('/')
     webhook_url = f"{host_url}/api/webhook/stripe"
-    
+
     stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
+
     success_url = f"{sub_request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{sub_request.origin_url}/subscription/cancel"
-    
+
     checkout_request = CheckoutSessionRequest(
         amount=12.99,
         currency="usd",
@@ -810,10 +913,9 @@ async def create_subscription_checkout(request: Request, sub_request: Subscripti
         cancel_url=cancel_url,
         metadata={"tier": "plus", "type": "subscription"}
     )
-    
+
     session = await stripe_checkout.create_checkout_session(checkout_request)
-    
-    # Create payment transaction record
+
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
         "session_id": session.session_id,
@@ -823,7 +925,7 @@ async def create_subscription_checkout(request: Request, sub_request: Subscripti
         "payment_status": "pending",
         "created_at": datetime.now(timezone.utc).isoformat()
     })
-    
+
     return {"url": session.url, "session_id": session.session_id}
 
 @api_router.get("/subscription/status/{session_id}")
@@ -831,16 +933,15 @@ async def get_subscription_status(request: Request, session_id: str):
     """Check subscription payment status"""
     host_url = str(request.base_url).rstrip('/')
     webhook_url = f"{host_url}/api/webhook/stripe"
-    
+
     stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
     status = await stripe_checkout.get_checkout_status(session_id)
-    
-    # Update transaction record
+
     await db.payment_transactions.update_one(
         {"session_id": session_id},
         {"$set": {"payment_status": status.payment_status, "status": status.status}}
     )
-    
+
     return {
         "status": status.status,
         "payment_status": status.payment_status,
@@ -852,19 +953,17 @@ async def get_subscription_status(request: Request, session_id: str):
 async def activate_subscription(wallet_address: str, session_id: str):
     """Activate Plus subscription after successful payment"""
     wallet = wallet_address.lower()
-    
-    # Check transaction
+
     transaction = await db.payment_transactions.find_one({"session_id": session_id})
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    
+
     if transaction.get("payment_status") != "paid":
         raise HTTPException(status_code=400, detail="Payment not completed")
-    
+
     if transaction.get("activated"):
         raise HTTPException(status_code=400, detail="Already activated")
-    
-    # Update user tier
+
     await db.users.update_one(
         {"wallet_address": wallet},
         {
@@ -875,13 +974,12 @@ async def activate_subscription(wallet_address: str, session_id: str):
             }
         }
     )
-    
-    # Mark as activated
+
     await db.payment_transactions.update_one(
         {"session_id": session_id},
         {"$set": {"activated": True, "wallet_address": wallet}}
     )
-    
+
     return {"success": True, "tier": "plus", "message": "Plus subscription activated!"}
 
 @api_router.post("/webhook/stripe")
@@ -889,21 +987,20 @@ async def stripe_webhook(request: Request):
     """Handle Stripe webhooks"""
     body = await request.body()
     signature = request.headers.get("Stripe-Signature")
-    
+
     host_url = str(request.base_url).rstrip('/')
     webhook_url = f"{host_url}/api/webhook/stripe"
-    
+
     stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
+
     try:
         webhook_response = await stripe_checkout.handle_webhook(body, signature)
-        
-        # Update transaction
+
         await db.payment_transactions.update_one(
             {"session_id": webhook_response.session_id},
             {"$set": {"payment_status": webhook_response.payment_status, "event_type": webhook_response.event_type}}
         )
-        
+
         return {"status": "success"}
     except Exception as e:
         logging.error(f"Webhook error: {e}")
@@ -926,7 +1023,7 @@ async def get_shop_items():
             {"id": str(uuid.uuid4()), "name": "Game Boost Pack", "description": "2x rewards for 24 hours", "price_zwap": 100, "price_zpts": 800, "image_url": "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=400", "category": "boosts", "in_stock": True, "plus_only": False},
         ]
         await db.shop_items.insert_many(items)
-    
+
     items = await db.shop_items.find({}, {"_id": 0}).to_list(100)
     return [ShopItem(**item) for item in items]
 
@@ -937,16 +1034,14 @@ async def purchase_item(wallet_address: str, purchase: PurchaseRequest):
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     item = await db.shop_items.find_one({"id": purchase.item_id})
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
-    # Check Plus-only items
+
     if item.get("plus_only") and user.get("tier") != "plus":
         raise HTTPException(status_code=403, detail="Plus subscription required")
-    
-    # Check balance and deduct
+
     if purchase.payment_type == "zpts":
         if not item.get("price_zpts"):
             raise HTTPException(status_code=400, detail="Item not available for Z Points")
@@ -967,8 +1062,7 @@ async def purchase_item(wallet_address: str, purchase: PurchaseRequest):
         )
         price_paid = item["price_zwap"]
         currency = "zwap"
-    
-    # Record purchase
+
     await db.purchases.insert_one({
         "id": str(uuid.uuid4()),
         "user_wallet": wallet,
@@ -978,9 +1072,9 @@ async def purchase_item(wallet_address: str, purchase: PurchaseRequest):
         "currency": currency,
         "purchased_at": datetime.now(timezone.utc).isoformat()
     })
-    
+
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    
+
     return {
         "success": True,
         "item": item["name"],
@@ -1003,28 +1097,28 @@ async def execute_swap(wallet_address: str, swap: SwapRequest):
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     prices = await get_crypto_prices()
     from_price = prices.get(swap.from_token, 0)
     to_price = prices.get(swap.to_token, 0)
-    
+
     if from_price == 0 or to_price == 0:
         raise HTTPException(status_code=400, detail="Invalid token pair")
-    
+
     if swap.from_token == "ZWAP" and user["zwap_balance"] < swap.amount:
         raise HTTPException(status_code=400, detail="Insufficient ZWAP balance")
-    
+
     from_value_usd = swap.amount * from_price
     fee = from_value_usd * 0.01
     net_value_usd = from_value_usd - fee
     to_amount = net_value_usd / to_price
     rate = from_price / to_price
-    
+
     if swap.from_token == "ZWAP":
         await db.users.update_one({"wallet_address": wallet}, {"$inc": {"zwap_balance": -swap.amount}})
     elif swap.to_token == "ZWAP":
         await db.users.update_one({"wallet_address": wallet}, {"$inc": {"zwap_balance": to_amount}})
-    
+
     swap_record = {
         "id": str(uuid.uuid4()),
         "user_wallet": wallet,
@@ -1037,10 +1131,14 @@ async def execute_swap(wallet_address: str, swap: SwapRequest):
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
     await db.swaps.insert_one(swap_record)
-    
+
     return SwapResponse(
-        from_token=swap.from_token, to_token=swap.to_token, from_amount=swap.amount,
-        to_amount=round(to_amount, 8), rate=round(rate, 8), fee=round(fee, 4),
+        from_token=swap.from_token,
+        to_token=swap.to_token,
+        from_amount=swap.amount,
+        to_amount=round(to_amount, 8),
+        rate=round(rate, 8),
+        fee=round(fee, 4),
         transaction_id=swap_record["id"]
     )
 
@@ -1063,11 +1161,9 @@ class UserRankResponse(BaseModel):
 def generate_username(wallet: str) -> str:
     """Generate username from wallet address"""
     try:
-        # Handle wallets with 0x prefix
         if wallet.startswith("0x"):
             hash_num = int(wallet[2:10], 16) % 9999
         else:
-            # Fallback for non-standard addresses
             hash_num = sum(ord(c) for c in wallet[:8]) % 9999
         return f"Zwapper#{str(hash_num).zfill(4)}"
     except (ValueError, IndexError):
@@ -1077,26 +1173,19 @@ def generate_username(wallet: str) -> str:
 async def get_leaderboard_stats():
     """Get global stats for the ticker"""
     total_users = await db.users.count_documents({})
-    
-    # Top earner today (simplified - using total_earned)
+
     top_earner = await db.users.find_one({}, {"_id": 0, "wallet_address": 1, "total_earned": 1}, sort=[("total_earned", -1)])
-    
-    # Top gamer
     top_gamer = await db.users.find_one({}, {"_id": 0, "wallet_address": 1, "games_played": 1}, sort=[("games_played", -1)])
-    
-    # Top stepper
     top_stepper = await db.users.find_one({}, {"_id": 0, "wallet_address": 1, "total_steps": 1}, sort=[("total_steps", -1)])
-    
-    # Total ZWAP distributed
+
     pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_earned"}}}]
     total_earned_result = await db.users.aggregate(pipeline).to_list(1)
     total_zwap_distributed = total_earned_result[0]["total"] if total_earned_result else 0
-    
-    # Total steps walked
+
     steps_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_steps"}}}]
     total_steps_result = await db.users.aggregate(steps_pipeline).to_list(1)
     total_steps = total_steps_result[0]["total"] if total_steps_result else 0
-    
+
     return {
         "total_users": total_users,
         "total_zwap_distributed": round(total_zwap_distributed, 2),
@@ -1119,7 +1208,7 @@ async def get_leaderboard_stats():
 async def get_user_rank(wallet_address: str, category: str):
     """Get user's rank in a specific category"""
     wallet = wallet_address.lower()
-    
+
     if category == "steps":
         sort_field = "total_steps"
     elif category == "games":
@@ -1130,21 +1219,19 @@ async def get_user_rank(wallet_address: str, category: str):
         sort_field = "zpts_balance"
     else:
         raise HTTPException(status_code=400, detail="Invalid category")
-    
+
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user_value = user.get(sort_field, 0)
-    
-    # Count users with higher values for global rank
+
     global_rank = await db.users.count_documents({sort_field: {"$gt": user_value}}) + 1
     total_users = await db.users.count_documents({})
-    
-    # Simulate regional and local ranks (in production, would use geolocation)
-    regional_rank = max(1, global_rank // 10)  # Simplified
-    local_rank = max(1, global_rank // 50)  # Simplified
-    
+
+    regional_rank = max(1, global_rank // 10)
+    local_rank = max(1, global_rank // 50)
+
     return {
         "username": generate_username(wallet),
         "category": category,
@@ -1168,13 +1255,16 @@ async def get_leaderboard(category: str, limit: int = 10):
         sort_field = "zpts_balance"
     else:
         raise HTTPException(status_code=400, detail="Invalid category")
-    
-    users = await db.users.find({}, {"_id": 0, "wallet_address": 1, sort_field: 1, "tier": 1}).sort(sort_field, -1).limit(limit).to_list(limit)
-    
+
+    users = await db.users.find(
+        {},
+        {"_id": 0, "wallet_address": 1, sort_field: 1, "tier": 1}
+    ).sort(sort_field, -1).limit(limit).to_list(limit)
+
     return [
         {
             "rank": i + 1,
-            "username": generate_username(u['wallet_address']),
+            "username": generate_username(u["wallet_address"]),
             "wallet": f"{u['wallet_address'][:6]}...{u['wallet_address'][-4:]}",
             "value": u.get(sort_field, 0),
             "tier": u.get("tier", "starter")
@@ -1192,13 +1282,12 @@ async def root():
 async def health():
     return {"status": "healthy", "service": "zwap-api"}
 
-# Include admin routes
+# Include admin + wallet routes before mounting api_router on app
 from routers.admin_routes import admin_router
 api_router.include_router(admin_router)
+api_router.include_router(wallet_routes.router)
 
 app.include_router(api_router)
-
-api_router.include_router(wallet_routes.router)
 
 app.add_middleware(
     CORSMiddleware,
