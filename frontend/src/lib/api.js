@@ -34,9 +34,22 @@ function stub(name, fallback = {}) {
 // Wallet
 // ---------------------------------------------------------------------------
 
-/** POST /api/users/connect — register or reconnect wallet */
-const connectWallet = (walletAddress) =>
-  request("POST", "/users/connect", { wallet_address: walletAddress });
+/** POST /stripe/create-subscription-checkout */
+const createSubscription = async (walletAddress) => {
+  const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/stripe/create-subscription-checkout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet_address: walletAddress }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.detail || "Failed to create subscription checkout");
+  }
+
+  return data;
+};
 
 /** Stub: GET /api/wallet/status — future: session validity */
 const walletStatus = () => stub("walletStatus", { connected: false });
