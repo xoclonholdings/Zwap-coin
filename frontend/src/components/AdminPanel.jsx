@@ -176,6 +176,31 @@ const DashboardSection = ({ data, onRefresh }) => {
   const analytics = data?.analytics || {};
   const topEarners = analytics?.top_earners || [];
 
+  const [purchaseAnalytics, setPurchaseAnalytics] = useState({
+    total_purchases: 0,
+    total_zwap_spent: 0,
+    total_zpts_spent: 0,
+    top_items: [],
+  });
+  const [loadingPurchaseAnalytics, setLoadingPurchaseAnalytics] = useState(true);
+
+  useEffect(() => {
+    loadPurchaseAnalytics();
+  }, []);
+
+  const loadPurchaseAnalytics = async () => {
+    setLoadingPurchaseAnalytics(true);
+    try {
+      const result = await adminApi.get("/analytics/purchases");
+      setPurchaseAnalytics(result || {});
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load purchase analytics");
+    } finally {
+      setLoadingPurchaseAnalytics(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -208,6 +233,33 @@ const DashboardSection = ({ data, onRefresh }) => {
           icon={Database}
           label="Treasury Balance"
           value={(treasury.on_chain_balance || 0).toFixed(2)}
+          color="blue"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={ShoppingBag}
+          label="Total Purchases"
+          value={purchaseAnalytics.total_purchases || 0}
+          color="cyan"
+        />
+        <StatCard
+          icon={DollarSign}
+          label="ZWAP Spent"
+          value={(purchaseAnalytics.total_zwap_spent || 0).toFixed(2)}
+          color="green"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="zPts Spent"
+          value={(purchaseAnalytics.total_zpts_spent || 0).toFixed(2)}
+          color="purple"
+        />
+        <StatCard
+          icon={BarChart3}
+          label="Top Items"
+          value={purchaseAnalytics.top_items?.length || 0}
           color="blue"
         />
       </div>
@@ -262,6 +314,28 @@ const DashboardSection = ({ data, onRefresh }) => {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      <div className="p-4 rounded-xl border border-gray-700 bg-gray-800/30">
+        <h3 className="text-white font-semibold mb-3">Top Purchased Items</h3>
+
+        {loadingPurchaseAnalytics ? (
+          <p className="text-gray-400 text-sm">Loading purchase analytics...</p>
+        ) : purchaseAnalytics.top_items?.length ? (
+          <div className="space-y-3">
+            {purchaseAnalytics.top_items.slice(0, 5).map((item, index) => (
+              <div
+                key={`${item.item_name}-${index}`}
+                className="flex items-center justify-between rounded-lg bg-gray-900/50 px-4 py-3"
+              >
+                <p className="text-white font-medium">{item.item_name}</p>
+                <p className="text-cyan-400 font-bold">{item.count}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-400 text-sm">No purchases yet</p>
         )}
       </div>
     </div>
