@@ -386,6 +386,7 @@ async def connect_wallet(user_data: UserCreate):
             "daily_steps": 0,
             "daily_zpts_earned": 0,
             "daily_streak": 0,
+            "last_daily_claim": None
             "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
             "games_played": 0,
             "total_earned": 100.0,
@@ -413,6 +414,7 @@ async def connect_wallet(user_data: UserCreate):
             "daily_steps": 0,
             "daily_zpts_earned": 0,
             "daily_streak": 0,
+            "last_daily_claim": None
             "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
             "games_played": 0,
             "total_earned": 100.0,
