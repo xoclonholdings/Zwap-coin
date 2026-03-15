@@ -156,7 +156,7 @@ export default function MoveTab() {
         <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-2 pulse-glow">
           <Footprints className="w-8 h-8 text-cyan-400" />
         </div>
-        <h1 className="text-2xl font-bold text-white">zWALK</h1>
+        <h1 className="text-2xl font-bold text-white">WALK</h1>
         <p className="text-gray-400 text-sm">Move & Earn</p>
         {user?.tier === "plus" && (
           <span className="inline-flex items-center gap-1 text-yellow-400 text-xs mt-1">
