@@ -44,12 +44,44 @@ export default function AppHeader() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
 
-  const username =
-    user?.custom_username ||
-    (walletAddress
-      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-      : "Guest");
+  const adjectives = [
+  "Nova",
+  "Pixel",
+  "Quantum",
+  "Echo",
+  "Neon",
+  "Solar",
+  "Cyber",
+  "Hyper",
+  "Shadow",
+  "Turbo",
+];
 
+const nouns = [
+  "Runner",
+  "Walker",
+  "Strider",
+  "Pilot",
+  "Glider",
+  "Breaker",
+  "Phantom",
+  "Rider",
+  "Explorer",
+  "Voyager",
+];
+
+const generateUsername = (wallet) => {
+  if (!wallet) return "Guest";
+
+  const seed = parseInt(wallet.slice(2, 10), 16);
+  const adj = adjectives[seed % adjectives.length];
+  const noun = nouns[(seed >> 3) % nouns.length];
+  const num = seed % 999;
+
+  return `${adj}${noun}${num}`;
+};
+
+const username = user?.custom_username || generateUsername(walletAddress);
   const initials =
     (walletAddress ? username : "Guest")
       .replace(/[^a-zA-Z0-9 ]/g, "")
