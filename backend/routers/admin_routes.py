@@ -358,9 +358,14 @@ async def delete_marketplace_item(
     _: None = Depends(verify_admin),
 ):
     db = _get_db(request)
+
+    print("DELETE ITEM ID:", item_id)
+
+    item = await db.shop_items.find_one({"_id": item_id})
+    print("FOUND ITEM:", item)
+
     return await marketplace_service.delete_item(db, item_id)
-
-
+    
 @admin_router.get("/marketplace/orders")
 async def list_marketplace_orders(
     request: Request,
