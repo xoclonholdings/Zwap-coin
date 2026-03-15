@@ -329,7 +329,7 @@ function AppContent() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-          <Route path="/subscription/cancel" element={<Dashboard />} />
+          <Route path="/cancel" element={<ShopTab />} />
           <Route path="/success" element={<SubscriptionSuccess />} />
           <Route path="/cancel" element={<Dashboard />} />
         </Routes>
