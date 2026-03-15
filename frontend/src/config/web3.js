@@ -9,7 +9,7 @@ const projectId = 'c4f79cc821944d9680842e34466bfbd3'
 const metadata = {
   name: 'ZWAP! Coin',
   description: 'Move. Play. Swap. Shop.',
-  url: typeof window !== 'undefined' ? window.location.origin : 'https://zwap.app',
+  url: typeof window !== 'undefined' ? window.location.origin : 'https://zwap.online',
   icons: ['https://customer-assets.emergentagent.com/job_zwap-wallet/artifacts/8gvtmj56_Zwap_logo_full.png']
 }
 
