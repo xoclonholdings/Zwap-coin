@@ -34,22 +34,9 @@ function stub(name, fallback = {}) {
 // Wallet
 // ---------------------------------------------------------------------------
 
-/** POST /stripe/create-subscription-checkout */
-const createSubscription = async (walletAddress) => {
-  const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/stripe/create-subscription-checkout`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ wallet_address: walletAddress }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.detail || "Failed to create subscription checkout");
-  }
-
-  return data;
-};
+/** POST /api/users/connect — register or reconnect wallet */
+const connectWallet = (walletAddress) =>
+  request("POST", "/users/connect", { wallet_address: walletAddress });
 
 /** Stub: GET /api/wallet/status — future: session validity */
 const walletStatus = () => stub("walletStatus", { connected: false });
@@ -70,7 +57,10 @@ const getUser = async (walletAddress) => {
 
 /** PUT /api/users/:address/profile */
 const updateProfile = (walletAddress, username, avatarUrl) =>
-  request("PUT", `/users/${walletAddress}/profile`, { username, avatar_url: avatarUrl });
+  request("PUT", `/users/${walletAddress}/profile`, {
+    username,
+    avatar_url: avatarUrl,
+  });
 
 /** GET /api/blockchain/balance/:address */
 const getOnchainBalance = (walletAddress) =>
@@ -108,7 +98,9 @@ const submitAntiCheatFlags = (walletAddress, flags) =>
  * @returns {Array<{id,question,options,correctAnswer}>}
  */
 const getTriviaQuestions = async (count = 5, difficulty = 1) => {
-  const res = await fetch(`${API}/games/trivia/questions?count=${count}&difficulty=${difficulty}`);
+  const res = await fetch(
+    `${API}/games/trivia/questions?count=${count}&difficulty=${difficulty}`
+  );
   return res.json();
 };
 
@@ -119,7 +111,11 @@ const getTriviaQuestions = async (count = 5, difficulty = 1) => {
  * @param {number} timeTaken — seconds
  */
 const checkTriviaAnswer = (questionId, answer, timeTaken) =>
-  request("POST", "/games/trivia/answer", { question_id: questionId, answer, time_taken: timeTaken });
+  request("POST", "/games/trivia/answer", {
+    question_id: questionId,
+    answer,
+    time_taken: timeTaken,
+  });
 
 /**
  * POST /api/games/result/:address
@@ -129,11 +125,22 @@ const checkTriviaAnswer = (questionId, answer, timeTaken) =>
  * @param {number} level
  * @param {number} blocksDestroyed — zbrickles only
  */
-const submitGameResult = async (walletAddress, gameType, score, level = 1, blocksDestroyed = 0) => {
+const submitGameResult = async (
+  walletAddress,
+  gameType,
+  score,
+  level = 1,
+  blocksDestroyed = 0
+) => {
   const res = await fetch(`${API}/games/result/${walletAddress}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ game_type: gameType, score, level, blocks_destroyed: blocksDestroyed }),
+    body: JSON.stringify({
+      game_type: gameType,
+      score,
+      level,
+      blocks_destroyed: blocksDestroyed,
+    }),
   });
   if (!res.ok) {
     const err = await res.json();
@@ -201,7 +208,13 @@ const executeSwap = async (walletAddress, fromToken, toToken, amount) => {
 
 /** Stub: GET /api/swap/quote?from=X&to=Y&amount=N */
 const getSwapQuote = (fromToken, toToken, amount) =>
-  stub("getSwapQuote", { from: fromToken, to: toToken, amount, estimated: 0, fee: 0 });
+  stub("getSwapQuote", {
+    from: fromToken,
+    to: toToken,
+    amount,
+    estimated: 0,
+    fee: 0,
+  });
 
 /** Stub: GET /api/swap/history/:address */
 const getSwapHistory = (walletAddress) =>
@@ -211,9 +224,25 @@ const getSwapHistory = (walletAddress) =>
 // Subscription
 // ---------------------------------------------------------------------------
 
-/** POST /api/subscription/checkout */
-const createSubscription = (originUrl) =>
-  request("POST", "/subscription/checkout", { origin_url: originUrl });
+/** POST /stripe/create-subscription-checkout */
+const createSubscription = async (walletAddress) => {
+  const res = await fetch(
+    `${process.env.REACT_APP_BACKEND_URL}/stripe/create-subscription-checkout`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet_address: walletAddress }),
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.detail || "Failed to create subscription checkout");
+  }
+
+  return data;
+};
 
 /** GET /api/subscription/status/:sessionId */
 const getSubscriptionStatus = (sessionId) =>
@@ -221,7 +250,10 @@ const getSubscriptionStatus = (sessionId) =>
 
 /** POST /api/subscription/activate/:address?session_id=X */
 const activateSubscription = async (walletAddress, sessionId) => {
-  const res = await fetch(`${API}/subscription/activate/${walletAddress}?session_id=${sessionId}`, { method: "POST" });
+  const res = await fetch(
+    `${API}/subscription/activate/${walletAddress}?session_id=${sessionId}`,
+    { method: "POST" }
+  );
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.detail || "Activation failed");
@@ -265,7 +297,11 @@ const convertZptsToZwap = async (walletAddress, zptsAmount) => {
  * @param {number} amount — ZWAP to claim to on-chain wallet
  */
 const requestClaim = (walletAddress, amount) =>
-  stub("requestClaim", { status: "not_implemented", wallet: walletAddress, amount });
+  stub("requestClaim", {
+    status: "not_implemented",
+    wallet: walletAddress,
+    amount,
+  });
 
 /** Stub: GET /api/claims/status/:claimId */
 const getClaimStatus = (claimId) =>
