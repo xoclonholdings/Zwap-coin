@@ -90,6 +90,8 @@ if w3 and w3.is_connected():
 app.state.db = db
 app.state.w3 = w3
 app.state.zwap_contract = zwap_contract
+app.state.treasury_wallet = "0x102a5301c56cFCf4F02bEA3184Bdb44b731375E0"
+app.state.treasury_private_key = os.environ.get("TREASURY_PRIVATE_KEY", "")
 
 TIERS = {
     "starter": {
