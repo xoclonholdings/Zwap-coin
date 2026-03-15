@@ -59,35 +59,35 @@ async def stripe_webhook(request: Request):
         return {"status": "error", "message": str(e)}
 
     if event["type"] == "checkout.session.completed":
-    session = event["data"]["object"]
+        session = event["data"]["object"]
 
-    wallet_address = session.get("metadata", {}).get("wallet_address")
-    item_id = session.get("metadata", {}).get("item_id")
-    purchase_type = session.get("metadata", {}).get("purchase_type")
+        wallet_address = session.get("metadata", {}).get("wallet_address")
+        item_id = session.get("metadata", {}).get("item_id")
+        purchase_type = session.get("metadata", {}).get("purchase_type")
 
-    print("Payment completed:", session["id"])
-    print("Wallet:", wallet_address)
-    print("Item ID:", item_id)
-    print("Purchase Type:", purchase_type)
+        print("Payment completed:", session["id"])
+        print("Wallet:", wallet_address)
+        print("Item ID:", item_id)
+        print("Purchase Type:", purchase_type)
 
-    if purchase_type == "shop_item" and wallet_address and item_id:
-        db = request.app.state.db
+        if purchase_type == "shop_item" and wallet_address and item_id:
+            db = request.app.state.db
 
-        item = await db.shop_items.find_one({"id": item_id})
-        if item:
-            amount_paid = (session.get("amount_total") or 0) / 100
+            item = await db.shop_items.find_one({"id": item_id})
+            if item:
+                amount_paid = (session.get("amount_total") or 0) / 100
 
-            await db.purchases.insert_one({
-                "id": session["id"],
-                "user_wallet": wallet_address,
-                "item_id": item_id,
-                "item_name": item.get("name", "Item"),
-                "price": amount_paid,
-                "currency": "usd",
-                "payment_provider": "stripe",
-                "purchased_at": datetime.now(timezone.utc).isoformat(),
-                "stripe_session_id": session["id"],
-                "payment_status": "paid",
-            })
-            
+                await db.purchases.insert_one({
+                    "id": session["id"],
+                    "user_wallet": wallet_address,
+                    "item_id": item_id,
+                    "item_name": item.get("name", "Item"),
+                    "price": amount_paid,
+                    "currency": "usd",
+                    "payment_provider": "stripe",
+                    "purchased_at": datetime.now(timezone.utc).isoformat(),
+                    "stripe_session_id": session["id"],
+                    "payment_status": "paid",
+                })
+
     return {"status": "received"}
