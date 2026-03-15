@@ -513,7 +513,24 @@ async def admin_delete_news(
     db = _get_db(request)
     return await news_service.delete_news(db, news_id)
 
+# ===========================
+# ADMIN ACTIONS
+# ===========================
+@admin_router.get("/actions")
+async def list_admin_actions(
+    request: Request,
+    limit: int = 100,
+    _: None = Depends(verify_admin),
+):
+    db = _get_db(request)
 
+    actions = await db.admin_actions.find(
+        {},
+        {"_id": 0},
+    ).sort("created_at", -1).limit(limit).to_list(length=limit)
+
+    return {"actions": actions}
+    
 # ===========================
 # ACCOUNT
 # ===========================
