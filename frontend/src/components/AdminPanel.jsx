@@ -563,74 +563,63 @@ const UsersSection = () => {
           <p className="text-sm text-gray-400 mb-2">Recent Purchases</p>
 
           {userPurchases.length > 0 ? (
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {userPurchases.map((purchase, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center bg-gray-800/40 rounded-lg px-3 py-2"
-                >
-                  <div>
-                    <p className="text-white text-sm">
-                      {purchase.item_name || "Item"}
-                    </p>
-                    <p className="text-gray-400 text-xs">
-                      {purchase.timestamp
-                        ? new Date(purchase.timestamp).toLocaleString()
-                        : "No timestamp"}
-                    </p>
-                  </div>
+  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+    {userPurchases.map((purchase, i) => (
+      <div
+        key={purchase.id || i}
+        className="bg-gray-800/40 rounded-lg px-3 py-2"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-white text-sm font-medium">
+              {purchase.item_name || "Item"}
+            </p>
+            <p className="text-gray-400 text-xs">
+              {purchase.timestamp
+                ? new Date(purchase.timestamp).toLocaleString()
+                : "No timestamp"}
+            </p>
 
-                  <div className="text-right">
-                    <p className="text-cyan-400 text-sm font-medium">
-                      {purchase.amount || 0} {purchase.payment_type || ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-400 text-sm">No purchases</p>
-          )}
+            {purchase.refunded && (
+              <p className="text-red-400 text-xs mt-1">
+                Refunded
+                {purchase.refunded_at
+                  ? ` • ${new Date(purchase.refunded_at).toLocaleString()}`
+                  : ""}
+              </p>
+            )}
+          </div>
+
+          <div className="text-right">
+            <p className="text-cyan-400 text-sm font-medium">
+              {purchase.amount || 0} {purchase.payment_type || ""}
+            </p>
+
+            {!purchase.refunded ? (
+              <Button
+                size="sm"
+                className="mt-2 bg-red-600 hover:bg-red-700 h-8 px-3 text-xs"
+                disabled={refundingPurchaseId === purchase.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  refundPurchase(purchase.id);
+                }}
+              >
+                {refundingPurchaseId === purchase.id ? "Refunding..." : "Refund"}
+              </Button>
+            ) : (
+              <span className="inline-block mt-2 text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">
+                Refunded
+              </span>
+            )}
+          </div>
         </div>
       </div>
-
-      <div className="flex gap-3 mt-4">
-        {selectedUser.status === "suspended" ? (
-          <Button
-            className="bg-green-600 hover:bg-green-700"
-            onClick={() => {
-              unsuspendUser(selectedUser.wallet_address);
-              setSelectedUser(null);
-            }}
-          >
-            Unsuspend User
-          </Button>
-        ) : (
-          <Button
-            className="bg-red-600 hover:bg-red-700"
-            onClick={() => {
-              suspendUser(selectedUser.wallet_address);
-              setSelectedUser(null);
-            }}
-          >
-            Suspend User
-          </Button>
-        )}
-
-        <Button
-          variant="outline"
-          onClick={() => setSelectedUser(null)}
-          className="border-gray-700"
-        >
-          Close
-        </Button>
-      </div>
-    </motion.div>
+    ))}
   </div>
+) : (
+  <p className="text-gray-400 text-sm">No purchases</p>
 )}
-    </div>
-  );
-};
 
 // Treasury Section
 const TreasurySection = () => {
