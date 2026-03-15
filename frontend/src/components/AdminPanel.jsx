@@ -740,6 +740,7 @@ const UsersSection = () => {
 const TreasurySection = () => {
   const [treasury, setTreasury] = useState(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     loadTreasury();
   }, []);
@@ -758,7 +759,10 @@ const TreasurySection = () => {
   const toggleClaims = async (pause) => {
     if (!confirm(pause ? "Pause all claims?" : "Resume claims?")) return;
     try {
-      await adminApi.post("/treasury/action", { action: pause ? "pause_claims" : "resume_claims", reason: "Admin toggle" });
+      await adminApi.post("/treasury/action", {
+        action: pause ? "pause_claims" : "resume_claims",
+        reason: "Admin toggle",
+      });
       toast.success(pause ? "Claims paused" : "Claims resumed");
       loadTreasury();
     } catch {
@@ -766,17 +770,80 @@ const TreasurySection = () => {
     }
   };
 
-  if (loading) return <div className="text-gray-400 text-center py-8">Loading treasury data...</div>;
+  if (loading) {
+    return <div className="text-gray-400 text-center py-8">Loading treasury data...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-white">Treasury & Token Operations</h2>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Database} label="Treasury Balance" value={treasury?.treasury_balance?.toFixed(2) || "—"} subValue="On-chain ZWAP" color="cyan" />
-        <StatCard icon={Coins} label="Total Issued" value={(treasury?.total_issued || 0).toFixed(0)} subValue="All time" color="purple" />
-        <StatCard icon={TrendingUp} label="Total Claimed" value={(treasury?.total_claimed || 0).toFixed(0)} color="green" />
-        <StatCard icon={Activity} label="In-App Circulating" value={(treasury?.circulating_in_app || 0).toFixed(0)} color="blue" />
+        <StatCard
+          icon={Database}
+          label="ZWAP Treasury"
+          value={(treasury?.on_chain_balance || 0).toFixed(2)}
+          subValue="Token balance"
+          color="cyan"
+        />
+        <StatCard
+          icon={Coins}
+          label="Native Balance"
+          value={(treasury?.native_balance || 0).toFixed(4)}
+          subValue="Wallet gas funds"
+          color="purple"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Issued Total"
+          value={(treasury?.issued_total || 0).toFixed(0)}
+          subValue="All time"
+          color="green"
+        />
+        <StatCard
+          icon={Activity}
+          label="Claimed Total"
+          value={(treasury?.claimed_total || 0).toFixed(0)}
+          subValue="All time"
+          color="blue"
+        />
+      </div>
+
+      <div className="p-4 rounded-xl border border-gray-700 bg-gray-800/30 space-y-3">
+        <h3 className="text-white font-semibold">Web3 Visibility</h3>
+
+        <div className="grid md:grid-cols-2 gap-3">
+          <div className="p-3 bg-gray-900/50 rounded-lg">
+            <p className="text-xs text-gray-500">Treasury Wallet</p>
+            <p className="text-white font-mono text-sm break-all">
+              {treasury?.treasury_wallet || "—"}
+            </p>
+          </div>
+
+          <div className="p-3 bg-gray-900/50 rounded-lg">
+            <p className="text-xs text-gray-500">ZWAP Contract</p>
+            <p className="text-white font-mono text-sm break-all">
+              {treasury?.contract_address || "—"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 pt-1">
+          <div
+            className={`px-3 py-1.5 rounded-full text-sm flex items-center gap-2 ${
+              treasury?.web3_connected
+                ? "bg-green-500/20 text-green-400"
+                : "bg-red-500/20 text-red-400"
+            }`}
+          >
+            {treasury?.web3_connected ? (
+              <Play className="w-3 h-3" />
+            ) : (
+              <Pause className="w-3 h-3" />
+            )}
+            Web3: {treasury?.status_label || (treasury?.web3_connected ? "connected" : "offline")}
+          </div>
+        </div>
       </div>
 
       <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5">
@@ -784,14 +851,26 @@ const TreasurySection = () => {
           <AlertTriangle className="w-5 h-5 text-red-400" />
           Emergency Controls
         </h3>
+
         <div className="flex flex-wrap gap-3">
-          <Button onClick={() => toggleClaims(true)} variant="destructive" disabled={treasury?.claims_paused} className="bg-red-600 hover:bg-red-700">
+          <Button
+            onClick={() => toggleClaims(true)}
+            variant="destructive"
+            disabled={treasury?.claims_paused}
+            className="bg-red-600 hover:bg-red-700"
+          >
             <Pause className="w-4 h-4 mr-2" /> Pause All Claims
           </Button>
-          <Button onClick={() => toggleClaims(false)} className="bg-green-600 hover:bg-green-700" disabled={!treasury?.claims_paused}>
+
+          <Button
+            onClick={() => toggleClaims(false)}
+            className="bg-green-600 hover:bg-green-700"
+            disabled={!treasury?.claims_paused}
+          >
             <Play className="w-4 h-4 mr-2" /> Resume Claims
           </Button>
         </div>
+
         {treasury?.claims_paused && (
           <p className="text-red-400 text-sm mt-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Claims are currently PAUSED
