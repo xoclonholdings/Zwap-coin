@@ -32,8 +32,8 @@ async def create_checkout_session(request: Request):
             }
         ],
         mode="payment",
-        success_url="http://localhost:3000/success",
-        cancel_url="http://localhost:3000/cancel",
+        success_url="http://localhost:3000/shop?payment=success"
+        cancel_url="http://localhost:3000/shop?payment=cancel"
         metadata={
             "wallet_address": wallet_address or "",
             "item_id": item_id or "",
