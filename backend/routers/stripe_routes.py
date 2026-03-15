@@ -1,8 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 import stripe
+import json
 
 router = APIRouter()
 
+
+# ===========================
+# CREATE CHECKOUT SESSION
+# ===========================
 @router.post("/stripe/create-checkout")
 async def create_checkout_session():
 
@@ -26,3 +31,25 @@ async def create_checkout_session():
     )
 
     return {"url": session.url}
+
+
+# ===========================
+# STRIPE WEBHOOK
+# ===========================
+@router.post("/stripe/webhook")
+async def stripe_webhook(request: Request):
+
+    payload = await request.body()
+
+    try:
+        event = stripe.Event.construct_from(
+            json.loads(payload), stripe.api_key
+        )
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        print("Payment completed:", session["id"])
+
+    return {"status": "received"}
