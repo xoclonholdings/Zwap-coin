@@ -129,11 +129,11 @@ export default function AppHeader() {
           <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
             <SheetTrigger asChild>
               <motion.button
-                className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/30 relative"
+                className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xl font-bold uppercase shadow-lg shadow-cyan-500/30 relative"
                 data-testid="profile-badge"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                animate={{ 
+                animate={{
                   boxShadow: [
                     "0 0 15px rgba(0,245,255,0.3)",
                     "0 0 30px rgba(0,245,255,0.5)",
@@ -142,60 +142,94 @@ export default function AppHeader() {
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                👤
-                {/* Settings indicator dot */}
-                <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#0a0b1e] rounded-full flex items-center justify-center">
-                  <motion.span 
-                    className="w-3 h-3 bg-cyan-400 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                </span>
-              </motion.button>
-            </SheetTrigger>
-            <SheetContent side="right" className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80 overflow-y-auto" aria-describedby="account-sheet-description">
-              <SheetHeader>
-                <SheetTitle className="text-white">Account</SheetTitle>
-                <p id="account-sheet-description" className="sr-only">Manage your ZWAP! account settings and profile</p>
-              </SheetHeader>
-              
-              <div className="mt-6 space-y-6 pb-8">
-                {/* User Info */}
-                <div className="flex items-center gap-3">
-                  <motion.div 
-                    className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-2xl"
-                    animate={{ 
-                      boxShadow: [
-                        "0 0 10px rgba(0,245,255,0.3)",
-                        "0 0 20px rgba(0,245,255,0.5)",
-                        "0 0 10px rgba(0,245,255,0.3)"
-                      ]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    👤
-                  </motion.div>
-                  <div>
-                    <p className="text-white font-semibold">{walletAddress ? username : "Guest"}</p>
-                    {walletAddress ? (
-                      <p className="text-gray-500 text-xs">
-                        {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-                      </p>
-                    ) : (
-                      <p className="text-gray-500 text-xs">Not connected</p>
-                    )}
-                    <div className="flex items-center gap-1 mt-1">
-                      {user?.tier === "plus" ? (
-                        <span className="text-xs text-yellow-400 flex items-center gap-1">
-                          <Crown className="w-3 h-3" /> Plus Member
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-500">{walletAddress ? "Starter" : "Connect to save progress"}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {(walletAddress ? username : "Guest")
+                  .replace(/[^a-zA-Z0-9 ]/g, "")
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join("") || "Z"}
 
+      {/* Settings indicator dot */}
+      <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#0a0b1e] rounded-full flex items-center justify-center">
+        <motion.span
+          className="w-3 h-3 bg-cyan-400 rounded-full"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+      </span>
+    </motion.button>
+  </SheetTrigger>
+
+  <SheetContent
+    side="right"
+    className="bg-[#0a0b1e] border-l border-cyan-500/20 w-80 overflow-y-auto"
+    aria-describedby="account-sheet-description"
+  >
+    <SheetHeader>
+      <SheetTitle className="text-white">Account</SheetTitle>
+      <p id="account-sheet-description" className="sr-only">
+        Manage your ZWAP! account settings and profile
+      </p>
+    </SheetHeader>
+
+    <div className="mt-6 space-y-6 pb-8">
+      {/* User Info */}
+      <div className="flex items-center gap-3">
+        <motion.div
+          className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold uppercase border ${
+            user?.tier === "plus"
+              ? "bg-gradient-to-br from-yellow-400/30 via-amber-500/20 to-orange-500/30 border-yellow-400/40 text-yellow-200"
+              : "bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border-cyan-400/30 text-white"
+          }`}
+          animate={{
+            boxShadow:
+              user?.tier === "plus"
+                ? [
+                    "0 0 10px rgba(250,204,21,0.25)",
+                    "0 0 20px rgba(251,191,36,0.4)",
+                    "0 0 10px rgba(250,204,21,0.25)"
+                  ]
+                : [
+                    "0 0 10px rgba(0,245,255,0.3)",
+                    "0 0 20px rgba(0,245,255,0.5)",
+                    "0 0 10px rgba(0,245,255,0.3)"
+                  ]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          {(walletAddress ? username : "Guest")
+            .replace(/[^a-zA-Z0-9 ]/g, "")
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((p) => p[0])
+            .join("") || "Z"}
+        </motion.div>
+
+        <div>
+          <p className="text-white font-semibold">{walletAddress ? username : "Guest"}</p>
+          {walletAddress ? (
+            <p className="text-gray-500 text-xs">
+              {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+            </p>
+          ) : (
+            <p className="text-gray-500 text-xs">Not connected</p>
+          )}
+
+          <div className="flex items-center gap-1 mt-1">
+            {user?.tier === "plus" ? (
+              <span className="text-xs text-yellow-400 flex items-center gap-1">
+                <Crown className="w-3 h-3" /> Plus Member
+              </span>
+            ) : (
+              <span className="text-xs text-gray-500">
+                {walletAddress ? "Starter" : "Connect to save progress"}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
                 {/* Balance Details (when connected) */}
                 {walletAddress && (
                   <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
