@@ -3,23 +3,40 @@ from typing import Dict
 
 async def get_treasury_status(db, w3, zwap_contract) -> Dict:
     """
-    Reads on-chain treasury balance and calculates issued vs claimed totals.
-    Works even if Web3 is not connected.
+    Read-only treasury visibility:
+    - native wallet balance
+    - token contract balance
+    - issued vs claimed totals
+    - connection status
     """
 
-    treasury_wallet = "TREASURY_WALLET_ADDRESS"
+    treasury_wallet = "0x102a5301c56cFCf4F02bEA3184Bdb44b731375E0"
 
-    # Default if blockchain unavailable
-    balance_zwap = 0
+    native_balance = 0
+    token_balance = 0
+    web3_connected = bool(w3 and w3.is_connected())
+    contract_address = None
 
-    if w3 and w3.is_connected():
+    if zwap_contract is not None:
         try:
-            balance_wei = w3.eth.get_balance(treasury_wallet)
-            balance_zwap = w3.from_wei(balance_wei, "ether")
+            contract_address = zwap_contract.address
         except Exception:
-            balance_zwap = 0
+            contract_address = None
 
-    # MongoDB aggregation
+    if web3_connected:
+        try:
+            native_balance_wei = w3.eth.get_balance(treasury_wallet)
+            native_balance = float(w3.from_wei(native_balance_wei, "ether"))
+        except Exception:
+            native_balance = 0
+
+        try:
+            if zwap_contract is not None:
+                token_balance_raw = zwap_contract.functions.balanceOf(treasury_wallet).call()
+                token_balance = float(w3.from_wei(token_balance_raw, "ether"))
+        except Exception:
+            token_balance = 0
+
     issued_total = await db.swaps.aggregate([
         {"$group": {"_id": None, "total_issued": {"$sum": "$amount"}}}
     ]).to_list(length=1)
@@ -29,8 +46,12 @@ async def get_treasury_status(db, w3, zwap_contract) -> Dict:
     ]).to_list(length=1)
 
     return {
-        "on_chain_balance": float(balance_zwap),
+        "treasury_wallet": treasury_wallet,
+        "contract_address": contract_address,
+        "native_balance": native_balance,
+        "on_chain_balance": token_balance,
         "issued_total": issued_total[0]["total_issued"] if issued_total else 0,
         "claimed_total": claimed_total[0]["total_claimed"] if claimed_total else 0,
-        "web3_connected": bool(w3 and w3.is_connected()),
+        "web3_connected": web3_connected,
+        "status_label": "connected" if web3_connected else "offline",
     }
