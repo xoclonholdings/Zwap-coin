@@ -275,6 +275,7 @@ const UsersSection = () => {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userPurchases, setUserPurchases] = useState([]);
+  const [refundingPurchaseId, setRefundingPurchaseId] = useState(null);
 
   useEffect(() => {
     loadUsers();
@@ -321,6 +322,28 @@ const UsersSection = () => {
     setUserPurchases([]);
   }
 };
+
+  const refundPurchase = async (purchaseId) => {
+    if (!purchaseId) return;
+    if (!window.confirm("Refund this purchase?")) return;
+  
+    setRefundingPurchaseId(purchaseId);
+  
+    try {
+      await adminApi.post(`/purchases/${purchaseId}/refund`, {});
+      toast.success("Purchase refunded");
+  
+      if (selectedUser?.wallet_address) {
+        await loadUserPurchases(selectedUser.wallet_address);
+        await loadUsers(search);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to refund purchase");
+    } finally {
+      setRefundingPurchaseId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
