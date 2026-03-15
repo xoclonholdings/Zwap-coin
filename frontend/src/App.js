@@ -22,6 +22,7 @@ import TermsPage from "@/components/TermsPage";
 import AdminPanel from "@/components/AdminPanel";
 import WalletPage from "@/components/WalletPage";
 import LearnPage from "@/components/LearnPage";
+import PlusPage from "@/components/PlusPage";
 
 console.log("ZWAP LOCAL APP.JS LOADED");
 
@@ -325,6 +326,7 @@ function AppContent() {
           <Route path="/shop" element={<ShopTab />} />
           <Route path="/swap" element={<SwapTab />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/plus" element={<PlusPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
