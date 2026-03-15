@@ -181,10 +181,10 @@ async def admin_user_purchases(
         normalized_purchases.append(
             {
                 "item_id": item_id,
-                "item_name": items_map.get(str(item_id), "Item"),
-                "amount": purchase.get("amount", 0),
+                "item_name": purchase.get("item_name") or items_map.get(str(item_id), "Item"),
+                "amount": purchase.get("price", 0),
                 "payment_type": purchase.get("currency", "zwap"),
-                "timestamp": purchase.get("timestamp"),
+                "timestamp": purchase.get("purchased_at"),
             }
         )
 
