@@ -34,15 +34,6 @@ export default function AppHeader() {
   const [convertOpen, setConvertOpen] = useState(false);
   const username = generateUsername(walletAddress);
 
-  const handleUpgrade = async () => {
-    try {
-      const result = await api.createSubscription(window.location.origin);
-      if (result.url) window.location.href = result.url;
-    } catch (error) {
-      console.error("Subscription error:", error);
-    }
-  };
-
   const settingsItems = [
     { icon: User, label: "Profile", action: () => { setSettingsOpen(false); navigate("/profile"); } },
     { icon: BookOpen, label: "Learn", action: () => { setSettingsOpen(false); navigate("/learn"); } },
@@ -298,25 +289,6 @@ export default function AppHeader() {
                   </motion.button>
                 )}
 
-                {/* Upgrade Banner */}
-                {walletAddress && user?.tier !== "plus" && (
-                  <motion.button
-                    onClick={handleUpgrade}
-                    className="w-full p-4 rounded-xl bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-left"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-yellow-400 font-semibold flex items-center gap-2">
-                          <Crown className="w-4 h-4" /> Upgrade to Plus
-                        </p>
-                        <p className="text-gray-400 text-xs">$12.99/mo • 1.5x rewards</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-yellow-400" />
-                    </div>
-                  </motion.button>
-                )}
 
                 {/* Settings Menu */}
                 <div className="space-y-1">
