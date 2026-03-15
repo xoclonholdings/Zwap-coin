@@ -11,7 +11,8 @@ async def get_treasury_status(db, w3, zwap_contract) -> Dict:
     """
 
     treasury_wallet = "0x102a5301c56cFCf4F02bEA3184Bdb44b731375E0"
-
+    contract_address = "0xE8898453Af13B9496a6E8ADA92C6efDAF4967A81"
+    
     native_balance = 0
     token_balance = 0
     web3_connected = bool(w3 and w3.is_connected())
