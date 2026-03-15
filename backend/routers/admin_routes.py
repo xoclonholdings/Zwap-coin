@@ -179,17 +179,22 @@ async def admin_user_purchases(
         }
 
     normalized_purchases = []
-    for purchase in purchases:
-        item_id = purchase.get("item_id")
-        normalized_purchases.append(
-            {
-                "item_id": item_id,
-                "item_name": purchase.get("item_name") or items_map.get(str(item_id), "Item"),
-                "amount": purchase.get("price", 0),
-                "payment_type": purchase.get("currency", "zwap"),
-                "timestamp": purchase.get("purchased_at"),
-            }
-        )
+for purchase in purchases:
+    item_id = purchase.get("item_id")
+
+    normalized_purchases.append(
+        {
+            "id": purchase.get("id"),
+            "item_id": item_id,
+            "item_name": purchase.get("item_name") or items_map.get(str(item_id), "Item"),
+            "amount": purchase.get("price", 0),
+            "payment_type": purchase.get("currency", "zwap"),
+            "timestamp": purchase.get("purchased_at"),
+            "refunded": purchase.get("refunded", False),
+            "refunded_at": purchase.get("refunded_at"),
+            "refunded_by": purchase.get("refunded_by"),
+        }
+    )
 
     return {"purchases": normalized_purchases}
 
