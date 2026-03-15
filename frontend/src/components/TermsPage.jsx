@@ -53,7 +53,7 @@ The App operates on blockchain technology and requires a compatible cryptocurren
       title: "6. Subscriptions",
       content: `Plus subscriptions:
 
-• Are billed monthly at $12.99
+• Are billed monthly at $9.99
 • Can be cancelled at any time
 • Benefits remain active until the end of the billing period
 • No refunds for partial months
