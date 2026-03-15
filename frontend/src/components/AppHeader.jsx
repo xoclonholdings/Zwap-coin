@@ -45,43 +45,45 @@ export default function AppHeader() {
   const [convertOpen, setConvertOpen] = useState(false);
 
   const adjectives = [
-  "Nova",
-  "Pixel",
-  "Quantum",
-  "Echo",
-  "Neon",
-  "Solar",
-  "Cyber",
-  "Hyper",
-  "Shadow",
-  "Turbo",
-];
+    "Nova",
+    "Pixel",
+    "Quantum",
+    "Echo",
+    "Neon",
+    "Solar",
+    "Cyber",
+    "Hyper",
+    "Shadow",
+    "Turbo",
+  ];
 
-const nouns = [
-  "Runner",
-  "Walker",
-  "Strider",
-  "Pilot",
-  "Glider",
-  "Breaker",
-  "Phantom",
-  "Rider",
-  "Explorer",
-  "Voyager",
-];
+  const nouns = [
+    "Runner",
+    "Walker",
+    "Strider",
+    "Pilot",
+    "Glider",
+    "Breaker",
+    "Phantom",
+    "Rider",
+    "Explorer",
+    "Voyager",
+  ];
 
-const generateUsername = (wallet) => {
-  if (!wallet) return "Guest";
+  const generateUsername = (wallet) => {
+    if (!wallet) return "Guest";
 
-  const seed = parseInt(wallet.slice(2, 10), 16);
-  const adj = adjectives[seed % adjectives.length];
-  const noun = nouns[(seed >> 3) % nouns.length];
-  const num = seed % 999;
+    const seed = parseInt(wallet.slice(2, 10), 16);
 
-  return `${adj}${noun}${num}`;
-};
+    const adjIndex = Math.abs(seed) % adjectives.length;
+    const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
+    const num = Math.abs(seed) % 999;
 
-const username = user?.custom_username || generateUsername(walletAddress);
+    return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
+  };
+
+  const username = user?.custom_username || generateUsername(walletAddress);
+
   const initials =
     (walletAddress ? username : "Guest")
       .replace(/[^a-zA-Z0-9 ]/g, "")
