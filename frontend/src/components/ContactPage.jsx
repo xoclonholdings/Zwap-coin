@@ -12,32 +12,32 @@ export default function ContactPage() {
       icon: Mail,
       title: "Email Support",
       description: "Get help with your account",
-      action: "support@zwap.app",
-      href: "mailto:support@zwap.app",
+      action: "app@zwap.online",
+      href: "mailto:app@zwap.online",
       color: "cyan"
     },
     {
       icon: MessageCircle,
       title: "General Inquiries",
       description: "Business and partnership questions",
-      action: "hello@zwap.app",
-      href: "mailto:hello@zwap.app",
+      action: "app@zwap.online",
+      href: "mailto:app@zwap.online",
       color: "purple"
     },
     {
       icon: Twitter,
       title: "Twitter / X",
       description: "Follow us for updates",
-      action: "@ZWAPcoin",
-      href: "https://twitter.com/ZWAPcoin",
+      action: "Coming Soon",
+      href: "https://twitter.com/",
       color: "blue"
     },
     {
       icon: Globe,
       title: "Website",
       description: "Learn more about ZWAP!",
-      action: "zwap.app",
-      href: "https://zwap.app",
+      action: "zwap.online",
+      href: "https://zwap.online",
       color: "pink"
     }
   ];
