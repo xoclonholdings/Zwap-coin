@@ -96,7 +96,7 @@ Note: Blockchain transactions cannot be deleted due to the nature of distributed
             <Shield className="w-8 h-8 text-cyan-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Privacy Policy</h2>
-          <p className="text-gray-400 text-sm">Last updated: January 2025</p>
+          <p className="text-gray-400 text-sm">Last updated: March 2026</p>
         </motion.div>
 
         {/* Content */}
