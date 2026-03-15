@@ -269,11 +269,16 @@ async def purchase_item(db, user_id: str, item_id: str, payment_type: str) -> Di
     )
 
     await db.purchases.insert_one({
-        "user_id": user_id,
-        "item_id": item_id,
-        "payment_type": payment_type,
-        "amount": cost,
-        "timestamp": datetime.utcnow()
-    })
+    "id": str(uuid.uuid4()),
+    "user_wallet": wallet,
+    "item_id": item["id"],
+    "item_name": item["name"],
+    "price": price_paid,
+    "currency": currency,
+    "purchased_at": datetime.now(timezone.utc).isoformat(),
+    "refunded": False,
+    "refunded_at": None,
+    "refunded_by": None
+})
 
     return {"user_id": user_id, "item_id": item_id, "amount": cost}
