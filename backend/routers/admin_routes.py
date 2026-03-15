@@ -395,20 +395,39 @@ async def refund_purchase(
 
     balance_field = "zwap_balance" if currency == "zwap" else "zpts_balance"
 
+    # Refund balance to user
     await db.users.update_one(
         {"wallet_address": wallet},
         {"$inc": {balance_field: price}},
     )
 
+    refunded_at = datetime.utcnow().isoformat()
+
+    # Mark purchase as refunded
     await db.purchases.update_one(
         {"id": purchase_id},
         {
             "$set": {
                 "refunded": True,
-                "refunded_at": datetime.utcnow().isoformat(),
+                "refunded_at": refunded_at,
                 "refunded_by": "admin",
             }
         },
+    )
+
+    # Write admin action log
+    await db.admin_actions.insert_one(
+        {
+            "id": f"admin_action_refund_{purchase_id}",
+            "action_type": "refund_purchase",
+            "target_type": "purchase",
+            "target_id": purchase_id,
+            "wallet_address": wallet,
+            "amount": price,
+            "currency": currency,
+            "performed_by": "admin",
+            "created_at": refunded_at,
+        }
     )
 
     return {
@@ -418,8 +437,7 @@ async def refund_purchase(
         "amount_refunded": price,
         "currency": currency,
     }
-
-
+    
 # ===========================
 # SWAP CONFIG
 # ===========================
