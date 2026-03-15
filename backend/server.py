@@ -172,6 +172,7 @@ class UserResponse(BaseModel):
     zwap_balance: float = 0.0
     zpts_balance: int = 0
     daily_streak: int = 0
+    last_daily_claim: Optional[str] = None
     tier: str = "starter"
     subscription_id: Optional[str] = None
     subscription_status: Optional[str] = None
