@@ -237,7 +237,7 @@ async def delete_item(db, item_id: str) -> Dict[str, Any]:
     if not item_id:
         raise HTTPException(status_code=400, detail="Missing item id")
 
-    result = await db[COLLECTION_NAME].delete_one({"_id": item_id})
+    result = await db[COLLECTION_NAME].delete_one({"id": item_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
