@@ -360,7 +360,54 @@ async def list_marketplace_orders(
     db = _get_db(request)
     return await marketplace_service.list_orders(db, limit=limit)
 
+@admin_router.post("/purchases/{purchase_id}/refund")
+async def refund_purchase(
+    purchase_id: str,
+    request: Request,
+    _: None = Depends(verify_admin),
+):
+    db = _get_db(request)
 
+    purchase = await db.purchases.find_one({"id": purchase_id})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+
+    if purchase.get("refunded"):
+        raise HTTPException(status_code=400, detail="Purchase already refunded")
+
+    wallet = purchase.get("user_wallet")
+    price = purchase.get("price", 0)
+    currency = (purchase.get("currency") or "").lower()
+
+    if not wallet:
+        raise HTTPException(status_code=400, detail="Purchase missing wallet")
+
+    balance_field = "zwap_balance" if currency == "zwap" else "zpts_balance"
+
+    await db.users.update_one(
+        {"wallet_address": wallet},
+        {"$inc": {balance_field: price}}
+    )
+
+    await db.purchases.update_one(
+        {"id": purchase_id},
+        {
+            "$set": {
+                "refunded": True,
+                "refunded_at": datetime.utcnow().isoformat(),
+                "refunded_by": "admin",
+            }
+        },
+    )
+
+    return {
+        "success": True,
+        "purchase_id": purchase_id,
+        "wallet": wallet,
+        "amount_refunded": price,
+        "currency": currency,
+    }
+    
 # ===========================
 # SWAP CONFIG
 # ===========================
