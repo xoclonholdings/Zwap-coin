@@ -75,6 +75,17 @@ ERC20_ABI = [
         "outputs": [{"name": "", "type": "uint256"}],
         "type": "function"
     }
+    
+    {
+    "constant": False,
+    "inputs": [
+        {"name": "_to", "type": "address"},
+        {"name": "_value", "type": "uint256"}
+    ],
+    "name": "transfer",
+    "outputs": [{"name": "", "type": "bool"}],
+    "type": "function"
+}
 ]
 
 # ZWAP Contract instance
