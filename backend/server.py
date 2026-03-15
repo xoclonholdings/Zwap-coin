@@ -41,8 +41,9 @@ ZWAP_DECIMALS = 18
 TREASURY_WALLET = os.environ.get("TREASURY_WALLET", "")
 
 # Web3 Setup for Polygon
-POLYGON_RPC_URL = os.environ.get("POLYGON_RPC_URL", "")
-w3 = Web3(Web3.HTTPProvider(POLYGON_RPC_URL)) if POLYGON_RPC_URL else None
+POLYGON_RPC_URL = os.environ.get("POLYGON_RPC_URL", "https://polygon-rpc.com")
+
+w3 = Web3(Web3.HTTPProvider(POLYGON_RPC_URL))
 
 # ERC-20 ABI (minimal for balanceOf)
 ERC20_ABI = [
