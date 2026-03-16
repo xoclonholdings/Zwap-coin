@@ -313,14 +313,21 @@ function AppContent() {
   }
 
   // Wallet gate: protected routes require wallet connection
-  const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap"];
+  const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
   if (protectedRoutes.includes(location.pathname) && !walletAddress) {
     navigate("/wallet");
     return null;
   }
 
-  const showLayout = ["/dashboard", "/move", "/play", "/shop", "/swap"].includes(location.pathname);
-
+  const showLayout = [
+    "/dashboard",
+    "/move",
+    "/play",
+    "/shop",
+    "/swap",
+    "/success",
+  ].includes(location.pathname);
+  
   return (
     <div className="min-h-screen bg-[#0a0b1e]">
       {/* Persistent Header */}
