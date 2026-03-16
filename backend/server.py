@@ -229,16 +229,36 @@ class ConvertZPtsRequest(BaseModel):
 
 class ShopItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
+
     id: str
     name: str
-    description: str
-    price_zwap: float
-    price_zpts: Optional[int] = None
+    description: str = ""
+
+    # Payment rails
+    payment_method: str = "zwap"
+    price_zwap: float = 0
+    price_zpts: Optional[float] = None
+    price_stripe: Optional[float] = None
+
+    # Display / catalog
     image_url: Optional[str] = None
-    category: str
+    category: str = "general"
+    subcategory: Optional[str] = None
+
+    # Availability / gating
     in_stock: bool = True
     plus_only: bool = False
+    active: bool = True
 
+    # Fulfillment
+    fulfillment_type: str = "none"
+    download_url: Optional[str] = None
+    external_url: Optional[str] = None
+    fulfillment_notes: Optional[str] = None
+
+    # Inventory / limits
+    max_quantity: Optional[int] = None
+    
 class PurchaseRequest(BaseModel):
     item_id: str
     payment_type: str = "zwap"  # "zwap" or "zpts"
