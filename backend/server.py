@@ -234,7 +234,7 @@ class ShopItem(BaseModel):
     description: str
     price_zwap: float
     price_zpts: Optional[int] = None
-    image_url: str
+    image_url: Optional[str] = None
     category: str
     in_stock: bool = True
     plus_only: bool = False
