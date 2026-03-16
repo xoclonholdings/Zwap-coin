@@ -1061,6 +1061,15 @@ async def activate_subscription(wallet_address: str, session_id: str):
         }
     )
     
+    await db.user_inventory.insert_one({
+        "user_wallet": wallet,
+        "item_id": "plus_subscription",
+        "item_name": "Plus",
+        "granted_at": datetime.now(timezone.utc).isoformat(),
+        "source": "stripe",
+        "active": True
+    })
+    
     existing_plus = await db.user_inventory.find_one({
         "user_wallet": wallet,
         "item_id": "plus_subscription",
