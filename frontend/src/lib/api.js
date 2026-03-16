@@ -226,13 +226,28 @@ const getSwapHistory = (walletAddress) =>
 
 /** POST /stripe/create-subscription-checkout */
 const createSubscription = async (walletAddress) => {
-  const res = await fetch(
-    `${process.env.REACT_APP_BACKEND_URL}/stripe/create-subscription-checkout`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet_address: walletAddress }),
-    }
+  const origin_url = window.location.origin;
+
+  const res = await fetch(`${API}/subscription/checkout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      wallet_address: walletAddress,
+      origin_url,
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.detail || "Failed to create subscription checkout");
+  }
+
+  return {
+    ...data,
+    checkout_url: data.url,
+  };
+};
   );
 
   const data = await res.json();
