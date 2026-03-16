@@ -23,7 +23,7 @@ export default function TabNavigation() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-400/10 bg-[#08101d]"
+      className="relative z-40 border-t border-cyan-400/10 bg-[#08101d]"
       data-testid="tab-navigation"
     >
       <div className="mx-auto max-w-lg px-2 pt-1 pb-1">
