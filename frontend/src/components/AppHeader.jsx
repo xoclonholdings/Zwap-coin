@@ -152,27 +152,40 @@ export default function AppHeader() {
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#0a0b1e]/95 backdrop-blur-lg border-b border-cyan-500/20">
       <div className="flex items-center justify-between gap-3 px-4 py-3 max-w-lg mx-auto">
         {/* Left side - future audio/player slot */}
-        <motion.button
-            type="button"
-            onClick={() => setAudioHubOpen(true)}
-            className="min-w-[108px] max-w-[128px] flex items-center gap-2 rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 px-3 py-2 text-left"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-400/20">
-            <Music4 className="w-4 h-4 text-cyan-300" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-300/90">
-              Player
-            </p>
-            <div className="flex items-center gap-1 text-[11px] text-gray-300">
-              <Play className="w-3 h-3" />
-              <span className="truncate">Connect</span>
+       <motion.button
+          type="button"
+          onClick={() => setAudioHubOpen(true)}
+          className="relative min-w-[112px] max-w-[132px] overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_rgba(20,26,48,0.92)_45%,_rgba(15,18,34,0.98)_100%)] px-3 py-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          animate={{
+            boxShadow: [
+              "0 8px 24px rgba(0,0,0,0.25), 0 0 0 rgba(34,211,238,0)",
+              "0 8px 24px rgba(0,0,0,0.25), 0 0 18px rgba(34,211,238,0.12)",
+              "0 8px 24px rgba(0,0,0,0.25), 0 0 0 rgba(34,211,238,0)",
+            ],
+          }}
+          transition={{ duration: 2.8, repeat: Infinity }}
+        >
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+        
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-400/20 bg-gradient-to-br from-cyan-500/18 to-purple-500/18">
+              <Music4 className="h-4 w-4 text-cyan-300" />
+            </div>
+        
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-300/90">
+                Audio
+              </p>
+              <div className="flex items-center gap-1 text-[11px] text-gray-300">
+                <Play className="h-3 w-3" />
+                <span className="truncate">Open Hub</span>
+              </div>
             </div>
           </div>
         </motion.button>
-
+        
         {/* Center - balances */}
         <motion.div
           className="flex items-center gap-2 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2"
