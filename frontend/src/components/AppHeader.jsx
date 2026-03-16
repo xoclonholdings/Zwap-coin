@@ -320,9 +320,10 @@ export default function AppHeader() {
 
           <div className="flex items-center gap-2 mt-1">
             {user?.tier === "plus" ? (
-              <span className="text-xs text-yellow-400 flex items-center gap-1">
-                <Crown className="w-3 h-3" /> Plus Member
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold flex items-center gap-1">
+                <Crown className="w-3 h-3" /> Plus
               </span>
+              
             ) : walletAddress ? (
               <>
                 <span className="text-xs text-gray-400">Starter</span>
