@@ -155,8 +155,7 @@ export default function AppHeader() {
        <motion.button
           type="button"
           onClick={() => setAudioHubOpen(true)}
-          className="relative min-w-[112px] max-w-[132px] overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_rgba(20,26,48,0.92)_45%,_rgba(15,18,34,0.98)_100%)] px-3 py-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
-          whileHover={{ scale: 1.02 }}
+          className="relative min-w-[132px] max-w-[152px] overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_rgba(20,26,48,0.92)_45%,_rgba(15,18,34,0.98)_100%)] px-3 py-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)]"          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           animate={{
             boxShadow: [
@@ -180,8 +179,7 @@ export default function AppHeader() {
               </p>
               <div className="flex items-center gap-1 text-[11px] text-gray-300">
                 <Play className="h-3 w-3" />
-                <span className="truncate">Open Hub</span>
-              </div>
+                <span>Open Hub</span>              </div>
             </div>
           </div>
         </motion.button>
