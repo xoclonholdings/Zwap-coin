@@ -249,15 +249,6 @@ const createSubscription = async (walletAddress) => {
   };
 };
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.detail || "Failed to create subscription checkout");
-  }
-
-  return data;
-};
-
 /** GET /api/subscription/status/:sessionId */
 const getSubscriptionStatus = (sessionId) =>
   request("GET", `/subscription/status/${sessionId}`);
