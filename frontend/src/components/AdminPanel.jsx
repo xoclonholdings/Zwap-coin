@@ -1047,7 +1047,7 @@ const MarketplaceSection = () => {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  
+
   const CATEGORY_MAP = {
     audio_video: ["music", "video"],
     merch: ["apparel", "accessories", "bundle"],
@@ -1064,6 +1064,12 @@ const MarketplaceSection = () => {
     { value: "digital", label: "Digital Download" },
     { value: "external", label: "External Link" },
     { value: "manual", label: "Manual Fulfillment" },
+  ];
+
+  const PAYMENT_METHOD_OPTIONS = [
+    { value: "zwap", label: "ZWAP" },
+    { value: "zpts", label: "zPts" },
+    { value: "stripe", label: "Stripe / Fiat" },
   ];
 
   useEffect(() => {
@@ -1114,8 +1120,10 @@ const MarketplaceSection = () => {
       name: "",
       description: "",
       image_url: "",
+      payment_method: "zwap",
       price_zwap: 0,
       price_zpts: 0,
+      price_stripe: 0,
       max_quantity: "",
       is_active: true,
       category: "",
@@ -1134,8 +1142,10 @@ const MarketplaceSection = () => {
       name: item.name ?? "",
       description: item.description ?? "",
       image_url: item.image_url ?? "",
+      payment_method: item.payment_method ?? "zwap",
       price_zwap: item.price_zwap ?? 0,
       price_zpts: item.price_zpts ?? item.price_zpoints ?? 0,
+      price_stripe: item.price_stripe ?? item.price_usd ?? 0,
       max_quantity: item.max_quantity ?? "",
       is_active: item.is_active ?? item.isActive ?? item.active ?? true,
       category: item.category ?? "",
@@ -1167,6 +1177,12 @@ const MarketplaceSection = () => {
         }
       }
 
+      if (field === "payment_method") {
+        if (value !== "zwap") next.price_zwap = 0;
+        if (value !== "zpts") next.price_zpts = 0;
+        if (value !== "stripe") next.price_stripe = 0;
+      }
+
       return next;
     });
   };
@@ -1174,12 +1190,16 @@ const MarketplaceSection = () => {
   const handleSave = async () => {
     if (!editingItem) return;
 
+    const paymentMethod = editingItem.payment_method || "zwap";
+
     const payload = {
       name: editingItem.name.trim(),
       description: editingItem.description.trim(),
       image_url: editingItem.image_url?.trim() || null,
-      price_zwap: Number(editingItem.price_zwap) || 0,
-      price_zpoints: Number(editingItem.price_zpts) || 0,
+      payment_method: paymentMethod,
+      price_zwap: paymentMethod === "zwap" ? Number(editingItem.price_zwap) || 0 : 0,
+      price_zpoints: paymentMethod === "zpts" ? Number(editingItem.price_zpts) || 0 : 0,
+      price_stripe: paymentMethod === "stripe" ? Number(editingItem.price_stripe) || 0 : 0,
       max_quantity:
         editingItem.max_quantity === "" || editingItem.max_quantity == null
           ? null
@@ -1195,6 +1215,21 @@ const MarketplaceSection = () => {
 
     if (!payload.name) {
       toast.error("Item name is required");
+      return;
+    }
+
+    if (paymentMethod === "zwap" && payload.price_zwap <= 0) {
+      toast.error("ZWAP price must be greater than 0");
+      return;
+    }
+
+    if (paymentMethod === "zpts" && payload.price_zpoints <= 0) {
+      toast.error("zPts price must be greater than 0");
+      return;
+    }
+
+    if (paymentMethod === "stripe" && payload.price_stripe <= 0) {
+      toast.error("Stripe price must be greater than 0");
       return;
     }
 
@@ -1314,24 +1349,57 @@ const MarketplaceSection = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Price (ZWAP)</label>
-              <Input
-                type="number"
-                min="0"
-                value={editingItem.price_zwap}
-                onChange={(e) => handleFieldChange("price_zwap", e.target.value)}
-              />
+              <label className="text-xs text-gray-400">Payment Method</label>
+              <select
+                value={editingItem.payment_method || "zwap"}
+                onChange={(e) => handleFieldChange("payment_method", e.target.value)}
+                className="w-full rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-sm text-gray-100"
+              >
+                {PAYMENT_METHOD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-gray-400">Price (zPts)</label>
-              <Input
-                type="number"
-                min="0"
-                value={editingItem.price_zpts}
-                onChange={(e) => handleFieldChange("price_zpts", e.target.value)}
-              />
-            </div>
+            {editingItem.payment_method === "zwap" && (
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Price (ZWAP)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editingItem.price_zwap}
+                  onChange={(e) => handleFieldChange("price_zwap", e.target.value)}
+                />
+              </div>
+            )}
+
+            {editingItem.payment_method === "zpts" && (
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Price (zPts)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editingItem.price_zpts}
+                  onChange={(e) => handleFieldChange("price_zpts", e.target.value)}
+                />
+              </div>
+            )}
+
+            {editingItem.payment_method === "stripe" && (
+              <div className="space-y-1">
+                <label className="text-xs text-gray-400">Price (USD)</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editingItem.price_stripe}
+                  onChange={(e) => handleFieldChange("price_stripe", e.target.value)}
+                  placeholder="9.99"
+                />
+              </div>
+            )}
 
             <div className="space-y-1 sm:col-span-2">
               <label className="text-xs text-gray-400">Description</label>
@@ -1479,8 +1547,10 @@ const MarketplaceSection = () => {
           items.map((item) => {
             const itemId = item.id || item._id || item.name;
             const itemPriceZpts = item.price_zpts ?? item.price_zpoints ?? 0;
+            const itemPriceStripe = item.price_stripe ?? item.price_usd ?? 0;
             const itemIsActive = item.is_active ?? item.isActive ?? item.active ?? false;
             const itemFulfillmentType = item.fulfillment_type ?? "none";
+            const itemPaymentMethod = item.payment_method ?? "zwap";
 
             return (
               <div
@@ -1511,12 +1581,26 @@ const MarketplaceSection = () => {
                   </p>
 
                   <div className="flex flex-wrap gap-3 mt-1 text-xs">
-                    <span className="text-cyan-400">
-                      {item.price_zwap} ZWAP
-                    </span>
+                    {itemPaymentMethod === "zwap" && (
+                      <span className="text-cyan-400">
+                        {item.price_zwap} ZWAP
+                      </span>
+                    )}
 
-                    <span className="text-purple-400">
-                      {itemPriceZpts} zPts
+                    {itemPaymentMethod === "zpts" && (
+                      <span className="text-purple-400">
+                        {itemPriceZpts} zPts
+                      </span>
+                    )}
+
+                    {itemPaymentMethod === "stripe" && (
+                      <span className="text-emerald-400">
+                        ${Number(itemPriceStripe || 0).toFixed(2)} USD
+                      </span>
+                    )}
+
+                    <span className="text-yellow-400">
+                      • {formatLabel(itemPaymentMethod)}
                     </span>
 
                     {item.category && (
@@ -1570,7 +1654,7 @@ const MarketplaceSection = () => {
         )}
       </div>
 
-            <div className="mt-8 space-y-3">
+      <div className="mt-8 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Recent Orders</h3>
           <Button
@@ -1731,7 +1815,7 @@ const MarketplaceSection = () => {
       )}
     </div>
   );
-  };
+};
 
 // Swap Config Section
 const SwapConfigSection = () => {
