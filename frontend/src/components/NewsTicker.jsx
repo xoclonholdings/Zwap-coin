@@ -332,7 +332,7 @@ export default function NewsTicker() {
         setCurrentIndex((prev) => (prev + 1) % tickerContent.length);
         setIsVisible(true);
       }, 350);
-    }, 7000);
+    }, 12000);
 
     return () => clearInterval(interval);
   }, [tickerContent.length]);
@@ -378,17 +378,24 @@ export default function NewsTicker() {
             <div className="min-w-0 flex-1 overflow-hidden">
               <AnimatePresence mode="wait">
                 {isVisible && (
-                  <motion.p
+                  <motion.div
                     key={currentIndex}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.35 }}
-                    className="truncate text-[13px] text-gray-100"
-                    title={current.text}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
                   >
-                    {current.text}
-                  </motion.p>
+                    <motion.p
+                      className="whitespace-nowrap text-[13px] text-gray-100 pr-10"
+                      title={current.text}
+                      initial={{ x: "100%" }}
+                      animate={{ x: "-100%" }}
+                      transition={{ duration: 12, ease: "linear" }}
+                    >
+                      {current.text}
+                    </motion.p>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
@@ -399,7 +406,7 @@ export default function NewsTicker() {
               className="h-full bg-gradient-to-r from-cyan-400 via-sky-400 to-purple-500"
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
-              transition={{ duration: 7, ease: "linear" }}
+              transition={{ duration: 12, ease: "linear" }}
               key={currentIndex}
             />
           </div>
