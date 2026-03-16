@@ -447,47 +447,122 @@ export default function PlayTab() {
 </div>
 
   // Active game or result screen
-  return (
-    <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="play-tab">
-      <div className="flex items-center mb-3 flex-shrink-0">
-        <button onClick={() => { setSelectedGame(null); setIsPlaying(false); setGameResult(null); }} className="text-gray-400 mr-3">
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-lg font-bold text-white">{games.find(g => g.id === selectedGame)?.name}</h1>
-        {selectedGame === "zbrickles" && <span className="ml-auto text-cyan-400 text-sm">Level {currentLevel}</span>}
-      </div>
+const currentGameData = games.find((g) => g.id === selectedGame);
 
-      <div className="flex-1 flex flex-col justify-center items-center">
-        {isPlaying && selectedGame === "zbrickles" && (
-          <BricklesGame level={currentLevel} onGameEnd={handleGameEnd} isPlaying={isPlaying} />
-        )}
+return (
+  <div
+    className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4"
+    data-testid="play-tab"
+  >
+    <div className="flex items-center mb-4 flex-shrink-0">
+      <button
+        onClick={() => {
+          setSelectedGame(null);
+          setIsPlaying(false);
+          setGameResult(null);
+        }}
+        className="text-gray-400 hover:text-white transition mr-3"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </button>
 
-        {isPlaying && selectedGame === "ztrivia" && (
-          <TriviaGame onGameEnd={handleGameEnd} isPlaying={isPlaying} />
-        )}
-
-        {isPlaying && selectedGame === "ztetris" && (
-          <TetrisGame level={currentLevel} onGameEnd={handleGameEnd} isPlaying={isPlaying} />
-        )}
-
-        {isPlaying && selectedGame === "zslots" && (
-          <SlotsGame level={currentLevel} onGameEnd={handleGameEnd} isPlaying={isPlaying} />
-        )}
-
-        {!isPlaying && gameResult && (
-          <div className="flex flex-col items-center space-y-4 text-center">
-            <h2 className="text-white font-bold text-lg">Game Over!</h2>
-            <p className="text-gray-400 text-sm">Score: {gameResult.score}</p>
-            <p className="text-cyan-400 text-sm">zPts Earned: {gameResult.zpts_earned}</p>
-            <p className="text-purple-400 text-sm">zWAP Earned: {gameResult.zwap_earned}</p>
-
-            <div className="flex space-x-3 mt-2">
-              <Button onClick={handleClaim} className="bg-gray-700">Claim</Button>
-              <Button onClick={handlePlayAgain} className="bg-cyan-500 text-black">Play Again</Button>
-            </div>
+      <div className="flex items-center gap-3">
+        {currentGameData?.icon && (
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <currentGameData.icon className="w-5 h-5 text-cyan-400" />
           </div>
         )}
+
+        <div>
+          <h1 className="text-lg font-bold text-white">
+            {currentGameData?.name}
+          </h1>
+          <p className="text-[11px] text-gray-500">
+            {currentGameData?.description}
+          </p>
+        </div>
       </div>
+
+      {(selectedGame === "zbrickles" || selectedGame === "ztetris") && (
+        <span className="ml-auto text-cyan-400 text-sm font-medium">
+          Level {currentLevel}
+        </span>
+      )}
     </div>
-  );
-}
+
+    <div className="flex-1 flex flex-col justify-center items-center">
+      {isPlaying && selectedGame === "zbrickles" && (
+        <BricklesGame
+          level={currentLevel}
+          onGameEnd={handleGameEnd}
+          isPlaying={isPlaying}
+        />
+      )}
+
+      {isPlaying && selectedGame === "ztrivia" && (
+        <TriviaGame
+          onGameEnd={handleGameEnd}
+          isPlaying={isPlaying}
+        />
+      )}
+
+      {isPlaying && selectedGame === "ztetris" && (
+        <TetrisGame
+          level={currentLevel}
+          onGameEnd={handleGameEnd}
+          isPlaying={isPlaying}
+        />
+      )}
+
+      {isPlaying && selectedGame === "zslots" && (
+        <SlotsGame
+          level={currentLevel}
+          onGameEnd={handleGameEnd}
+          isPlaying={isPlaying}
+        />
+      )}
+
+      {!isPlaying && gameResult && (
+        <div className="w-full max-w-sm glass-card rounded-2xl p-6 text-center">
+          <h2 className="text-white font-bold text-xl mb-2">Run Complete</h2>
+          <p className="text-gray-400 text-sm mb-5">
+            {currentGameData?.name} results
+          </p>
+
+          <div className="space-y-3 mb-6">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">Score</span>
+              <span className="text-white font-bold">{gameResult.score}</span>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">zPts Earned</span>
+              <span className="text-cyan-400 font-bold">
+                {gameResult.zpts_earned}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">zWAP Earned</span>
+              <span className="text-purple-400 font-bold">
+                {gameResult.zwap_earned}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={handleClaim} className="flex-1 bg-gray-700">
+              Done
+            </Button>
+            <Button
+              onClick={handlePlayAgain}
+              className="flex-1 bg-cyan-500 text-black"
+            >
+              Play Again
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
