@@ -400,16 +400,37 @@ export default function PlayTab() {
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
       animate={{
-        boxShadow: [
+  boxShadow:
+    game.color === "cyan"
+      ? [
           "0 0 10px rgba(0,245,255,0.10)",
           "0 0 20px rgba(0,245,255,0.22)",
           "0 0 10px rgba(0,245,255,0.10)",
+        ]
+      : game.color === "purple"
+      ? [
+          "0 0 10px rgba(168,85,247,0.10)",
+          "0 0 20px rgba(168,85,247,0.22)",
+          "0 0 10px rgba(168,85,247,0.10)",
+        ]
+      : game.color === "pink"
+      ? [
+          "0 0 10px rgba(236,72,153,0.10)",
+          "0 0 20px rgba(236,72,153,0.22)",
+          "0 0 10px rgba(236,72,153,0.10)",
+        ]
+      : [
+          "0 0 10px rgba(34,211,238,0.10)",
+          "0 0 20px rgba(34,211,238,0.22)",
+          "0 0 10px rgba(34,211,238,0.10)",
         ],
-      }}
+}}
       transition={{ duration: 2.5, repeat: Infinity }}
       className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col items-center justify-center relative bg-gradient-to-br from-${game.color}-500/20 to-${game.color}-500/5 border-${game.color}-500/30`}
     >
-      <game.icon className={`w-8 h-8 mb-2 text-${game.color}-400`} />
+      <div className={`w-14 h-14 mb-3 rounded-2xl flex items-center justify-center bg-${game.color}-500/10 border border-${game.color}-500/30`}>
+        <game.icon className={`w-7 h-7 text-${game.color}-400`} />
+      </div>
       <h3 className="text-white font-bold text-sm">{game.name}</h3>
       <p className="text-gray-400 text-[10px] text-center">{game.description}</p>
     </motion.button>
