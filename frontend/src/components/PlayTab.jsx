@@ -3,7 +3,7 @@ import { useApp, TIERS } from "@/App";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Gamepad2, Play, Trophy, Lock, Crown, ChevronLeft, HelpCircle } from "lucide-react";
+import { Gamepad2, Play, Trophy, ChevronLeft, HelpCircle } from "lucide-react";
 import TetrisGame from "@/components/games/TetrisGame";
 import SlotsGame from "@/components/games/SlotsGame";
 import { allTrivia } from "@/data/education";
@@ -279,18 +279,17 @@ export default function PlayTab() {
   const [currentLevel, setCurrentLevel] = useState(1);
 
   const tierConfig = TIERS[user?.tier || "starter"];
-  const isPlusUser = user?.tier === "plus";
   const gamesPlayed = user?.games_played || 0;
 
   // Progressive difficulty: level scales with total games played
   const baseLevel = Math.min(Math.floor(gamesPlayed / 3) + 1, 10);
 
   const games = [
-    { id: "zbrickles", name: "zBrickles", icon: "🧱", color: "cyan", description: "Break blocks!", locked: false },
-    { id: "ztrivia", name: "zTrivia", icon: "❓", color: "purple", description: "Test your crypto knowledge", locked: false },
-    { id: "ztetris", name: "zTetris", icon: "🎮", color: "pink", description: "Stack blocks", locked: !isPlusUser },
-    { id: "zslots", name: "zSlots", icon: "🎰", color: "yellow", description: "Try your luck", locked: !isPlusUser },
-  ];
+  { id: "zbrickles", name: "zBrickles", icon: "🧱", color: "cyan", description: "Break blocks!" },
+  { id: "ztrivia", name: "zTrivia", icon: "❓", color: "purple", description: "Test your crypto knowledge" },
+  { id: "ztetris", name: "zTetris", icon: "🎮", color: "pink", description: "Stack blocks" },
+  { id: "zslots", name: "zSlots", icon: "🎰", color: "yellow", description: "Try your luck" },
+];
 
   const handleGameEnd = useCallback(async (score, blocksOrDifficulty, level = 1, cleared = false) => {
     setIsPlaying(false);
@@ -326,11 +325,6 @@ export default function PlayTab() {
   };
 
   const startGame = (gameId) => {
-    const game = games.find(g => g.id === gameId);
-    if (game?.locked) {
-      toast.error("Upgrade to Plus to unlock this game!");
-      return;
-    }
     setSelectedGame(gameId);
     setIsPlaying(true);
     setGameResult(null);
@@ -370,25 +364,11 @@ export default function PlayTab() {
               key={game.id}
               data-testid={`game-${game.id}`}
               onClick={() => startGame(game.id)}
-              className={`p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] flex flex-col items-center justify-center relative ${
-                game.locked 
-                  ? 'bg-gray-800/50 border-gray-700 opacity-60' 
-                  : `bg-gradient-to-br from-${game.color}-500/20 to-${game.color}-500/5 border-${game.color}-500/30`
-              }`}
+              className={`p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] flex flex-col items-center justify-center relative bg-gradient-to-br from-${game.color}-500/20 to-${game.color}-500/5 border-${game.color}-500/30`}
             >
-              {game.locked && (
-                <div className="absolute top-2 right-2">
-                  <Lock className="w-4 h-4 text-gray-500" />
-                </div>
-              )}
               <span className="text-3xl mb-2">{game.icon}</span>
               <h3 className="text-white font-bold text-sm">{game.name}</h3>
               <p className="text-gray-400 text-[10px] text-center">{game.description}</p>
-              {game.locked && (
-                <span className="text-[10px] text-yellow-400 mt-1 flex items-center gap-1">
-                  <Crown className="w-3 h-3" /> Plus
-                </span>
-              )}
             </button>
           ))}
         </div>
