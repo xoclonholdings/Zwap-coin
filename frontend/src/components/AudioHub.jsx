@@ -13,7 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { connectSpotify } from "@/lib/spotify"
+import { connectSpotify } from "@/lib/spotify";
 
 const tabs = [
   { id: "spotify", label: "Spotify", icon: Headphones },
@@ -94,7 +94,8 @@ export default function AudioHub({ open, onOpenChange }) {
 
               <div className="rounded-2xl border border-green-400/20 bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-4 shadow-[0_0_25px_rgba(34,197,94,0.12)]">
                 <p className="text-sm leading-relaxed text-gray-300">
-                  Connect your Spotify account to bring your own playlists into ZWAP! and soundtrack your sessions your way.
+                  Connect your Spotify account to bring your own playlists into
+                  ZWAP! and soundtrack your sessions your way.
                 </p>
 
                 <button
@@ -103,6 +104,7 @@ export default function AudioHub({ open, onOpenChange }) {
                 >
                   Connect Spotify
                 </button>
+              </div>
 
               <p className="px-1 text-[11px] uppercase tracking-[0.22em] text-gray-500">
                 Spotify Features
@@ -128,15 +130,19 @@ export default function AudioHub({ open, onOpenChange }) {
                 </div>
 
                 <p className="text-sm leading-relaxed text-gray-400">
-                  Curated stations, branded playlists, and future ZWAP! audio channels will live here.
+                  Curated stations, branded playlists, and future ZWAP! audio
+                  channels will live here.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-dashed border-cyan-400/20 bg-cyan-500/[0.05] p-6 text-center">
                 <Music4 className="mx-auto mb-3 h-8 w-8 text-cyan-300" />
-                <p className="font-medium text-white">ZWAP! Radio is coming soon</p>
+                <p className="font-medium text-white">
+                  ZWAP! Radio is coming soon
+                </p>
                 <p className="mt-1 text-sm text-gray-400">
-                  Mood-based stations, movement soundtracks, and branded mixes will appear here.
+                  Mood-based stations, movement soundtracks, and branded mixes
+                  will appear here.
                 </p>
               </div>
 
@@ -145,7 +151,8 @@ export default function AudioHub({ open, onOpenChange }) {
                   In development
                 </p>
                 <p className="mt-2 text-sm text-gray-400">
-                  MOVE, PLAY, FOCUS, and AFTER DARK sound lanes can all live in this lane as ZWAP! Radio expands.
+                  MOVE, PLAY, FOCUS, and AFTER DARK sound lanes can all live in
+                  this lane as ZWAP! Radio expands.
                 </p>
               </div>
             </div>
@@ -156,7 +163,9 @@ export default function AudioHub({ open, onOpenChange }) {
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <Lock className="h-4 w-4 text-purple-300" />
-                  <h3 className="font-semibold text-white">Your Audio Library</h3>
+                  <h3 className="font-semibold text-white">
+                    Your Audio Library
+                  </h3>
                 </div>
 
                 <p className="text-sm leading-relaxed text-gray-400">
@@ -179,8 +188,9 @@ export default function AudioHub({ open, onOpenChange }) {
                   Coming into focus
                 </p>
                 <p className="mt-2 text-sm text-gray-400">
-                  Audiobook previews, owned content, and continue-listening states
-                  can all live in this lane without relying on external platforms.
+                  Audiobook previews, owned content, and continue-listening
+                  states can all live in this lane without relying on external
+                  platforms.
                 </p>
               </div>
             </div>
