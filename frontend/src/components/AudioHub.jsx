@@ -52,10 +52,11 @@ export default function AudioHub({ open, onOpenChange }) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto h-[82vh] max-w-lg rounded-t-[28px] border-t border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] px-0 text-white shadow-[0_-20px_60px_rgba(0,0,0,0.55)]"
+        className="mx-auto mb-4 h-[80vh] w-[calc(100%-24px)] max-w-md rounded-[28px] border border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] px-0 text-white shadow-[0_-20px_60px_rgba(0,0,0,0.55)]"
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
-        <div className="mx-auto mt-2 h-1.5 w-14 rounded-full bg-white/10" />
+        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/12" />
+        <div className="mx-auto mt-3 h-px w-24 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
 
         <SheetHeader className="border-b border-cyan-500/10 px-4 pb-3 pt-3">
           <div className="flex items-center gap-3">
@@ -110,7 +111,7 @@ export default function AudioHub({ open, onOpenChange }) {
         </div>
 
         {/* Content */}
-        <div className="h-[calc(82vh-150px)] overflow-y-auto px-4 py-4">
+        <div className="h-[calc(80vh-150px)] overflow-y-auto px-4 py-4">
           {activeTab === "radio" && (
             <div className="space-y-3">
               <div className="rounded-2xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/8 to-purple-500/8 p-4">
