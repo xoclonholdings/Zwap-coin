@@ -1,35 +1,35 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useApp, ZWAP_BANG } from "@/App";
 import {
   Footprints,
   Gamepad2,
   ShoppingBag,
   ArrowRightLeft,
-  Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function TabNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
+  useApp(); // keeps consistency if app context is needed later
 
   const tabs = [
     { id: "move", path: "/move", icon: Footprints, label: "MOVE" },
     { id: "play", path: "/play", icon: Gamepad2, label: "PLAY" },
-    { id: "bang", path: "/dashboard", icon: Zap, label: "BANG", home: true },
+    { id: "bang", path: "/dashboard", label: "BANG", home: true },
     { id: "shop", path: "/shop", icon: ShoppingBag, label: "SHOP" },
     { id: "swap", path: "/swap", icon: ArrowRightLeft, label: "SWAP" },
   ];
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-400/10 bg-[#0a0f1f]"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-400/10 bg-[#08101d]"
       data-testid="tab-navigation"
     >
       <div className="mx-auto max-w-lg px-2 py-2">
-        <div className="grid grid-cols-5 items-end gap-1 rounded-t-2xl bg-[#0d1328] px-2 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.35)]">
+        <div className="grid grid-cols-5 items-end gap-1 rounded-t-2xl bg-[#0d1328] px-2 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]">
           {tabs.map((tab) => {
-            const Icon = tab.icon;
             const isActive = location.pathname === tab.path;
 
             if (tab.home) {
@@ -45,9 +45,12 @@ export default function TabNavigation() {
                   }`}
                   whileTap={{ scale: 0.96 }}
                 >
-                  {/* subtle concave highlight */}
                   <div className="pointer-events-none absolute inset-x-3 top-1 h-3 rounded-full bg-white/5 blur-sm" />
-                  <motion.div
+
+                  <motion.img
+                    src={ZWAP_BANG}
+                    alt="ZWAP Home"
+                    className="mb-1 h-7 w-auto object-contain"
                     animate={
                       isActive
                         ? {
@@ -57,18 +60,25 @@ export default function TabNavigation() {
                               "drop-shadow(0 0 4px rgba(34,211,238,0.35))",
                             ],
                           }
-                        : {}
+                        : {
+                            filter: [
+                              "drop-shadow(0 0 2px rgba(34,211,238,0.18))",
+                              "drop-shadow(0 0 6px rgba(168,85,247,0.22))",
+                              "drop-shadow(0 0 2px rgba(34,211,238,0.18))",
+                            ],
+                          }
                     }
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Icon className="mb-1 h-6 w-6" />
-                  </motion.div>
+                    transition={{ duration: 2.2, repeat: Infinity }}
+                  />
+
                   <span className="text-[10px] font-semibold tracking-[0.16em]">
                     BANG
                   </span>
                 </motion.button>
               );
             }
+
+            const Icon = tab.icon;
 
             return (
               <motion.button
