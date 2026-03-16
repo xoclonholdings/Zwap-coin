@@ -446,7 +446,7 @@ export default function PlayTab() {
   ))}
 </div>
 
-  // Active game or result screen
+// Active game or result screen
 const currentGameData = games.find((g) => g.id === selectedGame);
 
 return (
