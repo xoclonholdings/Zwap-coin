@@ -9,13 +9,18 @@ export default function PlusPage() {
   const { walletAddress } = useApp();
 
   const handleSubscribe = async () => {
-    try {
-      const data = await api.createSubscription(walletAddress);
-      window.location.href = data.checkout_url;
-    } catch (error) {
-      console.error("Subscription checkout failed:", error);
-    }
-  };
+  if (!walletAddress) {
+    console.error("No wallet connected for subscription checkout");
+    return;
+  }
+
+  try {
+    const data = await api.createSubscription(walletAddress);
+    window.location.href = data.checkout_url;
+  } catch (error) {
+    console.error("Subscription checkout failed:", error);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
