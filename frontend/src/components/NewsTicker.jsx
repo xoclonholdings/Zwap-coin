@@ -351,8 +351,8 @@ export default function NewsTicker() {
   const Icon = config.icon;
 
   return (
-    <div className="fixed bottom-[72px] left-0 right-0 z-30">
-      <div className="max-w-lg mx-auto px-3">
+    <div className="relative z-30">
+      <div className="max-w-lg mx-auto px-3 py-2">
         <div className="relative overflow-hidden rounded-2xl border border-cyan-500/15 bg-[#0b1222]/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
           <div className="flex items-center gap-3 px-3 py-2.5">
             <motion.div
