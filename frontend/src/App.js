@@ -329,42 +329,69 @@ function AppContent() {
   ].includes(location.pathname);
   
   return (
-    <div className="min-h-screen bg-[#0a0b1e]">
-      {/* Persistent Header */}
-      {showLayout && <AppHeader />}
-      
-      {/* Main content with padding for header/ticker/nav */}
-      <main className={showLayout ? "pt-20 pb-20" : ""}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/move" element={<MoveTab />} />
-          <Route path="/play" element={<PlayTab />} />
-          <Route path="/shop" element={<ShopTab />} />
-          <Route path="/swap" element={<SwapTab />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/plus" element={<PlusPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-          <Route path="/subscription/cancel" element={<PlusPage />} />
-          <Route path="/success" element={<ShopTab />} />
-          <Route path="/cancel" element={<ShopTab />} />
-        </Routes>
-      </main>
-      
-      {/* News Ticker */}
-      {showLayout && <NewsTicker />}
-      
-      {/* Bottom Navigation */}
-      {showLayout && <TabNavigation />}
-      
-      {/* Wallet Modal */}
-      <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
-    </div>
-  );
+  <div className="min-h-screen bg-[#0a0b1e]">
+    {showLayout ? (
+      <div className="h-screen flex flex-col overflow-hidden">
+        {/* Persistent Header */}
+        <AppHeader />
+
+        {/* Main content area */}
+        <main className="flex-1 overflow-y-auto pt-20">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/move" element={<MoveTab />} />
+            <Route path="/play" element={<PlayTab />} />
+            <Route path="/shop" element={<ShopTab />} />
+            <Route path="/swap" element={<SwapTab />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/plus" element={<PlusPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+            <Route path="/subscription/cancel" element={<PlusPage />} />
+            <Route path="/success" element={<ShopTab />} />
+            <Route path="/cancel" element={<ShopTab />} />
+          </Routes>
+        </main>
+
+        {/* Bottom frame */}
+        <div className="shrink-0 bg-[#0a0b1e] border-t border-cyan-500/10">
+          <NewsTicker />
+          <TabNavigation />
+        </div>
+      </div>
+    ) : (
+      <>
+        <main>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/move" element={<MoveTab />} />
+            <Route path="/play" element={<PlayTab />} />
+            <Route path="/shop" element={<ShopTab />} />
+            <Route path="/swap" element={<SwapTab />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/plus" element={<PlusPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+            <Route path="/subscription/cancel" element={<PlusPage />} />
+            <Route path="/success" element={<ShopTab />} />
+            <Route path="/cancel" element={<ShopTab />} />
+          </Routes>
+        </main>
+      </>
+    )}
+
+    {/* Wallet Modal */}
+    <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
+  </div>
+);
 }
 
 function App() {
