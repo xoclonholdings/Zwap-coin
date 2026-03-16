@@ -1213,6 +1213,22 @@ async def purchase_item(wallet_address: str, purchase: PurchaseRequest):
         "purchased_at": datetime.now(timezone.utc).isoformat()
     })
 
+    existing_inventory = await db.user_inventory.find_one({
+        "user_wallet": wallet,
+        "item_id": item_id,
+        "active": True,
+    })
+    
+    if not existing_inventory:
+        await db.user_inventory.insert_one({
+            "user_wallet": wallet,
+            "item_id": item_id,
+            "item_name": item.get("name", "Item"),
+            "granted_at": datetime.now(timezone.utc).isoformat(),
+            "source": currency,
+            "active": True,
+        })
+
     updated_user = await db.users.find_one(
         {"wallet_address": wallet},
         {"_id": 0}
