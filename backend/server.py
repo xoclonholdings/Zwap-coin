@@ -917,20 +917,33 @@ async def create_subscription_checkout(request: Request, sub_request: Subscripti
     host_url = str(request.base_url).rstrip('/')
     webhook_url = f"{host_url}/api/webhook/stripe"
 
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    import stripe
 
-    success_url = f"{sub_request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{sub_request.origin_url}/subscription/cancel"
+stripe.api_key = STRIPE_API_KEY
 
-    checkout_request = CheckoutSessionRequest(
-        amount=9.99,
-        currency="usd",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={"tier": "plus", "type": "subscription"}
-    )
-
-    session = await stripe_checkout.create_checkout_session(checkout_request)
+session = stripe.checkout.Session.create(
+    mode="subscription",
+    payment_method_types=["card"],
+    line_items=[
+        {
+            "price_data": {
+                "currency": "usd",
+                "product_data": {
+                    "name": "ZWAP Plus Subscription",
+                },
+                "unit_amount": 999,
+                "recurring": {"interval": "month"},
+            },
+            "quantity": 1,
+        }
+    ],
+    success_url=success_url,
+    cancel_url=cancel_url,
+    metadata={
+        "tier": "plus",
+        "type": "subscription"
+    }
+)
 
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
