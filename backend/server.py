@@ -247,18 +247,16 @@ class ShopItem(BaseModel):
 
     # Availability / gating
     in_stock: bool = True
-    plus_only: bool = False
     active: bool = True
+    plus_only: bool = False
+    max_quantity: Optional[int] = None
 
     # Fulfillment
     fulfillment_type: str = "none"
     download_url: Optional[str] = None
     external_url: Optional[str] = None
     fulfillment_notes: Optional[str] = None
-
-    # Inventory / limits
-    max_quantity: Optional[int] = None
-    
+        
 class PurchaseRequest(BaseModel):
     item_id: str
     payment_type: str = "zwap"  # "zwap" or "zpts"
@@ -1125,17 +1123,25 @@ async def get_shop_items():
                 id=item.get("id") or str(item.get("_id")),
                 name=item.get("name", ""),
                 description=item.get("description", ""),
-                category=item.get("category", "general"),
+                payment_method=item.get("payment_method", "zwap"),
                 price_zwap=item.get("price_zwap", 0),
                 price_zpts=item.get("price_zpts"),
+                price_stripe=item.get("price_stripe"),
                 image_url=item.get("image_url"),
+                category=item.get("category", "general"),
+                subcategory=item.get("subcategory"),
+                in_stock=item.get("in_stock", True),
+                active=item.get("active", item.get("is_active", True)),
                 plus_only=item.get("plus_only", False),
-                active=item.get("active", True),
+                max_quantity=item.get("max_quantity"),
+                fulfillment_type=item.get("fulfillment_type", "none"),
+                download_url=item.get("download_url"),
+                external_url=item.get("external_url"),
+                fulfillment_notes=item.get("fulfillment_notes"),
             )
         )
 
     return normalized_items
-
 
 @api_router.post("/shop/purchase/{wallet_address}")
 async def purchase_item(wallet_address: str, purchase: PurchaseRequest):
