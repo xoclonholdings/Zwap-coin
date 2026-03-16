@@ -45,19 +45,23 @@ export default function PlusPage() {
         </div>
 
         <div className="text-left mb-8 space-y-2 text-sm">
-          <div>• Reward multipliers</div>
-          <div>• Developer game submission portal</div>
-          <div>• Early campaign access</div>
-          <div>• Exclusive boosts & cosmetics</div>
-        </div>
+  <div>• Reward multipliers</div>
+  <div>• Developer game submission portal</div>
+  <div>• Early campaign access</div>
+  <div>• Exclusive boosts & cosmetics</div>
+</div>
 
-        <Button
-          size="lg"
-          className="w-full text-base font-semibold"
-          onClick={handleSubscribe}
-        >
-          Subscribe to Plus
-        </Button>
+<div className="text-xs text-muted-foreground mb-4">
+  Wallet: {walletAddress || "NOT CONNECTED"}
+</div>
+
+<Button
+  size="lg"
+  className="w-full text-base font-semibold"
+  onClick={handleSubscribe}
+>
+  Subscribe to Plus
+</Button>
       </motion.div>
     </div>
   );
