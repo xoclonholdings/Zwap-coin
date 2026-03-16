@@ -258,8 +258,9 @@ class SwapResponse(BaseModel):
     transaction_id: str
 
 class SubscriptionRequest(BaseModel):
+    wallet_address: str
     origin_url: str
-
+    
 class TriviaQuestion(BaseModel):
     id: str
     question: str
