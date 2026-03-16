@@ -71,7 +71,7 @@ async def create_checkout_session(request: Request):
             }
         ],
         mode="payment",
-        success_url=f"{origin_url}/success?payment=success",
+        success_url=f"{origin_url}/success?payment=success&item={resolved_item_id}",
         cancel_url=f"{origin_url}/cancel?payment=cancel",
         metadata={
             "wallet_address": wallet_address,
