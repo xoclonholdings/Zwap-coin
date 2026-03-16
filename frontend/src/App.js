@@ -334,7 +334,7 @@ function AppContent() {
       {showLayout && <AppHeader />}
       
       {/* Main content with padding for header/ticker/nav */}
-      <main className={showLayout ? "pt-20 pb-32" : ""}>
+      <main className={showLayout ? "pt-20 pb-20" : ""}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/about" element={<AboutPage />} />
