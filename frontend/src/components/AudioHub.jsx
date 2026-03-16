@@ -26,27 +26,55 @@ const zwapPlaylists = [
     id: "move",
     title: "ZWAP! Move Mix",
     description: "Energy for walking, motion, and momentum",
+    track: "/audio/move.mp3",
   },
   {
     id: "play",
     title: "ZWAP! Play Mode",
     description: "Arcade-ready sound for game sessions",
+    track: "/audio/play.mp3",
   },
   {
     id: "focus",
     title: "ZWAP! Focus",
     description: "Clean focus for building, browsing, and flow",
+    track: "/audio/focus.mp3",
   },
   {
     id: "afterdark",
     title: "ZWAP! After Dark",
     description: "Late-night atmosphere and neon drift",
+    track: "/audio/afterdark.mp3",
   },
 ];
 
 export default function AudioHub({ open, onOpenChange }) {
   const [activeTab, setActiveTab] = useState("radio");
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  const playTrack = (track) => {
+  const audio = document.getElementById("zwap-player");
 
+  if (!audio) return;
+
+  if (currentTrack === track && isPlaying) {
+    audio.pause();
+    setIsPlaying(false);
+    return;
+  }
+
+  setCurrentTrack(track);
+
+  setTimeout(() => {
+    const updatedAudio = document.getElementById("zwap-player");
+    if (updatedAudio) {
+      updatedAudio.play().catch((err) => {
+        console.error("Audio playback failed:", err);
+      });
+    }
+  }, 50);
+};
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -138,6 +166,7 @@ export default function AudioHub({ open, onOpenChange }) {
 
                     <motion.button
                       type="button"
+                      onClick={() => playTrack(playlist.track)}
                       whileTap={{ scale: 0.95 }}
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/12"
                     >
@@ -216,7 +245,15 @@ export default function AudioHub({ open, onOpenChange }) {
               </div>
             </div>
           )}
-        </div>
+                </div>
+
+        <audio
+          id="zwap-player"
+          src={currentTrack || ""}
+          autoPlay
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+        />
       </SheetContent>
     </Sheet>
   );
