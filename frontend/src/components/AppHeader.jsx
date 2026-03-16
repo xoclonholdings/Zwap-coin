@@ -3,6 +3,7 @@ import { useApp, ZWAP_CONTRACT } from "@/App";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import AudioHub from "@/components/AudioHub";
 import {
   Wallet,
   User,
@@ -45,7 +46,8 @@ export default function AppHeader() {
   const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
-
+  const [audioHubOpen, setAudioHubOpen] = useState(false);
+  
   const adjectives = [
     "Nova",
     "Pixel",
@@ -151,11 +153,12 @@ export default function AppHeader() {
       <div className="flex items-center justify-between gap-3 px-4 py-3 max-w-lg mx-auto">
         {/* Left side - future audio/player slot */}
         <motion.button
-          type="button"
-          className="min-w-[108px] max-w-[128px] flex items-center gap-2 rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 px-3 py-2 text-left"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
+            type="button"
+            onClick={() => setAudioHubOpen(true)}
+            className="min-w-[108px] max-w-[128px] flex items-center gap-2 rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 px-3 py-2 text-left"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/15 border border-cyan-400/20">
             <Music4 className="w-4 h-4 text-cyan-300" />
           </div>
@@ -245,6 +248,8 @@ export default function AppHeader() {
           zptsBalance={user?.zpts_balance || 0}
           onConverted={() => {}}
         />
+        
+        <AudioHub open={audioHubOpen} onOpenChange={setAudioHubOpen} />
 
         {/* Right side - profile */}
         <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
