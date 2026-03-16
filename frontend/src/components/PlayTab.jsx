@@ -284,7 +284,6 @@ export default function PlayTab() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameResult, setGameResult] = useState(null);
-  const [isClaiming, setIsClaiming] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(1);
 
   const tierConfig = TIERS[user?.tier || "starter"];
@@ -320,7 +319,7 @@ export default function PlayTab() {
     name: "zSpin",
     icon: Sparkles,
     color: "cyan",
-    description: "Spin for rewards"
+    description: "Pulse the reels"
   }
 ];
 
@@ -369,9 +368,19 @@ export default function PlayTab() {
     return (
       <div className="min-h-[calc(100dvh-140px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="play-tab">
         <div className="text-center mb-4">
-          <div className="w-14 h-14 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-2 pulse-glow-purple">
-            <Gamepad2 className="w-7 h-7 text-purple-400" />
-          </div>
+          <motion.div
+            className={`w-14 h-14 mb-3 rounded-2xl flex items-center justify-center bg-${game.color}-500/10 border border-${game.color}-500/30`}
+            animate={{
+              boxShadow: [
+                "0 0 6px rgba(0,245,255,0.15)",
+                "0 0 14px rgba(0,245,255,0.35)",
+                "0 0 6px rgba(0,245,255,0.15)"
+              ]
+            }}
+            transition={{ duration: 2.2, repeat: Infinity }}
+          >
+            <game.icon className={`w-7 h-7 text-${game.color}-400`} />
+          </motion.div>
           <h1 className="text-xl font-bold text-white">PLAY</h1>
           <p className="text-gray-400 text-xs">Play & Earn</p>
         </div>
