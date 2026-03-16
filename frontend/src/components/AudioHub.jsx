@@ -5,7 +5,6 @@ import {
   Radio,
   Headphones,
   BookOpen,
-  Play,
   Lock,
 } from "lucide-react";
 import {
@@ -16,65 +15,14 @@ import {
 } from "@/components/ui/sheet";
 
 const tabs = [
-  { id: "radio", label: "ZWAP! Radio", icon: Radio },
   { id: "spotify", label: "Spotify", icon: Headphones },
+  { id: "radio", label: "ZWAP! Radio", icon: Radio },
   { id: "library", label: "Library", icon: BookOpen },
 ];
 
-const zwapPlaylists = [
-  {
-    id: "move",
-    title: "ZWAP! Move Mix",
-    description: "Energy for walking, motion, and momentum",
-    track: "/audio/move.mp3",
-  },
-  {
-    id: "play",
-    title: "ZWAP! Play Mode",
-    description: "Arcade-ready sound for game sessions",
-    track: "/audio/play.mp3",
-  },
-  {
-    id: "focus",
-    title: "ZWAP! Focus",
-    description: "Clean focus for building, browsing, and flow",
-    track: "/audio/focus.mp3",
-  },
-  {
-    id: "afterdark",
-    title: "ZWAP! After Dark",
-    description: "Late-night atmosphere and neon drift",
-    track: "/audio/afterdark.mp3",
-  },
-];
-
 export default function AudioHub({ open, onOpenChange }) {
-  const [activeTab, setActiveTab] = useState("radio");
-  const [currentTrack, setCurrentTrack] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  
-  const playTrack = (track) => {
-  const audio = document.getElementById("zwap-player");
+  const [activeTab, setActiveTab] = useState("spotify");
 
-  if (!audio) return;
-
-  if (currentTrack === track && isPlaying) {
-    audio.pause();
-    setIsPlaying(false);
-    return;
-  }
-
-  setCurrentTrack(track);
-
-  setTimeout(() => {
-    const updatedAudio = document.getElementById("zwap-player");
-    if (updatedAudio) {
-      updatedAudio.play().catch((err) => {
-        console.error("Audio playback failed:", err);
-      });
-    }
-  }, 50);
-};
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -137,76 +85,65 @@ export default function AudioHub({ open, onOpenChange }) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-6">
-          {activeTab === "radio" && (
-            <div className="space-y-3">
-              <div className="rounded-2xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/8 to-purple-500/8 p-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-300/80">
-                  Curated by ZWAP!
-                </p>
-                <p className="mt-2 text-sm text-gray-300">
-                  Soundtracks built for movement, play, focus, and vibe.
-                </p>
-              </div>
-
-              {zwapPlaylists.map((playlist) => (
-                <motion.div
-                  key={playlist.id}
-                  whileHover={{ scale: 1.01 }}
-                  className="rounded-2xl border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.07] via-sky-500/[0.04] to-purple-500/[0.08] p-4 transition-all"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-base font-semibold text-white">
-                        {playlist.title}
-                      </h3>
-                      <p className="mt-1 text-sm leading-relaxed text-gray-400">
-                        {playlist.description}
-                      </p>
-                    </div>
-
-                    <motion.button
-                      type="button"
-                      onClick={() => playTrack(playlist.track)}
-                      whileTap={{ scale: 0.95 }}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/12"
-                    >
-                      <Play className="ml-0.5 h-4 w-4 text-cyan-300" />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-
           {activeTab === "spotify" && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <Headphones className="h-4 w-4 text-green-300" />
-                  <h3 className="font-semibold text-white">Connect Spotify</h3>
-                </div>
+              <p className="px-1 text-[11px] uppercase tracking-[0.22em] text-green-300/80">
+                Primary Audio Source
+              </p>
 
-                <p className="text-sm leading-relaxed text-gray-400">
-                  Link your Spotify account so users can bring their own playlists
-                  into ZWAP! and set the vibe their way.
+              <div className="rounded-2xl border border-green-400/20 bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-4 shadow-[0_0_25px_rgba(34,197,94,0.12)]">
+                <p className="text-sm leading-relaxed text-gray-300">
+                  Connect your Spotify account to bring your own playlists into ZWAP! and soundtrack your sessions your way.
                 </p>
 
-                <button className="mt-4 w-full rounded-xl border border-green-400/20 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-4 py-3 text-sm font-medium text-green-200 transition hover:brightness-110">
+                <button className="mt-4 w-full rounded-xl border border-green-400/30 bg-gradient-to-r from-green-500/30 to-emerald-500/30 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(34,197,94,0.25)] transition hover:brightness-110">
                   Connect Spotify
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">
-                  Planned features
-                </p>
+              <p className="px-1 text-[11px] uppercase tracking-[0.22em] text-gray-500">
+                Spotify Features
+              </p>
 
-                <ul className="mt-3 space-y-2 text-sm text-gray-300">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <ul className="space-y-2 text-sm text-gray-300">
                   <li>• Choose a default playlist</li>
                   <li>• Browse saved playlists</li>
                   <li>• Set different soundtracks for MOVE / PLAY</li>
                   <li>• Blend personal listening with ZWAP! discovery</li>
                 </ul>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "radio" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <Radio className="h-4 w-4 text-cyan-300" />
+                  <h3 className="font-semibold text-white">ZWAP! Radio</h3>
+                </div>
+
+                <p className="text-sm leading-relaxed text-gray-400">
+                  Curated stations, branded playlists, and future ZWAP! audio channels will live here.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-dashed border-cyan-400/20 bg-cyan-500/[0.05] p-6 text-center">
+                <Music4 className="mx-auto mb-3 h-8 w-8 text-cyan-300" />
+                <p className="font-medium text-white">ZWAP! Radio is coming soon</p>
+                <p className="mt-1 text-sm text-gray-400">
+                  Mood-based stations, movement soundtracks, and branded mixes will appear here.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-500/10 bg-gradient-to-r from-cyan-500/[0.04] to-purple-500/[0.04] p-4">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-300/80">
+                  In development
+                </p>
+                <p className="mt-2 text-sm text-gray-400">
+                  MOVE, PLAY, FOCUS, and AFTER DARK sound lanes can all live in this lane as ZWAP! Radio expands.
+                </p>
               </div>
             </div>
           )}
@@ -245,15 +182,7 @@ export default function AudioHub({ open, onOpenChange }) {
               </div>
             </div>
           )}
-                </div>
-
-        <audio
-          id="zwap-player"
-          src={currentTrack || ""}
-          autoPlay
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-        />
+        </div>
       </SheetContent>
     </Sheet>
   );
