@@ -245,21 +245,11 @@ const createSubscription = async (walletAddress) => {
 
   return {
     checkout_url: data.url,
-    session_id: data.session_id,
-  };
-};
-
-  const data = await res.json();
+    session_id: data.session_ta = await res.json();
 
   if (!res.ok) {
     throw new Error(data?.detail || "Failed to create subscription checkout");
   }
-
-  return {
-    ...data,
-    checkout_url: data.url,
-  };
-};
 
 /** GET /api/subscription/status/:sessionId */
 const getSubscriptionStatus = (sessionId) =>
