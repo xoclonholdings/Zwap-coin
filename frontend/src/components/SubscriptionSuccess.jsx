@@ -103,7 +103,7 @@ export default function SubscriptionSuccess() {
             <Check className="w-10 h-10 text-green-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Welcome to Plus! 🎉</h2>
-          <p className="text-gray-400 mb-6">You now have access to all premium features</p>
+          <p className="text-gray-400 mb-6">Your Plus membership is active and ready to use.</p>
 
           <div className="glass-card p-4 mb-6 text-left">
             <div className="flex items-center gap-2 mb-3">
