@@ -1090,73 +1090,118 @@ async def stripe_webhook(request: Request):
     except Exception as e:
         logging.error(f"Webhook error: {e}")
         return {"status": "error", "message": str(e)}
+        
 # ============ SHOP ENDPOINTS ============
 
 @api_router.get("/shop/items", response_model=List[ShopItem])
 async def get_shop_items():
     """Get all shop items"""
+    items = await db.shop_items.find({}).to_list(100)
 
-    items = await db.shop_items.find({}, {"_id": 0}).to_list(100)
-    return [ShopItem(**item) for item in items]
+    normalized_items = []
+    for item in items:
+        normalized_items.append(
+            ShopItem(
+                id=item.get("id") or str(item.get("_id")),
+                name=item.get("name", ""),
+                description=item.get("description", ""),
+                category=item.get("category", "general"),
+                price_zwap=item.get("price_zwap", 0),
+                price_zpts=item.get("price_zpts"),
+                image_url=item.get("image_url"),
+                plus_only=item.get("plus_only", False),
+                active=item.get("active", True),
+            )
+        )
+
+    return normalized_items
+
 
 @api_router.post("/shop/purchase/{wallet_address}")
 async def purchase_item(wallet_address: str, purchase: PurchaseRequest):
     """Purchase item with ZWAP or Z Points"""
     wallet = wallet_address.lower()
+
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    item = await db.shop_items.find_one({"id": purchase.item_id})
+    item = await db.shop_items.find_one({
+        "$or": [
+            {"id": purchase.item_id},
+            {"_id": purchase.item_id},
+        ]
+    })
+
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+
+    item_id = item.get("id") or str(item.get("_id"))
 
     if item.get("plus_only") and user.get("tier") != "plus":
         raise HTTPException(status_code=403, detail="Plus subscription required")
 
     if purchase.payment_type == "zpts":
         if not item.get("price_zpts"):
-            raise HTTPException(status_code=400, detail="Item not available for Z Points")
+            raise HTTPException(
+                status_code=400,
+                detail="Item not available for Z Points"
+            )
+
         if user.get("zpts_balance", 0) < item["price_zpts"]:
-            raise HTTPException(status_code=400, detail="Insufficient Z Points")
+            raise HTTPException(
+                status_code=400,
+                detail="Insufficient Z Points"
+            )
+
         await db.users.update_one(
             {"wallet_address": wallet},
             {"$inc": {"zpts_balance": -item["price_zpts"]}}
         )
+
         price_paid = item["price_zpts"]
         currency = "zpts"
+
     else:
-        if user["zwap_balance"] < item["price_zwap"]:
-            raise HTTPException(status_code=400, detail="Insufficient ZWAP balance")
+        if user.get("zwap_balance", 0) < item.get("price_zwap", 0):
+            raise HTTPException(
+                status_code=400,
+                detail="Insufficient ZWAP balance"
+            )
+
         await db.users.update_one(
             {"wallet_address": wallet},
             {"$inc": {"zwap_balance": -item["price_zwap"]}}
         )
+
         price_paid = item["price_zwap"]
         currency = "zwap"
 
     await db.purchases.insert_one({
         "id": str(uuid.uuid4()),
         "user_wallet": wallet,
-        "item_id": item["id"],
-        "item_name": item["name"],
+        "item_id": item_id,
+        "item_name": item.get("name", "Item"),
         "price": price_paid,
         "currency": currency,
         "purchased_at": datetime.now(timezone.utc).isoformat()
     })
 
-    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+    updated_user = await db.users.find_one(
+        {"wallet_address": wallet},
+        {"_id": 0}
+    )
 
     return {
         "success": True,
-        "item": item["name"],
+        "item": item.get("name", "Item"),
         "price": price_paid,
         "currency": currency,
-        "new_zwap_balance": updated_user["zwap_balance"],
+        "new_zwap_balance": updated_user.get("zwap_balance", 0),
         "new_zpts_balance": updated_user.get("zpts_balance", 0),
-        "message": f"Successfully purchased {item['name']}!"
+        "message": f"Successfully purchased {item.get('name', 'item')}!"
     }
-
+    
 # ============ SWAP ENDPOINTS ============
 
 @api_router.get("/swap/prices")
