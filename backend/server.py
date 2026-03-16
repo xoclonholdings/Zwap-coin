@@ -945,15 +945,15 @@ session = stripe.checkout.Session.create(
     }
 )
 
-    await db.payment_transactions.insert_one({
-        "id": str(uuid.uuid4()),
-        "session_id": session.session_id,
-        "amount": 9.99,
-        "currency": "usd",
-        "metadata": {"tier": "plus", "type": "subscription"},
-        "payment_status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
+await db.payment_transactions.insert_one({
+    "id": str(uuid.uuid4()),
+    "session_id": session.session_id,
+    "amount": 9.99,
+    "currency": "usd",
+    "metadata": {"tier": "plus", "type": "subscription"},
+    "payment_status": "pending",
+    "created_at": datetime.now(timezone.utc).isoformat()
+})
 
     return {"url": session.url, "session_id": session.session_id}
 
