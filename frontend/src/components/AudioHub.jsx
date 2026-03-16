@@ -54,10 +54,10 @@ export default function AudioHub({ open, onOpenChange }) {
         className="mx-auto mb-4 flex h-[76vh] w-[calc(100%-24px)] max-w-md flex-col overflow-hidden rounded-[28px] border border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] px-0 text-white shadow-[0_-20px_60px_rgba(0,0,0,0.55)]"
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
-        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/12" />
-        <div className="mx-auto mt-3 h-px w-24 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+        <div className="mx-auto mt-1 h-1.5 w-12 rounded-full bg-white/12" />
+        <div className="mx-auto mt-1 h-px w-24 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
 
-        <SheetHeader className="shrink-0 border-b border-cyan-500/10 px-4 pb-3 pt-3">
+        <SheetHeader className="shrink-0 border-b border-cyan-500/10 px-5 pb-3 pt-2">
           <div className="flex items-center gap-3">
             <motion.div
               className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 to-purple-500/20"
@@ -81,8 +81,7 @@ export default function AudioHub({ open, onOpenChange }) {
           </div>
         </SheetHeader>
 
-        {/* Tabs */}
-        <div className="shrink-0 px-4 pt-4">
+        <div className="shrink-0 px-5 pt-4">
           <div className="grid grid-cols-3 gap-2 rounded-[22px] border border-white/6 bg-white/[0.03] p-1.5">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -109,8 +108,7 @@ export default function AudioHub({ open, onOpenChange }) {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-6">
           {activeTab === "radio" && (
             <div className="space-y-3">
               <div className="rounded-2xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/8 to-purple-500/8 p-4">
