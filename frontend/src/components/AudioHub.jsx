@@ -6,7 +6,6 @@ import {
   Headphones,
   BookOpen,
   Play,
-  ExternalLink,
   Lock,
 } from "lucide-react";
 import {
@@ -52,13 +51,13 @@ export default function AudioHub({ open, onOpenChange }) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto mb-4 h-[76vh] w-[calc(100%-24px)] max-w-md rounded-[28px] border border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] px-0 text-white shadow-[0_-20px_60px_rgba(0,0,0,0.55)]"
+        className="mx-auto mb-4 flex h-[76vh] w-[calc(100%-24px)] max-w-md flex-col overflow-hidden rounded-[28px] border border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] px-0 text-white shadow-[0_-20px_60px_rgba(0,0,0,0.55)]"
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
         <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/12" />
         <div className="mx-auto mt-3 h-px w-24 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
 
-        <SheetHeader className="border-b border-cyan-500/10 px-4 pb-3 pt-3">
+        <SheetHeader className="shrink-0 border-b border-cyan-500/10 px-4 pb-3 pt-3">
           <div className="flex items-center gap-3">
             <motion.div
               className="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-400/25 bg-gradient-to-br from-cyan-500/20 to-purple-500/20"
@@ -83,7 +82,7 @@ export default function AudioHub({ open, onOpenChange }) {
         </SheetHeader>
 
         {/* Tabs */}
-        <div className="px-4 pt-4">
+        <div className="shrink-0 px-4 pt-4">
           <div className="grid grid-cols-3 gap-2 rounded-[22px] border border-white/6 bg-white/[0.03] p-1.5">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -111,7 +110,8 @@ export default function AudioHub({ open, onOpenChange }) {
         </div>
 
         {/* Content */}
-          <div className="h-[calc(76vh-160px)] overflow-y-auto px-4 pt-4 pb-6">          {activeTab === "radio" && (
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-6">
+          {activeTab === "radio" && (
             <div className="space-y-3">
               <div className="rounded-2xl border border-cyan-400/15 bg-gradient-to-r from-cyan-500/8 to-purple-500/8 p-4">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-300/80">
@@ -126,7 +126,7 @@ export default function AudioHub({ open, onOpenChange }) {
                 <motion.div
                   key={playlist.id}
                   whileHover={{ scale: 1.01 }}
-                  className="rounded-2xl border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.07] via-sky-500/[0.04] to-purple-500/[0.08] p-4 shadow-[0_0_0_rgba(0,0,0,0)] transition-all"
+                  className="rounded-2xl border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.07] via-sky-500/[0.04] to-purple-500/[0.08] p-4 transition-all"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
