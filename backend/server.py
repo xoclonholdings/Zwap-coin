@@ -1016,8 +1016,12 @@ async def activate_subscription(wallet_address: str, session_id: str):
         raise HTTPException(status_code=400, detail="Payment not completed")
 
     if transaction.get("activated"):
-        raise HTTPException(status_code=400, detail="Already activated")
-
+    return {
+        "success": True,
+        "tier": "plus",
+        "message": "Plus subscription already active"
+    }
+    
     await db.users.update_one(
         {"wallet_address": wallet},
         {
