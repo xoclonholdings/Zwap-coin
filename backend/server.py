@@ -1202,6 +1202,20 @@ async def purchase_item(wallet_address: str, purchase: PurchaseRequest):
         "message": f"Successfully purchased {item.get('name', 'item')}!"
     }
     
+# ============ USER INVENTORY ============
+
+@api_router.get("/users/{wallet_address}/inventory")
+async def get_user_inventory(wallet_address: str):
+    """Get inventory for a user wallet"""
+    wallet = wallet_address.lower()
+
+    inventory = await db.user_inventory.find(
+        {"user_wallet": wallet, "active": True},
+        {"_id": 0}
+    ).sort("granted_at", -1).to_list(length=200)
+
+    return {"items": inventory}
+    
 # ============ SWAP ENDPOINTS ============
 
 @api_router.get("/swap/prices")
