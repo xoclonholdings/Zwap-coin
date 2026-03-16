@@ -248,7 +248,6 @@ const createSubscription = async (walletAddress) => {
     checkout_url: data.url,
   };
 };
-  );
 
   const data = await res.json();
 
