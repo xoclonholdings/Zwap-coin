@@ -2,6 +2,16 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
+
+const handleSubscribe = async () => {
+  try {
+    const data = await api.createPlusSubscription();
+    window.location.href = data.checkout_url;
+  } catch (error) {
+    console.error("Subscription checkout failed:", error);
+  }
+};
 
 export default function PlusPage() {
   return (
@@ -32,9 +42,13 @@ export default function PlusPage() {
           <div>• Exclusive boosts & cosmetics</div>
         </div>
 
-        <Button size="lg" className="w-full">
-          Subscribe to Plus
-        </Button>
+       <Button
+  size="lg"
+  className="w-full text-base font-semibold"
+  onClick={handleSubscribe}
+>
+  Subscribe to Plus
+</Button>
       </motion.div>
     </div>
   );
