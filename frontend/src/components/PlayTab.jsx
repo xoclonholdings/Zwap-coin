@@ -285,10 +285,34 @@ export default function PlayTab() {
   const baseLevel = Math.min(Math.floor(gamesPlayed / 3) + 1, 10);
 
   const games = [
-  { id: "zbrickles", name: "zBrickles", icon: "🧱", color: "cyan", description: "Break blocks!" },
-  { id: "ztrivia", name: "zTrivia", icon: "❓", color: "purple", description: "Test your crypto knowledge" },
-  { id: "ztetris", name: "zTetris", icon: "🎮", color: "pink", description: "Stack blocks" },
-  { id: "zslots", name: "zSlots", icon: "🎰", color: "yellow", description: "Try your luck" },
+  {
+    id: "zbrickles",
+    name: "zBrickles",
+    icon: "◫",
+    color: "cyan",
+    description: "Break blocks!"
+  },
+  {
+    id: "ztrivia",
+    name: "zTrivia",
+    icon: "?",
+    color: "purple",
+    description: "Test your crypto knowledge"
+  },
+  {
+    id: "ztetris",
+    name: "zTetris",
+    icon: "▣",
+    color: "pink",
+    description: "Stack blocks"
+  },
+  {
+    id: "zslots",
+    name: "zSpin",
+    icon: "✦",
+    color: "cyan",
+    description: "Spin for rewards"
+  },
 ];
 
   const handleGameEnd = useCallback(async (score, blocksOrDifficulty, level = 1, cleared = false) => {
