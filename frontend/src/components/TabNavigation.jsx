@@ -1,6 +1,12 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Footprints, Gamepad2, ShoppingBag, ArrowRightLeft, Zap } from "lucide-react";
+import {
+  Footprints,
+  Gamepad2,
+  ShoppingBag,
+  ArrowRightLeft,
+  Zap,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function TabNavigation() {
@@ -10,57 +16,54 @@ export default function TabNavigation() {
   const tabs = [
     { id: "move", path: "/move", icon: Footprints, label: "MOVE" },
     { id: "play", path: "/play", icon: Gamepad2, label: "PLAY" },
-    { id: "bang", path: "/dashboard", icon: Zap, label: "BANG", center: true },
+    { id: "bang", path: "/dashboard", icon: Zap, label: "BANG", home: true },
     { id: "shop", path: "/shop", icon: ShoppingBag, label: "SHOP" },
     { id: "swap", path: "/swap", icon: ArrowRightLeft, label: "SWAP" },
   ];
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-3"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-400/10 bg-[#0a0f1f]"
       data-testid="tab-navigation"
     >
-      <div className="relative max-w-lg mx-auto">
-        <div className="relative flex justify-between items-center px-6 py-3 rounded-[24px] bg-[#0b0c22]/90 backdrop-blur-xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+      <div className="mx-auto max-w-lg px-2 py-2">
+        <div className="grid grid-cols-5 items-end gap-1 rounded-t-2xl bg-[#0d1328] px-2 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.35)]">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = location.pathname === tab.path;
 
-            if (tab.center) {
+            if (tab.home) {
               return (
                 <motion.button
                   key={tab.id}
                   data-testid={`tab-${tab.id}`}
                   onClick={() => navigate("/dashboard")}
-                  className="absolute left-1/2 -translate-x-1/2 -top-7 flex flex-col items-center justify-center w-20 h-20"
-                  whileTap={{ scale: 0.92 }}
+                  className={`relative flex flex-col items-center justify-center rounded-2xl px-2 py-3 transition-all ${
+                    isActive
+                      ? "bg-[#131d3d] text-cyan-300 shadow-[inset_0_2px_10px_rgba(0,0,0,0.45),0_0_18px_rgba(34,211,238,0.12)]"
+                      : "bg-[#10182f] text-white/85 shadow-[inset_0_2px_10px_rgba(0,0,0,0.35)]"
+                  }`}
+                  whileTap={{ scale: 0.96 }}
                 >
+                  {/* subtle concave highlight */}
+                  <div className="pointer-events-none absolute inset-x-3 top-1 h-3 rounded-full bg-white/5 blur-sm" />
                   <motion.div
-                    className={`flex items-center justify-center w-16 h-16 rounded-full border ${
+                    animate={
                       isActive
-                        ? "bg-gradient-to-br from-cyan-400 via-sky-400 to-purple-500 border-cyan-200/60"
-                        : "bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600 border-white/20"
-                    } shadow-[0_8px_25px_rgba(0,0,0,0.35)]`}
-                    animate={{
-                      y: [0, -2, 0],
-                      boxShadow: isActive
-                        ? [
-                            "0 0 16px rgba(34,211,238,0.45), 0 8px 25px rgba(0,0,0,0.35)",
-                            "0 0 28px rgba(168,85,247,0.55), 0 10px 28px rgba(0,0,0,0.4)",
-                            "0 0 16px rgba(34,211,238,0.45), 0 8px 25px rgba(0,0,0,0.35)",
-                          ]
-                        : [
-                            "0 0 10px rgba(34,211,238,0.25), 0 8px 25px rgba(0,0,0,0.35)",
-                            "0 0 18px rgba(168,85,247,0.35), 0 10px 28px rgba(0,0,0,0.4)",
-                            "0 0 10px rgba(34,211,238,0.25), 0 8px 25px rgba(0,0,0,0.35)",
-                          ],
-                    }}
-                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                        ? {
+                            filter: [
+                              "drop-shadow(0 0 4px rgba(34,211,238,0.35))",
+                              "drop-shadow(0 0 10px rgba(34,211,238,0.65))",
+                              "drop-shadow(0 0 4px rgba(34,211,238,0.35))",
+                            ],
+                          }
+                        : {}
+                    }
+                    transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <Zap className="w-7 h-7 text-white" />
+                    <Icon className="mb-1 h-6 w-6" />
                   </motion.div>
-
-                  <span className="mt-1 text-[10px] font-semibold tracking-wide text-white/90">
+                  <span className="text-[10px] font-semibold tracking-[0.16em]">
                     BANG
                   </span>
                 </motion.button>
@@ -72,28 +75,29 @@ export default function TabNavigation() {
                 key={tab.id}
                 data-testid={`tab-${tab.id}`}
                 onClick={() => navigate(tab.path)}
-                className={`flex flex-col items-center justify-center min-w-[56px] pt-1 text-[10px] font-medium tracking-wide transition-all ${
-                  isActive ? "text-cyan-400" : "text-gray-500 hover:text-gray-300"
+                className={`flex flex-col items-center justify-center rounded-xl px-2 py-3 text-[10px] font-medium tracking-[0.14em] transition-all ${
+                  isActive
+                    ? "text-cyan-400"
+                    : "text-white/45 hover:text-white/75"
                 }`}
-                whileTap={{ scale: 0.92 }}
+                whileTap={{ scale: 0.96 }}
               >
                 <motion.div
                   animate={
                     isActive
                       ? {
                           filter: [
-                            "drop-shadow(0 0 4px rgba(34,211,238,0.35))",
-                            "drop-shadow(0 0 10px rgba(34,211,238,0.75))",
-                            "drop-shadow(0 0 4px rgba(34,211,238,0.35))",
+                            "drop-shadow(0 0 4px rgba(34,211,238,0.30))",
+                            "drop-shadow(0 0 8px rgba(34,211,238,0.55))",
+                            "drop-shadow(0 0 4px rgba(34,211,238,0.30))",
                           ],
                         }
                       : {}
                   }
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Icon className="w-5 h-5 mb-1" />
+                  <Icon className="mb-1 h-5 w-5" />
                 </motion.div>
-
                 <span>{tab.label}</span>
               </motion.button>
             );
