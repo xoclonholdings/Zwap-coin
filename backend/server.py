@@ -914,69 +914,93 @@ async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsReq
 @api_router.post("/subscription/checkout")
 async def create_subscription_checkout(request: Request, sub_request: SubscriptionRequest):
     """Create Stripe checkout session for Plus subscription"""
-    host_url = str(request.base_url).rstrip('/')
-    webhook_url = f"{host_url}/api/webhook/stripe"
-
     import stripe
 
-stripe.api_key = STRIPE_API_KEY
+    stripe.api_key = STRIPE_API_KEY
 
-session = stripe.checkout.Session.create(
-    mode="subscription",
-    payment_method_types=["card"],
-    line_items=[
-        {
-            "price_data": {
-                "currency": "usd",
-                "product_data": {
-                    "name": "ZWAP Plus Subscription",
-                },
-                "unit_amount": 999,
-                "recurring": {"interval": "month"},
+    success_url = f"{sub_request.origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{sub_request.origin_url}/subscription/cancel"
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": {
+                            "name": "ZWAP Plus Subscription",
+                        },
+                        "unit_amount": 999,
+                        "recurring": {
+                            "interval": "month"
+                        },
+                    },
+                    "quantity": 1,
+                }
+            ],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "tier": "plus",
+                "type": "subscription",
+                "wallet_address": sub_request.wallet_address,
             },
-            "quantity": 1,
-        }
-    ],
-    success_url=success_url,
-    cancel_url=cancel_url,
-    metadata={
-        "tier": "plus",
-        "type": "subscription"
-    }
-)
+        )
 
-await db.payment_transactions.insert_one({
-    "id": str(uuid.uuid4()),
-    "session_id": session.session_id,
-    "amount": 9.99,
-    "currency": "usd",
-    "metadata": {"tier": "plus", "type": "subscription"},
-    "payment_status": "pending",
-    "created_at": datetime.now(timezone.utc).isoformat()
-})
+        await db.payment_transactions.insert_one({
+            "id": str(uuid.uuid4()),
+            "session_id": session.id,
+            "amount": 9.99,
+            "currency": "usd",
+            "metadata": {
+                "tier": "plus",
+                "type": "subscription",
+                "wallet_address": sub_request.wallet_address,
+            },
+            "payment_status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
 
-    return {"url": session.url, "session_id": session.session_id}
+        return {"url": session.url, "session_id": session.id}
+
+    except Exception as e:
+        logging.error(f"Subscription checkout error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/subscription/status/{session_id}")
-async def get_subscription_status(request: Request, session_id: str):
-    """Check subscription payment status"""
-    host_url = str(request.base_url).rstrip('/')
-    webhook_url = f"{host_url}/api/webhook/stripe"
+async def get_subscription_status(session_id: str):
+    """Check subscription payment status directly from Stripe"""
+    import stripe
 
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    status = await stripe_checkout.get_checkout_status(session_id)
+    stripe.api_key = STRIPE_API_KEY
 
-    await db.payment_transactions.update_one(
-        {"session_id": session_id},
-        {"$set": {"payment_status": status.payment_status, "status": status.status}}
-    )
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
 
-    return {
-        "status": status.status,
-        "payment_status": status.payment_status,
-        "amount": status.amount_total / 100,
-        "currency": status.currency
-    }
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {
+                "$set": {
+                    "payment_status": session.payment_status,
+                    "status": session.status
+                }
+            }
+        )
+
+        return {
+            "status": session.status,
+            "payment_status": session.payment_status,
+            "amount": (session.amount_total / 100) if session.amount_total else 0,
+            "currency": session.currency
+        }
+
+    except Exception as e:
+        logging.error(f"Subscription status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.post("/subscription/activate/{wallet_address}")
 async def activate_subscription(wallet_address: str, session_id: str):
@@ -1006,35 +1030,61 @@ async def activate_subscription(wallet_address: str, session_id: str):
 
     await db.payment_transactions.update_one(
         {"session_id": session_id},
-        {"$set": {"activated": True, "wallet_address": wallet}}
+        {
+            "$set": {
+                "activated": True,
+                "wallet_address": wallet
+            }
+        }
     )
 
-    return {"success": True, "tier": "plus", "message": "Plus subscription activated!"}
+    return {
+        "success": True,
+        "tier": "plus",
+        "message": "Plus subscription activated!"
+    }
+
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhooks"""
+    import stripe
+
+    stripe.api_key = STRIPE_API_KEY
+
     body = await request.body()
     signature = request.headers.get("Stripe-Signature")
-
-    host_url = str(request.base_url).rstrip('/')
-    webhook_url = f"{host_url}/api/webhook/stripe"
-
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
 
     try:
-        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        if webhook_secret:
+            event = stripe.Webhook.construct_event(body, signature, webhook_secret)
+        else:
+            event = stripe.Event.construct_from(await request.json(), stripe.api_key)
 
-        await db.payment_transactions.update_one(
-            {"session_id": webhook_response.session_id},
-            {"$set": {"payment_status": webhook_response.payment_status, "event_type": webhook_response.event_type}}
-        )
+        event_type = event["type"]
+        event_data = event["data"]["object"]
+
+        if event_type == "checkout.session.completed":
+            session_id = event_data.get("id")
+            payment_status = event_data.get("payment_status", "paid")
+
+            await db.payment_transactions.update_one(
+                {"session_id": session_id},
+                {
+                    "$set": {
+                        "payment_status": payment_status,
+                        "status": "complete",
+                        "event_type": event_type
+                    }
+                }
+            )
 
         return {"status": "success"}
+
     except Exception as e:
         logging.error(f"Webhook error: {e}")
         return {"status": "error", "message": str(e)}
-
 # ============ SHOP ENDPOINTS ============
 
 @api_router.get("/shop/items", response_model=List[ShopItem])
