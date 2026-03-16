@@ -26,10 +26,17 @@ async def create_checkout_session(request: Request):
         raise HTTPException(status_code=400, detail="item_id is required")
 
     db = request.app.state.db
-    item = await db.shop_items.find_one({"id": item_id})
+    item = await db.shop_items.find_one({
+        "$or": [
+            {"id": item_id},
+            {"_id": item_id},
+        ]
+    })
 
     if not item:
         raise HTTPException(status_code=404, detail="Shop item not found")
+
+    resolved_item_id = item.get("id") or str(item.get("_id"))
 
     # Stripe checkout should only be used for stripe-priced items
     payment_method = item.get("payment_method")
@@ -39,15 +46,15 @@ async def create_checkout_session(request: Request):
             detail=f"Item is not purchasable with Stripe (payment_method={payment_method})"
         )
 
-    # Expect price in dollars for Stripe items
-    price = item.get("price")
+    # Stripe-priced items should use price_stripe
+    price = item.get("price_stripe")
     if price is None:
-        raise HTTPException(status_code=400, detail="Item price is missing")
+        raise HTTPException(status_code=400, detail="Item Stripe price is missing")
 
     try:
         unit_amount = int(float(price) * 100)
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid item price")
+        raise HTTPException(status_code=400, detail="Invalid Stripe price")
 
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -68,7 +75,7 @@ async def create_checkout_session(request: Request):
         cancel_url=f"{origin_url}/cancel?payment=cancel",
         metadata={
             "wallet_address": wallet_address,
-            "item_id": item_id,
+            "item_id": resolved_item_id,
             "purchase_type": purchase_type,
         },
     )
@@ -89,7 +96,6 @@ async def create_subscription_checkout(request: Request):
     if not wallet_address:
         raise HTTPException(status_code=400, detail="wallet_address is required")
 
-    # If you already have a Stripe Price ID for Plus, use it.
     plus_price_id = os.environ.get("STRIPE_PLUS_PRICE_ID")
 
     if plus_price_id:
@@ -110,7 +116,6 @@ async def create_subscription_checkout(request: Request):
             },
         )
     else:
-        # Fallback if no Stripe Price ID exists yet
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
@@ -178,15 +183,24 @@ async def stripe_webhook(request: Request):
         # SHOP ITEM PURCHASE HANDLER
         # -----------------------------------
         if purchase_type == "shop_item" and wallet_address and item_id:
-            item = await db.shop_items.find_one({"id": item_id})
+            item = await db.shop_items.find_one({
+                "$or": [
+                    {"id": item_id},
+                    {"_id": item_id},
+                ]
+            })
 
             if item:
-                existing_purchase = await db.purchases.find_one({"stripe_session_id": session_id})
+                resolved_item_id = item.get("id") or str(item.get("_id"))
+
+                existing_purchase = await db.purchases.find_one({
+                    "stripe_session_id": session_id
+                })
                 if not existing_purchase:
                     await db.purchases.insert_one({
                         "id": session_id,
                         "user_wallet": wallet_address,
-                        "item_id": item_id,
+                        "item_id": resolved_item_id,
                         "item_name": item.get("name", "Item"),
                         "price": amount_paid,
                         "currency": currency,
@@ -198,14 +212,14 @@ async def stripe_webhook(request: Request):
 
                 existing_inventory = await db.user_inventory.find_one({
                     "user_wallet": wallet_address,
-                    "item_id": item_id,
+                    "item_id": resolved_item_id,
                     "stripe_session_id": session_id,
                 })
 
                 if not existing_inventory:
                     await db.user_inventory.insert_one({
                         "user_wallet": wallet_address,
-                        "item_id": item_id,
+                        "item_id": resolved_item_id,
                         "item_name": item.get("name", "Item"),
                         "granted_at": datetime.now(timezone.utc).isoformat(),
                         "source": "stripe",
