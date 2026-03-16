@@ -7,6 +7,7 @@ import { useApp } from "@/App";
 
 export default function PlusPage() {
   const { walletAddress } = useApp();
+  console.log("PlusPage walletAddress:", walletAddress);
 
   const handleSubscribe = async () => {
   if (!walletAddress) {
