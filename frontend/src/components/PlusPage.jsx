@@ -6,12 +6,12 @@ import api from "@/lib/api";
 import { useApp } from "@/App";
 
 export default function PlusPage() {
-  const { walletAddress } = useApp();
+  const { walletAddress, setIsWalletModalOpen } = useApp();
   console.log("PlusPage walletAddress:", walletAddress);
 
   const handleSubscribe = async () => {
   if (!walletAddress) {
-    console.error("No wallet connected for subscription checkout");
+    setIsWalletModalOpen(true);
     return;
   }
 
