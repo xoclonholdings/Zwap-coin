@@ -523,46 +523,23 @@ return (
       )}
 
       {!isPlaying && gameResult && (
-        <div className="w-full max-w-sm glass-card rounded-2xl p-6 text-center">
-          <h2 className="text-white font-bold text-xl mb-2">Run Complete</h2>
-          <p className="text-gray-400 text-sm mb-5">
-            {currentGameData?.name} results
-          </p>
-
-          <div className="space-y-3 mb-6">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400 text-sm">Score</span>
-              <span className="text-white font-bold">{gameResult.score}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400 text-sm">zPts Earned</span>
-              <span className="text-cyan-400 font-bold">
-                {gameResult.zpts_earned}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400 text-sm">zWAP Earned</span>
-              <span className="text-purple-400 font-bold">
-                {gameResult.zwap_earned}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Button onClick={handleClaim} className="flex-1 bg-gray-700">
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <h2 className="text-white font-bold text-lg">Game Over!</h2>
+          <p className="text-gray-400 text-sm">Score: {gameResult.score}</p>
+          <p className="text-cyan-400 text-sm">zPts Earned: {gameResult.zpts_earned}</p>
+          <p className="text-purple-400 text-sm">zWAP Earned: {gameResult.zwap_earned}</p>
+      
+          <div className="flex space-x-3 mt-2">
+            <Button onClick={handleClaim} className="bg-gray-700">
               Done
             </Button>
-            <Button
-              onClick={handlePlayAgain}
-              className="flex-1 bg-cyan-500 text-black"
-            >
+            <Button onClick={handlePlayAgain} className="bg-cyan-500 text-black">
               Play Again
             </Button>
           </div>
         </div>
       )}
-    </div>
-  );
-}
+      </div>
+      </div>
+      );
+      }
