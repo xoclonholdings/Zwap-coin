@@ -213,16 +213,24 @@ export default function ProfilePage() {
               </p>
 
               <div className="flex items-center justify-center gap-2">
-                {user?.tier === "plus" ? (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm">
-                    <Crown className="w-4 h-4" /> Plus Member
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-700/50 text-gray-400 text-sm">
-                    Starter
-                  </span>
-                )}
-              </div>
+  {user?.tier === "plus" ? (
+    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-sm font-semibold">
+      <Crown className="w-4 h-4" /> Plus
+    </span>
+  ) : (
+    <>
+      <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-700/50 text-gray-400 text-sm">
+        Starter
+      </span>
+      <button
+        onClick={() => navigate("/plus")}
+        className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-semibold hover:opacity-90 transition"
+      >
+        Upgrade
+      </button>
+    </>
+  )}
+</div>
 
               <p className="text-gray-500 text-xs mt-2 flex items-center justify-center gap-1">
                 <Calendar className="w-3 h-3" />
@@ -277,25 +285,25 @@ export default function ProfilePage() {
         >
           <h3 className="text-lg font-bold text-white mb-4">Your Benefits</h3>
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Reward Multiplier</span>
-              <span className="text-cyan-400 font-bold">
-                {tierConfig.multiplier}x
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Daily Z Points Cap</span>
-              <span className="text-purple-400 font-bold">
-                {tierConfig.dailyZptsCap}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Games Unlocked</span>
-              <span className="text-white font-bold">
-                {user?.tier === "plus" ? "All 4" : "2"}
-              </span>
-            </div>
-          </div>
+  <div className="flex justify-between items-center">
+    <span className="text-gray-400">Reward Multiplier</span>
+    <span className="text-cyan-400 font-bold">
+      {tierConfig.multiplier}x
+    </span>
+  </div>
+  <div className="flex justify-between items-center">
+    <span className="text-gray-400">Daily Z Points Cap</span>
+    <span className="text-purple-400 font-bold">
+      {tierConfig.dailyZptsCap}
+    </span>
+  </div>
+  <div className="flex justify-between items-center">
+    <span className="text-gray-400">Game Submission Portal</span>
+    <span className="text-white font-bold">
+      {user?.tier === "plus" ? "Unlocked" : "Plus Only"}
+    </span>
+  </div>
+</div>
         </motion.div>
       </div>
     </div>
