@@ -3,7 +3,16 @@ import { useApp, TIERS } from "@/App";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Gamepad2, Play, Trophy, ChevronLeft, HelpCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  Gamepad2,
+  Blocks,
+  Brain,
+  Grid3X3,
+  Sparkles,
+  ChevronLeft,
+  HelpCircle
+} from "lucide-react";
 import TetrisGame from "@/components/games/TetrisGame";
 import SlotsGame from "@/components/games/SlotsGame";
 import { allTrivia } from "@/data/education";
@@ -288,31 +297,31 @@ export default function PlayTab() {
   {
     id: "zbrickles",
     name: "zBrickles",
-    icon: "◫",
+    icon: Blocks,
     color: "cyan",
     description: "Break blocks!"
   },
   {
     id: "ztrivia",
     name: "zTrivia",
-    icon: "?",
+    icon: Brain,
     color: "purple",
     description: "Test your crypto knowledge"
   },
   {
     id: "ztetris",
     name: "zTetris",
-    icon: "▣",
+    icon: Grid3X3,
     color: "pink",
     description: "Stack blocks"
   },
   {
     id: "zslots",
     name: "zSpin",
-    icon: "✦",
+    icon: Sparkles,
     color: "cyan",
     description: "Spin for rewards"
-  },
+  }
 ];
 
   const handleGameEnd = useCallback(async (score, blocksOrDifficulty, level = 1, cleared = false) => {
@@ -382,28 +391,30 @@ export default function PlayTab() {
         </div>
 
         {/* Game grid */}
-        <div className="grid grid-cols-2 gap-3 flex-1">
-          {games.map((game) => (
-            <button
-              key={game.id}
-              data-testid={`game-${game.id}`}
-              onClick={() => startGame(game.id)}
-              className={`p-4 rounded-2xl border transition-all duration-200 active:scale-[0.98] flex flex-col items-center justify-center relative bg-gradient-to-br from-${game.color}-500/20 to-${game.color}-500/5 border-${game.color}-500/30`}
-            >
-              <span className="text-3xl mb-2">{game.icon}</span>
-              <h3 className="text-white font-bold text-sm">{game.name}</h3>
-              <p className="text-gray-400 text-[10px] text-center">{game.description}</p>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-3 text-center text-xs text-gray-500 flex-shrink-0">
-          <HelpCircle className="w-3 h-3 inline mr-1" />
-          Games get harder = more rewards!
-        </div>
-      </div>
-    );
-  }
+<div className="grid grid-cols-2 gap-3 flex-1">
+  {games.map((game) => (
+    <motion.button
+      key={game.id}
+      data-testid={`game-${game.id}`}
+      onClick={() => startGame(game.id)}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
+      animate={{
+        boxShadow: [
+          "0 0 10px rgba(0,245,255,0.10)",
+          "0 0 20px rgba(0,245,255,0.22)",
+          "0 0 10px rgba(0,245,255,0.10)",
+        ],
+      }}
+      transition={{ duration: 2.5, repeat: Infinity }}
+      className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col items-center justify-center relative bg-gradient-to-br from-${game.color}-500/20 to-${game.color}-500/5 border-${game.color}-500/30`}
+    >
+      <game.icon className={`w-8 h-8 mb-2 text-${game.color}-400`} />
+      <h3 className="text-white font-bold text-sm">{game.name}</h3>
+      <p className="text-gray-400 text-[10px] text-center">{game.description}</p>
+    </motion.button>
+  ))}
+</div>
 
   // Active game or result screen
   return (
