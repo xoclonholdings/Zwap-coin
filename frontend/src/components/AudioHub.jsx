@@ -13,6 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { connectSpotify } from "@/lib/spotify"
 
 const tabs = [
   { id: "spotify", label: "Spotify", icon: Headphones },
@@ -96,10 +97,12 @@ export default function AudioHub({ open, onOpenChange }) {
                   Connect your Spotify account to bring your own playlists into ZWAP! and soundtrack your sessions your way.
                 </p>
 
-                <button className="mt-4 w-full rounded-xl border border-green-400/30 bg-gradient-to-r from-green-500/30 to-emerald-500/30 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(34,197,94,0.25)] transition hover:brightness-110">
+                <button
+                  onClick={connectSpotify}
+                  className="mt-4 w-full rounded-xl border border-green-400/30 bg-gradient-to-r from-green-500/30 to-emerald-500/30 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(34,197,94,0.25)] transition hover:brightness-110"
+                >
                   Connect Spotify
                 </button>
-              </div>
 
               <p className="px-1 text-[11px] uppercase tracking-[0.22em] text-gray-500">
                 Spotify Features
