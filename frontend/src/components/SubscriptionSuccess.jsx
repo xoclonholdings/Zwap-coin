@@ -111,11 +111,10 @@ export default function SubscriptionSuccess() {
               <span className="text-white font-semibold">Plus Benefits:</span>
             </div>
             <ul className="text-sm text-gray-400 space-y-2">
-              <li>✓ All 4 games unlocked (zTetris, zSlots)</li>
-              <li>✓ 1.5× ZWAP rewards</li>
-              <li>✓ 30 Z Points daily cap</li>
-              <li>✓ No ads</li>
-              <li>✓ zDance & zWorkout modes</li>
+              <li>✓ Game Submission Portal unlocked</li>
+              <li>✓ Reward multipliers enabled</li>
+              <li>✓ Early campaign access</li>
+              <li>✓ Exclusive boosts & cosmetics</li>
             </ul>
           </div>
 
