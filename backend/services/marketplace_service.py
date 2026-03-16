@@ -1,5 +1,5 @@
 from typing import Dict, List, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from fastapi import HTTPException
@@ -11,11 +11,11 @@ COLLECTION_NAME = "shop_items"
 def _normalize_item_payload(item: Dict[str, Any]) -> Dict[str, Any]:
     """
     Ensure that the item document has consistent fields.
-    This is used by both create_item and update_item.
+    Used by both create_item and update_item.
     """
     normalized: Dict[str, Any] = {}
 
-    # Name (required-ish)
+    # Name
     name = (item.get("name") or "").strip()
     if name:
         normalized["name"] = name
@@ -23,25 +23,36 @@ def _normalize_item_payload(item: Dict[str, Any]) -> Dict[str, Any]:
     # Description
     normalized["description"] = (item.get("description") or "").strip()
 
-    # Image URL (nullable)
+    # Image URL
     image_url = (item.get("image_url") or "").strip()
     normalized["image_url"] = image_url or None
 
+    # Payment method
+    payment_method = (item.get("payment_method") or "zwap").strip().lower()
+    allowed_payment_methods = {"zwap", "zpts", "stripe"}
+    normalized["payment_method"] = (
+        payment_method if payment_method in allowed_payment_methods else "zwap"
+    )
+
     # Prices
-    # NOTE: DB + purchase_item expect "price_zwap" and "price_zpts"
     try:
         normalized["price_zwap"] = float(item.get("price_zwap") or 0)
     except (TypeError, ValueError):
         normalized["price_zwap"] = 0.0
 
     try:
-        # Keep the existing naming: price_zpts
         zpts_raw = item.get("price_zpts", item.get("price_zpoints", 0))
         normalized["price_zpts"] = float(zpts_raw or 0)
     except (TypeError, ValueError):
         normalized["price_zpts"] = 0.0
 
-    # Max quantity (nullable)
+    try:
+        stripe_raw = item.get("price_stripe", item.get("price_usd", 0))
+        normalized["price_stripe"] = float(stripe_raw or 0)
+    except (TypeError, ValueError):
+        normalized["price_stripe"] = 0.0
+
+    # Max quantity
     max_q_raw = item.get("max_quantity", None)
     if max_q_raw in ("", None, "null"):
         normalized["max_quantity"] = None
@@ -58,7 +69,10 @@ def _normalize_item_payload(item: Dict[str, Any]) -> Dict[str, Any]:
     else:
         normalized["is_active"] = bool(is_active)
 
-    # Category / subcategory (nullable)
+    # Legacy compatibility
+    normalized["active"] = normalized["is_active"]
+
+    # Category / subcategory
     category = (item.get("category") or "").strip()
     normalized["category"] = category or None
 
@@ -81,8 +95,11 @@ def _normalize_item_payload(item: Dict[str, Any]) -> Dict[str, Any]:
     fulfillment_notes = (item.get("fulfillment_notes") or "").strip()
     normalized["fulfillment_notes"] = fulfillment_notes or None
 
+    # Plus-only flag
+    normalized["plus_only"] = bool(item.get("plus_only", False))
+
     # Timestamps
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if "created_at" not in item:
         normalized["created_at"] = now
     normalized["updated_at"] = now
@@ -101,7 +118,9 @@ async def list_items(db) -> Dict[str, List[Dict[str, Any]]]:
     async for doc in cursor:
         safe_doc = dict(doc)
 
-        safe_doc["id"] = str(safe_doc.get("id") or safe_doc.get("_id")) if (safe_doc.get("id") or safe_doc.get("_id")) is not None else None
+        safe_doc["id"] = str(safe_doc.get("id") or safe_doc.get("_id")) if (
+            safe_doc.get("id") or safe_doc.get("_id")
+        ) is not None else None
         safe_doc.pop("_id", None)
 
         if isinstance(safe_doc.get("created_at"), datetime):
@@ -137,14 +156,12 @@ async def list_orders(db, limit: int = 100) -> Dict[str, List[Dict[str, Any]]]:
         user_wallet = doc.get("user_wallet")
         item_id = doc.get("item_id")
 
-        # Support both old and new item lookup shapes
         item = None
         if item_id:
             item = await db[COLLECTION_NAME].find_one({"_id": item_id})
             if not item:
                 item = await db[COLLECTION_NAME].find_one({"id": item_id})
 
-        # Support both user_id-based and wallet-based purchase records
         user = None
         if user_id:
             user = await db.users.find_one({"_id": user_id})
@@ -168,7 +185,7 @@ async def list_orders(db, limit: int = 100) -> Dict[str, List[Dict[str, Any]]]:
 
         order = {
             "id": str(raw_id) if raw_id is not None else doc.get("id"),
-            "user_id": user_id or user.get("id") if user else None,
+            "user_id": user_id or (user.get("id") if user else None),
             "item_id": item_id,
             "payment_type": payment_type,
             "amount": amount,
@@ -186,21 +203,48 @@ async def list_orders(db, limit: int = 100) -> Dict[str, List[Dict[str, Any]]]:
         orders.append(order)
 
     return {"orders": orders}
-    
+
+
 async def create_item(db, item: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a new marketplace item in the shop_items collection.
     """
     payload = _normalize_item_payload(item)
+
     if not payload.get("name"):
         raise HTTPException(status_code=400, detail="Item name is required")
 
+    payment_method = payload.get("payment_method", "zwap")
+
+    if payment_method == "zwap" and payload.get("price_zwap", 0) <= 0:
+        raise HTTPException(status_code=400, detail="ZWAP price must be greater than 0")
+
+    if payment_method == "zpts" and payload.get("price_zpts", 0) <= 0:
+        raise HTTPException(status_code=400, detail="zPts price must be greater than 0")
+
+    if payment_method == "stripe" and payload.get("price_stripe", 0) <= 0:
+        raise HTTPException(status_code=400, detail="Stripe price must be greater than 0")
+
     item_id = item.get("id") or str(uuid.uuid4())
     payload["_id"] = item_id
+    payload["id"] = item_id
 
     await db[COLLECTION_NAME].insert_one(payload)
-    payload["id"] = str(payload["_id"])
-    return payload
+
+    created = await db[COLLECTION_NAME].find_one({"_id": item_id})
+    if not created:
+        raise HTTPException(status_code=500, detail="Item was not created")
+
+    created["id"] = str(created.get("id") or created.get("_id"))
+    created.pop("_id", None)
+
+    if isinstance(created.get("created_at"), datetime):
+        created["created_at"] = created["created_at"].isoformat()
+
+    if isinstance(created.get("updated_at"), datetime):
+        created["updated_at"] = created["updated_at"].isoformat()
+
+    return created
 
 
 async def update_item(db, item_id: str, item: Dict[str, Any]) -> Dict[str, Any]:
@@ -212,22 +256,44 @@ async def update_item(db, item_id: str, item: Dict[str, Any]) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail="Missing item id")
 
     payload = _normalize_item_payload(item)
+
     if "name" in payload and not payload["name"]:
         raise HTTPException(status_code=400, detail="Item name cannot be empty")
 
+    payment_method = payload.get("payment_method", "zwap")
+
+    if payment_method == "zwap" and payload.get("price_zwap", 0) <= 0:
+        raise HTTPException(status_code=400, detail="ZWAP price must be greater than 0")
+
+    if payment_method == "zpts" and payload.get("price_zpts", 0) <= 0:
+        raise HTTPException(status_code=400, detail="zPts price must be greater than 0")
+
+    if payment_method == "stripe" and payload.get("price_stripe", 0) <= 0:
+        raise HTTPException(status_code=400, detail="Stripe price must be greater than 0")
+
     result = await db[COLLECTION_NAME].update_one(
-        {"_id": item_id},
+        {"$or": [{"_id": item_id}, {"id": item_id}]},
         {"$set": payload},
     )
+
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    doc = await db[COLLECTION_NAME].find_one({"_id": item_id})
+    doc = await db[COLLECTION_NAME].find_one({"$or": [{"_id": item_id}, {"id": item_id}]})
     if not doc:
         raise HTTPException(status_code=404, detail="Item not found after update")
 
-    doc["id"] = str(doc["_id"])
+    doc["id"] = str(doc.get("id") or doc.get("_id"))
+    doc.pop("_id", None)
+
+    if isinstance(doc.get("created_at"), datetime):
+        doc["created_at"] = doc["created_at"].isoformat()
+
+    if isinstance(doc.get("updated_at"), datetime):
+        doc["updated_at"] = doc["updated_at"].isoformat()
+
     return doc
+
 
 async def delete_item(db, item_id: str) -> Dict[str, Any]:
     """
@@ -237,10 +303,8 @@ async def delete_item(db, item_id: str) -> Dict[str, Any]:
     if not item_id:
         raise HTTPException(status_code=400, detail="Missing item id")
 
-    # Try deleting by _id first
     result = await db[COLLECTION_NAME].delete_one({"_id": item_id})
 
-    # If not found, try legacy schema
     if result.deleted_count == 0:
         result = await db[COLLECTION_NAME].delete_one({"id": item_id})
 
@@ -249,8 +313,9 @@ async def delete_item(db, item_id: str) -> Dict[str, Any]:
 
     return {"deleted": True, "id": item_id}
 
+
 # ===========================
-# PURCHASE LOGIC (existing)
+# PURCHASE LOGIC (legacy/internal)
 # ===========================
 async def purchase_item(db, user_id: str, item_id: str, payment_type: str) -> Dict[str, Any]:
     """
@@ -259,6 +324,7 @@ async def purchase_item(db, user_id: str, item_id: str, payment_type: str) -> Di
     """
     user = await db.users.find_one({"_id": user_id})
     item = await db[COLLECTION_NAME].find_one({"_id": item_id})
+
     if not user or not item:
         raise ValueError("Invalid user or item")
 
@@ -274,16 +340,12 @@ async def purchase_item(db, user_id: str, item_id: str, payment_type: str) -> Di
     )
 
     await db.purchases.insert_one({
-    "id": str(uuid.uuid4()),
-    "user_wallet": wallet,
-    "item_id": item["id"],
-    "item_name": item["name"],
-    "price": price_paid,
-    "currency": currency,
-    "purchased_at": datetime.now(timezone.utc).isoformat(),
-    "refunded": False,
-    "refunded_at": None,
-    "refunded_by": None
-})
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "item_id": item_id,
+        "amount": cost,
+        "payment_type": payment_type,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
 
     return {"user_id": user_id, "item_id": item_id, "amount": cost}
