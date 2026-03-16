@@ -67,8 +67,19 @@ export const CRYPTO_LOGOS = {
 
 // Tier configs
 export const TIERS = {
-  starter: { name: "Starter", games: ["zbrickles", "ztrivia"], dailyZptsCap: 75, multiplier: 1 },
-  plus: { name: "Plus", games: ["zbrickles", "ztrivia", "ztetris", "zslots"], dailyZptsCap: 150, multiplier: 1.5 }
+  starter: {
+    name: "Starter",
+    multiplier: 1,
+    dailyZptsCap: 75,
+    gameSubmission: false
+  },
+
+  plus: {
+    name: "Plus",
+    multiplier: 1.5,
+    dailyZptsCap: 150,
+    gameSubmission: true
+  }
 };
 
 // API functions — centralized in lib/api.js
