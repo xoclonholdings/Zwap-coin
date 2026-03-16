@@ -38,7 +38,6 @@ async def create_checkout_session(request: Request):
 
     resolved_item_id = item.get("id") or str(item.get("_id"))
 
-    # Stripe checkout should only be used for stripe-priced items
     payment_method = item.get("payment_method")
     if payment_method and payment_method != "stripe":
         raise HTTPException(
@@ -46,7 +45,6 @@ async def create_checkout_session(request: Request):
             detail=f"Item is not purchasable with Stripe (payment_method={payment_method})"
         )
 
-    # Stripe-priced items should use price_stripe
     price = item.get("price_stripe")
     if price is None:
         raise HTTPException(status_code=400, detail="Item Stripe price is missing")
@@ -196,6 +194,7 @@ async def stripe_webhook(request: Request):
                 existing_purchase = await db.purchases.find_one({
                     "stripe_session_id": session_id
                 })
+
                 if not existing_purchase:
                     await db.purchases.insert_one({
                         "id": session_id,
@@ -242,5 +241,22 @@ async def stripe_webhook(request: Request):
                     }
                 }
             )
+
+            existing_plus = await db.user_inventory.find_one({
+                "user_wallet": wallet_address,
+                "item_id": "plus_subscription",
+                "active": True,
+            })
+
+            if not existing_plus:
+                await db.user_inventory.insert_one({
+                    "user_wallet": wallet_address,
+                    "item_id": "plus_subscription",
+                    "item_name": "Plus",
+                    "granted_at": datetime.now(timezone.utc).isoformat(),
+                    "source": "stripe",
+                    "stripe_session_id": session_id,
+                    "active": True,
+                })
 
     return {"status": "received"}
