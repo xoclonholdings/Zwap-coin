@@ -3,15 +3,27 @@ from pydantic import BaseModel
 
 from services import reward_service
 
-swap_router = APIRouter(tags=["Swap"])
+swap_router = APIRouter(prefix="/swap", tags=["Swap"])
 
 
 class ConvertZPtsRequest(BaseModel):
     zpts_amount: int
 
 
+@swap_router.get("/prices")
+async def get_swap_prices():
+    return {
+        "ZWAP_USD": 0.05,
+        "ZPTS_ZWAP_RATE": 1000,
+    }
+
+
 @swap_router.post("/zpts/convert/{wallet_address}")
-async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsRequest, request: Request):
+async def convert_zpts_to_zwap(
+    wallet_address: str,
+    convert_data: ConvertZPtsRequest,
+    request: Request,
+):
     """Convert Z Points to ZWAP using centralized reward service."""
     db = request.app.state.db
     wallet = wallet_address.lower()
@@ -25,7 +37,7 @@ async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsReq
 
     result = await reward_service.convert_zpts_to_zwap(
         convert_data.zpts_amount,
-        user.get("tier", "starter")
+        user.get("tier", "starter"),
     )
 
     zwap_amount = result["zwap"]
@@ -37,7 +49,7 @@ async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsReq
                 "zpts_balance": -convert_data.zpts_amount,
                 "zwap_balance": zwap_amount,
             }
-        }
+        },
     )
 
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
