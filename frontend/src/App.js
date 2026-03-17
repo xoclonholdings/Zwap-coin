@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
 import WalletModal from "@/components/WalletModal";
+import OnboardingModal from "@/components/OnboardingModal";
 import AppHeader from "@/components/AppHeader";
 import NewsTicker from "@/components/NewsTicker";
 import Dashboard from "@/components/Dashboard";
@@ -426,6 +427,12 @@ function AppContent() {
         </main>
       </>
     )}
+
+    <OnboardingModal
+      open={isOnboardingModalOpen}
+      onOpenChange={setIsOnboardingModalOpen}
+    />
+
 
     {/* Wallet Modal */}
     <WalletModal open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} />
