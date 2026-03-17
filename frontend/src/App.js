@@ -276,10 +276,10 @@ function AppContent() {
       <SplashScreen
         onNewUser={() => {
           setShowSplash(false);
-          navigate("/wallet");
-          setIsFirstTimeUserPromptOpen(true);
-          setIsOnboardingModalOpen(false);
           setIsWalletModalOpen(false);
+          setIsOnboardingModalOpen(false);
+          setIsFirstTimeUserPromptOpen(true);
+          navigate("/wallet");
         }}
         onReturningUser={() => {
           setShowSplash(false);
@@ -333,16 +333,23 @@ function AppContent() {
     return (
       <>
         <WalletPage />
+  
         <FirstTimeUserPrompt
           open={isFirstTimeUserPromptOpen}
           onOpenChange={setIsFirstTimeUserPromptOpen}
         />
+  
         <OnboardingModal
-          open={isOnboardingModalOpen}
+          open={!isFirstTimeUserPromptOpen && isOnboardingModalOpen}
           onOpenChange={setIsOnboardingModalOpen}
         />
+  
         <WalletModal
-          open={isWalletModalOpen}
+          open={
+            !isFirstTimeUserPromptOpen &&
+            !isOnboardingModalOpen &&
+            isWalletModalOpen
+          }
           onOpenChange={setIsWalletModalOpen}
         />
       </>
