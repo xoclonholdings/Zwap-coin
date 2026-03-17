@@ -167,10 +167,6 @@ const submitGameResult = async (
   return res.json();
 };
 
-/** POST /api/faucet/scratch/:address */
-const scratchToWin = (walletAddress) =>
-  request("POST", `/faucet/scratch/${walletAddress}`);
-
 // ---------------------------------------------------------------------------
 // Shop
 // ---------------------------------------------------------------------------
@@ -388,7 +384,6 @@ const api = {
   getTriviaQuestions,
   checkTriviaAnswer,
   submitGameResult,
-  scratchToWin,
 
   // Shop
   getShopItems,
