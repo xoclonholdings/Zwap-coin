@@ -19,7 +19,20 @@ import stripe
 from routers import stripe_routes
 from routers import move_routes
 from routers import play_routes
-
+from services.reward_service import (
+    TIERS,
+    ZPTS_TO_ZWAP_RATE,
+    STEP_CLAIM_COOLDOWN,
+    GAME_RESULT_COOLDOWN,
+    MIN_STEPS_PER_CLAIM,
+    MAX_STEPS_PER_CLAIM,
+    MAX_GAME_SCORES,
+    check_and_reset_daily_zwap,
+    check_rate_limit,
+    get_daily_reward,
+    check_and_reset_daily_zpts,
+    get_user_tier_config,
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
