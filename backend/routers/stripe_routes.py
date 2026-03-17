@@ -138,6 +138,19 @@ async def create_subscription_checkout(request: Request):
             },
         )
 
+    db = request.app.state.db
+
+    await db.payment_transactions.insert_one({
+        "id": session.id,
+        "session_id": session.id,
+        "wallet_address": wallet_address,
+        "amount": 9.99,
+        "currency": "usd",
+        "payment_status": "pending",
+        "type": "subscription_plus",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
     return {"url": session.url}
 
 
@@ -177,9 +190,6 @@ async def stripe_webhook(request: Request):
         print("Item ID:", item_id)
         print("Purchase Type:", purchase_type)
 
-        # -----------------------------------
-        # SHOP ITEM PURCHASE HANDLER
-        # -----------------------------------
         if purchase_type == "shop_item" and wallet_address and item_id:
             item = await db.shop_items.find_one({
                 "$or": [
@@ -226,10 +236,18 @@ async def stripe_webhook(request: Request):
                         "active": True,
                     })
 
-        # -----------------------------------
-        # PLUS SUBSCRIPTION HANDLER
-        # -----------------------------------
         if purchase_type == "subscription_plus" and wallet_address:
+            await db.payment_transactions.update_one(
+                {"session_id": session_id},
+                {
+                    "$set": {
+                        "payment_status": "paid",
+                        "wallet_address": wallet_address,
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                }
+            )
+
             await db.users.update_one(
                 {"wallet_address": wallet_address},
                 {
