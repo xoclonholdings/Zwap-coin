@@ -104,14 +104,17 @@ export default function SubscriptionSuccess() {
       setStatus("error");
       return;
     }
-
+  
     if (!walletAddress) {
       console.log("WAITING FOR WALLET ADDRESS...");
       return;
     }
-
+  
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+  
     pollPaymentStatus(sessionId);
-  }, [sessionId, walletAddress, pollPaymentStatus]);
+  }, [sessionId, walletAddress]);
 
   return (
     <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col items-center justify-center p-6">
