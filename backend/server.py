@@ -1483,6 +1483,7 @@ from routers.admin_routes import admin_router
 api_router.include_router(admin_router)
 api_router.include_router(wallet_routes.router)
 api_router.include_router(move_routes.router)
+api_router.include_router(play_routes.router)
 
 app.include_router(api_router)
 app.include_router(stripe_routes.router)
