@@ -1,7 +1,6 @@
 /**
  * ZWAP! Coin — Centralized API Client
  * Single source of truth for all backend communication.
- * Stubs log to console and return structured "not implemented" responses.
  */
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -13,15 +12,19 @@ console.log("ZWAP API BASE =", API);
 
 async function request(method, path, body = null) {
   const opts = { method, headers: {} };
+
   if (body) {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(body);
   }
+
   const res = await fetch(`${API}${path}`, opts);
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || `Request failed: ${method} ${path}`);
   }
+
   return res.json();
 }
 
@@ -74,20 +77,25 @@ const getContractInfo = () => request("GET", "/blockchain/contract-info");
 // ---------------------------------------------------------------------------
 
 /**
- * POST /api/faucet/steps/:address
+ * POST /api/move/steps/:address
  * @param {string} walletAddress
  * @param {number} steps
  */
 const claimStepRewards = (walletAddress, steps) =>
-  request("POST", `/faucet/steps/${walletAddress}`, { steps });
+  request("POST", `/move/steps/${walletAddress}`, { steps });
 
-/** Stub: GET /api/move/session/:address — active step-tracking session */
+/** GET /api/move/session/:address */
 const getMoveSession = (walletAddress) =>
-  stub("getMoveSession", { active: false, steps: 0, wallet: walletAddress });
+  request("GET", `/move/session/${walletAddress}`);
 
-/** Stub: POST /api/move/anti-cheat — submit client-side cheat flags */
+/** Stub for future richer anti-cheat payload handling */
 const submitAntiCheatFlags = (walletAddress, flags) =>
-  stub("submitAntiCheatFlags", { received: true, wallet: walletAddress });
+  stub("submitAntiCheatFlags", {
+    received: true,
+    flagged: false,
+    wallet: walletAddress,
+    flags,
+  });
 
 // ---------------------------------------------------------------------------
 // Play (Games)
@@ -95,12 +103,12 @@ const submitAntiCheatFlags = (walletAddress, flags) =>
 
 /**
  * GET /api/games/trivia/questions?count=N&difficulty=D
- * @returns {Array<{id,question,options,correctAnswer}>}
  */
 const getTriviaQuestions = async (count = 5, difficulty = 1) => {
   const res = await fetch(
     `${API}/games/trivia/questions?count=${count}&difficulty=${difficulty}`
   );
+  if (!res.ok) throw new Error("Failed to load trivia questions");
   return res.json();
 };
 
@@ -108,7 +116,7 @@ const getTriviaQuestions = async (count = 5, difficulty = 1) => {
  * POST /api/games/trivia/answer
  * @param {string} questionId
  * @param {string} answer
- * @param {number} timeTaken — seconds
+ * @param {number} timeTaken
  */
 const checkTriviaAnswer = (questionId, answer, timeTaken) =>
   request("POST", "/games/trivia/answer", {
@@ -120,10 +128,10 @@ const checkTriviaAnswer = (questionId, answer, timeTaken) =>
 /**
  * POST /api/games/result/:address
  * @param {string} walletAddress
- * @param {string} gameType — zbrickles | ztrivia | ztetris | zslots
+ * @param {string} gameType
  * @param {number} score
  * @param {number} level
- * @param {number} blocksDestroyed — zbrickles only
+ * @param {number} blocksDestroyed
  */
 const submitGameResult = async (
   walletAddress,
@@ -142,10 +150,12 @@ const submitGameResult = async (
       blocks_destroyed: blocksDestroyed,
     }),
   });
+
   if (!res.ok) {
-    const err = await res.json();
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Game submission failed");
   }
+
   return res.json();
 };
 
@@ -172,10 +182,12 @@ const purchaseItem = async (walletAddress, itemId, paymentType = "zwap") => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ item_id: itemId, payment_type: paymentType }),
   });
+
   if (!res.ok) {
-    const err = await res.json();
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Purchase failed");
   }
+
   return res.json();
 };
 
@@ -197,12 +209,18 @@ const executeSwap = async (walletAddress, fromToken, toToken, amount) => {
   const res = await fetch(`${API}/swap/execute/${walletAddress}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ from_token: fromToken, to_token: toToken, amount }),
+    body: JSON.stringify({
+      from_token: fromToken,
+      to_token: toToken,
+      amount,
+    }),
   });
+
   if (!res.ok) {
-    const err = await res.json();
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Swap failed");
   }
+
   return res.json();
 };
 
@@ -224,7 +242,7 @@ const getSwapHistory = (walletAddress) =>
 // Subscription
 // ---------------------------------------------------------------------------
 
-/** POST /stripe/create-subscription-checkout */
+/** POST /api/subscription/checkout */
 const createSubscription = async (walletAddress) => {
   const res = await fetch(`${API}/subscription/checkout`, {
     method: "POST",
@@ -259,10 +277,12 @@ const activateSubscription = async (walletAddress, sessionId) => {
     `${API}/subscription/activate/${walletAddress}?session_id=${sessionId}`,
     { method: "POST" }
   );
+
   if (!res.ok) {
-    const err = await res.json();
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Activation failed");
   }
+
   return res.json();
 };
 
@@ -285,10 +305,12 @@ const convertZptsToZwap = async (walletAddress, zptsAmount) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ zpts_amount: zptsAmount }),
   });
+
   if (!res.ok) {
-    const err = await res.json();
+    const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Conversion failed");
   }
+
   return res.json();
 };
 
@@ -296,11 +318,7 @@ const convertZptsToZwap = async (walletAddress, zptsAmount) => {
 // Treasury / Claims
 // ---------------------------------------------------------------------------
 
-/**
- * Stub: POST /api/claims/request
- * @param {string} walletAddress
- * @param {number} amount — ZWAP to claim to on-chain wallet
- */
+/** Stub: POST /api/claims/request */
 const requestClaim = (walletAddress, amount) =>
   stub("requestClaim", {
     status: "not_implemented",
@@ -335,13 +353,6 @@ const getUserRank = async (walletAddress, category) => {
 };
 
 // ---------------------------------------------------------------------------
-// Admin (pass-through — admin panel has its own auth header)
-// ---------------------------------------------------------------------------
-
-/** Admin endpoints use their own auth via X-Admin-Key header.
- *  See AdminPanel.jsx → adminApi for the authenticated wrapper. */
-
-// ---------------------------------------------------------------------------
 // Export all methods as default object
 // ---------------------------------------------------------------------------
 
@@ -350,39 +361,48 @@ const api = {
   connectWallet,
   walletStatus,
   disconnectWallet,
+
   // User
   getUser,
   updateProfile,
   getOnchainBalance,
   getContractInfo,
+
   // Move
   claimStepRewards,
   getMoveSession,
   submitAntiCheatFlags,
+
   // Play
   getTriviaQuestions,
   checkTriviaAnswer,
   submitGameResult,
   scratchToWin,
+
   // Shop
   getShopItems,
   purchaseItem,
+
   // Swap
   getPrices,
   executeSwap,
   getSwapQuote,
   getSwapHistory,
+
   // Subscription
   createSubscription,
   getSubscriptionStatus,
   activateSubscription,
   cancelSubscription,
+
   // zPts
   convertZptsToZwap,
+
   // Treasury / Claims
   requestClaim,
   getClaimStatus,
   getClaimHistory,
+
   // Leaderboard
   getLeaderboard,
   getLeaderboardStats,
