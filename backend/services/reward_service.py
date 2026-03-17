@@ -1,12 +1,42 @@
 """
-ZWAP! Reward Service Stubs
-===========================
-Service-layer function signatures for reward calculations.
-DO NOT implement reward math here — these are contract stubs only.
-Routes should call these; implementations come later.
+ZWAP! Reward Service
+====================
+Central reward calculation logic for MOVE, PLAY, conversions, tier multipliers,
+and daily cap helpers.
 """
 
 from typing import Dict
+
+
+TIERS = {
+    "starter": {
+        "move": 1.0,
+        "play": 1.0,
+        "daily_zpts_cap": 75,
+        "daily_zwap_cap": 500.0,
+        "games": ["zbrickles", "ztrivia"],
+    },
+    "plus": {
+        "move": 1.5,
+        "play": 1.5,
+        "daily_zpts_cap": 150,
+        "daily_zwap_cap": 1500.0,
+        "games": ["zbrickles", "ztrivia", "ztetris", "zslots"],
+    },
+}
+
+ZPTS_TO_ZWAP_RATE = 1000
+
+MAX_GAME_SCORES = {
+    "zbrickles": 5000,
+    "ztrivia": 50,
+    "ztetris": 10000,
+    "zslots": 8000,
+}
+
+
+def _get_tier_config(tier: str) -> Dict:
+    return TIERS.get(tier, TIERS["starter"])
 
 
 async def calculate_play_reward(
@@ -14,39 +44,74 @@ async def calculate_play_reward(
     score: int,
     level: int,
     tier: str,
+    blocks_destroyed: int = 0,
 ) -> Dict:
     """
     Compute rewards for a completed game session.
-
-    Inputs:
-        game_type: "zbrickles" | "ztrivia" | "ztetris" | "zslots"
-        score:     Final score from the game
-        level:     Game difficulty level (1+)
-        tier:      "starter" | "plus"
-
-    Returns:
-        { "zwap": float, "zpts": int }
+    Returns: { "zwap": float, "zpts": int }
     """
-    raise NotImplementedError("calculate_play_reward not yet implemented")
+    if score < 0 or level < 1:
+        raise ValueError("Invalid game data")
+
+    max_score = MAX_GAME_SCORES.get(game_type, 5000)
+    if score > max_score:
+        raise ValueError("Invalid score")
+
+    tier_config = _get_tier_config(tier)
+    multiplier = tier_config["play"]
+    difficulty_multiplier = 1 + (level - 1) * 0.1
+
+    if game_type == "zbrickles":
+        base_zwap = min(blocks_destroyed * 0.5 + (score / 100), 50)
+        base_zpts = min(blocks_destroyed + (score // 50), 10)
+    elif game_type == "ztrivia":
+        base_zwap = min(score * 0.5, 30)
+        base_zpts = min(score * 2, 8)
+    elif game_type == "ztetris":
+        base_zwap = min((score / 100) + (level * 2), 75)
+        base_zpts = min((score // 100) + level, 12)
+    elif game_type == "zslots":
+        base_zwap = min(score * 0.3, 40)
+        base_zpts = min(score // 10, 8)
+    else:
+        base_zwap = 0
+        base_zpts = 0
+
+    return {
+        "zwap": round(base_zwap * difficulty_multiplier * multiplier, 2),
+        "zpts": int(base_zpts * difficulty_multiplier),
+    }
 
 
 async def calculate_move_reward(
     steps: int,
     tier: str,
-    daily_steps_so_far: int,
+    daily_steps_so_far: int = 0,
 ) -> Dict:
     """
     Compute ZWAP earned from a step-tracking session.
-
-    Inputs:
-        steps:              Steps submitted in this session
-        tier:               "starter" | "plus"
-        daily_steps_so_far: Steps already submitted today (for cap enforcement)
-
-    Returns:
-        { "zwap": float }
+    Returns: { "zwap": float }
     """
-    raise NotImplementedError("calculate_move_reward not yet implemented")
+    if steps < 10:
+        raise ValueError("Minimum 10 steps required")
+    if steps > 50000:
+        raise ValueError("Step count exceeds maximum (50000)")
+
+    tier_config = _get_tier_config(tier)
+    multiplier = tier_config["move"]
+
+    if steps < 1000:
+        base = steps * 0.01
+    elif steps < 5000:
+        base = 10 + (steps - 1000) * 0.02
+    elif steps < 10000:
+        base = 90 + (steps - 5000) * 0.03
+    else:
+        base = 240 + (steps - 10000) * 0.05
+
+    return {
+        "zwap": round(base * multiplier, 2),
+    }
 
 
 async def convert_zpts_to_zwap(
@@ -55,44 +120,53 @@ async def convert_zpts_to_zwap(
 ) -> Dict:
     """
     Calculate ZWAP output for a zPts conversion.
-
-    Inputs:
-        zpts_amount: Number of zPts to convert
-        tier:        "starter" | "plus"
-
-    Returns:
-        { "zwap": float, "rate": float }
+    Returns: { "zwap": float, "rate": float }
     """
-    raise NotImplementedError("convert_zpts_to_zwap not yet implemented")
+    if zpts_amount < ZPTS_TO_ZWAP_RATE:
+        raise ValueError(f"Minimum {ZPTS_TO_ZWAP_RATE} zPts required")
+
+    zwap = zpts_amount / ZPTS_TO_ZWAP_RATE
+
+    return {
+        "zwap": round(zwap, 4),
+        "rate": float(ZPTS_TO_ZWAP_RATE),
+    }
 
 
 async def get_tier_multipliers(tier: str) -> Dict:
     """
     Return all reward multipliers for a given tier.
-
-    Inputs:
-        tier: "starter" | "plus"
-
-    Returns:
-        { "move": float, "play": float, "cap": int }
+    Returns: { "move": float, "play": float, "daily_zpts_cap": int, "daily_zwap_cap": float }
     """
-    raise NotImplementedError("get_tier_multipliers not yet implemented")
+    tier_config = _get_tier_config(tier)
+    return {
+        "move": tier_config["move"],
+        "play": tier_config["play"],
+        "daily_zpts_cap": tier_config["daily_zpts_cap"],
+        "daily_zwap_cap": tier_config["daily_zwap_cap"],
+    }
 
 
 async def enforce_daily_caps(
     wallet_address: str,
     tier: str,
     earned_today: float,
+    cap_type: str = "zwap",
 ) -> Dict:
     """
     Check whether a user has hit their daily earning limit.
-
-    Inputs:
-        wallet_address: User's wallet
-        tier:           "starter" | "plus"
-        earned_today:   ZWAP or zPts already earned today
-
-    Returns:
-        { "capped": bool, "remaining": float }
+    Returns: { "capped": bool, "remaining": float }
     """
-    raise NotImplementedError("enforce_daily_caps not yet implemented")
+    tier_config = _get_tier_config(tier)
+
+    if cap_type == "zpts":
+        cap = float(tier_config["daily_zpts_cap"])
+    else:
+        cap = float(tier_config["daily_zwap_cap"])
+
+    remaining = max(0.0, cap - float(earned_today or 0))
+
+    return {
+        "capped": remaining <= 0,
+        "remaining": round(remaining, 2),
+    }
