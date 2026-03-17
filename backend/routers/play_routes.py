@@ -5,8 +5,9 @@ Routes for trivia, game results, and future game types.
 Reward calculations are delegated to reward_service (stubs for now).
 """
 
+import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 # Import reward service stubs — these raise NotImplementedError until implemented.
@@ -40,25 +41,29 @@ MAX_GAME_SCORES = {
     "zslots": 8000,
 }
 
-TIER_GAMES = {
-    "starter": ["zbrickles", "ztrivia"],
-    "plus": ["zbrickles", "ztrivia", "ztetris", "zslots"],
-}
-
-TIER_DAILY_ZPTS_CAP = {
-    "starter": 75,
-    "plus": 150,
-}
-
-TIER_ZWAP_MULTIPLIER = {
-    "starter": 1.0,
-    "plus": 1.5,
-}
-
 DAILY_ZWAP_CAPS = {
     "starter": 500.0,
     "plus": 1500.0,
 }
+
+TIERS = {
+    "starter": {
+        "name": "Starter",
+        "zwap_multiplier": 1.0,
+        "daily_zpts_cap": 75,
+        "games": ["zbrickles", "ztrivia"],
+    },
+    "plus": {
+        "name": "Plus",
+        "zwap_multiplier": 1.5,
+        "daily_zpts_cap": 150,
+        "games": ["zbrickles", "ztrivia", "ztetris", "zslots"],
+    },
+}
+
+
+def get_user_tier_config(tier: str) -> dict:
+    return TIERS.get(tier, TIERS["starter"])
 
 
 def calculate_game_rewards(
@@ -68,6 +73,7 @@ def calculate_game_rewards(
     blocks: int = 0,
     multiplier: float = 1.0,
 ) -> dict:
+    """Calculate ZWAP and Z Points rewards for games with progressive difficulty."""
     difficulty_multiplier = 1 + (level - 1) * 0.1
 
     if game_type == "zbrickles":
@@ -97,6 +103,7 @@ def calculate_game_rewards(
 
 
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
+    """Check if daily Z Points should be reset."""
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zpts_reset")
 
@@ -105,23 +112,13 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
         if last_reset_dt.date() < now.date():
             await db.users.update_one(
                 {"wallet_address": user["wallet_address"]},
-                {
-                    "$set": {
-                        "daily_zpts_earned": 0,
-                        "last_zpts_reset": now.isoformat(),
-                    }
-                },
+                {"$set": {"daily_zpts_earned": 0, "last_zpts_reset": now.isoformat()}},
             )
             user["daily_zpts_earned"] = 0
     else:
         await db.users.update_one(
             {"wallet_address": user["wallet_address"]},
-            {
-                "$set": {
-                    "daily_zpts_earned": 0,
-                    "last_zpts_reset": now.isoformat(),
-                }
-            },
+            {"$set": {"daily_zpts_earned": 0, "last_zpts_reset": now.isoformat()}},
         )
         user["daily_zpts_earned"] = 0
 
@@ -129,31 +126,22 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
 
 
 async def check_and_reset_daily_zwap(db, user: dict) -> dict:
+    """Reset daily ZWAP earned at midnight UTC."""
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zwap_reset")
 
     if last_reset:
-        last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
-        if last_reset_dt.date() < now.date():
+        last_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+        if last_dt.date() < now.date():
             await db.users.update_one(
                 {"wallet_address": user["wallet_address"]},
-                {
-                    "$set": {
-                        "daily_zwap_earned": 0.0,
-                        "last_zwap_reset": now.isoformat(),
-                    }
-                },
+                {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}},
             )
             user["daily_zwap_earned"] = 0.0
     else:
         await db.users.update_one(
             {"wallet_address": user["wallet_address"]},
-            {
-                "$set": {
-                    "daily_zwap_earned": 0.0,
-                    "last_zwap_reset": now.isoformat(),
-                }
-            },
+            {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}},
         )
         user["daily_zwap_earned"] = 0.0
 
@@ -164,8 +152,7 @@ async def check_and_reset_daily_zwap(db, user: dict) -> dict:
 async def get_trivia_questions(count: int = 5, difficulty: str = "medium"):
     """
     Returns trivia questions.
-    Currently: frontend generates questions from the education spine.
-    Future: backend generates + validates questions server-side.
+    Currently: stub — frontend or future learn routes can source these.
     """
     return {"questions": [], "count": count, "difficulty": difficulty}
 
@@ -174,26 +161,25 @@ async def get_trivia_questions(count: int = 5, difficulty: str = "medium"):
 async def check_trivia_answer(payload: TriviaAnswerRequest):
     """
     Validates a trivia answer.
-    Currently: stub — frontend validates client-side.
-    Future: server-side validation to prevent cheating.
+    Currently: stub — future server-side validation.
     """
     return {"correct": False, "explanation": None}
 
 
 @router.post("/result/{wallet_address}")
-async def submit_game_result(
-    wallet_address: str,
-    payload: GameResultRequest,
-    request: Request,
-):
+async def submit_game_result(wallet_address: str, game_data: GameResultRequest, request):
+    """Submit game result and claim rewards (ZWAP + Z Points)."""
     db = request.app.state.db
     wallet = wallet_address.lower()
 
-    max_score = MAX_GAME_SCORES.get(payload.game_type, 5000)
-    if payload.score > max_score:
+    max_score = MAX_GAME_SCORES.get(game_data.game_type, 5000)
+    if game_data.score > max_score:
+        logging.warning(
+            f"Anti-cheat flag: {wallet} submitted {game_data.game_type} score {game_data.score} (max {max_score})"
+        )
         raise HTTPException(status_code=400, detail="Invalid score")
 
-    if payload.score < 0 or payload.level < 1:
+    if game_data.score < 0 or game_data.level < 1:
         raise HTTPException(status_code=400, detail="Invalid game data")
 
     user = await db.users.find_one({"wallet_address": wallet})
@@ -201,30 +187,28 @@ async def submit_game_result(
         raise HTTPException(status_code=404, detail="User not found")
 
     tier = user.get("tier", "starter")
-    allowed_games = TIER_GAMES.get(tier, TIER_GAMES["starter"])
+    tier_config = get_user_tier_config(tier)
 
-    if payload.game_type not in allowed_games:
+    if game_data.game_type not in tier_config["games"]:
         raise HTTPException(
             status_code=403,
-            detail=f"Game not available in {tier} tier",
+            detail=f"Game not available in {tier_config['name']} tier",
         )
 
     user = await check_and_reset_daily_zpts(db, user)
-    user = await check_and_reset_daily_zwap(db, user)
-
     daily_zpts = user.get("daily_zpts_earned", 0)
-    daily_zwap = float(user.get("daily_zwap_earned", 0.0) or 0.0)
+    zpts_cap = tier_config["daily_zpts_cap"]
 
-    zpts_cap = TIER_DAILY_ZPTS_CAP.get(tier, 75)
+    user = await check_and_reset_daily_zwap(db, user)
+    daily_zwap = user.get("daily_zwap_earned", 0.0)
     zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
-    multiplier = TIER_ZWAP_MULTIPLIER.get(tier, 1.0)
 
     rewards = calculate_game_rewards(
-        payload.game_type,
-        payload.score,
-        payload.level,
-        payload.blocks_destroyed,
-        multiplier,
+        game_data.game_type,
+        game_data.score,
+        game_data.level,
+        game_data.blocks_destroyed,
+        tier_config["zwap_multiplier"],
     )
 
     zpts_to_add = max(0, min(rewards["zpts"], zpts_cap - daily_zpts))
@@ -247,9 +231,9 @@ async def submit_game_result(
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
 
     return {
-        "game": payload.game_type,
-        "score": payload.score,
-        "level": payload.level,
+        "game": game_data.game_type,
+        "score": game_data.score,
+        "level": game_data.level,
         "zwap_earned": round(zwap_to_add, 2),
         "zpts_earned": zpts_to_add,
         "zpts_capped": zpts_to_add < rewards["zpts"],
@@ -261,7 +245,5 @@ async def submit_game_result(
         ),
         "new_zwap_balance": round(updated_user.get("zwap_balance", 0), 2),
         "new_zpts_balance": updated_user.get("zpts_balance", 0),
-        "tier": tier,
-        "multiplier": multiplier,
         "message": f"Earned {zwap_to_add:.2f} ZWAP + {zpts_to_add} zPts!",
     }
