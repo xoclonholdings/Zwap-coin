@@ -86,6 +86,7 @@ async def create_checkout_session(request: Request):
 # ===========================
 @router.post("/stripe/create-subscription-checkout")
 async def create_subscription_checkout(request: Request):
+    print("HIT create-subscription-checkout")
     body = await request.json()
 
     wallet_address = (body.get("wallet_address") or "").lower()
