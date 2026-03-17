@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
 import random
+import time as _time
 from web3 import Web3
 import asyncio
 from functools import lru_cache
@@ -19,20 +20,8 @@ import stripe
 from routers import stripe_routes
 from routers import move_routes
 from routers import play_routes
-from services.reward_service import (
-    TIERS,
-    ZPTS_TO_ZWAP_RATE,
-    STEP_CLAIM_COOLDOWN,
-    GAME_RESULT_COOLDOWN,
-    MIN_STEPS_PER_CLAIM,
-    MAX_STEPS_PER_CLAIM,
-    MAX_GAME_SCORES,
-    check_and_reset_daily_zwap,
-    check_rate_limit,
-    get_daily_reward,
-    check_and_reset_daily_zpts,
-    get_user_tier_config,
-)
+from services import reward_service
+from services.reward_service import TIERS, get_daily_reward
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -124,53 +113,6 @@ app.state.w3 = w3
 app.state.zwap_contract = zwap_contract
 app.state.treasury_wallet = "0x102a5301c56cFCf4F02bEA3184Bdb44b731375E0"
 app.state.treasury_private_key = os.environ.get("TREASURY_PRIVATE_KEY", "")
-
-
-# ============ ANTI-CHEAT: RATE LIMITING ============
-
-from collections import defaultdict
-import time as _time
-
-# In-memory rate limiter {wallet: {action: last_timestamp}}
-_rate_limits = defaultdict(dict)
-
-# Daily ZWAP tracking reset helper
-async def check_and_reset_daily_zwap(user: dict) -> dict:
-    """Reset daily ZWAP earned at midnight UTC"""
-    now = datetime.now(timezone.utc)
-    last_reset = user.get("last_zwap_reset")
-    if last_reset:
-        last_dt = datetime.fromisoformat(last_reset.replace('Z', '+00:00'))
-        if last_dt.date() < now.date():
-            await db.users.update_one(
-                {"id": user["id"]},
-                {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}}
-            )
-            user["daily_zwap_earned"] = 0.0
-    else:
-        await db.users.update_one(
-            {"id": user["id"]},
-            {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}}
-        )
-        user["daily_zwap_earned"] = 0.0
-    return user
-
-def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
-    """Returns True if rate-limited (too soon). False if OK."""
-    now = _time.time()
-    last = _rate_limits[wallet].get(action, 0)
-    if now - last < cooldown_seconds:
-        return True
-    _rate_limits[wallet][action] = now
-    return False
-
-# Anti-cheat constants
-STEP_CLAIM_COOLDOWN = 300   # 5 min between step claims
-GAME_RESULT_COOLDOWN = 20   # 20 sec between game submissions
-MAX_STEPS_PER_CLAIM = 50000
-MIN_STEPS_PER_CLAIM = 10
-MAX_GAME_SCORES = {"zbrickles": 5000, "ztrivia": 50, "ztetris": 10000, "zslots": 8000}
-DAILY_ZWAP_CAPS = {"starter": 500.0, "plus": 1500.0}
 
 # ============ MODELS ============
 
@@ -296,77 +238,6 @@ async def get_crypto_prices():
         logging.error(f"Error fetching prices: {e}")
     return {"BTC": 65000, "ETH": 3500, "POL": 0.85, "SOL": 150, "USDT": 1.00, "ZWAP": 0.01}
 
-def calculate_step_rewards(steps: int, multiplier: float = 1.0) -> float:
-    """Tiered earning system for steps"""
-    if steps < 1000:
-        base = steps * 0.01
-    elif steps < 5000:
-        base = 10 + (steps - 1000) * 0.02
-    elif steps < 10000:
-        base = 90 + (steps - 5000) * 0.03
-    else:
-        base = 240 + (steps - 10000) * 0.05
-    return base * multiplier
-
-def calculate_game_rewards(game_type: str, score: int, level: int, blocks: int = 0, multiplier: float = 1.0) -> dict:
-    """Calculate ZWAP and Z Points rewards for games with progressive difficulty"""
-
-    difficulty_multiplier = 1 + (level - 1) * 0.1
-
-    if game_type == "zbrickles":
-        base_zwap = min(blocks * 0.5 + (score / 100), 50)
-        base_zpts = min(blocks + (score // 50), 10)
-
-    elif game_type == "ztrivia":
-        base_zwap = min(score * 0.5, 30)
-        base_zpts = min(score * 2, 8)
-
-    elif game_type == "ztetris":
-        base_zwap = min((score / 100) + (level * 2), 75)
-        base_zpts = min((score // 100) + level, 12)
-
-    elif game_type == "zslots":
-        base_zwap = min(score * 0.3, 40)
-        base_zpts = min(score // 10, 8)
-
-    else:
-        base_zwap = 0
-        base_zpts = 0
-
-    return {
-        "zwap": round(base_zwap * difficulty_multiplier * multiplier, 2),
-        "zpts": int(base_zpts * difficulty_multiplier)
-    }
-
-def get_daily_reward(streak: int) -> int:
-    """Return zPts reward based on streak day"""
-    if streak > 7:
-        streak = 7
-    return DAILY_REWARD_TABLE.get(streak, 10)
-
-async def check_and_reset_daily_zpts(user: dict) -> dict:
-    """Check if daily Z Points should be reset"""
-    now = datetime.now(timezone.utc)
-    last_reset = user.get("last_zpts_reset")
-
-    if last_reset:
-        last_reset_dt = datetime.fromisoformat(last_reset.replace('Z', '+00:00'))
-        if last_reset_dt.date() < now.date():
-            await db.users.update_one(
-                {"id": user["id"]},
-                {"$set": {"daily_zpts_earned": 0, "last_zpts_reset": now.isoformat()}}
-            )
-            user["daily_zpts_earned"] = 0
-    else:
-        await db.users.update_one(
-            {"id": user["id"]},
-            {"$set": {"last_zpts_reset": now.isoformat()}}
-        )
-
-    return user
-
-def get_user_tier_config(tier: str) -> dict:
-    return TIERS.get(tier, TIERS["starter"])
 
 async def get_onchain_zwap_balance(wallet_address: str) -> Optional[float]:
     """Get ZWAP balance from Polygon blockchain"""
@@ -723,37 +594,13 @@ async def check_trivia_answer(answer: TriviaAnswer):
         "time_bonus": round(time_bonus, 2)
     }
 
-@api_router.post("/faucet/scratch/{wallet_address}")
-async def scratch_to_win(wallet_address: str):
-    """Scratch card bonus"""
-    wallet = wallet_address.lower()
-    user = await db.users.find_one({"wallet_address": wallet})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    won = random.random() < 0.3
-    amount = random.choice([5, 10, 25, 50, 100]) if won else 0
-
-    if won:
-        await db.users.update_one(
-            {"wallet_address": wallet},
-            {"$inc": {"zwap_balance": amount, "total_earned": amount}}
-        )
-
-    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    return {
-        "won": won,
-        "amount": amount,
-        "new_balance": updated_user["zwap_balance"],
-        "message": f"You won {amount} ZWAP!" if won else "Better luck next time!"
-    }
-
 # ============ Z POINTS CONVERSION ============
 
 @api_router.post("/zpts/convert/{wallet_address}")
 async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsRequest):
-    """Convert Z Points to ZWAP (1000 zPts = 1 ZWAP)"""
+    """Convert Z Points to ZWAP using centralized reward service"""
     wallet = wallet_address.lower()
+
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -761,27 +608,35 @@ async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsReq
     if user.get("zpts_balance", 0) < convert_data.zpts_amount:
         raise HTTPException(status_code=400, detail="Insufficient Z Points")
 
-    if convert_data.zpts_amount < ZPTS_TO_ZWAP_RATE:
-        raise HTTPException(status_code=400, detail=f"Minimum {ZPTS_TO_ZWAP_RATE} zPts required")
+    # Use reward service (single source of truth)
+    result = await reward_service.convert_zpts_to_zwap(
+        convert_data.zpts_amount,
+        user.get("tier", "starter")
+    )
 
-    zwap_amount = convert_data.zpts_amount / ZPTS_TO_ZWAP_RATE
+    zwap_amount = result["zwap"]
 
     await db.users.update_one(
         {"wallet_address": wallet},
         {
-            "$inc": {"zpts_balance": -convert_data.zpts_amount, "zwap_balance": zwap_amount}
+            "$inc": {
+                "zpts_balance": -convert_data.zpts_amount,
+                "zwap_balance": zwap_amount
+            }
         }
     )
 
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+
     return {
         "zpts_converted": convert_data.zpts_amount,
         "zwap_received": zwap_amount,
-        "new_zpts_balance": updated_user["zpts_balance"],
-        "new_zwap_balance": updated_user["zwap_balance"],
-        "message": f"Converted {convert_data.zpts_amount} zPts to {zwap_amount} ZWAP!"
+        "rate": result["rate"],
+        "new_zpts_balance": updated_user.get("zpts_balance", 0),
+        "new_zwap_balance": updated_user.get("zwap_balance", 0),
+        "message": f"Converted {convert_data.zpts_amount} zPts to {zwap_amount} ZWAP"
     }
-
+    
 # ============ SUBSCRIPTION ENDPOINTS ============
 
 @api_router.post("/subscription/checkout")
