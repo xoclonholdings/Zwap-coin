@@ -38,13 +38,6 @@ export default function Dashboard() {
     }
   };
 
-    const data = await res.json();
-    alert(JSON.stringify(data, null, 2));
-  } catch (err) {
-    alert("ERROR: " + err.message);
-  }
-};
-
   return (
     <div className="min-h-[calc(100dvh-160px)] bg-[#0a0b1e] flex flex-col px-4 py-4" data-testid="dashboard">
       {/* Stats Summary */}
