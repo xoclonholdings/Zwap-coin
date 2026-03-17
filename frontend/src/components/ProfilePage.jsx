@@ -140,7 +140,19 @@ export default function ProfilePage() {
   };
 
   const inventoryDisplayItems = useMemo(() => {
-    return inventoryItems.map((item, idx) => ({
+    const deduped = [];
+    const seen = new Set();
+  
+    for (const item of inventoryItems) {
+      const dedupeKey = `${item.item_id || ""}::${item.item_name || ""}`;
+  
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+  
+      deduped.push(item);
+    }
+  
+    return deduped.map((item, idx) => ({
       key: `${item.item_id || "item"}-${idx}`,
       ...item,
     }));
