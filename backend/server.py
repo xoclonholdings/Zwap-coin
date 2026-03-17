@@ -41,6 +41,16 @@ STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 app = FastAPI(title="ZWAP! API")
 api_router = APIRouter(prefix="/api")
 
+@app.get("/")
+async def app_root():
+    return {
+        "name": "ZWAP API",
+        "status": "running",
+        "version": "2.0.0",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
+    
 # ============ ZWAP CONTRACT CONFIG ============
 ZWAP_CONTRACT_ADDRESS = "0xe8898453af13b9496a6e8ada92c6efdaf4967a81"
 ZWAP_CHAIN_ID = 137
