@@ -7,7 +7,7 @@ Reward calculations are delegated to reward_service (stubs for now).
 
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 # Import reward service stubs — these raise NotImplementedError until implemented.
@@ -167,7 +167,11 @@ async def check_trivia_answer(payload: TriviaAnswerRequest):
 
 
 @router.post("/result/{wallet_address}")
-async def submit_game_result(wallet_address: str, game_data: GameResultRequest, request):
+async def submit_game_result(
+    wallet_address: str,
+    game_data: GameResultRequest,
+    request: Request,
+):
     """Submit game result and claim rewards (ZWAP + Z Points)."""
     db = request.app.state.db
     wallet = wallet_address.lower()
