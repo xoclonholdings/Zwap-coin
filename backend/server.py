@@ -670,9 +670,10 @@ async def get_contract_info():
 
 # ============ FAUCET ENDPOINTS (MOVE) ============
 
+"""
 @api_router.post("/faucet/steps/{wallet_address}")
 async def claim_step_rewards(wallet_address: str, steps_data: StepsUpdate):
-    """Claim ZWAP rewards for steps (no Z Points from walking)"""
+    '''Claim ZWAP rewards for steps (no Z Points from walking)'''
     wallet = wallet_address.lower()
 
     if check_rate_limit(wallet, "steps", STEP_CLAIM_COOLDOWN):
@@ -721,6 +722,7 @@ async def claim_step_rewards(wallet_address: str, steps_data: StepsUpdate):
         "daily_zwap_remaining": round(zwap_cap - updated_user.get("daily_zwap_earned", 0), 2),
         "message": f"Earned {rewards:.2f} ZWAP for {steps_data.steps} steps!"
     }
+"""
 
 # ============ EDUCATION SPINE TRIVIA (SERVER-SIDE) ============
 
