@@ -333,7 +333,37 @@ async def check_trivia_answer(answer: TriviaAnswer):
         "correct_answer": question["answer"],
         "time_bonus": round(time_bonus, 2),
     }
+    
+from fastapi import Request
 
+@learn_router.post("/complete/{wallet_address}/{module_id}")
+async def complete_module(wallet_address: str, module_id: str, request: Request):
+    db = request.app.state.db
+    wallet = wallet_address.lower()
+
+    user = await db.users.find_one({"wallet_address": wallet})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # prevent duplicate completion
+    completed = user.get("completed_modules", [])
+    if module_id in completed:
+        return {"message": "Already completed", "reward": 0}
+
+    reward = 25  # simple fixed reward for now
+
+    await db.users.update_one(
+        {"wallet_address": wallet},
+        {
+            "$inc": {"zpts_balance": reward, "total_zpts": reward},
+            "$push": {"completed_modules": module_id},
+        },
+    )
+
+    return {
+        "message": "Module completed",
+        "reward": reward,
+    }
 
 # Export canonical name expected by server.py
 router = learn_router
