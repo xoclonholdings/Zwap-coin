@@ -13,6 +13,7 @@ export default function SubscriptionSuccess() {
 
   const [status, setStatus] = useState("checking"); // checking, activating, success, error
   const [attempts, setAttempts] = useState(0);
+  const hasStartedRef = useRef(false);
   console.log("PAGE LOADED", {
     sessionId: searchParams.get("session_id"),
     walletAddress,
