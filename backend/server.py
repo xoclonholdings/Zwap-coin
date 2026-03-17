@@ -25,6 +25,7 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+print("CONNECTED DB:", db.name)
 
 # Stripe
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
