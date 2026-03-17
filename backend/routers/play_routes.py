@@ -2,7 +2,7 @@
 Play (Games) Router
 ====================
 Routes for trivia, game results, and future game types.
-Reward calculations are delegated to reward_service (stubs for now).
+Reward calculations are delegated to reward_service.
 """
 
 import logging
@@ -10,13 +10,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-# Import reward service stubs — these raise NotImplementedError until implemented.
-# Routes currently use inline logic from server.py; these imports prepare for migration.
-from services.reward_service import (  # noqa: F401
-    calculate_play_reward,
-    get_tier_multipliers,
-    enforce_daily_caps,
-)
+# Reward calculations are handled by the shared reward service.
+from services.reward_service import calculate_play_reward
 
 router = APIRouter(prefix="/games", tags=["Play"])
 
@@ -64,42 +59,6 @@ TIERS = {
 
 def get_user_tier_config(tier: str) -> dict:
     return TIERS.get(tier, TIERS["starter"])
-
-
-def calculate_game_rewards(
-    game_type: str,
-    score: int,
-    level: int,
-    blocks: int = 0,
-    multiplier: float = 1.0,
-) -> dict:
-    """Calculate ZWAP and Z Points rewards for games with progressive difficulty."""
-    difficulty_multiplier = 1 + (level - 1) * 0.1
-
-    if game_type == "zbrickles":
-        base_zwap = min(blocks * 0.5 + (score / 100), 50)
-        base_zpts = min(blocks + (score // 50), 10)
-
-    elif game_type == "ztrivia":
-        base_zwap = min(score * 0.5, 30)
-        base_zpts = min(score * 2, 8)
-
-    elif game_type == "ztetris":
-        base_zwap = min((score / 100) + (level * 2), 75)
-        base_zpts = min((score // 100) + level, 12)
-
-    elif game_type == "zslots":
-        base_zwap = min(score * 0.3, 40)
-        base_zpts = min(score // 10, 8)
-
-    else:
-        base_zwap = 0
-        base_zpts = 0
-
-    return {
-        "zwap": round(base_zwap * difficulty_multiplier * multiplier, 2),
-        "zpts": int(base_zpts * difficulty_multiplier),
-    }
 
 
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
@@ -192,27 +151,27 @@ async def submit_game_result(
 
     tier = user.get("tier", "starter")
     tier_config = get_user_tier_config(tier)
-
+    
     if game_data.game_type not in tier_config["games"]:
         raise HTTPException(
             status_code=403,
             detail=f"Game not available in {tier_config['name']} tier",
         )
-
+    
     user = await check_and_reset_daily_zpts(db, user)
     daily_zpts = user.get("daily_zpts_earned", 0)
     zpts_cap = tier_config["daily_zpts_cap"]
-
+    
     user = await check_and_reset_daily_zwap(db, user)
     daily_zwap = user.get("daily_zwap_earned", 0.0)
     zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
-
-    rewards = calculate_game_rewards(
-        game_data.game_type,
-        game_data.score,
-        game_data.level,
-        game_data.blocks_destroyed,
-        tier_config["zwap_multiplier"],
+    
+    rewards = await calculate_play_reward(
+        game_type=game_data.game_type,
+        score=game_data.score,
+        level=game_data.level,
+        tier=tier,
+        blocks_destroyed=game_data.blocks_destroyed,
     )
 
     zpts_to_add = max(0, min(rewards["zpts"], zpts_cap - daily_zpts))
