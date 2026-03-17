@@ -6,7 +6,7 @@ import uuid
 
 from services.reward_service import get_daily_reward
 
-user_router = APIRouter(tags=["User"])
+user_router = APIRouter(prefix="/users", tags=["User"])
 
 
 class UserCreate(BaseModel):
