@@ -73,6 +73,14 @@ const getOnchainBalance = (walletAddress) =>
 const getContractInfo = () => request("GET", "/blockchain/contract-info");
 
 // ---------------------------------------------------------------------------
+// Learn
+// ---------------------------------------------------------------------------
+
+/** POST /api/learn/complete/:address/:moduleId */
+const completeLearnModule = (walletAddress, moduleId) =>
+  request("POST", `/learn/complete/${walletAddress}/${moduleId}`);
+
+// ---------------------------------------------------------------------------
 // Move-to-Earn
 // ---------------------------------------------------------------------------
 
@@ -367,6 +375,9 @@ const api = {
   updateProfile,
   getOnchainBalance,
   getContractInfo,
+  
+  // Learn
+  completeLearnModule,
 
   // Move
   claimStepRewards,
