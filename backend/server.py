@@ -933,6 +933,7 @@ async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsReq
 @api_router.post("/subscription/checkout")
 async def create_subscription_checkout(request: Request, sub_request: SubscriptionRequest):
     """Create Stripe checkout session for Plus subscription"""
+    print("HIT server.py subscription/checkout")
     import stripe
 
     stripe.api_key = STRIPE_API_KEY
