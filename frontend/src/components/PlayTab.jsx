@@ -481,19 +481,21 @@ export default function PlayTab() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameResult, setGameResult] = useState(null);
   const [currentLevel, setCurrentLevel] = useState(1);
-
+  const [rewardPopup, setRewardPopup] = useState(null);
+  
   const tierConfig = TIERS[user?.tier || "starter"];
   const gamesPlayed = user?.games_played || 0;
   const baseLevel = Math.min(Math.floor(gamesPlayed / 3) + 1, 10);
+  const isPlus = user?.tier === "plus";
 
   const handleGameEnd = useCallback(
     async (score, blocksOrDifficulty, level = 1, cleared = false) => {
       setIsPlaying(false);
-
+  
       const gameType = selectedGame;
       const blocks = gameType === "zbrickles" ? blocksOrDifficulty : 0;
       const difficulty = gameType === "ztrivia" ? blocksOrDifficulty : level;
-
+  
       try {
         const result = await api.submitGameResult(
           walletAddress,
@@ -502,13 +504,15 @@ export default function PlayTab() {
           difficulty,
           blocks
         );
-
+  
+        setRewardPopup(result);
+  
         setGameResult({
           ...result,
           cleared,
           nextLevel: cleared ? level + 1 : level,
         });
-
+  
         await refreshUser();
       } catch (error) {
         toast.error(error.message || "Failed to submit result");
@@ -641,14 +645,21 @@ export default function PlayTab() {
               <currentGameData.icon className="w-5 h-5 text-cyan-400" />
             </div>
           )}
-
+        
           <div>
             <h1 className="text-lg font-bold text-white">
               {currentGameData?.name}
             </h1>
+        
             <p className="text-[11px] text-gray-500">
               {currentGameData?.description}
             </p>
+        
+            {isPlus && (
+              <p className="text-[11px] text-yellow-400 font-medium mt-1">
+                👑 1.5x Rewards
+              </p>
+            )}
           </div>
         </div>
 
@@ -697,7 +708,7 @@ export default function PlayTab() {
           </div>
         )}
 
-        {!isPlaying && gameResult && (
+        {!isPlaying && gameResult && !rewardPopup && (
           <div className="w-full max-w-sm glass-card rounded-2xl p-6 text-center">
             <h2 className="text-white font-bold text-xl mb-2">Run Complete</h2>
             <p className="text-gray-400 text-sm mb-5">
@@ -738,9 +749,49 @@ export default function PlayTab() {
                 Play Again
               </Button>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                    </div>
+                    )}
+                  </div>
+            
+                  {rewardPopup && (
+                      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/60">
+                        <motion.div
+                          initial={{ scale: 0.85, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className={`rounded-2xl p-6 text-center w-72 border ${
+                            isPlus
+                              ? "bg-gradient-to-br from-purple-900/40 to-black border-purple-500/40"
+                              : "bg-[#0a0b1e] border-cyan-500/30"
+                          }`}
+                        >
+                          <h2 className="text-white text-lg font-bold mb-2">
+                            {isPlus ? "Bonus Reward" : "Session Reward"}
+                          </h2>
+                    
+                          <p className="text-purple-400 text-xl font-bold">
+                            +{rewardPopup.zwap_earned || 0} ZWAP
+                          </p>
+                    
+                          <p className={`text-sm mb-4 ${isPlus ? "text-pink-400" : "text-cyan-400"}`}>
+                            +{rewardPopup.zpts_earned || 0} zPts
+                          </p>
+                    
+                          {isPlus && (
+                            <p className="text-xs text-purple-300 mb-3">
+                              ✨ Plus Bonus Applied
+                            </p>
+                          )}
+                    
+                          <Button
+                            onClick={() => setRewardPopup(null)}
+                            className={`w-full ${isPlus ? "bg-purple-500 text-white" : "bg-cyan-500 text-black"}`}
+                          >
+                            Continue
+                          </Button>
+                        </motion.div>
+                      </div>
+                    )}
+            
+                </div>
+              );
+            }
