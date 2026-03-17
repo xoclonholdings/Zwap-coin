@@ -5,7 +5,7 @@ Routes for step submission, session tracking, and anti-cheat.
 Reward calculations are delegated to reward_service (stubs for now).
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, HTTPException
 
 # Import reward service stubs — these raise NotImplementedError until implemented.
 # Routes currently use inline logic from server.py; these imports prepare for migration.
@@ -16,6 +16,50 @@ from services.reward_service import (  # noqa: F401
 )
 
 router = APIRouter(prefix="/move", tags=["Move"])
+
+
+@router.post("/claim/{wallet_address}")
+async def claim_move_rewards(wallet_address: str, request: Request, steps: int):
+    db = request.app.state.db
+    wallet = wallet_address.lower()
+
+    user = await db.users.find_one({"wallet_address": wallet})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Base reward copied from server.py for migration
+    if steps < 1000:
+        base = steps * 0.01
+    elif steps < 5000:
+        base = 10 + (steps - 1000) * 0.02
+    elif steps < 10000:
+        base = 90 + (steps - 5000) * 0.03
+    else:
+        base = 240 + (steps - 10000) * 0.05
+
+    multiplier = 1.5 if user.get("tier") == "plus" else 1.0
+    reward = base * multiplier
+
+    await db.users.update_one(
+        {"wallet_address": wallet},
+        {
+            "$inc": {
+                "zwap_balance": reward,
+                "total_earned": reward,
+                "total_steps": steps,
+            },
+            "$set": {
+                "daily_steps": steps
+            }
+        }
+    )
+
+    return {
+        "steps": steps,
+        "reward": round(reward, 2),
+        "tier": user.get("tier"),
+        "multiplier": multiplier
+    }
 
 
 @router.get("/session/{wallet_address}")
