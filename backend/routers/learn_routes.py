@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 import random
 import time as _time
 import uuid
@@ -27,6 +27,10 @@ class LearnModuleSummary(BaseModel):
     level: str
     category: str
     short_description: str
+    core: str
+    analogy: str
+    did_you_know: List[str]
+    quick_check: dict
 
 
 LEARN_MODULES = [
@@ -36,6 +40,23 @@ LEARN_MODULES = [
         "level": "beginner",
         "category": "foundations",
         "short_description": "A simple introduction to Web3, digital ownership, and blockchain-based apps.",
+        "core": (
+            "Web3 is the next layer of the internet where users can do more than just read and interact. "
+            "They can also hold assets, connect wallets, and participate in systems powered by blockchain."
+        ),
+        "analogy": (
+            "Think of Web2 like renting space in someone else's mall. Web3 is more like entering a city "
+            "where you can actually own your shop, your keys, and some of the roads you use."
+        ),
+        "did_you_know": [
+            "Web3 often uses wallets instead of only usernames and passwords.",
+            "Smart contracts can automate rules without needing a central company to approve every action.",
+            "Many Web3 apps use tokens to coordinate rewards, access, and participation."
+        ],
+        "quick_check": {
+            "question": "What makes Web3 different from earlier internet models?",
+            "answer": "It adds stronger ideas of ownership, wallets, blockchain, and token-powered participation."
+        },
         "content": {
             "overview": (
                 "Web3 is a way of building internet products that use blockchains, smart contracts, "
@@ -61,6 +82,23 @@ LEARN_MODULES = [
         "level": "beginner",
         "category": "tokens",
         "short_description": "Learn what utility tokens do and why they matter inside an app ecosystem.",
+        "core": (
+            "A utility token is a token that is meant to be used. Its job is not just to sit in a wallet. "
+            "It should unlock value inside a product, platform, or ecosystem."
+        ),
+        "analogy": (
+            "Think of a utility token like a universal pass, arcade card, and rewards key blended together. "
+            "Its value comes from what it lets you do once you are inside the system."
+        ),
+        "did_you_know": [
+            "Utility tokens can be used for access, payments, rewards, or ecosystem participation.",
+            "A token can have utility without representing ownership in a company.",
+            "The stronger the real use inside a platform, the stronger the utility story becomes."
+        ],
+        "quick_check": {
+            "question": "What gives a utility token meaning?",
+            "answer": "What it can actually do inside the ecosystem."
+        },
         "content": {
             "overview": (
                 "A utility token is a digital asset designed to unlock access to features, products, or services "
@@ -79,11 +117,66 @@ LEARN_MODULES = [
         },
     },
     {
+        "id": "zwap-token-utility",
+        "title": "How ZWAP Fits In",
+        "level": "beginner",
+        "category": "zwap",
+        "short_description": "A beginner explanation of how ZWAP and zPts differ and how utility can work inside the app.",
+        "core": (
+            "ZWAP and zPts are connected, but they are not the same thing. zPts are in-app points. "
+            "ZWAP is the token layer. A beginner needs to understand where each one lives and what each one does."
+        ),
+        "analogy": (
+            "Think of zPts like points on your arcade card, while ZWAP is the actual token rail connected to the wider ecosystem."
+        ),
+        "did_you_know": [
+            "zPts are tracked in the app and are not on-chain.",
+            "ZWAP is the token users associate with ecosystem utility.",
+            "Clear education reduces confusion between rewards, balances, and token use."
+        ],
+        "quick_check": {
+            "question": "Are zPts and ZWAP the same thing?",
+            "answer": "No. zPts are app points, while ZWAP is the token layer."
+        },
+        "content": {
+            "overview": (
+                "ZWAP is the ecosystem token, while zPts are off-chain in-app points. They are related, but they are not the same thing."
+            ),
+            "key_points": [
+                "zPts are app-tracked points and do not live on-chain.",
+                "ZWAP is the token layer used for ecosystem utility.",
+                "A healthy beginner flow teaches users what they earn, where it lives, and what they can do with it.",
+                "Utility becomes stronger when users can clearly connect rewards, access, and actions inside the app.",
+            ],
+            "zwap_context": (
+                "The Learn module should help users understand the path from learning, to participation, to earning, "
+                "to practical token use inside ZWAP."
+            ),
+        },
+    },
+    {
         "id": "web2-vs-web3",
         "title": "Web2 vs Web3",
         "level": "beginner",
         "category": "foundations",
         "short_description": "A plain-English comparison between platform internet and ownership-oriented internet.",
+        "core": (
+            "Web2 is the internet most people know today. You use apps and platforms, but they usually own the rails. "
+            "Web3 tries to give users more direct control through wallets, tokens, and blockchain infrastructure."
+        ),
+        "analogy": (
+            "Web2 is like living in a hotel where everything works but you own nothing. "
+            "Web3 is closer to a neighborhood where you may have more responsibility, but more of what you build can belong to you."
+        ),
+        "did_you_know": [
+            "Web2 platforms usually control identity, storage, and monetization.",
+            "Web3 aims to make assets and participation more portable.",
+            "Web3 is still early and can be harder for beginners to use."
+        ],
+        "quick_check": {
+            "question": "What is one major difference between Web2 and Web3?",
+            "answer": "Web3 pushes more toward user ownership and wallet-based participation."
+        },
         "content": {
             "overview": (
                 "Web2 is the familiar internet of apps, feeds, and platform accounts. Web3 aims to add stronger user "
@@ -107,6 +200,23 @@ LEARN_MODULES = [
         "level": "beginner",
         "category": "foundations",
         "short_description": "Understand the on-chain rules that power many blockchain applications.",
+        "core": (
+            "A smart contract is code that lives on a blockchain and runs automatically. "
+            "It follows its programmed rules without needing a person in the middle to approve every step."
+        ),
+        "analogy": (
+            "Think of a smart contract like a digital vending machine. "
+            "If the right conditions are met, it delivers the programmed outcome without asking a cashier."
+        ),
+        "did_you_know": [
+            "Smart contracts can handle tokens, permissions, rewards, and marketplace actions.",
+            "They reduce manual handling, but they can still contain bugs if written poorly.",
+            "Many blockchain apps depend on smart contracts as their trust layer."
+        ],
+        "quick_check": {
+            "question": "What makes a smart contract useful?",
+            "answer": "It can automatically execute rules once conditions are met."
+        },
         "content": {
             "overview": (
                 "A smart contract is code deployed on a blockchain that runs automatically when its rules are triggered. "
@@ -120,28 +230,6 @@ LEARN_MODULES = [
             "zwap_context": (
                 "When ZWAP connects rewards, token utility, or ecosystem mechanics to blockchain logic, smart contracts "
                 "become part of the trust layer."
-            ),
-        },
-    },
-    {
-        "id": "zwap-token-utility",
-        "title": "How ZWAP Fits In",
-        "level": "beginner",
-        "category": "zwap",
-        "short_description": "A beginner explanation of how ZWAP and zPts differ and how utility can work inside the app.",
-        "content": {
-            "overview": (
-                "ZWAP is the ecosystem token, while zPts are off-chain in-app points. They are related, but they are not the same thing."
-            ),
-            "key_points": [
-                "zPts are app-tracked points and do not live on-chain.",
-                "ZWAP is the token layer used for ecosystem utility.",
-                "A healthy beginner flow teaches users what they earn, where it lives, and what they can do with it.",
-                "Utility becomes stronger when users can clearly connect rewards, access, and actions inside the app.",
-            ],
-            "zwap_context": (
-                "The Learn module should help users understand the path from learning, to participation, to earning, "
-                "to practical token use inside ZWAP."
             ),
         },
     },
@@ -181,6 +269,10 @@ async def list_learn_modules():
             level=module["level"],
             category=module["category"],
             short_description=module["short_description"],
+            core=module["core"],
+            analogy=module["analogy"],
+            did_you_know=module["did_you_know"],
+            quick_check=module["quick_check"],
         )
         for module in LEARN_MODULES
     ]
