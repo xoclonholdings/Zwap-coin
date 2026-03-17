@@ -46,28 +46,6 @@ async def leaderboard_stats(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@leaderboard_router.get("/{category}")
-async def leaderboard_by_category(
-    request: Request,
-    category: str,
-    limit: int = Query(10, ge=1, le=100),
-):
-    """
-    Returns top leaderboard entries only.
-    Matches the current server.py leaderboard list route shape closely.
-    """
-    db = request.app.state.db
-    try:
-        return await get_top_leaderboard(
-            db=db,
-            category=category,
-            limit=limit,
-            include_anonymized_name=True,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 @leaderboard_router.get("/user/{wallet_address}/{category}")
 async def leaderboard_user_rank(
     request: Request,
@@ -91,6 +69,28 @@ async def leaderboard_user_rank(
         if not result.get("found"):
             raise HTTPException(status_code=404, detail="User not found")
         return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@leaderboard_router.get("/{category}")
+async def leaderboard_by_category(
+    request: Request,
+    category: str,
+    limit: int = Query(10, ge=1, le=100),
+):
+    """
+    Returns top leaderboard entries only.
+    Matches the current server.py leaderboard list route shape closely.
+    """
+    db = request.app.state.db
+    try:
+        return await get_top_leaderboard(
+            db=db,
+            category=category,
+            limit=limit,
+            include_anonymized_name=True,
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
