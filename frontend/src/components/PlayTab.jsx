@@ -483,7 +483,9 @@ export default function PlayTab() {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [rewardPopup, setRewardPopup] = useState(null);
   
-  const tierConfig = TIERS[user?.tier || "starter"];
+  const forcedTier = "starter"; // change to "plus" or "starter" when testing
+  const isPlus = forcedTier === "plus";
+  const tierConfig = TIERS[forcedTier];
   const gamesPlayed = user?.games_played || 0;
   const baseLevel = Math.min(Math.floor(gamesPlayed / 3) + 1, 10);
   const isPlus = user?.tier === "plus";
