@@ -2,7 +2,7 @@
 Move-to-Earn Router
 ====================
 Routes for step submission, session tracking, and anti-cheat.
-Reward calculations are delegated to reward_service (stubs for now).
+Reward calculations are delegated to reward_service.
 """
 
 from collections import defaultdict
@@ -12,9 +12,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 
-# Import reward service stubs — these raise NotImplementedError until implemented.
-# Routes currently use inline logic from server.py; these imports prepare for migration.
-from services.reward_service import (  # noqa: F401
+from services.reward_service import (
     calculate_move_reward,
     get_tier_multipliers,
     enforce_daily_caps,
@@ -34,22 +32,6 @@ STEP_CLAIM_COOLDOWN = 300
 MAX_STEPS_PER_CLAIM = 50000
 MIN_STEPS_PER_CLAIM = 10
 
-DAILY_ZWAP_CAPS = {
-    "starter": 500.0,
-    "plus": 1500.0,
-}
-
-TIERS = {
-    "starter": {
-        "name": "Starter",
-        "zwap_multiplier": 1.0,
-    },
-    "plus": {
-        "name": "Plus",
-        "zwap_multiplier": 1.5,
-    },
-}
-
 
 def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
     """Returns True if rate-limited (too soon). False if OK."""
@@ -59,23 +41,6 @@ def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
         return True
     _rate_limits[wallet][action] = now
     return False
-
-
-def get_user_tier_config(tier: str) -> dict:
-    return TIERS.get(tier, TIERS["starter"])
-
-
-def calculate_step_rewards(steps: int, multiplier: float = 1.0) -> float:
-    """Tiered earning system for steps."""
-    if steps < 1000:
-        base = steps * 0.01
-    elif steps < 5000:
-        base = 10 + (steps - 1000) * 0.02
-    elif steps < 10000:
-        base = 90 + (steps - 5000) * 0.03
-    else:
-        base = 240 + (steps - 10000) * 0.05
-    return base * multiplier
 
 
 async def check_and_reset_daily_zwap(db, user: dict) -> dict:
@@ -144,23 +109,35 @@ async def claim_step_rewards(
         raise HTTPException(status_code=404, detail="User not found")
 
     tier = user.get("tier", "starter")
-    tier_config = get_user_tier_config(tier)
 
     user = await check_and_reset_daily_zwap(db, user)
-    daily_zwap = user.get("daily_zwap_earned", 0.0)
-    zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
+    daily_zwap = float(user.get("daily_zwap_earned", 0.0) or 0.0)
 
-    if daily_zwap >= zwap_cap:
+    tier_config = await get_tier_multipliers(tier)
+    cap_check = await enforce_daily_caps(
+        wallet_address=wallet,
+        tier=tier,
+        earned_today=daily_zwap,
+        cap_type="zwap",
+    )
+
+    if cap_check["capped"]:
         raise HTTPException(
             status_code=429,
             detail="Daily ZWAP earning limit reached. Come back tomorrow!",
         )
 
-    rewards = calculate_step_rewards(
-        steps_data.steps,
-        tier_config["zwap_multiplier"],
-    )
-    rewards = min(rewards, zwap_cap - daily_zwap)
+    try:
+        reward_result = await calculate_move_reward(
+            steps=steps_data.steps,
+            tier=tier,
+            daily_steps_so_far=user.get("daily_steps", 0),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    rewards = min(reward_result["zwap"], cap_check["remaining"])
+    zwap_cap = tier_config["daily_zwap_cap"]
 
     await db.users.update_one(
         {"wallet_address": wallet},
@@ -186,7 +163,7 @@ async def claim_step_rewards(
             2,
         ),
         "tier": tier,
-        "multiplier": tier_config["zwap_multiplier"],
+        "multiplier": tier_config["move"],
         "message": f"Earned {rewards:.2f} ZWAP for {steps_data.steps} steps!",
     }
 
