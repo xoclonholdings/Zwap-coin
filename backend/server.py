@@ -125,38 +125,6 @@ app.state.zwap_contract = zwap_contract
 app.state.treasury_wallet = "0x102a5301c56cFCf4F02bEA3184Bdb44b731375E0"
 app.state.treasury_private_key = os.environ.get("TREASURY_PRIVATE_KEY", "")
 
-TIERS = {
-    "starter": {
-        "name": "Starter",
-        "price": 0,
-        "zwap_multiplier": 1.0,
-        "daily_zpts_cap": 75,
-        "monthly_zwap_cap": 146250,
-        "games": ["zbrickles", "ztrivia"],
-        "features": ["zWALK", "ads"]
-    },
-    "plus": {
-        "name": "Plus",
-        "price": 9.99,
-        "zwap_multiplier": 1.5,
-        "daily_zpts_cap": 150,
-        "monthly_zwap_cap": 219375,
-        "games": ["zbrickles", "ztrivia", "ztetris", "zslots"],
-        "features": ["zWALK", "no_ads", "zDance", "zWorkout"]
-    }
-}
-
-DAILY_REWARD_TABLE = {
-    1: 10,
-    2: 15,
-    3: 20,
-    4: 25,
-    5: 30,
-    6: 35,
-    7: 50,
-}
-
-ZPTS_TO_ZWAP_RATE = 1000  # 1000 Z Points = 1 ZWAP
 
 # ============ ANTI-CHEAT: RATE LIMITING ============
 
