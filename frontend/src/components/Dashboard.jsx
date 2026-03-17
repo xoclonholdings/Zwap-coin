@@ -38,19 +38,6 @@ export default function Dashboard() {
     }
   };
 
-  const testMove = async () => {
-  try {
-    const res = await fetch(
-      `${process.env.REACT_APP_BACKEND_URL}/api/move/steps/${walletAddress}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ steps: 2000 }),
-      }
-    );
-
     const data = await res.json();
     alert(JSON.stringify(data, null, 2));
   } catch (err) {
@@ -216,14 +203,6 @@ export default function Dashboard() {
           );
         })}
       </div>
-      
-      <button
-        onClick={testMove}
-        className="mt-4 w-full rounded-xl bg-cyan-500 text-black font-semibold py-3"
-        type="button"
-      >
-        Test Move Reward
-      </button>
 
       {/* Tip */}
       <motion.div 
