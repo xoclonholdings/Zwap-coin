@@ -16,7 +16,10 @@ export default function FirstTimeUserPrompt({ open, onOpenChange }) {
 
   const handleGetWallet = () => {
     onOpenChange(false);
-    setIsOnboardingModalOpen(true);
+  
+    setTimeout(() => {
+      setIsOnboardingModalOpen(true);
+    }, 100);
   };
 
   return (
