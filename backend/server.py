@@ -142,9 +142,9 @@ api_router.include_router(swap_routes.router)
 api_router.include_router(leaderboard_routes.router)
 api_router.include_router(learn_routes.router)
 api_router.include_router(user_routes.router)
+api_router.include_router(stripe_routes.router)
 
 app.include_router(api_router)
-app.include_router(stripe_routes.router)
 
 # ============ MIDDLEWARE ============
 
