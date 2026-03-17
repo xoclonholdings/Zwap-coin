@@ -90,6 +90,7 @@ function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
@@ -195,19 +196,56 @@ function AppProvider({ children }) {
 };
 
   return (
-    <AppContext.Provider value={{
-      user, walletAddress, isWalletModalOpen, setIsWalletModalOpen,
-      pendingAction, setPendingAction, connectWallet, disconnectWallet,
-      refreshUser, requireWallet, isLoading, initialized, showSplash, setShowSplash,
-      onchainBalance, fetchOnchainBalance,
-    }}>
+    <AppContext.Provider
+      value={{
+        user,
+        walletAddress,
+  
+        // Wallet modal
+        isWalletModalOpen,
+        setIsWalletModalOpen,
+  
+        // Onboarding modal
+        isOnboardingModalOpen,
+        setIsOnboardingModalOpen,
+  
+        // Actions
+        pendingAction,
+        setPendingAction,
+        connectWallet,
+        disconnectWallet,
+        refreshUser,
+        requireWallet,
+  
+        // App state
+        isLoading,
+        initialized,
+        showSplash,
+        setShowSplash,
+  
+        // Blockchain
+        onchainBalance,
+        fetchOnchainBalance,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
 }
 
 function AppContent() {
-  const { walletAddress, isWalletModalOpen, setIsWalletModalOpen, pendingAction, setPendingAction, initialized, showSplash, setShowSplash } = useApp();
+  const { 
+    walletAddress, 
+    isWalletModalOpen, 
+    setIsWalletModalOpen,
+    isOnboardingModalOpen,
+    setIsOnboardingModalOpen,
+    pendingAction,
+    setPendingAction,
+    initialized,
+    showSplash,
+    setShowSplash
+  } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -228,14 +266,15 @@ function AppContent() {
   if (showSplash && location.pathname === "/") {
   return (
     <SplashScreen 
-      onEnter={() => { 
-        setShowSplash(false); 
+       onEnter={() => {
+        setShowSplash(false);
+      
         if (walletAddress) {
           navigate("/dashboard");
         } else {
-          // Go to Before You Begin, and explicitly open the wallet modal
+          // Go to wallet page BUT show onboarding first
           navigate("/wallet");
-          setIsWalletModalOpen(true);
+          setIsOnboardingModalOpen(true);
         }
       }}
       onWhatIsZwap={() => {
