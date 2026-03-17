@@ -12,6 +12,8 @@ import {
   Sparkles,
   GraduationCap,
 } from "lucide-react";
+import { useApp } from "@/App";
+import api from "@/lib/api";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
@@ -45,14 +47,19 @@ const categoryColors = {
   },
 };
 
-function ModuleCard({ module, index, defaultOpen = false }) {
+function ModuleCard({ module, index, defaultOpen = false, walletAddress }) {
   const [expanded, setExpanded] = useState(defaultOpen);
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [completedReward, setCompletedReward] = useState(null);
+
   const colors = categoryColors[module.category] || categoryColors.foundations;
+  const display = details || module;
 
   async function loadDetails() {
     if (details || loading) return;
+
     setLoading(true);
     try {
       const res = await fetch(`${API}/learn/modules/${module.id}`);
@@ -76,12 +83,25 @@ function ModuleCard({ module, index, defaultOpen = false }) {
   async function handleToggle() {
     const next = !expanded;
     setExpanded(next);
+
     if (next && !details) {
       await loadDetails();
     }
   }
 
-  const display = details || module;
+  async function handleComplete() {
+    if (!walletAddress || completing || completedReward !== null) return;
+
+    setCompleting(true);
+    try {
+      const result = await api.completeLearnModule(walletAddress, module.id);
+      setCompletedReward(result?.reward ?? 0);
+    } catch (err) {
+      console.error("Error completing learn module:", err);
+    } finally {
+      setCompleting(false);
+    }
+  }
 
   return (
     <motion.div
@@ -139,7 +159,9 @@ function ModuleCard({ module, index, defaultOpen = false }) {
                 <>
                   <div>
                     <p className="text-gray-300 text-sm leading-relaxed">
-                      {display.core || display.content?.overview || module.short_description}
+                      {display.core ||
+                        display.content?.overview ||
+                        module.short_description}
                     </p>
                   </div>
 
@@ -209,6 +231,36 @@ function ModuleCard({ module, index, defaultOpen = false }) {
                     </div>
                   )}
 
+                  {walletAddress && (
+                    <div className="pt-2">
+                      <button
+                        onClick={handleComplete}
+                        disabled={completing || completedReward !== null}
+                        className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-60"
+                      >
+                        {completing
+                          ? "Saving..."
+                          : completedReward !== null
+                            ? "Completed"
+                            : "Mark as Complete"}
+                      </button>
+
+                      {completedReward !== null && (
+                        <p
+                          className={`mt-2 text-center text-xs ${
+                            completedReward > 0
+                              ? "text-green-400"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {completedReward > 0
+                            ? `+${completedReward} zPts earned`
+                            : "Already completed"}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {display.quick_check?.question && (
                     <div className="pt-2 border-t border-gray-800/50">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
@@ -236,7 +288,12 @@ function ModuleCard({ module, index, defaultOpen = false }) {
   );
 }
 
-function SectionHeader({ icon: Icon, title, subtitle, colorClass = "text-cyan-300" }) {
+function SectionHeader({
+  icon: Icon,
+  title,
+  subtitle,
+  colorClass = "text-cyan-300",
+}) {
   return (
     <div className="mb-3">
       <div className="flex items-center gap-2 mb-1">
@@ -250,6 +307,7 @@ function SectionHeader({ icon: Icon, title, subtitle, colorClass = "text-cyan-30
 
 export default function LearnPage() {
   const navigate = useNavigate();
+  const { walletAddress } = useApp();
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -333,8 +391,8 @@ export default function LearnPage() {
               <h3 className="text-white font-semibold mb-1">Start here first</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
                 New to crypto or Web3? Begin with the first three modules below.
-                They cover the minimum you need before the rest of the page starts
-                making deeper sense.
+                They cover the minimum you need before the rest of the page
+                starts making deeper sense.
               </p>
             </div>
           </div>
@@ -361,6 +419,7 @@ export default function LearnPage() {
                     module={module}
                     index={i}
                     defaultOpen={i === 0}
+                    walletAddress={walletAddress}
                   />
                 ))}
               </div>
@@ -373,12 +432,16 @@ export default function LearnPage() {
                 subtitle="Deeper context you can open whenever you're ready."
                 colorClass="text-purple-300"
               />
-              <div className="space-y-3" data-testid="learn-explore-more-list">
+              <div
+                className="space-y-3"
+                data-testid="learn-explore-more-list"
+              >
                 {exploreModules.map((module, i) => (
                   <ModuleCard
                     key={module.id}
                     module={module}
                     index={i + startHereModules.length}
+                    walletAddress={walletAddress}
                   />
                 ))}
               </div>
