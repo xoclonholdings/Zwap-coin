@@ -10,19 +10,32 @@ export default function SubscriptionSuccess() {
   const { walletAddress, refreshUser } = useApp();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
   const [status, setStatus] = useState("checking"); // checking, activating, success, error
   const [attempts, setAttempts] = useState(0);
 
-  // ---------------------------
-  // Stable function definitions
-  // ---------------------------
+  const sessionId = searchParams.get("session_id");
 
-  // 1️⃣ Wrap activateSubscription in useCallback
   const activateSubscription = useCallback(
-    async (sessionId) => {
+    async (currentSessionId) => {
+      if (!walletAddress || !currentSessionId) {
+        console.log("ACTIVATE SUB BLOCKED", {
+          walletAddress,
+          sessionId: currentSessionId,
+        });
+        setStatus("error");
+        toast.error("Missing wallet or session information");
+        return;
+      }
+
       try {
+        console.log("ACTIVATE SUB DEBUG", {
+          walletAddress,
+          sessionId: currentSessionId,
+        });
+
         setStatus("activating");
-        await api.activateSubscription(walletAddress, sessionId);
+        await api.activateSubscription(walletAddress, currentSessionId);
         await refreshUser();
         setStatus("success");
         toast.success("Plus subscription activated!");
@@ -35,49 +48,66 @@ export default function SubscriptionSuccess() {
     [walletAddress, refreshUser]
   );
 
-  // 2️⃣ Wrap pollPaymentStatus in useCallback and include activateSubscription in deps
   const pollPaymentStatus = useCallback(
-    async (sessionId, attempt = 0) => {
-      if (attempt >= 5) {
+    async (currentSessionId, attempt = 0) => {
+      if (!currentSessionId) {
         setStatus("error");
         return;
       }
 
+      if (attempt >= 5) {
+        setStatus("error");
+        toast.error("Payment verification timed out");
+        return;
+      }
+
       try {
-        const result = await api.getSubscriptionStatus(sessionId);
+        const result = await api.getSubscriptionStatus(currentSessionId);
+
+        console.log("SUB STATUS DEBUG", {
+          walletAddress,
+          sessionId: currentSessionId,
+          attempt,
+          result,
+        });
 
         if (result.payment_status === "paid") {
-          await activateSubscription(sessionId); // ✅ stable reference
+          if (!walletAddress) {
+            setAttempts(attempt + 1);
+            setTimeout(() => pollPaymentStatus(currentSessionId, attempt + 1), 2000);
+            return;
+          }
+
+          await activateSubscription(currentSessionId);
         } else if (result.status === "expired") {
           setStatus("error");
+          toast.error("Checkout session expired");
         } else {
           setAttempts(attempt + 1);
-          setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
+          setTimeout(() => pollPaymentStatus(currentSessionId, attempt + 1), 2000);
         }
       } catch (error) {
         console.error("Error checking status:", error);
-        setTimeout(() => pollPaymentStatus(sessionId, attempt + 1), 2000);
+        setAttempts(attempt + 1);
+        setTimeout(() => pollPaymentStatus(currentSessionId, attempt + 1), 2000);
       }
     },
-    [activateSubscription] // ✅ added missing dependency
+    [walletAddress, activateSubscription]
   );
 
-  // ---------------------------
-  // Effects
-  // ---------------------------
-
   useEffect(() => {
-    const sessionId = searchParams.get("session_id");
     if (!sessionId) {
       setStatus("error");
       return;
     }
-    pollPaymentStatus(sessionId);
-  }, [searchParams, pollPaymentStatus]);
 
-  // ---------------------------
-  // Render
-  // ---------------------------
+    if (!walletAddress) {
+      console.log("WAITING FOR WALLET ADDRESS...");
+      return;
+    }
+
+    pollPaymentStatus(sessionId);
+  }, [sessionId, walletAddress, pollPaymentStatus]);
 
   return (
     <div className="h-[100dvh] bg-[#0a0b1e] flex flex-col items-center justify-center p-6">
@@ -86,6 +116,9 @@ export default function SubscriptionSuccess() {
           <Loader2 className="w-16 h-16 text-cyan-400 animate-spin mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">Processing Payment</h2>
           <p className="text-gray-400">Please wait while we verify your payment...</p>
+          {attempts > 0 && (
+            <p className="text-gray-500 text-xs mt-2">Attempt {attempts + 1} of 5</p>
+          )}
         </div>
       )}
 
