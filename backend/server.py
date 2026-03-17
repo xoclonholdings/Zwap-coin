@@ -13,7 +13,6 @@ from routers import move_routes
 from routers import play_routes
 from routers import shop_routes
 from routers import swap_routes
-from routers import subscription_routes
 from routers import leaderboard_routes
 from routers import learn_routes
 from routers import user_routes
@@ -140,7 +139,6 @@ api_router.include_router(move_routes.router)
 api_router.include_router(play_routes.router)
 api_router.include_router(shop_routes.router)
 api_router.include_router(swap_routes.router)
-api_router.include_router(subscription_routes.router)
 api_router.include_router(leaderboard_routes.router)
 api_router.include_router(learn_routes.router)
 api_router.include_router(user_routes.router)
