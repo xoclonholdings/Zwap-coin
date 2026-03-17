@@ -212,28 +212,43 @@ export default function ShopTab() {
 
   const handleStripeCheckout = async () => {
     if (!selectedItem || !walletAddress) return;
-
+  
     setIsPurchasing(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/stripe/create-checkout`, {
+      const isPlusSubscription =
+        selectedItem.id === "plus_subscription" ||
+        selectedItem.name?.toLowerCase() === "plus";
+  
+      const endpoint = isPlusSubscription
+        ? `${process.env.REACT_APP_BACKEND_URL}/stripe/create-subscription-checkout`
+        : `${process.env.REACT_APP_BACKEND_URL}/stripe/create-checkout`;
+  
+      const body = isPlusSubscription
+        ? {
+            wallet_address: walletAddress,
+            origin_url: window.location.origin,
+          }
+        : {
+            item_id: selectedItem.id,
+            wallet_address: walletAddress,
+            purchase_type: "shop_item",
+            origin_url: window.location.origin,
+          };
+  
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          item_id: selectedItem.id,
-          wallet_address: walletAddress,
-          purchase_type: "shop_item",
-          origin_url: window.location.origin,
-        }),
+        body: JSON.stringify(body),
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok || !data.url) {
         throw new Error(data?.detail || "Failed to create Stripe checkout session");
       }
-
+  
       window.location.href = data.url;
     } catch (error) {
       toast.error(error.message || "Stripe checkout failed");
