@@ -18,6 +18,8 @@ import routers.wallet_routes as wallet_routes
 import stripe
 from routers import stripe_routes
 from routers import move_routes
+from routers import play_routes
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
