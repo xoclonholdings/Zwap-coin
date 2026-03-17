@@ -23,6 +23,7 @@ from routers import play_routes
 from services import reward_service
 from services.reward_service import TIERS, get_daily_reward
 from routers import leaderboard_routes
+from routers import learn_routes
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1060,6 +1061,7 @@ api_router.include_router(wallet_routes.router)
 api_router.include_router(move_routes.router)
 api_router.include_router(play_routes.router)
 api_router.include_router(leaderboard_routes.router)
+api_router.include_router(learn_routes.router)
 
 app.include_router(api_router)
 app.include_router(stripe_routes.router)
