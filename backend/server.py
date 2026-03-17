@@ -26,6 +26,7 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 print("CONNECTED DB:", db.name)
+print("MONGO URL:", mongo_url)
 
 # Stripe
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
