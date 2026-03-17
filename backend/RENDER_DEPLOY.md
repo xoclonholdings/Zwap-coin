@@ -22,7 +22,7 @@ Set these in the Render dashboard under **Environment**:
 | Variable          | Value                                          | Required |
 |-------------------|------------------------------------------------|----------|
 | `MONGO_URL`       | Your MongoDB Atlas connection string           | Yes      |
-| `DB_NAME`         | `zwap_production`                              | Yes      |
+| `DB_NAME`         | `zwap-production`                              | Yes      |
 | `CORS_ORIGINS`    | Your Netlify frontend URL (e.g. `https://your-app.netlify.app`) | Yes      |
 | `STRIPE_API_KEY`  | Your Stripe secret key                         | Yes      |
 | `POLYGON_RPC_URL` | Your Alchemy Polygon RPC URL                   | Yes      |
