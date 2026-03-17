@@ -16,10 +16,10 @@ from routers import stripe_routes
 from routers import move_routes
 from routers import play_routes
 from services import reward_service
-from services.reward_service import get_daily_reward
 from routers import leaderboard_routes
 from routers import learn_routes
 from routers.admin_routes import admin_router
+from routers import user_routes
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -114,27 +114,6 @@ app.state.treasury_private_key = os.environ.get("TREASURY_PRIVATE_KEY", "")
 
 # ============ MODELS ============
 
-class UserCreate(BaseModel):
-    wallet_address: str
-
-class UserResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str
-    wallet_address: str
-    zwap_balance: float = 0.0
-    zpts_balance: int = 0
-    daily_streak: int = 0
-    last_daily_claim: Optional[str] = None
-    tier: str = "starter"
-    subscription_id: Optional[str] = None
-    subscription_status: Optional[str] = None
-    total_steps: int = 0
-    daily_steps: int = 0
-    daily_zpts_earned: int = 0
-    last_zpts_reset: Optional[str] = None
-    games_played: int = 0
-    total_earned: float = 0.0
-    created_at: str
 
 
 class ConvertZPtsRequest(BaseModel):
@@ -179,174 +158,6 @@ class PurchaseRequest(BaseModel):
 class SubscriptionRequest(BaseModel):
     wallet_address: str
     origin_url: str
-
-# ============ USER ENDPOINTS ============
-
-@api_router.post("/users/connect", response_model=UserResponse)
-async def connect_wallet(user_data: UserCreate):
-    """Connect wallet and create/get user.
-
-    Normal path:
-      - Look up user in MongoDB by wallet_address
-      - If exists, return it
-      - Else create a new user document and insert
-
-    Dev fallback:
-      - If MongoDB is unreachable or errors, log the exception
-      - Return an in-memory user object so local wallet login still works
-    """
-    wallet = user_data.wallet_address.lower()
-
-    try:
-        existing = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-        if existing:
-            return UserResponse(**existing)
-
-        new_user = {
-            "id": str(uuid.uuid4()),
-            "wallet_address": wallet,
-            "zwap_balance": 100.0,
-            "zpts_balance": 0,
-            "tier": "starter",
-            "subscription_id": None,
-            "subscription_status": None,
-            "total_steps": 0,
-            "daily_steps": 0,
-            "daily_zpts_earned": 0,
-            "daily_streak": 0,
-            "last_daily_claim": None,
-            "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
-            "games_played": 0,
-            "total_earned": 100.0,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-
-        await db.users.insert_one(new_user)
-        return UserResponse(**{k: v for k, v in new_user.items() if k != "_id"})
-
-    except Exception as e:
-        logging.exception(
-            f"DB error in /users/connect for wallet {wallet}. Using in-memory fallback user."
-        )
-
-        fallback_user = {
-            "id": str(uuid.uuid4()),
-            "wallet_address": wallet,
-            "zwap_balance": 100.0,
-            "zpts_balance": 0,
-            "tier": "starter",
-            "subscription_id": None,
-            "subscription_status": None,
-            "total_steps": 0,
-            "daily_steps": 0,
-            "daily_zpts_earned": 0,
-            "daily_streak": 0,
-            "last_daily_claim": None,
-            "last_zpts_reset": datetime.now(timezone.utc).isoformat(),
-            "games_played": 0,
-            "total_earned": 100.0,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-
-        return UserResponse(**fallback_user)
-
-@api_router.get("/users/{wallet_address}", response_model=UserResponse)
-async def get_user(wallet_address: str):
-    """Get user by wallet address"""
-    wallet = wallet_address.lower()
-    user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return UserResponse(**user)
-
-@api_router.get("/rewards/status/{wallet_address}")
-async def get_daily_reward_status(wallet_address: str):
-    wallet = wallet_address.lower()
-
-    user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    streak = user.get("daily_streak", 0)
-    last_claim = user.get("last_daily_claim")
-    now = datetime.now(timezone.utc)
-
-    can_claim = True
-
-    if not last_claim:
-        projected_streak = 1
-    else:
-        last_claim_dt = datetime.fromisoformat(last_claim.replace("Z", "+00:00"))
-        elapsed = now - last_claim_dt
-
-        if elapsed < timedelta(hours=24):
-            can_claim = False
-            projected_streak = streak
-        elif elapsed < timedelta(hours=48):
-            projected_streak = streak + 1
-        else:
-            projected_streak = 1
-
-    next_reward = get_daily_reward(projected_streak)
-
-    return {
-        "daily_streak": streak,
-        "can_claim": can_claim,
-        "next_reward_zpts": next_reward,
-        "last_daily_claim": last_claim
-    }
-
-@api_router.post("/rewards/daily/{wallet_address}")
-async def claim_daily_reward(wallet_address: str):
-    wallet = wallet_address.lower()
-
-    user = await db.users.find_one({"wallet_address": wallet})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    now = datetime.now(timezone.utc)
-    streak = user.get("daily_streak", 0)
-    last_claim = user.get("last_daily_claim")
-
-    if last_claim:
-        last_claim_dt = datetime.fromisoformat(last_claim.replace("Z", "+00:00"))
-        elapsed = now - last_claim_dt
-
-        if elapsed < timedelta(hours=24):
-            raise HTTPException(status_code=400, detail="Daily reward already claimed")
-
-        if elapsed < timedelta(hours=48):
-            new_streak = streak + 1
-        else:
-            new_streak = 1
-    else:
-        new_streak = 1
-
-    reward_amount = get_daily_reward(new_streak)
-
-    await db.users.update_one(
-        {"wallet_address": wallet},
-        {
-            "$set": {
-                "daily_streak": new_streak,
-                "last_daily_claim": now.isoformat()
-            },
-            "$inc": {
-                "zpts_balance": reward_amount
-            }
-        }
-    )
-
-    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-
-    return {
-        "success": True,
-        "daily_streak": updated_user.get("daily_streak", new_streak),
-        "reward_zpts": reward_amount,
-        "new_zpts_balance": updated_user.get("zpts_balance", 0),
-        "last_daily_claim": updated_user.get("last_daily_claim"),
-        "message": f"Claimed {reward_amount} zPts daily reward"
-    }
 
 
 # ============ Z POINTS CONVERSION ============
@@ -757,6 +568,7 @@ api_router.include_router(move_routes.router)
 api_router.include_router(play_routes.router)
 api_router.include_router(leaderboard_routes.router)
 api_router.include_router(learn_routes.router)
+api_router.include_router(user_routes.router)
 
 app.include_router(api_router)
 app.include_router(stripe_routes.router)
