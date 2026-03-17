@@ -14,7 +14,7 @@ import {
 export default function FirstTimeUserPrompt({ open, onOpenChange }) {
   const { setIsOnboardingModalOpen } = useApp();
 
-  const handleGetStarted = () => {
+  const handleGetWallet = () => {
     onOpenChange(false);
     setIsOnboardingModalOpen(true);
   };
@@ -27,7 +27,7 @@ export default function FirstTimeUserPrompt({ open, onOpenChange }) {
             Welcome to ZWAP!
           </DialogTitle>
           <DialogDescription className="text-gray-400 text-center">
-            Start in seconds and create your wallet as you go.
+            You can explore freely, then create a wallet when you're ready.
           </DialogDescription>
         </DialogHeader>
 
@@ -54,29 +54,29 @@ export default function FirstTimeUserPrompt({ open, onOpenChange }) {
             <p className="text-white font-medium">You can explore first:</p>
             <ul className="text-gray-400 text-sm space-y-1">
               <li>✓ Browse the app</li>
-              <li>✓ View prices and items</li>
+              <li>✓ View items and prices</li>
               <li>✓ Try demo games</li>
             </ul>
           </div>
 
           <div className="space-y-2 mb-6">
-            <p className="text-cyan-400 font-medium">When you’re ready, you can:</p>
+            <p className="text-cyan-400 font-medium">When you’re ready:</p>
             <ul className="text-gray-300 text-sm space-y-1">
               <li>💰 Earn and save rewards</li>
               <li>🎮 Keep your progress</li>
               <li>🛒 Unlock purchases</li>
-              <li>🔐 Create a wallet in-app</li>
+              <li>🔐 Create your wallet</li>
             </ul>
           </div>
         </motion.div>
 
         <div className="space-y-3">
           <Button
-            onClick={handleGetStarted}
+            onClick={handleGetWallet}
             className="w-full h-12 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-base font-semibold"
           >
             <Wallet className="w-5 h-5 mr-2" />
-            Get Started
+            Get Wallet
           </Button>
 
           <Button
