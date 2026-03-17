@@ -5,25 +5,21 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Dict
+from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
-import httpx
-import random
-import time as _time
 from web3 import Web3
-import asyncio
-from functools import lru_cache
 import routers.wallet_routes as wallet_routes
 import stripe
 from routers import stripe_routes
 from routers import move_routes
 from routers import play_routes
 from services import reward_service
-from services.reward_service import TIERS, get_daily_reward
+from services.reward_service import get_daily_reward
 from routers import leaderboard_routes
 from routers import learn_routes
+from routers.admin_routes import admin_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -140,19 +136,6 @@ class UserResponse(BaseModel):
     total_earned: float = 0.0
     created_at: str
 
-class StepsUpdate(BaseModel):
-    steps: int
-
-class GameResult(BaseModel):
-    game_type: str
-    score: int
-    level: int = 1
-    blocks_destroyed: int = 0
-
-class TriviaAnswer(BaseModel):
-    question_id: str
-    answer: str
-    time_taken: float  # seconds
 
 class ConvertZPtsRequest(BaseModel):
     zpts_amount: int
@@ -191,76 +174,11 @@ class PurchaseRequest(BaseModel):
     item_id: str
     payment_type: str = "zwap"  # "zwap" or "zpts"
 
-class SwapRequest(BaseModel):
-    from_token: str
-    to_token: str
-    amount: float
 
-class SwapResponse(BaseModel):
-    from_token: str
-    to_token: str
-    from_amount: float
-    to_amount: float
-    rate: float
-    fee: float
-    transaction_id: str
 
 class SubscriptionRequest(BaseModel):
     wallet_address: str
     origin_url: str
-    
-class TriviaQuestion(BaseModel):
-    id: str
-    question: str
-    options: List[str]
-    difficulty: int  # 1-5
-
-# ============ HELPER FUNCTIONS ============
-
-async def get_crypto_prices():
-    """Fetch real crypto prices from CoinGecko"""
-    try:
-        async with httpx.AsyncClient() as http_client:
-            response = await http_client.get(
-                "https://api.coingecko.com/api/v3/simple/price",
-                params={"ids": "bitcoin,ethereum,matic-network,solana", "vs_currency": "usd"},
-                timeout=10.0
-            )
-            if response.status_code == 200:
-                data = response.json()
-                return {
-                    "BTC": data.get("bitcoin", {}).get("usd", 65000),
-                    "ETH": data.get("ethereum", {}).get("usd", 3500),
-                    "POL": data.get("matic-network", {}).get("usd", 0.85),
-                    "SOL": data.get("solana", {}).get("usd", 150),
-                    "USDT": 1.00,
-                    "ZWAP": 0.01
-                }
-    except Exception as e:
-        logging.error(f"Error fetching prices: {e}")
-    return {"BTC": 65000, "ETH": 3500, "POL": 0.85, "SOL": 150, "USDT": 1.00, "ZWAP": 0.01}
-
-
-async def get_onchain_zwap_balance(wallet_address: str) -> Optional[float]:
-    """Get ZWAP balance from Polygon blockchain"""
-    if not zwap_contract or not w3:
-        logging.warning("Web3 not connected, cannot fetch on-chain balance")
-        return None
-
-    try:
-        loop = asyncio.get_event_loop()
-        checksum_address = Web3.to_checksum_address(wallet_address)
-
-        balance_wei = await loop.run_in_executor(
-            None,
-            zwap_contract.functions.balanceOf(checksum_address).call
-        )
-
-        balance = balance_wei / (10 ** ZWAP_DECIMALS)
-        return balance
-    except Exception as e:
-        logging.error(f"Error fetching on-chain balance for {wallet_address}: {e}")
-        return None
 
 # ============ USER ENDPOINTS ============
 
@@ -430,171 +348,6 @@ async def claim_daily_reward(wallet_address: str):
         "message": f"Claimed {reward_amount} zPts daily reward"
     }
 
-class ProfileUpdate(BaseModel):
-    username: Optional[str] = None
-    avatar_url: Optional[str] = None
-
-@api_router.put("/users/{wallet_address}/profile")
-async def update_profile(wallet_address: str, profile: ProfileUpdate):
-    """Update user profile (username and avatar)"""
-    wallet = wallet_address.lower()
-    user = await db.users.find_one({"wallet_address": wallet})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    update_data = {}
-    if profile.username:
-        update_data["custom_username"] = profile.username
-    if profile.avatar_url:
-        update_data["avatar_url"] = profile.avatar_url
-
-    if update_data:
-        await db.users.update_one(
-            {"wallet_address": wallet},
-            {"$set": update_data}
-        )
-
-    updated = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    return updated
-
-@api_router.get("/tiers")
-async def get_tiers():
-    """Get available subscription tiers"""
-    return TIERS
-
-# ============ BLOCKCHAIN ENDPOINTS ============
-
-@api_router.get("/blockchain/balance/{wallet_address}")
-async def get_blockchain_balance(wallet_address: str):
-    """Get real on-chain ZWAP balance from Polygon"""
-    try:
-        balance = await get_onchain_zwap_balance(wallet_address)
-        if balance is None:
-            return {
-                "wallet_address": wallet_address,
-                "onchain_balance": None,
-                "error": "Unable to fetch on-chain balance",
-                "connected": w3.is_connected() if w3 else False
-            }
-
-        return {
-            "wallet_address": wallet_address,
-            "onchain_balance": balance,
-            "contract_address": ZWAP_CONTRACT_ADDRESS,
-            "network": "polygon",
-            "chain_id": ZWAP_CHAIN_ID,
-            "decimals": ZWAP_DECIMALS
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@api_router.get("/blockchain/contract-info")
-async def get_contract_info():
-    """Get ZWAP token contract information"""
-    if not zwap_contract or not w3:
-        return {
-            "connected": False,
-            "error": "Web3 not connected"
-        }
-
-    try:
-        loop = asyncio.get_event_loop()
-
-        symbol = await loop.run_in_executor(None, zwap_contract.functions.symbol().call)
-        decimals = await loop.run_in_executor(None, zwap_contract.functions.decimals().call)
-        total_supply_wei = await loop.run_in_executor(None, zwap_contract.functions.totalSupply().call)
-        total_supply = total_supply_wei / (10 ** decimals)
-
-        return {
-            "connected": True,
-            "contract_address": ZWAP_CONTRACT_ADDRESS,
-            "network": "polygon",
-            "chain_id": ZWAP_CHAIN_ID,
-            "symbol": symbol,
-            "decimals": decimals,
-            "total_supply": total_supply,
-            "total_supply_formatted": f"{total_supply:,.0f}"
-        }
-    except Exception as e:
-        logging.error(f"Error fetching contract info: {e}")
-        return {
-            "connected": w3.is_connected() if w3 else False,
-            "error": str(e)
-        }
-
-# ============ FAUCET ENDPOINTS ============
-
-# ============ EDUCATION SPINE TRIVIA (SERVER-SIDE) ============
-
-EDUCATION_TRIVIA = [
-    {"id": "edu-crypto-1", "module": "What Is Cryptocurrency?", "question": "Is cryptocurrency physical or digital?", "options": ["Physical", "Digital", "Both", "Neither"], "answer": "Digital", "difficulty": 1},
-    {"id": "edu-crypto-2", "module": "What Is Cryptocurrency?", "question": "Does one bank control cryptocurrency?", "options": ["Yes", "No", "Sometimes", "Only in the US"], "answer": "No", "difficulty": 1},
-    {"id": "edu-crypto-3", "module": "What Is Cryptocurrency?", "question": "What keeps track of crypto transactions?", "options": ["A single bank", "A network of computers", "Paper receipts", "The government"], "answer": "A network of computers", "difficulty": 1},
-    {"id": "edu-chain-1", "module": "What Is a Blockchain?", "question": "What are transactions stored in?", "options": ["Files", "Blocks", "Folders", "Emails"], "answer": "Blocks", "difficulty": 1},
-    {"id": "edu-chain-2", "module": "What Is a Blockchain?", "question": "Can you erase a block once it is added?", "options": ["Yes", "No", "Only admins can", "After 24 hours"], "answer": "No", "difficulty": 1},
-    {"id": "edu-chain-3", "module": "What Is a Blockchain?", "question": "Why is it called a chain?", "options": ["It looks like a chain", "Because blocks are linked together", "It was invented by a chain company", "No reason"], "answer": "Because blocks are linked together", "difficulty": 2},
-    {"id": "edu-wallet-1", "module": "What Is a Crypto Wallet?", "question": "Does a wallet hold crypto physically?", "options": ["Yes", "No", "Only some wallets", "Only on phones"], "answer": "No", "difficulty": 1},
-    {"id": "edu-wallet-2", "module": "What Is a Crypto Wallet?", "question": "What does a wallet really store?", "options": ["Coins", "Keys", "Passwords", "Photos"], "answer": "Keys", "difficulty": 2},
-    {"id": "edu-wallet-3", "module": "What Is a Crypto Wallet?", "question": "Should you share your private key?", "options": ["Yes, with friends", "Never", "Only online", "Only with your bank"], "answer": "Never", "difficulty": 1},
-    {"id": "edu-zwap-1", "module": "What Is ZWAP?", "question": "How do you earn ZWAP?", "options": ["Buying it", "Walking and playing games", "Watching ads", "Signing up"], "answer": "Walking and playing games", "difficulty": 1},
-    {"id": "edu-zwap-2", "module": "What Is ZWAP?", "question": "Can you use ZWAP in the shop?", "options": ["Yes", "No", "Only on weekends", "Only with Plus"], "answer": "Yes", "difficulty": 1},
-    {"id": "edu-zwap-3", "module": "What Is ZWAP?", "question": "Is ZWAP a physical coin?", "options": ["Yes", "No, it is digital", "Sometimes", "Only in some countries"], "answer": "No, it is digital", "difficulty": 1},
-    {"id": "edu-zpts-1", "module": "What Are zPts?", "question": "Are zPts the same as ZWAP?", "options": ["Yes", "No", "They are similar", "Only on Plus tier"], "answer": "No", "difficulty": 1},
-    {"id": "edu-zpts-2", "module": "What Are zPts?", "question": "How many zPts equal 1 ZWAP?", "options": ["100", "500", "1000", "10000"], "answer": "1000", "difficulty": 2},
-    {"id": "edu-zpts-3", "module": "What Are zPts?", "question": "Do zPts live on the blockchain?", "options": ["Yes", "No, they are tracked in the app", "Sometimes", "Only for Plus users"], "answer": "No, they are tracked in the app", "difficulty": 2},
-    {"id": "edu-swap-1", "module": "What Is a Swap?", "question": "What does a swap do?", "options": ["Deletes crypto", "Exchanges one crypto for another", "Creates new crypto", "Sends crypto to a bank"], "answer": "Exchanges one crypto for another", "difficulty": 1},
-    {"id": "edu-swap-2", "module": "What Is a Swap?", "question": "Does the price stay the same all the time?", "options": ["Yes", "No, it changes", "Only on weekdays", "Only for ZWAP"], "answer": "No, it changes", "difficulty": 2},
-    {"id": "edu-swap-3", "module": "What Is a Swap?", "question": "Why is there a small fee?", "options": ["There is no fee", "To help support the system", "To pay the government", "It is a bug"], "answer": "To help support the system", "difficulty": 2},
-]
-
-_trivia_sessions = {}
-
-@api_router.get("/games/trivia/questions")
-async def get_trivia_questions(count: int = 5, difficulty: int = 1):
-    """Get trivia questions from the education spine — server-side validated"""
-    filtered = [q for q in EDUCATION_TRIVIA if q["difficulty"] <= difficulty + 1]
-    selected = random.sample(filtered, min(count, len(filtered)))
-
-    session_id = str(uuid.uuid4())
-    _trivia_sessions[session_id] = {
-        "questions": {q["id"]: q["answer"] for q in selected},
-        "expires": _time.time() + 600,
-    }
-
-    now = _time.time()
-    expired = [k for k, v in _trivia_sessions.items() if v["expires"] < now]
-    for k in expired:
-        del _trivia_sessions[k]
-
-    return {
-        "session_id": session_id,
-        "questions": [
-            {
-                "id": q["id"],
-                "question": q["question"],
-                "options": q["options"],
-                "difficulty": q["difficulty"],
-                "module": q["module"]
-            }
-            for q in selected
-        ]
-    }
-
-@api_router.post("/games/trivia/answer")
-async def check_trivia_answer(answer: TriviaAnswer):
-    """Check trivia answer — server-side validation"""
-    question = next((q for q in EDUCATION_TRIVIA if q["id"] == answer.question_id), None)
-    if not question:
-        return {"correct": False, "correct_answer": None, "time_bonus": 0}
-
-    correct = question["answer"] == answer.answer
-    time_bonus = max(0, 1 - (answer.time_taken / 30)) if correct else 0
-
-    return {
-        "correct": correct,
-        "correct_answer": question["answer"],
-        "time_bonus": round(time_bonus, 2)
-    }
 
 # ============ Z POINTS CONVERSION ============
 
@@ -987,63 +740,6 @@ async def get_user_inventory(wallet_address: str):
 
     return {"items": inventory}
     
-# ============ SWAP ENDPOINTS ============
-
-@api_router.get("/swap/prices")
-async def get_prices():
-    return await get_crypto_prices()
-
-@api_router.post("/swap/execute/{wallet_address}", response_model=SwapResponse)
-async def execute_swap(wallet_address: str, swap: SwapRequest):
-    wallet = wallet_address.lower()
-    user = await db.users.find_one({"wallet_address": wallet})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    prices = await get_crypto_prices()
-    from_price = prices.get(swap.from_token, 0)
-    to_price = prices.get(swap.to_token, 0)
-
-    if from_price == 0 or to_price == 0:
-        raise HTTPException(status_code=400, detail="Invalid token pair")
-
-    if swap.from_token == "ZWAP" and user["zwap_balance"] < swap.amount:
-        raise HTTPException(status_code=400, detail="Insufficient ZWAP balance")
-
-    from_value_usd = swap.amount * from_price
-    fee = from_value_usd * 0.01
-    net_value_usd = from_value_usd - fee
-    to_amount = net_value_usd / to_price
-    rate = from_price / to_price
-
-    if swap.from_token == "ZWAP":
-        await db.users.update_one({"wallet_address": wallet}, {"$inc": {"zwap_balance": -swap.amount}})
-    elif swap.to_token == "ZWAP":
-        await db.users.update_one({"wallet_address": wallet}, {"$inc": {"zwap_balance": to_amount}})
-
-    swap_record = {
-        "id": str(uuid.uuid4()),
-        "user_wallet": wallet,
-        "from_token": swap.from_token,
-        "to_token": swap.to_token,
-        "from_amount": swap.amount,
-        "to_amount": to_amount,
-        "rate": rate,
-        "fee": fee,
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
-    await db.swaps.insert_one(swap_record)
-
-    return SwapResponse(
-        from_token=swap.from_token,
-        to_token=swap.to_token,
-        from_amount=swap.amount,
-        to_amount=round(to_amount, 8),
-        rate=round(rate, 8),
-        fee=round(fee, 4),
-        transaction_id=swap_record["id"]
-    )
-
 # ============ HEALTH & ROOT ============
 
 @api_router.get("/")
@@ -1055,7 +751,6 @@ async def health():
     return {"status": "healthy", "service": "zwap-api"}
 
 # Include admin + wallet routes before mounting api_router on app
-from routers.admin_routes import admin_router
 api_router.include_router(admin_router)
 api_router.include_router(wallet_routes.router)
 api_router.include_router(move_routes.router)
