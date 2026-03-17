@@ -140,7 +140,9 @@ async def create_subscription_checkout(request: Request):
         )
 
     db = request.app.state.db
-
+    
+    print("WRITING payment_transactions", session.id)
+    
     await db.payment_transactions.insert_one({
         "id": session.id,
         "session_id": session.id,
