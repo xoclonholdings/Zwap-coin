@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,6 +8,9 @@ import {
   BookOpen,
   Lightbulb,
   Loader2,
+  Compass,
+  Sparkles,
+  GraduationCap,
 } from "lucide-react";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
@@ -42,8 +45,8 @@ const categoryColors = {
   },
 };
 
-function ModuleCard({ module, index }) {
-  const [expanded, setExpanded] = useState(false);
+function ModuleCard({ module, index, defaultOpen = false }) {
+  const [expanded, setExpanded] = useState(defaultOpen);
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const colors = categoryColors[module.category] || categoryColors.foundations;
@@ -63,6 +66,13 @@ function ModuleCard({ module, index }) {
     }
   }
 
+  useEffect(() => {
+    if (defaultOpen) {
+      loadDetails();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleToggle() {
     const next = !expanded;
     setExpanded(next);
@@ -74,9 +84,9 @@ function ModuleCard({ module, index }) {
   return (
     <motion.div
       className={`rounded-2xl border ${colors.border} ${colors.bg} overflow-hidden`}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08 }}
+      transition={{ delay: index * 0.06 }}
     >
       <button
         onClick={handleToggle}
@@ -94,6 +104,11 @@ function ModuleCard({ module, index }) {
             {module.level} • {module.category}
           </p>
           <h3 className="text-white font-bold text-sm">{module.title}</h3>
+          {module.short_description && !expanded && (
+            <p className="text-gray-400 text-xs mt-1 truncate">
+              {module.short_description}
+            </p>
+          )}
         </div>
 
         {expanded ? (
@@ -109,7 +124,7 @@ function ModuleCard({ module, index }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.22 }}
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-4">
@@ -132,7 +147,7 @@ function ModuleCard({ module, index }) {
                     >
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
                         <Lightbulb className="w-3 h-3" />
-                        ZWAP Context
+                        Why it matters in ZWAP
                       </p>
                       <p className={`${colors.panelText} text-sm`}>
                         {details.content.zwap_context}
@@ -172,6 +187,18 @@ function ModuleCard({ module, index }) {
   );
 }
 
+function SectionHeader({ icon: Icon, title, subtitle, colorClass = "text-cyan-300" }) {
+  return (
+    <div className="mb-3">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className={`w-4 h-4 ${colorClass}`} />
+        <h3 className="text-white font-semibold">{title}</h3>
+      </div>
+      {subtitle ? <p className="text-sm text-gray-400">{subtitle}</p> : null}
+    </div>
+  );
+}
+
 export default function LearnPage() {
   const navigate = useNavigate();
   const [modules, setModules] = useState([]);
@@ -185,7 +212,7 @@ export default function LearnPage() {
         const res = await fetch(`${API}/learn/modules`);
         if (!res.ok) throw new Error("Failed to load modules");
         const data = await res.json();
-        if (active) setModules(data);
+        if (active) setModules(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error loading learn modules:", err);
         if (active) setModules([]);
@@ -200,6 +227,14 @@ export default function LearnPage() {
       active = false;
     };
   }, []);
+
+  const startHereIds = useMemo(
+    () => ["web3-basics", "utility-token-basics", "zwap-token-utility"],
+    []
+  );
+
+  const startHereModules = modules.filter((m) => startHereIds.includes(m.id));
+  const exploreModules = modules.filter((m) => !startHereIds.includes(m.id));
 
   return (
     <div className="min-h-screen bg-[#050510] text-white">
@@ -219,7 +254,7 @@ export default function LearnPage() {
         </div>
       </div>
 
-      <div className="pt-20 pb-8 px-4 max-w-lg mx-auto">
+      <div className="pt-20 pb-10 px-4 max-w-lg mx-auto">
         <motion.div
           className="text-center mb-6"
           initial={{ opacity: 0 }}
@@ -230,10 +265,30 @@ export default function LearnPage() {
               Crypto Made Simple
             </span>
           </h2>
-          <p className="text-gray-400 text-sm">
-            Learn Web3, wallets, tokens, and how ZWAP fits together in plain
-            language.
+          <p className="text-gray-400 text-sm max-w-md mx-auto">
+            Start with the essentials, then explore the deeper parts of Web3,
+            tokens, wallets, and how ZWAP fits together.
           </p>
+        </motion.div>
+
+        <motion.div
+          className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center shrink-0">
+              <GraduationCap className="w-5 h-5 text-cyan-300" />
+            </div>
+            <div>
+              <h3 className="text-white font-semibold mb-1">Start here first</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                New to crypto or Web3? Begin with the first three modules below.
+                They cover the minimum you need before the rest of the page starts
+                making deeper sense.
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         {loading ? (
@@ -242,20 +297,53 @@ export default function LearnPage() {
             Loading lessons...
           </div>
         ) : (
-          <div className="space-y-3" data-testid="learn-modules-list">
-            {modules.map((module, i) => (
-              <ModuleCard key={module.id} module={module} index={i} />
-            ))}
-          </div>
+          <>
+            <section className="mb-8">
+              <SectionHeader
+                icon={Sparkles}
+                title="Start Here"
+                subtitle="The beginner runway. These are the essentials."
+                colorClass="text-cyan-300"
+              />
+              <div className="space-y-3" data-testid="learn-start-here-list">
+                {startHereModules.map((module, i) => (
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    index={i}
+                    defaultOpen={i === 0}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <SectionHeader
+                icon={Compass}
+                title="Explore More"
+                subtitle="Deeper context you can open whenever you're ready."
+                colorClass="text-purple-300"
+              />
+              <div className="space-y-3" data-testid="learn-explore-more-list">
+                {exploreModules.map((module, i) => (
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    index={i + startHereModules.length}
+                  />
+                ))}
+              </div>
+            </section>
+          </>
         )}
 
         <motion.p
           className="text-center text-gray-600 text-xs mt-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
         >
-          These lessons power beginner learning across the ZWAP ecosystem.
+          Learn first. Move with confidence after.
         </motion.p>
       </div>
     </div>
