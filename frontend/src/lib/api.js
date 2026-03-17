@@ -342,8 +342,8 @@ const getClaimHistory = (walletAddress) =>
 const getLeaderboard = (category, limit = 10) =>
   request("GET", `/leaderboard/${category}?limit=${limit}`);
 
-/** GET /api/leaderboard/stats */
-const getLeaderboardStats = () => request("GET", "/leaderboard/stats");
+/** GET /api/leaderboard/overview */
+const getLeaderboardStats = () => request("GET", "/leaderboard/overview");
 
 /** GET /api/leaderboard/user/:address/:category */
 const getUserRank = async (walletAddress, category) => {
