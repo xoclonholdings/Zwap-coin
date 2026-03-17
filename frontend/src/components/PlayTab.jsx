@@ -539,6 +539,7 @@ export default function PlayTab() {
   const startGame = (gameId) => {
     setSelectedGame(gameId);
     setIsPlaying(true);
+    setRewardPopup(null);
     setGameResult(null);
     setCurrentLevel(Math.max(baseLevel, currentLevel));
   };
@@ -755,49 +756,54 @@ export default function PlayTab() {
                 Play Again
               </Button>
             </div>
-                    </div>
-                    )}
-                  </div>
-            
-                  {rewardPopup && (
-                      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/60">
-                        <motion.div
-                          initial={{ scale: 0.85, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          className={`rounded-2xl p-6 text-center w-72 border ${
-                            isPlus
-                              ? "bg-gradient-to-br from-purple-900/40 to-black border-purple-500/40"
-                              : "bg-[#0a0b1e] border-cyan-500/30"
-                          }`}
-                        >
-                          <h2 className="text-white text-lg font-bold mb-2">
-                            {isPlus ? "Bonus Reward" : "Session Reward"}
-                          </h2>
-                    
-                          <p className="text-purple-400 text-xl font-bold">
-                            +{rewardPopup.zwap_earned || 0} ZWAP
-                          </p>
-                    
-                          <p className={`text-sm mb-4 ${isPlus ? "text-pink-400" : "text-cyan-400"}`}>
-                            +{rewardPopup.zpts_earned || 0} zPts
-                          </p>
-                    
-                          {isPlus && (
-                            <p className="text-xs text-purple-300 mb-3">
-                              ✨ Plus Bonus Applied
-                            </p>
-                          )}
-                    
-                          <Button
-                            onClick={() => setRewardPopup(null)}
-                            className={`w-full ${isPlus ? "bg-purple-500 text-white" : "bg-cyan-500 text-black"}`}
-                          >
-                            Continue
-                          </Button>
-                        </motion.div>
-                      </div>
-                    )}
-            
-                </div>
-              );
-            }
+          </div>
+        )}
+      </div>
+
+      {rewardPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/60">
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`rounded-2xl p-6 text-center w-72 border ${
+              isPlus
+                ? "bg-gradient-to-br from-purple-900/40 to-black border-purple-500/40"
+                : "bg-[#0a0b1e] border-cyan-500/30"
+            }`}
+          >
+            <h2 className="text-white text-lg font-bold mb-2">
+              {isPlus ? "Bonus Reward" : "Session Reward"}
+            </h2>
+
+            <p className="text-purple-400 text-xl font-bold">
+              +{rewardPopup.zwap_earned || 0} ZWAP
+            </p>
+
+            <p
+              className={`text-sm mb-4 ${
+                isPlus ? "text-pink-400" : "text-cyan-400"
+              }`}
+            >
+              +{rewardPopup.zpts_earned || 0} zPts
+            </p>
+
+            {isPlus && (
+              <p className="text-xs text-purple-300 mb-3">
+                ✨ Plus Bonus Applied
+              </p>
+            )}
+
+            <Button
+              onClick={() => setRewardPopup(null)}
+              className={`w-full ${
+                isPlus ? "bg-purple-500 text-white" : "bg-cyan-500 text-black"
+              }`}
+            >
+              Continue
+            </Button>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}
