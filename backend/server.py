@@ -17,6 +17,7 @@ from functools import lru_cache
 import routers.wallet_routes as wallet_routes
 import stripe
 from routers import stripe_routes
+from routers import move_routes
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1479,6 +1480,7 @@ async def health():
 from routers.admin_routes import admin_router
 api_router.include_router(admin_router)
 api_router.include_router(wallet_routes.router)
+api_router.include_router(move_routes.router)
 
 app.include_router(api_router)
 app.include_router(stripe_routes.router)
