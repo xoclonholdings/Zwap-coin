@@ -81,6 +81,8 @@ function ModuleCard({ module, index, defaultOpen = false }) {
     }
   }
 
+  const display = details || module;
+
   return (
     <motion.div
       className={`rounded-2xl border ${colors.border} ${colors.bg} overflow-hidden`}
@@ -104,7 +106,7 @@ function ModuleCard({ module, index, defaultOpen = false }) {
             {module.level} • {module.category}
           </p>
           <h3 className="text-white font-bold text-sm">{module.title}</h3>
-          {module.short_description && !expanded && (
+          {!expanded && module.short_description && (
             <p className="text-gray-400 text-xs mt-1 truncate">
               {module.short_description}
             </p>
@@ -133,35 +135,68 @@ function ModuleCard({ module, index, defaultOpen = false }) {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading lesson...
                 </div>
-              ) : details ? (
+              ) : display ? (
                 <>
                   <div>
                     <p className="text-gray-300 text-sm leading-relaxed">
-                      {details.content?.overview || module.short_description}
+                      {display.core || display.content?.overview || module.short_description}
                     </p>
                   </div>
 
-                  {details.content?.zwap_context && (
+                  {display.analogy && (
                     <div
                       className={`p-3 rounded-xl ${colors.panelBg} border ${colors.panelBorder}`}
                     >
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
                         <Lightbulb className="w-3 h-3" />
-                        Why it matters in ZWAP
+                        Think of it this way
                       </p>
-                      <p className={`${colors.panelText} text-sm`}>
-                        {details.content.zwap_context}
+                      <p className={`${colors.panelText} text-sm italic`}>
+                        "{display.analogy}"
                       </p>
                     </div>
                   )}
 
-                  {!!details.content?.key_points?.length && (
+                  {!!display.did_you_know?.length && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                        Did You Know?
+                      </p>
+                      <ul className="space-y-1.5">
+                        {display.did_you_know.map((fact, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-gray-400 text-sm"
+                          >
+                            <span className={`${colors.text} mt-0.5`}>•</span>
+                            <span>{fact}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {display.content?.zwap_context && (
+                    <div
+                      className={`p-3 rounded-xl ${colors.panelBg} border ${colors.panelBorder}`}
+                    >
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Why it matters in ZWAP
+                      </p>
+                      <p className={`${colors.panelText} text-sm`}>
+                        {display.content.zwap_context}
+                      </p>
+                    </div>
+                  )}
+
+                  {!!display.content?.key_points?.length && (
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
                         Key Points
                       </p>
                       <ul className="space-y-1.5">
-                        {details.content.key_points.map((point, i) => (
+                        {display.content.key_points.map((point, i) => (
                           <li
                             key={i}
                             className="flex items-start gap-2 text-gray-400 text-sm"
@@ -171,6 +206,20 @@ function ModuleCard({ module, index, defaultOpen = false }) {
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                  {display.quick_check?.question && (
+                    <div className="pt-2 border-t border-gray-800/50">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                        Quick Check
+                      </p>
+                      <p className={`text-sm ${colors.text} font-medium`}>
+                        Q: {display.quick_check.question}
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        A: {display.quick_check.answer}
+                      </p>
                     </div>
                   )}
                 </>
