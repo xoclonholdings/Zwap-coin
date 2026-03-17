@@ -8,6 +8,7 @@ from pathlib import Path
 from web3 import Web3
 
 import routers.wallet_routes as wallet_routes
+from routers import blockchain_routes
 from routers import stripe_routes
 from routers import move_routes
 from routers import play_routes
@@ -145,6 +146,7 @@ async def health():
 
 api_router.include_router(admin_router)
 api_router.include_router(wallet_routes.router)
+api_router.include_router(blockchain_routes.router)
 api_router.include_router(move_routes.router)
 api_router.include_router(play_routes.router)
 api_router.include_router(shop_routes.router)
