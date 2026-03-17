@@ -15,11 +15,13 @@ import stripe
 from routers import stripe_routes
 from routers import move_routes
 from routers import play_routes
+from routers import swap_routes
 from services import reward_service
 from routers import leaderboard_routes
 from routers import learn_routes
 from routers.admin_routes import admin_router
 from routers import user_routes
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -115,10 +117,6 @@ app.state.treasury_private_key = os.environ.get("TREASURY_PRIVATE_KEY", "")
 # ============ MODELS ============
 
 
-
-class ConvertZPtsRequest(BaseModel):
-    zpts_amount: int
-
 class ShopItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -159,49 +157,6 @@ class SubscriptionRequest(BaseModel):
     wallet_address: str
     origin_url: str
 
-
-# ============ Z POINTS CONVERSION ============
-
-@api_router.post("/zpts/convert/{wallet_address}")
-async def convert_zpts_to_zwap(wallet_address: str, convert_data: ConvertZPtsRequest):
-    """Convert Z Points to ZWAP using centralized reward service"""
-    wallet = wallet_address.lower()
-
-    user = await db.users.find_one({"wallet_address": wallet})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if user.get("zpts_balance", 0) < convert_data.zpts_amount:
-        raise HTTPException(status_code=400, detail="Insufficient Z Points")
-
-    # Use reward service (single source of truth)
-    result = await reward_service.convert_zpts_to_zwap(
-        convert_data.zpts_amount,
-        user.get("tier", "starter")
-    )
-
-    zwap_amount = result["zwap"]
-
-    await db.users.update_one(
-        {"wallet_address": wallet},
-        {
-            "$inc": {
-                "zpts_balance": -convert_data.zpts_amount,
-                "zwap_balance": zwap_amount
-            }
-        }
-    )
-
-    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-
-    return {
-        "zpts_converted": convert_data.zpts_amount,
-        "zwap_received": zwap_amount,
-        "rate": result["rate"],
-        "new_zpts_balance": updated_user.get("zpts_balance", 0),
-        "new_zwap_balance": updated_user.get("zwap_balance", 0),
-        "message": f"Converted {convert_data.zpts_amount} zPts to {zwap_amount} ZWAP"
-    }
     
 # ============ SUBSCRIPTION ENDPOINTS ============
 
@@ -566,6 +521,7 @@ api_router.include_router(admin_router)
 api_router.include_router(wallet_routes.router)
 api_router.include_router(move_routes.router)
 api_router.include_router(play_routes.router)
+api_router.include_router(swap_routes.router)
 api_router.include_router(leaderboard_routes.router)
 api_router.include_router(learn_routes.router)
 api_router.include_router(user_routes.router)
