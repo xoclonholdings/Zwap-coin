@@ -483,21 +483,19 @@ export default function PlayTab() {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [rewardPopup, setRewardPopup] = useState(null);
 
-  const forcedTier = "starter"; // change to "plus" when testing
-  const effectiveTier = forcedTier || user?.tier || "starter";
-  const isPlus = effectiveTier === "plus";
-  const tierConfig = TIERS[effectiveTier];
+  const isPlus = user?.tier === "plus";
+  const tierConfig = TIERS[user?.tier || "starter"];
   const gamesPlayed = user?.games_played || 0;
   const baseLevel = Math.min(Math.floor(gamesPlayed / 3) + 1, 10);
+
   const handleGameEnd = useCallback(
     async (score, blocksOrDifficulty, level = 1, cleared = false) => {
       setIsPlaying(false);
+        const gameType = selectedGame;
+        const blocks = gameType === "zbrickles" ? blocksOrDifficulty : 0;
+        const difficulty = gameType === "ztrivia" ? blocksOrDifficulty : level;
   
-      const gameType = selectedGame;
-      const blocks = gameType === "zbrickles" ? blocksOrDifficulty : 0;
-      const difficulty = gameType === "ztrivia" ? blocksOrDifficulty : level;
-  
-      try {
+    try {
         const result = await api.submitGameResult(
           walletAddress,
           gameType,
@@ -524,6 +522,7 @@ export default function PlayTab() {
   );
 
   const handleDone = () => {
+    setRewardPopup(null);
     setGameResult(null);
     setSelectedGame(null);
     setCurrentLevel(1);
