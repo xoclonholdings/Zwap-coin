@@ -482,13 +482,13 @@ export default function PlayTab() {
   const [gameResult, setGameResult] = useState(null);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [rewardPopup, setRewardPopup] = useState(null);
-  
-  const isPlus = forcedTier === "plus";
-  const tierConfig = TIERS[forcedTier];
+
+  const forcedTier = "starter"; // change to "plus" when testing
+  const effectiveTier = forcedTier || user?.tier || "starter";
+  const isPlus = effectiveTier === "plus";
+  const tierConfig = TIERS[effectiveTier];
   const gamesPlayed = user?.games_played || 0;
   const baseLevel = Math.min(Math.floor(gamesPlayed / 3) + 1, 10);
-  const isPlus = user?.tier === "plus";
-
   const handleGameEnd = useCallback(
     async (score, blocksOrDifficulty, level = 1, cleared = false) => {
       setIsPlaying(false);
