@@ -13,7 +13,10 @@ export default function SubscriptionSuccess() {
 
   const [status, setStatus] = useState("checking"); // checking, activating, success, error
   const [attempts, setAttempts] = useState(0);
-
+  console.log("PAGE LOADED", {
+    sessionId: searchParams.get("session_id"),
+    walletAddress,
+  });
   const sessionId = searchParams.get("session_id");
 
   const activateSubscription = useCallback(
