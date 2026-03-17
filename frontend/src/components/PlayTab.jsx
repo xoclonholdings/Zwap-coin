@@ -557,8 +557,14 @@ export default function PlayTab() {
           </div>
           <h1 className="text-xl font-bold text-white">PLAY</h1>
           <p className="text-gray-400 text-xs">Play & Earn</p>
+        
+          {isPlus && (
+            <p className="text-yellow-400 text-xs font-medium mt-1">
+              👑 1.5x Rewards
+            </p>
+          )}
         </div>
-
+        
         <div className="glass-card p-3 mb-4 flex-shrink-0 rounded-xl">
           <div className="flex justify-between items-center">
             <div>
