@@ -10,7 +10,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import adminApi from "@/lib/adminApi";
-import StatCard from "@/components/StatCard";
+
+const StatCard = ({ icon: Icon, label, value, subValue, color = "cyan" }) => (
+  <div className={`p-4 rounded-xl border border-${color}-500/30 bg-gradient-to-br from-${color}-500/10 to-transparent`}>
+    <div className="flex items-start justify-between">
+      <div className={`w-10 h-10 rounded-lg bg-${color}-500/20 flex items-center justify-center`}>
+        <Icon className={`w-5 h-5 text-${color}-400`} />
+      </div>
+    </div>
+    <p className="text-2xl font-bold text-white mt-3">{value}</p>
+    <p className="text-sm text-gray-400">{label}</p>
+    {subValue && <p className="text-xs text-gray-500 mt-1">{subValue}</p>}
+  </div>
+);
 
 // Section Tab Component
 const SectionTab = ({ icon: Icon, label, active, onClick }) => (
