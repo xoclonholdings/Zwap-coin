@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import adminApi from "@/lib/adminApi";
-import StatCard from "@/components/admin/StatCard";
+import StatCard from "@/components/StatCard";
 
 // Section Tab Component
 const SectionTab = ({ icon: Icon, label, active, onClick }) => (
