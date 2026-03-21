@@ -1,11 +1,10 @@
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 
 import services.analytics_service as analytics_service
-import services.news_service as news_service
 import services.reward_service as reward_service
 import services.subscription_service as subscription_service
 
@@ -99,39 +98,6 @@ async def purchase_analytics(
         "total_zpts_spent": total_zpts_spent,
         "top_items": top_items,
     }
-
-
-# ===========================
-# NEWS
-# ===========================
-@admin_router.get("/news")
-async def admin_list_news(
-    request: Request,
-    limit: int = 50,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await news_service.list_news(db, limit=limit)
-
-
-@admin_router.post("/news")
-async def admin_create_news(
-    item: Dict[str, Any],
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await news_service.create_news(db, item)
-
-
-@admin_router.delete("/news/{news_id}")
-async def admin_delete_news(
-    news_id: str,
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await news_service.delete_news(db, news_id)
 
 
 # ===========================
