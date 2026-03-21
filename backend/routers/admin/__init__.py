@@ -9,6 +9,7 @@ from .news import router as news_router
 from .analytics import router as analytics_router
 from .account import router as account_router
 from .config import router as config_router
+from .subscriptions import router as subscriptions_router
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -21,6 +22,7 @@ admin_router.include_router(news_router)
 admin_router.include_router(analytics_router)
 admin_router.include_router(account_router)
 admin_router.include_router(config_router)
+admin_router.include_router(subscriptions_router)
 
 # Keep legacy admin routes active while we continue splitting
 from routers import admin_routes  # noqa: F401
