@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 import services.analytics_service as analytics_service
 import services.config_service as config_service
-import services.marketplace_service as marketplace_service
 import services.news_service as news_service
 import services.reward_service as reward_service
 import services.subscription_service as subscription_service
@@ -139,56 +138,6 @@ async def update_game_config(
 ):
     db = get_db(request)
     return await config_service.update_game_config(db, game_id, config)
-
-
-# ===========================
-# MARKETPLACE
-# ===========================
-@admin_router.get("/marketplace/items")
-async def list_marketplace_items(request: Request, _: None = Depends(verify_admin)):
-    db = get_db(request)
-    return await marketplace_service.list_items(db)
-
-
-@admin_router.post("/marketplace/items")
-async def create_marketplace_item(
-    item: Dict[str, Any],
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await marketplace_service.create_item(db, item)
-
-
-@admin_router.put("/marketplace/items/{item_id}")
-async def update_marketplace_item(
-    item_id: str,
-    item: Dict[str, Any],
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await marketplace_service.update_item(db, item_id, item)
-
-
-@admin_router.delete("/marketplace/items/{item_id}")
-async def delete_marketplace_item(
-    item_id: str,
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await marketplace_service.delete_item(db, item_id)
-
-
-@admin_router.get("/marketplace/orders")
-async def list_marketplace_orders(
-    request: Request,
-    limit: int = 100,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await marketplace_service.list_orders(db, limit=limit)
 
 
 # ===========================
