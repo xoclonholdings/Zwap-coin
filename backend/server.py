@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from web3 import Web3
 
+from routers.admin import admin_router
 import routers.wallet_routes as wallet_routes
 from routers import blockchain_routes
 from routers import stripe_routes
@@ -17,7 +18,7 @@ from routers import swap_routes
 from routers import leaderboard_routes
 from routers import learn_routes
 from routers import user_routes
-from routers.admin_routes import admin_router
+
 
 
 logging.basicConfig(
