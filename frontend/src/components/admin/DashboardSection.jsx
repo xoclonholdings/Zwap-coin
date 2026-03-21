@@ -50,7 +50,7 @@ export default function DashboardSection({ data, onRefresh }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Dashboard Overview</h2>
           <p className="text-sm text-gray-400 mt-1">
@@ -62,7 +62,7 @@ export default function DashboardSection({ data, onRefresh }) {
           size="sm"
           variant="outline"
           onClick={onRefresh}
-          className="border-gray-700"
+          className="border-gray-700 w-fit"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
@@ -83,43 +83,16 @@ export default function DashboardSection({ data, onRefresh }) {
           color="green"
         />
         <StatCard
-          icon={Coins}
-          label="Claimed Total"
-          value={(treasury.claimed_total || 0).toFixed(2)}
-          color="purple"
-        />
-        <StatCard
           icon={Database}
           label="Treasury Balance"
           value={(treasury.on_chain_balance || 0).toFixed(2)}
           color="blue"
         />
-      </div>
-
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
-          icon={ShoppingBag}
-          label="Total Purchases"
-          value={purchaseAnalytics.total_purchases || 0}
-          color="cyan"
-        />
-        <StatCard
-          icon={DollarSign}
-          label="ZWAP Spent"
-          value={(purchaseAnalytics.total_zwap_spent || 0).toFixed(2)}
-          color="green"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="zPts Spent"
-          value={(purchaseAnalytics.total_zpts_spent || 0).toFixed(2)}
+          icon={Coins}
+          label="Claimed Total"
+          value={(treasury.claimed_total || 0).toFixed(2)}
           color="purple"
-        />
-        <StatCard
-          icon={BarChart3}
-          label="Top Items"
-          value={purchaseAnalytics.top_items?.length || 0}
-          color="blue"
         />
       </div>
 
@@ -138,13 +111,45 @@ export default function DashboardSection({ data, onRefresh }) {
             </div>
 
             <div className="h-72 rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-purple-500/5 to-transparent flex items-center justify-center">
-              <div className="text-center">
+              <div className="text-center px-4">
                 <BarChart3 className="w-10 h-10 text-cyan-400 mx-auto mb-3" />
                 <p className="text-white font-medium">Activity Graph Placeholder</p>
                 <p className="text-sm text-gray-400 mt-1">
                   This panel can later show claims, rewards, or DAU trends
                 </p>
               </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl border border-gray-700 bg-gray-800/30">
+              <div className="flex items-center gap-3 mb-2">
+                <ShoppingBag className="w-5 h-5 text-cyan-400" />
+                <p className="text-sm text-gray-400">Total Purchases</p>
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {purchaseAnalytics.total_purchases || 0}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl border border-gray-700 bg-gray-800/30">
+              <div className="flex items-center gap-3 mb-2">
+                <DollarSign className="w-5 h-5 text-green-400" />
+                <p className="text-sm text-gray-400">ZWAP Spent</p>
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {(purchaseAnalytics.total_zwap_spent || 0).toFixed(2)}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl border border-gray-700 bg-gray-800/30">
+              <div className="flex items-center gap-3 mb-2">
+                <TrendingUp className="w-5 h-5 text-purple-400" />
+                <p className="text-sm text-gray-400">zPts Spent</p>
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {(purchaseAnalytics.total_zpts_spent || 0).toFixed(2)}
+              </p>
             </div>
           </div>
 
@@ -254,6 +259,7 @@ export default function DashboardSection({ data, onRefresh }) {
             <h3 className="text-white font-semibold text-lg mb-3">
               Live Activity Feed
             </h3>
+
             <div className="space-y-3 text-sm text-gray-400">
               <div className="rounded-xl bg-gray-900/50 px-4 py-3">
                 Live reward activity feed placeholder
