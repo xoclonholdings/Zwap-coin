@@ -4,7 +4,6 @@ from fastapi import Depends, Request
 from pydantic import BaseModel
 
 import services.reward_service as reward_service
-import services.subscription_service as subscription_service
 
 from routers.admin import admin_router
 from routers.admin.common import verify_admin, get_db
@@ -57,17 +56,3 @@ async def list_admin_actions(
     ).sort("created_at", -1).limit(limit).to_list(length=limit)
 
     return {"actions": actions}
-
-
-# ===========================
-# SUBSCRIPTIONS
-# ===========================
-@admin_router.get("/subscriptions")
-async def admin_list_subscriptions(
-    request: Request,
-    skip: int = 0,
-    limit: int = 50,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await subscription_service.list_subscriptions(db, skip=skip, limit=limit)
