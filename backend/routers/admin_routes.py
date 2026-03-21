@@ -6,7 +6,6 @@ from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 
 import services.analytics_service as analytics_service
-import services.config_service as config_service
 import services.news_service as news_service
 import services.reward_service as reward_service
 import services.subscription_service as subscription_service
@@ -45,100 +44,6 @@ async def adjust_reward(
         reason=payload.reason,
         is_deduction=payload.is_deduction,
     )
-
-
-# ===========================
-# CONFIG – SYSTEM
-# ===========================
-@admin_router.get("/config/system")
-async def get_system_config(request: Request, _: None = Depends(verify_admin)):
-    db = get_db(request)
-
-    config = await db.configs.find_one({"key": "system_config"})
-
-    if not config:
-        default_config = {
-            "maintenance_mode": False,
-            "claims_paused": False,
-        }
-
-        await db.configs.update_one(
-            {"key": "system_config"},
-            {"$set": {"value": default_config}},
-            upsert=True,
-        )
-
-        return default_config
-
-    return config.get("value", {})
-
-
-@admin_router.put("/config/system")
-async def update_system_config(
-    config: Dict[str, Any],
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-
-    await db.configs.update_one(
-        {"key": "system_config"},
-        {"$set": {"value": config}},
-        upsert=True,
-    )
-
-    return config
-
-
-# ===========================
-# CONFIG – WALK
-# ===========================
-@admin_router.get("/config/walk")
-async def get_walk_config(request: Request, _: None = Depends(verify_admin)):
-    db = get_db(request)
-    return await config_service.get_walk_to_earn_config(db)
-
-
-@admin_router.put("/config/walk")
-async def update_walk_config(
-    config: Dict[str, Any],
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await config_service.update_walk_to_earn_config(db, config)
-
-
-# ===========================
-# CONFIG – GAMES
-# ===========================
-@admin_router.get("/config/games")
-async def get_game_config(request: Request, _: None = Depends(verify_admin)):
-    db = get_db(request)
-    return await config_service.get_game_config(db)
-
-
-@admin_router.post("/config/games/{game_id}/toggle")
-async def toggle_game_config(
-    game_id: str,
-    enabled: bool,
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await config_service.update_game_config(db, game_id, {"enabled": enabled})
-
-
-@admin_router.put("/config/games/{game_id}")
-async def update_game_config(
-    game_id: str,
-    config: Dict[str, Any],
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await config_service.update_game_config(db, game_id, config)
-
 
 # ===========================
 # SWAP CONFIG
