@@ -6,38 +6,16 @@ import {
   Pause, Play, Eye, Ban, Plus, Trash2, Edit, Save, X,
   DollarSign, Activity, BarChart3, Lock, Footprints, Bell, Globe
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+
 import adminApi from "@/lib/adminApi";
 
-const StatCard = ({ icon: Icon, label, value, subValue, color = "cyan" }) => (
-  <div className={`p-4 rounded-xl border border-${color}-500/30 bg-gradient-to-br from-${color}-500/10 to-transparent`}>
-    <div className="flex items-start justify-between">
-      <div className={`w-10 h-10 rounded-lg bg-${color}-500/20 flex items-center justify-center`}>
-        <Icon className={`w-5 h-5 text-${color}-400`} />
-      </div>
-    </div>
-    <p className="text-2xl font-bold text-white mt-3">{value}</p>
-    <p className="text-sm text-gray-400">{label}</p>
-    {subValue && <p className="text-xs text-gray-500 mt-1">{subValue}</p>}
-  </div>
-);
-
-// Section Tab Component
-const SectionTab = ({ icon: Icon, label, active, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
-      active
-        ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-        : "text-gray-400 hover:text-white hover:bg-gray-800/50"
-    }`}
-  >
-    <Icon className="w-4 h-4" />
-    <span className="text-sm font-medium">{label}</span>
-  </button>
-);
+// ✅ NEW: import from your admin components folder
+import StatCard from "@/components/admin/StatCard";
+import SectionTab from "@/components/admin/SectionTab";
 
 // Login Screen
 const AdminLogin = ({ onLogin }) => {
