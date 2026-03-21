@@ -1,5 +1,6 @@
 # routers/admin_routes.py
 
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from fastapi import Depends, HTTPException, Request
@@ -9,11 +10,11 @@ import services.analytics_service as analytics_service
 import services.news_service as news_service
 import services.reward_service as reward_service
 import services.subscription_service as subscription_service
-import services.swap_service as swap_service
 import services.treasury_service as treasury_service
 
 from routers.admin import admin_router
 from routers.admin.common import verify_admin, get_db, get_chain
+import routers.admin.common as admin_common
 
 # Keep compatibility with any old imports
 router = admin_router
@@ -44,25 +45,6 @@ async def adjust_reward(
         reason=payload.reason,
         is_deduction=payload.is_deduction,
     )
-
-# ===========================
-# SWAP CONFIG
-# ===========================
-@admin_router.get("/config/swap")
-async def get_swap_config(request: Request, _: None = Depends(verify_admin)):
-    db = get_db(request)
-    return await swap_service.get_swap_config(db)
-
-
-@admin_router.put("/config/swap/{token_symbol}")
-async def update_swap_config(
-    token_symbol: str,
-    config: Dict[str, Any],
-    request: Request,
-    _: None = Depends(verify_admin),
-):
-    db = get_db(request)
-    return await swap_service.update_swap_config(db, token_symbol, config)
 
 
 # ===========================
@@ -154,36 +136,38 @@ async def admin_send_zwap(
     to_address = payload.get("to")
     amount = payload.get("amount")
 
-    if not to_address or not amount:
+    if not to_address or amount is None:
         raise HTTPException(status_code=400, detail="Missing destination or amount")
 
     try:
         amount_wei = w3.to_wei(amount, "ether")
-
         nonce = w3.eth.get_transaction_count(treasury_wallet)
 
         tx = zwap_contract.functions.transfer(
             to_address,
-            amount_wei
-        ).build_transaction({
-            "from": treasury_wallet,
-            "nonce": nonce,
-            "gas": 200000,
-            "gasPrice": w3.eth.gas_price,
-        })
+            amount_wei,
+        ).build_transaction(
+            {
+                "from": treasury_wallet,
+                "nonce": nonce,
+                "gas": 200000,
+                "gasPrice": w3.eth.gas_price,
+            }
+        )
 
         signed_tx = w3.eth.account.sign_transaction(tx, treasury_private_key)
         tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
         tx_hash_hex = w3.to_hex(tx_hash)
 
-        await db.admin_activity.insert_one({
-            "type": "treasury_transfer",
-            "to": to_address,
-            "amount": amount,
-            "tx_hash": tx_hash_hex,
-            "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
-        })
+        await db.admin_activity.insert_one(
+            {
+                "type": "treasury_transfer",
+                "to": to_address,
+                "amount": amount,
+                "tx_hash": tx_hash_hex,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
         return {
             "success": True,
@@ -324,10 +308,7 @@ async def change_admin_key(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    from routers.admin.common import ADMIN_API_KEY
-    import routers.admin.common as admin_common
-
-    if payload.current_key != ADMIN_API_KEY:
+    if payload.current_key != admin_common.ADMIN_API_KEY:
         raise HTTPException(status_code=400, detail="Current admin key is incorrect")
 
     if not payload.new_key or len(payload.new_key) < 12:
@@ -341,7 +322,7 @@ async def change_admin_key(
 
     updated_value = {
         **current_value,
-        "key_last_changed": __import__("datetime").datetime.utcnow().isoformat(),
+        "key_last_changed": datetime.utcnow().isoformat(),
     }
 
     await db.configs.update_one(
