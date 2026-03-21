@@ -1,16 +1,12 @@
 # routers/admin_routes.py
 
-import os
-from datetime import datetime
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 
-# Direct service imports
 import services.analytics_service as analytics_service
 import services.config_service as config_service
-import services.leaderboard_service as leaderboard_service
 import services.marketplace_service as marketplace_service
 import services.news_service as news_service
 import services.reward_service as reward_service
@@ -18,73 +14,12 @@ import services.subscription_service as subscription_service
 import services.swap_service as swap_service
 import services.treasury_service as treasury_service
 
+from routers.admin import admin_router
+from routers.admin.common import verify_admin, get_db, get_chain
 
-# ===========================
-# ROUTER
-# ===========================
-admin_router = APIRouter(prefix="/admin", tags=["Admin"])
-
-# What server.py expects
+# Keep compatibility with any old imports
 router = admin_router
 
-ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY")
-
-
-# ===========================
-# AUTH
-# ===========================
-def verify_admin(request: Request) -> None:
-    key = request.headers.get("X-Admin-Key")
-    if not ADMIN_API_KEY or key != ADMIN_API_KEY:
-        raise HTTPException(status_code=403, detail="Unauthorized")
-
-
-def _get_db(request: Request):
-    db = getattr(request.app.state, "db", None)
-    if db is None:
-        raise HTTPException(status_code=500, detail="Database not initialized")
-    return db
-
-
-def _get_chain(request: Request):
-    w3 = getattr(request.app.state, "w3", None)
-    zwap_contract = getattr(request.app.state, "zwap_contract", None)
-    return w3, zwap_contract
-
-
-# ===========================
-# DASHBOARD
-# ===========================
-@admin_router.get("/dashboard")
-async def dashboard(request: Request, _: None = Depends(verify_admin)):
-    db = _get_db(request)
-    w3, zwap_contract = _get_chain(request)
-
-    treasury = await treasury_service.get_treasury_status(db, w3, zwap_contract)
-    analytics = await analytics_service.get_overview(db)
-
-    print("DASHBOARD TREASURY:", treasury)
-    print("DASHBOARD ANALYTICS:", analytics)
-
-    leaderboard = await leaderboard_service.get_global_stats_and_top(
-        db, category="earned", limit=50
-    )
-
-    news = await news_service.list_news(db, limit=25)
-
-    return {
-        "treasury": treasury,
-        "analytics": analytics,
-        "leaderboard": leaderboard,
-        "news": news,
-    }
-
-
-# ===========================
-# USERS
-# ===========================
-      
-    
 
 # ===========================
 # REWARD ADJUSTMENT
@@ -102,7 +37,7 @@ async def adjust_reward(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
 
     return await reward_service.adjust_reward(
         db=db,
@@ -118,7 +53,7 @@ async def adjust_reward(
 # ===========================
 @admin_router.get("/config/system")
 async def get_system_config(request: Request, _: None = Depends(verify_admin)):
-    db = _get_db(request)
+    db = get_db(request)
 
     config = await db.configs.find_one({"key": "system_config"})
 
@@ -145,7 +80,7 @@ async def update_system_config(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
 
     await db.configs.update_one(
         {"key": "system_config"},
@@ -161,7 +96,7 @@ async def update_system_config(
 # ===========================
 @admin_router.get("/config/walk")
 async def get_walk_config(request: Request, _: None = Depends(verify_admin)):
-    db = _get_db(request)
+    db = get_db(request)
     return await config_service.get_walk_to_earn_config(db)
 
 
@@ -171,7 +106,7 @@ async def update_walk_config(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await config_service.update_walk_to_earn_config(db, config)
 
 
@@ -180,7 +115,7 @@ async def update_walk_config(
 # ===========================
 @admin_router.get("/config/games")
 async def get_game_config(request: Request, _: None = Depends(verify_admin)):
-    db = _get_db(request)
+    db = get_db(request)
     return await config_service.get_game_config(db)
 
 
@@ -191,7 +126,7 @@ async def toggle_game_config(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await config_service.update_game_config(db, game_id, {"enabled": enabled})
 
 
@@ -202,7 +137,7 @@ async def update_game_config(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await config_service.update_game_config(db, game_id, config)
 
 
@@ -211,7 +146,7 @@ async def update_game_config(
 # ===========================
 @admin_router.get("/marketplace/items")
 async def list_marketplace_items(request: Request, _: None = Depends(verify_admin)):
-    db = _get_db(request)
+    db = get_db(request)
     return await marketplace_service.list_items(db)
 
 
@@ -221,7 +156,7 @@ async def create_marketplace_item(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await marketplace_service.create_item(db, item)
 
 
@@ -232,7 +167,7 @@ async def update_marketplace_item(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await marketplace_service.update_item(db, item_id, item)
 
 
@@ -242,16 +177,18 @@ async def delete_marketplace_item(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
-
-    print("DELETE ITEM ID:", item_id)
-
-    item = await db.shop_items.find_one({"_id": item_id})
-    print("FOUND ITEM:", item)
-
+    db = get_db(request)
     return await marketplace_service.delete_item(db, item_id)
-    
 
+
+@admin_router.get("/marketplace/orders")
+async def list_marketplace_orders(
+    request: Request,
+    limit: int = 100,
+    _: None = Depends(verify_admin),
+):
+    db = get_db(request)
+    return await marketplace_service.list_orders(db, limit=limit)
 
 
 # ===========================
@@ -259,7 +196,7 @@ async def delete_marketplace_item(
 # ===========================
 @admin_router.get("/config/swap")
 async def get_swap_config(request: Request, _: None = Depends(verify_admin)):
-    db = _get_db(request)
+    db = get_db(request)
     return await swap_service.get_swap_config(db)
 
 
@@ -270,7 +207,7 @@ async def update_swap_config(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await swap_service.update_swap_config(db, token_symbol, config)
 
 
@@ -283,15 +220,16 @@ async def analytics_overview(
     days: int = 30,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await analytics_service.get_overview(db, days=days)
+
 
 @admin_router.get("/analytics/purchases")
 async def purchase_analytics(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
 
     purchases = await db.purchases.find({}, {"_id": 0}).to_list(length=None)
 
@@ -329,14 +267,14 @@ async def purchase_analytics(
         "top_items": top_items,
     }
 
+
 # ===========================
 # TREASURY
 # ===========================
-
 @admin_router.get("/treasury")
 async def treasury_status(request: Request, _: None = Depends(verify_admin)):
-    db = _get_db(request)
-    w3, zwap_contract = _get_chain(request)
+    db = get_db(request)
+    w3, zwap_contract = get_chain(request)
     return await treasury_service.get_treasury_status(db, w3, zwap_contract)
 
 
@@ -346,7 +284,7 @@ async def admin_send_zwap(
     payload: dict,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
 
     w3 = request.app.state.w3
     zwap_contract = request.app.state.zwap_contract
@@ -377,7 +315,7 @@ async def admin_send_zwap(
             "from": treasury_wallet,
             "nonce": nonce,
             "gas": 200000,
-            "gasPrice": w3.eth.gas_price
+            "gasPrice": w3.eth.gas_price,
         })
 
         signed_tx = w3.eth.account.sign_transaction(tx, treasury_private_key)
@@ -390,18 +328,19 @@ async def admin_send_zwap(
             "to": to_address,
             "amount": amount,
             "tx_hash": tx_hash_hex,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
         })
 
         return {
             "success": True,
             "tx_hash": tx_hash_hex,
             "to": to_address,
-            "amount": amount
+            "amount": amount,
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # ===========================
 # NEWS
@@ -412,7 +351,7 @@ async def admin_list_news(
     limit: int = 50,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await news_service.list_news(db, limit=limit)
 
 
@@ -422,7 +361,7 @@ async def admin_create_news(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await news_service.create_news(db, item)
 
 
@@ -432,8 +371,9 @@ async def admin_delete_news(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await news_service.delete_news(db, news_id)
+
 
 # ===========================
 # ADMIN ACTIONS
@@ -444,7 +384,7 @@ async def list_admin_actions(
     limit: int = 100,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
 
     actions = await db.admin_actions.find(
         {},
@@ -452,7 +392,8 @@ async def list_admin_actions(
     ).sort("created_at", -1).limit(limit).to_list(length=limit)
 
     return {"actions": actions}
-    
+
+
 # ===========================
 # ACCOUNT
 # ===========================
@@ -472,7 +413,7 @@ async def get_account_settings(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
 
     config = await db.configs.find_one({"key": "admin_account_settings"})
 
@@ -502,7 +443,7 @@ async def update_account_settings(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
 
     existing = await db.configs.find_one({"key": "admin_account_settings"})
     current_value = existing.get("value", {}) if existing else {}
@@ -529,7 +470,8 @@ async def change_admin_key(
     request: Request,
     _: None = Depends(verify_admin),
 ):
-    global ADMIN_API_KEY
+    from routers.admin.common import ADMIN_API_KEY
+    import routers.admin.common as admin_common
 
     if payload.current_key != ADMIN_API_KEY:
         raise HTTPException(status_code=400, detail="Current admin key is incorrect")
@@ -537,15 +479,15 @@ async def change_admin_key(
     if not payload.new_key or len(payload.new_key) < 12:
         raise HTTPException(status_code=400, detail="New key must be at least 12 characters")
 
-    ADMIN_API_KEY = payload.new_key
+    admin_common.ADMIN_API_KEY = payload.new_key
 
-    db = _get_db(request)
+    db = get_db(request)
     existing = await db.configs.find_one({"key": "admin_account_settings"})
     current_value = existing.get("value", {}) if existing else {}
 
     updated_value = {
         **current_value,
-        "key_last_changed": datetime.utcnow().isoformat(),
+        "key_last_changed": __import__("datetime").datetime.utcnow().isoformat(),
     }
 
     await db.configs.update_one(
@@ -567,5 +509,5 @@ async def admin_list_subscriptions(
     limit: int = 50,
     _: None = Depends(verify_admin),
 ):
-    db = _get_db(request)
+    db = get_db(request)
     return await subscription_service.list_subscriptions(db, skip=skip, limit=limit)
