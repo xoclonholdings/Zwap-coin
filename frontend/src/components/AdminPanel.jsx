@@ -9,7 +9,6 @@ import {
   Shield,
   Activity,
   BarChart3,
-  Lock,
   Footprints,
   Database,
 } from "lucide-react";
@@ -26,7 +25,6 @@ import UsersSection from "@/components/admin/UsersSection";
 import TreasurySection from "@/components/admin/TreasurySection";
 import WalkSection from "@/components/admin/WalkSection";
 import MarketplaceSection from "@/components/admin/MarketplaceSection";
-import AccountSection from "@/components/admin/AccountSection";
 import GamesSection from "@/components/admin/GamesSection";
 import SwapConfigSection from "@/components/admin/SwapConfigSection";
 import ActivityLogSection from "@/components/admin/ActivityLogSection";
@@ -80,8 +78,7 @@ export default function AdminPanel() {
     { id: "games", label: "Games", icon: Gamepad2 },
     { id: "marketplace", label: "Marketplace", icon: ShoppingBag },
     { id: "swap", label: "Swap Config", icon: ArrowRightLeft },
-    { id: "settings", label: "Settings", icon: Settings },
-    { id: "account", label: "Account", icon: Lock },
+    { id: "account-settings", label: "Account Settings", icon: Settings },
     { id: "activity", label: "Activity Log", icon: Activity },
   ];
 
@@ -151,8 +148,7 @@ export default function AdminPanel() {
           {activeSection === "games" && <GamesSection />}
           {activeSection === "marketplace" && <MarketplaceSection />}
           {activeSection === "swap" && <SwapConfigSection />}
-          {activeSection === "settings" && <SettingsSection />}
-          {activeSection === "account" && <AccountSection />}
+          {activeSection === "account-settings" && <AccountSettingsSection />}
           {activeSection === "activity" && <ActivityLogSection />}
         </motion.div>
       </div>
