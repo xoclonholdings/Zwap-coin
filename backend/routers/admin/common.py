@@ -1,6 +1,6 @@
 import os
-from fastapi import Depends, HTTPException, Request
 
+from fastapi import HTTPException, Request
 
 ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY")
 
