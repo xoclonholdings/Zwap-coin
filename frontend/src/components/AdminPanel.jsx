@@ -9,76 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-
-const API = process.env.REACT_APP_BACKEND_URL + "/api";
-
-// Admin API helper
-const adminApi = {
-  headers(key) {
-    return {
-      "X-Admin-Key": key ?? localStorage.getItem("zwap_admin_key") ?? "",
-      "Content-Type": "application/json",
-    };
-  },
-
-  async get(endpoint, key) {
-    const res = await fetch(`${API}/admin${endpoint}`, {
-      method: "GET",
-      headers: this.headers(key),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`GET ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
-  },
-
-  async post(endpoint, data, key) {
-    const res = await fetch(`${API}/admin${endpoint}`, {
-      method: "POST",
-      headers: this.headers(key),
-      body: JSON.stringify(data),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`POST ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
-  },
-
-  async put(endpoint, data, key) {
-    const res = await fetch(`${API}/admin${endpoint}`, {
-      method: "PUT",
-      headers: this.headers(key),
-      body: JSON.stringify(data),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`PUT ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
-  },
-
-  async delete(endpoint, key) {
-    const res = await fetch(`${API}/admin${endpoint}`, {
-      method: "DELETE",
-      headers: this.headers(key),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`DELETE ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
-  },
-};
+import adminApi from "@/lib/adminApi";
 
 // Stat Card Component
 const StatCard = ({ icon: Icon, label, value, subValue, color = "cyan" }) => (
@@ -1928,19 +1859,20 @@ const AccountSection = () => {
       toast.error("New keys don't match");
       return;
     }
+  
     if (keyForm.new_key.length < 12) {
       toast.error("New key must be at least 12 characters");
       return;
     }
+  
     setChangingKey(true);
+  
     try {
-      const res = await fetch(`${API}/admin/account/change-key`, {
-        method: "POST",
-        headers: { ...adminApi.headers(), "Content-Type": "application/json" },
-        body: JSON.stringify({ current_key: keyForm.current_key, new_key: keyForm.new_key }),
+      await adminApi.post("/account/change-key", {
+        current_key: keyForm.current_key,
+        new_key: keyForm.new_key,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Failed");
+  
       localStorage.setItem("zwap_admin_key", keyForm.new_key);
       toast.success("Admin key changed successfully");
       setKeyForm({ current_key: "", new_key: "", confirm_key: "" });
@@ -1948,6 +1880,7 @@ const AccountSection = () => {
     } catch (e) {
       toast.error(e.message || "Failed to change key");
     }
+  
     setChangingKey(false);
   };
 
