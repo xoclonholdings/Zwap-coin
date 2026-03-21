@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -154,7 +155,6 @@ async def refund_purchase(
         {"$inc": {balance_field: price}},
     )
 
-    from datetime import datetime
     refunded_at = datetime.utcnow().isoformat()
 
     await db.purchases.update_one(
