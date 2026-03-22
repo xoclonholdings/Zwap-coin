@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
+import FirstTimeUserPage from "@/components/FirstTimeUserPage";
 import GetWalletPrompt from "@/components/GetWalletPrompt";
 import OnboardingModal from "@/components/OnboardingModal";
 import WalletModal from "@/components/WalletModal";
@@ -23,7 +24,6 @@ import ContactPage from "@/components/ContactPage";
 import PrivacyPage from "@/components/PrivacyPage";
 import TermsPage from "@/components/TermsPage";
 import AdminPanel from "@/components/AdminPanel";
-import WalletPage from "@/components/WalletPage";
 import LearnPage from "@/components/LearnPage";
 import PlusPage from "@/components/PlusPage";
 
@@ -99,6 +99,7 @@ function AppProvider({ children }) {
 
   useEffect(() => {
     const savedWallet = localStorage.getItem("zwap_wallet");
+
     if (savedWallet) {
       setWalletAddress(savedWallet);
       loadUser(savedWallet).finally(() => setInitialized(true));
@@ -191,9 +192,9 @@ function AppProvider({ children }) {
   const requireWallet = (action) => {
     if (!walletAddress) {
       setPendingAction(action);
-      setIsGetWalletPromptOpen(false);
       setIsWalletModalOpen(false);
-      setIsOnboardingModalOpen(true);
+      setIsOnboardingModalOpen(false);
+      setIsGetWalletPromptOpen(true);
       return false;
     }
     return true;
@@ -257,6 +258,7 @@ function AppContent() {
   useEffect(() => {
     if (walletAddress && pendingAction) {
       setPendingAction(null);
+
       switch (pendingAction) {
         case "swap":
           navigate("/swap");
@@ -334,7 +336,7 @@ function AppContent() {
   if (location.pathname === "/wallet") {
     return (
       <>
-        <WalletPage />
+        <FirstTimeUserPage />
 
         <GetWalletPrompt
           open={isGetWalletPromptOpen}
@@ -385,8 +387,8 @@ function AppContent() {
   const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
   if (protectedRoutes.includes(location.pathname) && !walletAddress) {
     setIsWalletModalOpen(false);
-    setIsGetWalletPromptOpen(false);
-    setIsOnboardingModalOpen(true);
+    setIsOnboardingModalOpen(false);
+    setIsGetWalletPromptOpen(true);
     navigate("/wallet");
     return null;
   }
