@@ -1,4 +1,3 @@
-import React, { useEffect, useMemo, useState } from "react";
 import {
   Pause,
   Play,
@@ -11,10 +10,12 @@ import {
   DollarSign,
   TrendingUp,
   BarChart3,
+  Sparkles,
   Trophy,
   Newspaper,
   ListOrdered,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
