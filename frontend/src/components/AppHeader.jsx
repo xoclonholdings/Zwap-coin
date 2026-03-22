@@ -48,8 +48,6 @@ export default function AppHeader() {
     return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
   };
 
-  const profile = user || authUser || null;
-
   const displayName = useMemo(() => {
     if (user?.custom_username) return user.custom_username;
     if (user?.username) return user.username;
@@ -73,17 +71,16 @@ export default function AppHeader() {
   }, [displayName]);
 
   const appZwapBalance = Number(
-    user?.zwap_balance ?? authUser?.zwap_pending ?? profile?.zwap_pending ?? 0
+    user?.zwap_balance ?? authUser?.zwap_pending ?? authUser?.zwap_balance ?? 0
   );
 
   const zptsBalance = Number(
-    user?.zpts_balance ?? authUser?.zpts_pending ?? profile?.zpts_balance ?? 0
+    user?.zpts_balance ?? authUser?.zpts_pending ?? authUser?.zpts_balance ?? 0
   );
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 border-b border-cyan-500/20 bg-[#0a0b1e]/95 backdrop-blur-lg">
       <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-3">
-        {/* Left side - audio hub */}
         <motion.button
           type="button"
           onClick={() => setAudioHubOpen(true)}
@@ -118,7 +115,6 @@ export default function AppHeader() {
           </div>
         </motion.button>
 
-        {/* Center - balances */}
         <motion.div
           className="flex items-center gap-2 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2"
           animate={{
@@ -142,7 +138,7 @@ export default function AppHeader() {
               }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              {onchainBalance !== null ? onchainBalance.toFixed(2) : "0.00"}
+              {walletAddress && onchainBalance !== null ? onchainBalance.toFixed(2) : "--"}
             </motion.p>
             <p className="text-[10px] text-gray-500">Wallet</p>
           </div>
@@ -186,13 +182,12 @@ export default function AppHeader() {
           </div>
         </motion.div>
 
-        {/* Right side - account trigger */}
         <AccountDrawer
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
           trigger={
             <motion.button
-              className="relative h-14 w-14 shrink-0 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
+              className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
               data-testid="profile-badge"
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
