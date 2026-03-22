@@ -4,15 +4,14 @@ import {
   Flame,
   Footprints,
   Coins,
-  Trophy,
   Gamepad2,
   ShoppingBag,
   ArrowRightLeft,
   Wallet,
   Sparkles,
-  ChevronRight,
   ShieldCheck,
   CircleDollarSign,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/App";
@@ -241,13 +240,7 @@ function TaskRow({ done = false, title, reward, tone = "cyan" }) {
 }
 
 export default function Dashboard() {
-  const {
-    user,
-    authUser,
-    walletAddress,
-    onchainBalance,
-    requireWallet,
-  } = useApp();
+  const { user, authUser, walletAddress, onchainBalance, requireWallet } = useApp();
 
   const profile = user || authUser || {};
 
@@ -339,7 +332,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#050510] text-white px-4 pb-28 pt-4 sm:px-5">
       <div className="max-w-6xl mx-auto space-y-5">
-        {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -395,12 +387,10 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Streak strip */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <DayStreakRow streak={streak} />
         </motion.div>
 
-        {/* Main dashboard grid */}
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="space-y-5">
             <motion.div
@@ -550,7 +540,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Bottom quick actions */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -602,7 +591,6 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Soft progress footer */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
