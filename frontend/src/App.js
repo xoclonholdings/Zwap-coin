@@ -162,6 +162,23 @@ function AppProvider({ children }) {
     }
   };
 
+  const closeAllAuthModals = () => {
+    setIsGetWalletPromptOpen(false);
+    setIsOnboardingModalOpen(false);
+    setIsReturningUserPromptOpen(false);
+    setIsWalletModalOpen(false);
+  };
+
+  const openWalletUpgradeFlow = () => {
+    closeAllAuthModals();
+    setIsOnboardingModalOpen(true);
+  };
+
+  const openGuestWalletFlow = () => {
+    closeAllAuthModals();
+    setIsGetWalletPromptOpen(true);
+  };
+
   const connectWallet = async (address) => {
     console.log("🔌 connectWallet called with:", address);
 
@@ -174,10 +191,7 @@ function AppProvider({ children }) {
       setWalletAddress(address);
       localStorage.setItem("zwap_wallet", address);
 
-      setIsWalletModalOpen(false);
-      setIsOnboardingModalOpen(false);
-      setIsGetWalletPromptOpen(false);
-      setIsReturningUserPromptOpen(false);
+      closeAllAuthModals();
 
       toast.success("Wallet connected!");
       return userData;
@@ -193,11 +207,7 @@ function AppProvider({ children }) {
   const completeEmailAuth = (emailUser) => {
     setAuthUser(emailUser);
     localStorage.setItem("zwap_auth_user", JSON.stringify(emailUser));
-
-    setIsGetWalletPromptOpen(false);
-    setIsOnboardingModalOpen(false);
-    setIsReturningUserPromptOpen(false);
-
+    closeAllAuthModals();
     toast.success("Signed in");
   };
 
@@ -231,10 +241,7 @@ function AppProvider({ children }) {
   const requireWallet = (action) => {
     if (!isAuthenticated) {
       setPendingAction(action);
-      setIsWalletModalOpen(false);
-      setIsOnboardingModalOpen(false);
-      setIsReturningUserPromptOpen(false);
-      setIsGetWalletPromptOpen(true);
+      openGuestWalletFlow();
       return false;
     }
     return true;
@@ -264,6 +271,7 @@ function AppProvider({ children }) {
 
         pendingAction,
         setPendingAction,
+
         connectWallet,
         completeEmailAuth,
         disconnectWallet,
@@ -271,6 +279,10 @@ function AppProvider({ children }) {
         logoutAll,
         refreshUser,
         requireWallet,
+
+        closeAllAuthModals,
+        openWalletUpgradeFlow,
+        openGuestWalletFlow,
 
         isLoading,
         initialized,
@@ -288,7 +300,6 @@ function AppProvider({ children }) {
 
 function AppContent() {
   const {
-    walletAddress,
     isAuthenticated,
     isGetWalletPromptOpen,
     setIsGetWalletPromptOpen,
@@ -303,6 +314,8 @@ function AppContent() {
     initialized,
     showSplash,
     setShowSplash,
+    openGuestWalletFlow,
+    closeAllAuthModals,
   } = useApp();
 
   const location = useLocation();
@@ -333,10 +346,7 @@ function AppContent() {
       <SplashScreen
         onNewUser={() => {
           setShowSplash(false);
-          setIsWalletModalOpen(false);
-          setIsOnboardingModalOpen(false);
-          setIsReturningUserPromptOpen(false);
-          setIsGetWalletPromptOpen(false);
+          closeAllAuthModals();
           navigate("/wallet");
         }}
         onReturningUser={() => {
@@ -345,9 +355,7 @@ function AppContent() {
           if (isAuthenticated) {
             navigate("/dashboard");
           } else {
-            setIsGetWalletPromptOpen(false);
-            setIsOnboardingModalOpen(false);
-            setIsWalletModalOpen(false);
+            closeAllAuthModals();
             setIsReturningUserPromptOpen(true);
             navigate("/wallet");
           }
@@ -432,15 +440,13 @@ function AppContent() {
   const settingsPages = ["/profile", "/contact", "/privacy", "/terms", "/admin"];
   if (settingsPages.includes(location.pathname)) {
     return (
-      <>
-        <Routes>
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
-      </>
+      <Routes>
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/admin" element={<AdminPanel />} />
+      </Routes>
     );
   }
 
@@ -451,10 +457,7 @@ function AppContent() {
 
   const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
   if (protectedRoutes.includes(location.pathname) && !isAuthenticated) {
-    setIsWalletModalOpen(false);
-    setIsOnboardingModalOpen(false);
-    setIsReturningUserPromptOpen(false);
-    setIsGetWalletPromptOpen(true);
+    openGuestWalletFlow();
     navigate("/wallet");
     return null;
   }
