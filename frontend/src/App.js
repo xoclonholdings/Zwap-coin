@@ -9,6 +9,7 @@ import AboutPage from "@/components/AboutPage";
 import FirstTimeUserPage from "@/components/FirstTimeUserPage";
 import GetWalletPrompt from "@/components/GetWalletPrompt";
 import OnboardingModal from "@/components/OnboardingModal";
+import ReturningUserPrompt from "@/components/ReturningUserPrompt";
 import WalletModal from "@/components/WalletModal";
 import AppHeader from "@/components/AppHeader";
 import NewsTicker from "@/components/NewsTicker";
@@ -89,6 +90,7 @@ function AppProvider({ children }) {
 
   const [isGetWalletPromptOpen, setIsGetWalletPromptOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
   const [pendingAction, setPendingAction] = useState(null);
@@ -162,6 +164,7 @@ function AppProvider({ children }) {
       setIsWalletModalOpen(false);
       setIsOnboardingModalOpen(false);
       setIsGetWalletPromptOpen(false);
+      setIsReturningUserPromptOpen(false);
 
       toast.success("Wallet connected!");
       return userData;
@@ -194,6 +197,7 @@ function AppProvider({ children }) {
       setPendingAction(action);
       setIsWalletModalOpen(false);
       setIsOnboardingModalOpen(false);
+      setIsReturningUserPromptOpen(false);
       setIsGetWalletPromptOpen(true);
       return false;
     }
@@ -211,6 +215,9 @@ function AppProvider({ children }) {
 
         isOnboardingModalOpen,
         setIsOnboardingModalOpen,
+
+        isReturningUserPromptOpen,
+        setIsReturningUserPromptOpen,
 
         isWalletModalOpen,
         setIsWalletModalOpen,
@@ -243,6 +250,8 @@ function AppContent() {
     setIsGetWalletPromptOpen,
     isOnboardingModalOpen,
     setIsOnboardingModalOpen,
+    isReturningUserPromptOpen,
+    setIsReturningUserPromptOpen,
     isWalletModalOpen,
     setIsWalletModalOpen,
     pendingAction,
@@ -282,6 +291,7 @@ function AppContent() {
           setShowSplash(false);
           setIsWalletModalOpen(false);
           setIsOnboardingModalOpen(false);
+          setIsReturningUserPromptOpen(false);
           setIsGetWalletPromptOpen(false);
           navigate("/wallet");
         }}
@@ -293,7 +303,8 @@ function AppContent() {
           } else {
             setIsGetWalletPromptOpen(false);
             setIsOnboardingModalOpen(false);
-            setIsWalletModalOpen(true);
+            setIsWalletModalOpen(false);
+            setIsReturningUserPromptOpen(true);
             navigate("/wallet");
           }
         }}
@@ -339,17 +350,27 @@ function AppContent() {
         <FirstTimeUserPage />
 
         <GetWalletPrompt
-          open={isGetWalletPromptOpen}
+          open={!isReturningUserPromptOpen && isGetWalletPromptOpen}
           onOpenChange={setIsGetWalletPromptOpen}
         />
 
         <OnboardingModal
-          open={!isGetWalletPromptOpen && isOnboardingModalOpen}
+          open={
+            !isReturningUserPromptOpen &&
+            !isGetWalletPromptOpen &&
+            isOnboardingModalOpen
+          }
           onOpenChange={setIsOnboardingModalOpen}
+        />
+
+        <ReturningUserPrompt
+          open={isReturningUserPromptOpen}
+          onOpenChange={setIsReturningUserPromptOpen}
         />
 
         <WalletModal
           open={
+            !isReturningUserPromptOpen &&
             !isGetWalletPromptOpen &&
             !isOnboardingModalOpen &&
             isWalletModalOpen
@@ -388,6 +409,7 @@ function AppContent() {
   if (protectedRoutes.includes(location.pathname) && !walletAddress) {
     setIsWalletModalOpen(false);
     setIsOnboardingModalOpen(false);
+    setIsReturningUserPromptOpen(false);
     setIsGetWalletPromptOpen(true);
     navigate("/wallet");
     return null;
