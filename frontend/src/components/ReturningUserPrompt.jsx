@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useApp } from "@/App";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -16,11 +16,16 @@ const API_BASE =
   "/api";
 
 export default function ReturningUserPrompt({ open, onOpenChange }) {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState(localStorage.getItem("zwap_email") || "");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const isValidEmail = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()), [email]);
+  const isValidEmail = useMemo(
+    () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
+    [email]
+  );
   const isValidPassword = password.trim().length >= 8;
 
   const handleLogin = async (e) => {
@@ -54,7 +59,7 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
       localStorage.setItem("zwap_email", email.trim().toLowerCase());
       toast.success("Welcome back");
       onOpenChange(false);
-      window.location.href = "/dashboard";
+      navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
       toast.error(error?.message || "Unable to log in");
@@ -79,7 +84,10 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
         <form onSubmit={handleLogin} className="space-y-4 mt-4">
           <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 space-y-4">
             <div>
-              <label htmlFor="returning-email" className="block text-sm text-gray-300 mb-2">
+              <label
+                htmlFor="returning-email"
+                className="block text-sm text-gray-300 mb-2"
+              >
                 Email address
               </label>
               <div className="relative">
@@ -98,7 +106,10 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
             </div>
 
             <div>
-              <label htmlFor="returning-password" className="block text-sm text-gray-300 mb-2">
+              <label
+                htmlFor="returning-password"
+                className="block text-sm text-gray-300 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
