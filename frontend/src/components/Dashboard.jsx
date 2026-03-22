@@ -8,10 +8,8 @@ import {
   Wallet,
   Sparkles,
   CircleDollarSign,
-  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { useApp } from "@/App";
 
 function ProgressRing({
@@ -196,7 +194,6 @@ function ActivityRow({ title, meta }) {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { user, authUser, walletAddress, onchainBalance, requireWallet } = useApp();
 
   const profile = user || authUser || {};
@@ -249,21 +246,6 @@ export default function Dashboard() {
 
   const handleShop = () => {
     requireWallet("shop");
-  };
-
-  const handleAdminTap = () => {
-    const now = Date.now();
-    const lastTap = window._adminTapTime || 0;
-    const tapCount =
-      now - lastTap < 500 ? (window._adminTapCount || 0) + 1 : 1;
-
-    window._adminTapTime = now;
-    window._adminTapCount = tapCount;
-
-    if (tapCount >= 3) {
-      window._adminTapCount = 0;
-      navigate("/admin");
-    }
   };
 
   return (
@@ -429,7 +411,7 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Footer status + shield/admin access */}
+        {/* Footer status */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -457,25 +439,6 @@ export default function Dashboard() {
                     Play {Math.round(playPercent)}%
                   </span>
                 </div>
-              </div>
-
-              <div className="pt-2 border-t border-white/10 flex items-center justify-center">
-                <motion.div
-                  animate={{
-                    filter: [
-                      "drop-shadow(0 0 8px rgba(0,245,255,0.22))",
-                      "drop-shadow(0 0 18px rgba(0,245,255,0.42))",
-                      "drop-shadow(0 0 8px rgba(0,245,255,0.22))",
-                    ],
-                  }}
-                  transition={{ duration: 2.2, repeat: Infinity }}
-                >
-                  <Shield
-                    className="w-8 h-8 text-cyan-400 cursor-pointer"
-                    onClick={handleAdminTap}
-                    title="Admin access"
-                  />
-                </motion.div>
               </div>
             </div>
           </div>
