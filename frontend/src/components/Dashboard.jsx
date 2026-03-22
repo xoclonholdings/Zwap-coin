@@ -1,559 +1,637 @@
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
 import {
-  Pause,
-  Play,
-  RefreshCw,
-  Users,
-  Activity,
+  Flame,
+  Footprints,
   Coins,
-  Database,
-  ShoppingBag,
-  DollarSign,
-  TrendingUp,
-  BarChart3,
-  Sparkles,
   Trophy,
-  Newspaper,
-  ListOrdered,
+  Gamepad2,
+  ShoppingBag,
+  ArrowRightLeft,
+  Wallet,
+  Sparkles,
+  ChevronRight,
+  ShieldCheck,
+  CircleDollarSign,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { useApp } from "@/App";
 
-import adminApi from "@/lib/adminApi";
+function ProgressRing({
+  value = 0,
+  max = 100,
+  size = 132,
+  stroke = 10,
+  accent = "cyan",
+  label,
+  sublabel,
+}) {
+  const safeMax = Math.max(max, 1);
+  const percent = Math.max(0, Math.min((value / safeMax) * 100, 100));
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference - (percent / 100) * circumference;
 
-export default function DashboardSection({ data, onRefresh }) {
-  const treasury = data?.treasury || {};
-  const analytics = data?.analytics || {};
-  const topEarners = analytics?.top_earners || [];
-  const leaderboard = data?.leaderboard || {};
-  const news = data?.news || [];
-
-  const [days, setDays] = useState(30);
-  const [view, setView] = useState("portfolio");
-  const [insightTab, setInsightTab] = useState("earners");
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [purchaseAnalytics, setPurchaseAnalytics] = useState({
-    total_purchases: 0,
-    total_zwap_spent: 0,
-    total_zpts_spent: 0,
-    top_items: [],
-    daily_series: [],
-    days: 30,
-  });
-
-  const [loadingPurchaseAnalytics, setLoadingPurchaseAnalytics] = useState(true);
-
-  useEffect(() => {
-    loadPurchaseAnalytics(days);
-  }, [days]);
-
-  const loadPurchaseAnalytics = async (rangeDays = 30) => {
-    setLoadingPurchaseAnalytics(true);
-    try {
-      const result = await adminApi.get(`/analytics/purchases?days=${rangeDays}`);
-      setPurchaseAnalytics(result || {});
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load purchase analytics");
-    } finally {
-      setLoadingPurchaseAnalytics(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await Promise.all([
-        Promise.resolve(onRefresh?.()),
-        loadPurchaseAnalytics(days),
-      ]);
-      toast.success("Dashboard refreshed");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to refresh dashboard");
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const chartData = useMemo(() => {
-    const series = purchaseAnalytics.daily_series || [];
-
-    if (view === "portfolio") {
-      return series.map((item) => ({
-        date: item.date,
-        value: Number(item.zwap_spent || 0),
-      }));
-    }
-
-    if (view === "activity") {
-      return series.map((item) => ({
-        date: item.date,
-        value: Number(item.count || 0),
-      }));
-    }
-
-    return series.map((item) => ({
-      date: item.date,
-      value: Number(item.zpts_spent || 0),
-    }));
-  }, [purchaseAnalytics.daily_series, view]);
-
-  const chartMax = Math.max(...chartData.map((d) => d.value), 1);
-
-  const summaryCards = [
-    {
-      label: "Total Users",
-      value: analytics.total_users || 0,
-      icon: Users,
-      tone: "cyan",
-    },
-    {
-      label: "Active Today",
-      value: analytics.dau || 0,
-      icon: Activity,
-      tone: "green",
-    },
-    {
-      label: "Treasury Balance",
-      value: (treasury.on_chain_balance || 0).toFixed(2),
-      icon: Database,
-      tone: "blue",
-    },
-    {
-      label: "Claimed Total",
-      value: (treasury.claimed_total || 0).toFixed(2),
-      icon: Coins,
-      tone: "purple",
-    },
-    {
-      label: "Purchases",
-      value: purchaseAnalytics.total_purchases || 0,
-      icon: ShoppingBag,
-      tone: "cyan",
-    },
-    {
-      label: "ZWAP Spent",
-      value: (purchaseAnalytics.total_zwap_spent || 0).toFixed(2),
-      icon: DollarSign,
-      tone: "green",
-    },
-    {
-      label: "zPts Spent",
-      value: (purchaseAnalytics.total_zpts_spent || 0).toFixed(2),
-      icon: TrendingUp,
-      tone: "purple",
-    },
-  ];
-
-  const toneMap = {
+  const accentMap = {
     cyan: {
-      iconWrap: "bg-cyan-500/15 border border-cyan-400/20",
-      icon: "text-cyan-300",
-      value: "text-cyan-200",
-    },
-    green: {
-      iconWrap: "bg-emerald-500/15 border border-emerald-400/20",
-      icon: "text-emerald-300",
-      value: "text-emerald-200",
-    },
-    blue: {
-      iconWrap: "bg-blue-500/15 border border-blue-400/20",
-      icon: "text-blue-300",
-      value: "text-blue-200",
+      track: "rgba(34, 211, 238, 0.14)",
+      stroke: "#22d3ee",
+      glow: "drop-shadow(0 0 10px rgba(34,211,238,0.32))",
+      text: "text-cyan-300",
     },
     purple: {
-      iconWrap: "bg-violet-500/15 border border-violet-400/20",
-      icon: "text-violet-300",
-      value: "text-violet-200",
+      track: "rgba(168, 85, 247, 0.14)",
+      stroke: "#a855f7",
+      glow: "drop-shadow(0 0 10px rgba(168,85,247,0.32))",
+      text: "text-violet-300",
+    },
+    green: {
+      track: "rgba(16, 185, 129, 0.14)",
+      stroke: "#10b981",
+      glow: "drop-shadow(0 0 10px rgba(16,185,129,0.32))",
+      text: "text-emerald-300",
     },
   };
 
-  const viewMeta = {
-    portfolio: {
-      title: "Treasury Overview",
-      subtitle: "ZWAP purchase value over time",
-      metricLabel: "ZWAP spent",
-    },
-    activity: {
-      title: "Purchase Activity",
-      subtitle: "Marketplace purchase count over time",
-      metricLabel: "Purchases",
-    },
-    rewards: {
-      title: "Reward Spending View",
-      subtitle: "zPts marketplace spending over time",
-      metricLabel: "zPts spent",
-    },
-  };
+  const theme = accentMap[accent] || accentMap.cyan;
 
-  const insightTabs = [
-    { id: "earners", label: "Top Earners", icon: Trophy },
-    { id: "purchases", label: "Top Purchased", icon: ShoppingBag },
-    { id: "activity", label: "Live Activity", icon: Newspaper },
-    { id: "leaderboard", label: "Leaderboard", icon: ListOrdered },
-  ];
-
-  const renderInsightContent = () => {
-    if (insightTab === "earners") {
-      return topEarners.length === 0 ? (
-        <p className="text-gray-400 text-sm">No top earners yet</p>
-      ) : (
-        <div className="space-y-3">
-          {topEarners.slice(0, 5).map((user, index) => (
-            <div
-              key={user.id || user.wallet_address || index}
-              className="flex items-center justify-between rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="text-white font-medium truncate">
-                  {user.username || "Unnamed User"}
-                </p>
-                <p className="text-xs text-gray-500 font-mono truncate">
-                  {user.wallet_address
-                    ? `${user.wallet_address.slice(0, 8)}...${user.wallet_address.slice(-4)}`
-                    : "No wallet"}
-                </p>
-              </div>
-
-              <div className="text-right pl-4">
-                <p className="text-cyan-300 font-bold">
-                  {(user.zwap_balance || 0).toFixed(2)} ZWAP
-                </p>
-                <p className="text-xs text-gray-500 capitalize">
-                  {user.tier || "starter"}
-                </p>
-              </div>
-            </div>
-          ))}
+  return (
+    <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-white font-semibold">{label}</p>
+          <p className="text-xs text-gray-500 mt-1">{sublabel}</p>
         </div>
-      );
-    }
-
-    if (insightTab === "purchases") {
-      if (loadingPurchaseAnalytics) {
-        return <p className="text-gray-400 text-sm">Loading purchase analytics...</p>;
-      }
-
-      return purchaseAnalytics.top_items?.length ? (
-        <div className="space-y-3">
-          {purchaseAnalytics.top_items.slice(0, 5).map((item, index) => (
-            <div
-              key={`${item.item_name}-${index}`}
-              className="flex items-center justify-between rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3"
-            >
-              <p className="text-white font-medium">{item.item_name}</p>
-              <p className="text-cyan-300 font-bold">{item.count}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-400 text-sm">No purchases yet</p>
-      );
-    }
-
-    if (insightTab === "activity") {
-      return news.length > 0 ? (
-        <div className="space-y-3">
-          {news.slice(0, 5).map((item, index) => (
-            <div
-              key={item.id || index}
-              className="rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3"
-            >
-              <p className="text-sm text-white font-medium">
-                {item.title || "Platform update"}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {item.created_at
-                  ? new Date(item.created_at).toLocaleString()
-                  : "Recent"}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3 text-sm text-gray-400">
-            Live reward activity feed placeholder
-          </div>
-          <div className="rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3 text-sm text-gray-400">
-            Recent streaks, claims, and campaign events can appear here
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-3 text-sm">
-        <div className="rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3 flex items-center justify-between">
-          <span className="text-gray-400">Entries</span>
-          <span className="text-white font-semibold">
-            {leaderboard?.entries?.length || 0}
-          </span>
-        </div>
-        <div className="rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3 flex items-center justify-between">
-          <span className="text-gray-400">Category</span>
-          <span className="text-white font-semibold">Earned</span>
-        </div>
-        <div className="rounded-2xl border border-gray-800 bg-white/[0.03] px-4 py-3 flex items-center justify-between">
-          <span className="text-gray-400">Top Items Count</span>
-          <span className="text-white font-semibold">
-            {purchaseAnalytics.top_items?.length || 0}
-          </span>
+        <div className={`text-xs font-semibold ${theme.text}`}>
+          {Math.round(percent)}%
         </div>
       </div>
-    );
+
+      <div className="flex items-center justify-center">
+        <svg width={size} height={size} className="overflow-visible">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="transparent"
+            stroke={theme.track}
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="transparent"
+            stroke={theme.stroke}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            style={{ filter: theme.glow }}
+          />
+          <text
+            x="50%"
+            y="47%"
+            textAnchor="middle"
+            className="fill-white text-[20px] font-bold"
+          >
+            {typeof value === "number" ? Math.round(value) : value}
+          </text>
+          <text
+            x="50%"
+            y="61%"
+            textAnchor="middle"
+            className="fill-gray-500 text-[11px]"
+          >
+            {max}
+          </text>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function MiniStatCard({ icon: Icon, label, value, tone = "cyan", hint }) {
+  const toneMap = {
+    cyan: "from-cyan-500/18 to-cyan-500/5 text-cyan-300 border-cyan-400/20",
+    purple:
+      "from-violet-500/18 to-violet-500/5 text-violet-300 border-violet-400/20",
+    green:
+      "from-emerald-500/18 to-emerald-500/5 text-emerald-300 border-emerald-400/20",
+    amber:
+      "from-amber-500/18 to-amber-500/5 text-amber-300 border-amber-400/20",
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.25em] text-cyan-400/80">
-            Admin Overview
+    <div
+      className={`rounded-[1.5rem] border bg-gradient-to-br p-4 ${toneMap[tone] || toneMap.cyan}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-gray-400">
+            {label}
           </p>
-          <h2 className="text-3xl font-bold text-white">Dashboard Overview</h2>
-          <p className="text-sm text-gray-400 max-w-2xl">
-            Platform health, treasury visibility, spending behavior, and live admin
-            intelligence in one place.
+          <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+          {hint ? <p className="mt-1 text-xs text-gray-500">{hint}</p> : null}
+        </div>
+
+        <div className="w-10 h-10 rounded-2xl bg-black/20 border border-white/10 flex items-center justify-center">
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DayStreakRow({ streak = 0 }) {
+  const today = new Date();
+  const labels = ["S", "M", "T", "W", "T", "F", "S"];
+  const jsDay = today.getDay();
+
+  return (
+    <div className="rounded-[1.75rem] border border-orange-400/15 bg-gradient-to-br from-orange-500/10 via-pink-500/5 to-transparent p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 text-orange-300" />
+            <p className="text-white font-semibold">Daily Streak</p>
+          </div>
+          <p className="text-sm text-gray-400 mt-1">
+            Keep showing up. Momentum multiplies.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {[7, 30, 90].map((range) => (
-            <button
-              key={range}
-              onClick={() => setDays(range)}
-              className={`px-3 py-2 rounded-xl text-sm border transition ${
-                days === range
-                  ? "bg-cyan-500/20 border-cyan-400/30 text-cyan-300"
-                  : "bg-white/5 border-gray-800 text-gray-400 hover:bg-white/10"
-              }`}
-            >
-              {range}d
-            </button>
-          ))}
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="border-gray-700 bg-white/5 text-gray-200 hover:bg-white/10"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </Button>
+        <div className="text-right">
+          <p className="text-3xl font-black text-orange-300">{streak}</p>
+          <p className="text-xs text-gray-500">days</p>
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-[minmax(0,1.7fr)_360px] gap-5">
-        <div className="space-y-5">
-          <div className="rounded-3xl border border-gray-800 bg-[#0c101b] overflow-hidden">
-            <div className="px-6 pt-6 pb-4 border-b border-gray-800/80">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Analytics Snapshot</p>
-                  <div className="flex items-end gap-3 mt-2 flex-wrap">
-                    <h3 className="text-4xl font-bold text-white">
-                      {view === "portfolio" && (treasury.on_chain_balance || 0).toFixed(2)}
-                      {view === "activity" && (purchaseAnalytics.total_purchases || 0)}
-                      {view === "rewards" && (purchaseAnalytics.total_zpts_spent || 0).toFixed(2)}
-                    </h3>
-                    <span className="px-2.5 py-1 rounded-xl text-xs border border-gray-700 bg-white/5 text-gray-300">
-                      {viewMeta[view].metricLabel}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Range: last {days} days
-                  </p>
-                </div>
+      <div className="grid grid-cols-7 gap-2">
+        {labels.map((label, index) => {
+          const isToday = index === jsDay;
+          const isActive = index < Math.min(streak, 7);
 
-                <div className="flex flex-wrap gap-2">
-                  {["portfolio", "activity", "rewards"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setView(tab)}
-                      className={`px-3 py-2 rounded-xl text-sm border transition ${
-                        view === tab
-                          ? "bg-cyan-500/20 border-cyan-400/30 text-cyan-300"
-                          : "bg-white/5 border-gray-800 text-gray-400 hover:bg-white/10"
-                      }`}
-                    >
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="rounded-3xl border border-cyan-500/15 bg-gradient-to-br from-cyan-500/10 via-violet-500/5 to-transparent min-h-[340px] p-5">
-                <div className="mb-5">
-                  <p className="text-white text-lg font-semibold">
-                    {viewMeta[view].title}
-                  </p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {viewMeta[view].subtitle}
-                  </p>
-                </div>
-
-                {loadingPurchaseAnalytics ? (
-                  <div className="h-[240px] flex items-center justify-center text-gray-400 text-sm">
-                    Loading chart data...
-                  </div>
-                ) : chartData.length === 0 ? (
-                  <div className="h-[240px] flex items-center justify-center text-gray-400 text-sm">
-                    No chart data available
-                  </div>
-                ) : (
-                  <div className="h-[240px] flex items-end gap-2">
-                    {chartData.map((point, index) => {
-                      const height = `${Math.max((point.value / chartMax) * 100, 6)}%`;
-
-                      return (
-                        <div
-                          key={`${point.date}-${index}`}
-                          className="flex-1 flex flex-col items-center justify-end gap-2"
-                        >
-                          <div
-                            className="w-full rounded-t-xl bg-gradient-to-t from-cyan-400/80 to-violet-400/70 min-h-[12px]"
-                            style={{ height }}
-                            title={`${point.date}: ${point.value}`}
-                          />
-                          <span className="text-[10px] text-gray-500">
-                            {point.date.slice(5)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3">
-                {summaryCards.map((card) => {
-                  const Icon = card.icon;
-                  const tone = toneMap[card.tone];
-
-                  return (
-                    <div
-                      key={card.label}
-                      className="rounded-2xl border border-gray-800 bg-[#101522] p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-[11px] uppercase tracking-wide text-gray-500">
-                            {card.label}
-                          </p>
-                          <p className={`mt-2 text-2xl font-bold ${tone.value}`}>
-                            {card.value}
-                          </p>
-                        </div>
-
-                        <div
-                          className={`w-10 h-10 rounded-2xl flex items-center justify-center ${tone.iconWrap}`}
-                        >
-                          <Icon className={`w-4 h-4 ${tone.icon}`} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-gray-800 bg-[#0c101b] p-5">
-            <div className="flex flex-col gap-4 mb-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-white font-semibold text-lg">Insights</h3>
-                  <p className="text-sm text-gray-400">
-                    Switch between leaderboard, marketplace, and activity views
-                  </p>
-                </div>
-
-                <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                  Live admin intelligence
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {insightTabs.map((tab) => {
-                  const Icon = tab.icon;
-
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setInsightTab(tab.id)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm border transition ${
-                        insightTab === tab.id
-                          ? "bg-cyan-500/20 border-cyan-400/30 text-cyan-300"
-                          : "bg-white/5 border-gray-800 text-gray-400 hover:bg-white/10"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {renderInsightContent()}
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div className="rounded-3xl border border-gray-800 bg-[#0c101b] p-5">
-            <h3 className="text-white font-semibold text-lg mb-4">System Status</h3>
-
-            <div className="space-y-3">
-              <div
-                className={`px-4 py-3 rounded-2xl text-sm flex items-center gap-2 ${
-                  treasury.web3_connected
-                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20"
-                    : "bg-red-500/15 text-red-300 border border-red-400/20"
+          return (
+            <div
+              key={`${label}-${index}`}
+              className={`rounded-2xl border px-2 py-3 text-center transition ${
+                isToday
+                  ? "border-cyan-400/40 bg-cyan-500/15"
+                  : isActive
+                    ? "border-orange-400/25 bg-orange-500/12"
+                    : "border-white/10 bg-white/[0.03]"
+              }`}
+            >
+              <p
+                className={`text-xs font-semibold ${
+                  isToday
+                    ? "text-cyan-300"
+                    : isActive
+                      ? "text-orange-300"
+                      : "text-gray-500"
                 }`}
               >
-                {treasury.web3_connected ? (
-                  <Play className="w-4 h-4" />
-                ) : (
-                  <Pause className="w-4 h-4" />
-                )}
-                Web3: {treasury.web3_connected ? "Connected" : "Offline"}
+                {label}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TaskRow({ done = false, title, reward, tone = "cyan" }) {
+  const toneMap = {
+    cyan: done
+      ? "border-cyan-400/25 bg-cyan-500/10"
+      : "border-white/10 bg-white/[0.03]",
+    purple: done
+      ? "border-violet-400/25 bg-violet-500/10"
+      : "border-white/10 bg-white/[0.03]",
+    green: done
+      ? "border-emerald-400/25 bg-emerald-500/10"
+      : "border-white/10 bg-white/[0.03]",
+  };
+
+  return (
+    <div
+      className={`rounded-2xl border px-4 py-3 flex items-center justify-between gap-3 ${toneMap[tone] || toneMap.cyan}`}
+    >
+      <div className="min-w-0">
+        <p className={`font-medium ${done ? "text-white" : "text-gray-200"}`}>
+          {title}
+        </p>
+        <p className="text-xs text-gray-500 mt-1">{reward}</p>
+      </div>
+
+      <div
+        className={`w-6 h-6 rounded-full border flex items-center justify-center ${
+          done
+            ? "border-emerald-400/40 bg-emerald-500/20"
+            : "border-white/10 bg-white/[0.03]"
+        }`}
+      >
+        {done ? <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" /> : null}
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const {
+    user,
+    authUser,
+    walletAddress,
+    onchainBalance,
+    requireWallet,
+  } = useApp();
+
+  const profile = user || authUser || {};
+
+  const streak = profile?.daily_streak || 3;
+  const todaySteps = profile?.today_steps || 4826;
+  const stepGoal = profile?.step_goal || 8000;
+  const pendingZwap =
+    Number(profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0) || 0;
+  const zpts = Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 125) || 0;
+  const gamesPlayed = Number(profile?.games_played_today ?? 1) || 0;
+  const gameGoal = Number(profile?.daily_game_goal ?? 3) || 3;
+  const username = profile?.username || profile?.email?.split("@")[0] || "Zwapper";
+
+  const dailyTasks = useMemo(
+    () => [
+      {
+        title: "Check in to ZWAP!",
+        reward: "+10 zPts",
+        done: true,
+        tone: "cyan",
+      },
+      {
+        title: "Walk toward your goal",
+        reward: "+15 zPts",
+        done: todaySteps >= Math.min(stepGoal, 5000),
+        tone: "green",
+      },
+      {
+        title: "Play 1 game",
+        reward: "+10 zPts",
+        done: gamesPlayed >= 1,
+        tone: "purple",
+      },
+      {
+        title: "Reach full move goal",
+        reward: "+0.25 ZWAP!",
+        done: todaySteps >= stepGoal,
+        tone: "cyan",
+      },
+    ],
+    [todaySteps, stepGoal, gamesPlayed]
+  );
+
+  const recentActivity = useMemo(() => {
+    const items = [];
+
+    if (streak > 0) {
+      items.push({
+        title: `🔥 ${streak}-day streak active`,
+        meta: "Keep it going tomorrow",
+      });
+    }
+
+    if (todaySteps > 0) {
+      items.push({
+        title: `👟 ${todaySteps.toLocaleString()} steps recorded`,
+        meta: `${Math.max(stepGoal - todaySteps, 0).toLocaleString()} to goal`,
+      });
+    }
+
+    if (gamesPlayed > 0) {
+      items.push({
+        title: `🎮 ${gamesPlayed} game session${gamesPlayed > 1 ? "s" : ""} today`,
+        meta: `${Math.max(gameGoal - gamesPlayed, 0)} left for daily target`,
+      });
+    }
+
+    if (pendingZwap > 0 || zpts > 0) {
+      items.push({
+        title: `💰 Rewards building`,
+        meta: `${pendingZwap.toFixed(2)} ZWAP! • ${zpts} zPts`,
+      });
+    }
+
+    return items.slice(0, 4);
+  }, [streak, todaySteps, stepGoal, gamesPlayed, gameGoal, pendingZwap, zpts]);
+
+  const stepsPercent = Math.min((todaySteps / Math.max(stepGoal, 1)) * 100, 100);
+  const playPercent = Math.min((gamesPlayed / Math.max(gameGoal, 1)) * 100, 100);
+
+  const handleSwap = () => {
+    requireWallet("swap");
+  };
+
+  const handleShop = () => {
+    requireWallet("shop");
+  };
+
+  return (
+    <div className="min-h-screen bg-[#050510] text-white px-4 pb-28 pt-4 sm:px-5">
+      <div className="max-w-6xl mx-auto space-y-5">
+        {/* Hero */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-cyan-500/10 via-violet-500/6 to-pink-500/8 p-5 sm:p-6"
+        >
+          <div className="absolute -top-10 right-[-2rem] w-44 h-44 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-2rem] left-[-1rem] w-40 h-40 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/80">
+                Move. Play. Swap. Shop.
+              </p>
+              <h1 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight">
+                Welcome back, {username}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm sm:text-base text-gray-300 leading-relaxed">
+                Your ZWAP! dashboard is your daily pulse: movement, rewards,
+                streaks, and progress all in one place.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 w-full lg:w-[360px]">
+              <MiniStatCard
+                icon={Flame}
+                label="Streak"
+                value={`${streak} days`}
+                tone="amber"
+                hint="Daily momentum"
+              />
+              <MiniStatCard
+                icon={Coins}
+                label="Pending ZWAP!"
+                value={pendingZwap.toFixed(2)}
+                tone="cyan"
+                hint="Claim when ready"
+              />
+              <MiniStatCard
+                icon={Sparkles}
+                label="zPts"
+                value={zpts}
+                tone="purple"
+                hint="Play-powered rewards"
+              />
+              <MiniStatCard
+                icon={Wallet}
+                label="Wallet"
+                value={walletAddress ? "Connected" : "Not yet"}
+                tone="green"
+                hint={walletAddress ? "Ready to claim" : "Optional for now"}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Streak strip */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <DayStreakRow streak={streak} />
+        </motion.div>
+
+        {/* Main dashboard grid */}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="space-y-5">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid gap-5 md:grid-cols-2"
+            >
+              <ProgressRing
+                value={todaySteps}
+                max={stepGoal}
+                label="Today’s Move Goal"
+                sublabel="Walk, build streak, stack rewards"
+                accent="cyan"
+              />
+
+              <ProgressRing
+                value={gamesPlayed}
+                max={gameGoal}
+                label="Play Progress"
+                sublabel="Daily game rhythm"
+                accent="purple"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5 sm:p-6"
+            >
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Today’s Missions</h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Small wins. Daily rhythm. Compound progress.
+                  </p>
+                </div>
+                <Target className="w-5 h-5 text-cyan-300 mt-1" />
               </div>
 
-              <div className="px-4 py-3 rounded-2xl bg-white/[0.03] border border-gray-800 text-sm text-gray-300">
-                Treasury Wallet
-                <div className="font-mono text-gray-400 mt-1">
-                  {treasury.treasury_wallet
-                    ? `${treasury.treasury_wallet.slice(0, 8)}...${treasury.treasury_wallet.slice(-4)}`
-                    : "Not available"}
+              <div className="space-y-3">
+                {dailyTasks.map((task) => (
+                  <TaskRow
+                    key={task.title}
+                    title={task.title}
+                    reward={task.reward}
+                    done={task.done}
+                    tone={task.tone}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="space-y-5">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5"
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Rewards Snapshot</h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    What you’re building right now
+                  </p>
                 </div>
+                <CircleDollarSign className="w-5 h-5 text-emerald-300 mt-1" />
               </div>
 
-              <div className="px-4 py-3 rounded-2xl bg-white/[0.03] border border-gray-800 text-sm text-gray-300">
-                Contract
-                <div className="font-mono text-gray-400 mt-1">
-                  {treasury.contract_address
-                    ? `${treasury.contract_address.slice(0, 8)}...${treasury.contract_address.slice(-4)}`
-                    : "Not available"}
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/10 px-4 py-4">
+                  <p className="text-xs uppercase tracking-wide text-cyan-300/80">
+                    Pending ZWAP!
+                  </p>
+                  <p className="text-3xl font-black text-white mt-2">
+                    {pendingZwap.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Connect a wallet when you want to claim onchain.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-violet-400/15 bg-violet-500/10 px-4 py-4">
+                  <p className="text-xs uppercase tracking-wide text-violet-300/80">
+                    zPts Balance
+                  </p>
+                  <p className="text-3xl font-black text-white mt-2">{zpts}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Earn more through Play and daily actions.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={handleSwap}
+                    className="h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-semibold"
+                  >
+                    <ArrowRightLeft className="w-4 h-4 mr-2" />
+                    Swap
+                  </Button>
+
+                  <Button
+                    onClick={handleShop}
+                    variant="outline"
+                    className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06]"
+                  >
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Shop
+                  </Button>
                 </div>
               </div>
+            </motion.div>
 
-              <div className="px-4 py-3 rounded-2xl bg-white/[0.03] border border-gray-800 text-sm text-gray-300">
-                Native Balance
-                <div className="text-white font-semibold mt-1">
-                  {(treasury.native_balance || 0).toFixed(4)}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5"
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Live Activity</h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Your day inside ZWAP!
+                  </p>
                 </div>
+                <Sparkles className="w-5 h-5 text-cyan-300 mt-1" />
+              </div>
+
+              <div className="space-y-3">
+                {recentActivity.map((item, index) => (
+                  <div
+                    key={`${item.title}-${index}`}
+                    className="rounded-2xl border border-white/10 bg-black/15 px-4 py-3"
+                  >
+                    <p className="text-white font-medium text-sm">{item.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">{item.meta}</p>
+                  </div>
+                ))}
+
+                {!recentActivity.length ? (
+                  <div className="rounded-2xl border border-white/10 bg-black/15 px-4 py-4 text-sm text-gray-400">
+                    Activity will start building as you move, play, and earn in ZWAP!
+                  </div>
+                ) : null}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Bottom quick actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white">Quick Actions</h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Jump into the part of ZWAP! you want right now.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
+              <Button
+                variant="outline"
+                className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06]"
+              >
+                <Footprints className="w-4 h-4 mr-2" />
+                Move
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06]"
+              >
+                <Gamepad2 className="w-4 h-4 mr-2" />
+                Play
+              </Button>
+
+              <Button
+                onClick={handleSwap}
+                variant="outline"
+                className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06]"
+              >
+                <ArrowRightLeft className="w-4 h-4 mr-2" />
+                Swap
+              </Button>
+
+              <Button
+                onClick={handleShop}
+                variant="outline"
+                className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06]"
+              >
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Shop
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Soft progress footer */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="pb-2"
+        >
+          <div className="rounded-[1.5rem] border border-white/10 bg-gradient-to-r from-cyan-500/8 via-violet-500/6 to-pink-500/8 px-4 py-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Today’s rhythm is building
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {stepsPercent >= 100
+                    ? "Move goal complete. Nice work."
+                    : `${Math.max(stepGoal - todaySteps, 0).toLocaleString()} steps left to finish today’s move goal.`}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-gray-300">
+                <span className="px-2.5 py-1 rounded-xl bg-white/[0.05] border border-white/10">
+                  Move {Math.round(stepsPercent)}%
+                </span>
+                <span className="px-2.5 py-1 rounded-xl bg-white/[0.05] border border-white/10">
+                  Play {Math.round(playPercent)}%
+                </span>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
