@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
-import FirstTimeUserPrompt from "@/components/FirstTimeUserPrompt";
+import GetWalletPrompt from "@/components/GetWalletPrompt";
 import OnboardingModal from "@/components/OnboardingModal";
 import WalletModal from "@/components/WalletModal";
 import AppHeader from "@/components/AppHeader";
@@ -87,7 +87,7 @@ function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
 
-  const [isFirstTimeUserPromptOpen, setIsFirstTimeUserPromptOpen] = useState(false);
+  const [isGetWalletPromptOpen, setIsGetWalletPromptOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
@@ -160,7 +160,7 @@ function AppProvider({ children }) {
 
       setIsWalletModalOpen(false);
       setIsOnboardingModalOpen(false);
-      setIsFirstTimeUserPromptOpen(false);
+      setIsGetWalletPromptOpen(false);
 
       toast.success("Wallet connected!");
       return userData;
@@ -191,6 +191,8 @@ function AppProvider({ children }) {
   const requireWallet = (action) => {
     if (!walletAddress) {
       setPendingAction(action);
+      setIsGetWalletPromptOpen(false);
+      setIsWalletModalOpen(false);
       setIsOnboardingModalOpen(true);
       return false;
     }
@@ -203,8 +205,8 @@ function AppProvider({ children }) {
         user,
         walletAddress,
 
-        isFirstTimeUserPromptOpen,
-        setIsFirstTimeUserPromptOpen,
+        isGetWalletPromptOpen,
+        setIsGetWalletPromptOpen,
 
         isOnboardingModalOpen,
         setIsOnboardingModalOpen,
@@ -236,8 +238,8 @@ function AppProvider({ children }) {
 function AppContent() {
   const {
     walletAddress,
-    isFirstTimeUserPromptOpen,
-    setIsFirstTimeUserPromptOpen,
+    isGetWalletPromptOpen,
+    setIsGetWalletPromptOpen,
     isOnboardingModalOpen,
     setIsOnboardingModalOpen,
     isWalletModalOpen,
@@ -278,7 +280,7 @@ function AppContent() {
           setShowSplash(false);
           setIsWalletModalOpen(false);
           setIsOnboardingModalOpen(false);
-          setIsFirstTimeUserPromptOpen(true);
+          setIsGetWalletPromptOpen(false);
           navigate("/wallet");
         }}
         onReturningUser={() => {
@@ -287,10 +289,10 @@ function AppContent() {
           if (walletAddress) {
             navigate("/dashboard");
           } else {
-            navigate("/wallet");
-            setIsWalletModalOpen(true);
-            setIsFirstTimeUserPromptOpen(false);
+            setIsGetWalletPromptOpen(false);
             setIsOnboardingModalOpen(false);
+            setIsWalletModalOpen(true);
+            navigate("/wallet");
           }
         }}
         onWhatIsZwap={() => {
@@ -333,20 +335,20 @@ function AppContent() {
     return (
       <>
         <WalletPage />
-  
-        <FirstTimeUserPrompt
-          open={isFirstTimeUserPromptOpen}
-          onOpenChange={setIsFirstTimeUserPromptOpen}
+
+        <GetWalletPrompt
+          open={isGetWalletPromptOpen}
+          onOpenChange={setIsGetWalletPromptOpen}
         />
-  
+
         <OnboardingModal
-          open={!isFirstTimeUserPromptOpen && isOnboardingModalOpen}
+          open={!isGetWalletPromptOpen && isOnboardingModalOpen}
           onOpenChange={setIsOnboardingModalOpen}
         />
-  
+
         <WalletModal
           open={
-            !isFirstTimeUserPromptOpen &&
+            !isGetWalletPromptOpen &&
             !isOnboardingModalOpen &&
             isWalletModalOpen
           }
@@ -371,19 +373,6 @@ function AppContent() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
-
-        <FirstTimeUserPrompt
-          open={isFirstTimeUserPromptOpen}
-          onOpenChange={setIsFirstTimeUserPromptOpen}
-        />
-        <OnboardingModal
-          open={isOnboardingModalOpen}
-          onOpenChange={setIsOnboardingModalOpen}
-        />
-        <WalletModal
-          open={isWalletModalOpen}
-          onOpenChange={setIsWalletModalOpen}
-        />
       </>
     );
   }
@@ -395,10 +384,10 @@ function AppContent() {
 
   const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
   if (protectedRoutes.includes(location.pathname) && !walletAddress) {
-    navigate("/wallet");
-    setIsFirstTimeUserPromptOpen(false);
-    setIsOnboardingModalOpen(true);
     setIsWalletModalOpen(false);
+    setIsGetWalletPromptOpen(false);
+    setIsOnboardingModalOpen(true);
+    navigate("/wallet");
     return null;
   }
 
@@ -465,21 +454,6 @@ function AppContent() {
           </Routes>
         </main>
       )}
-
-      <FirstTimeUserPrompt
-        open={isFirstTimeUserPromptOpen}
-        onOpenChange={setIsFirstTimeUserPromptOpen}
-      />
-
-      <OnboardingModal
-        open={isOnboardingModalOpen}
-        onOpenChange={setIsOnboardingModalOpen}
-      />
-
-      <WalletModal
-        open={isWalletModalOpen}
-        onOpenChange={setIsWalletModalOpen}
-      />
     </div>
   );
 }
