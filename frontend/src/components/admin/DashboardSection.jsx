@@ -83,31 +83,27 @@ export default function DashboardSection({ data, onRefresh }) {
       iconWrap: "bg-cyan-500/15 border border-cyan-400/20",
       icon: "text-cyan-300",
       value: "text-cyan-200",
-      glow: "from-cyan-500/10",
     },
     green: {
       iconWrap: "bg-emerald-500/15 border border-emerald-400/20",
       icon: "text-emerald-300",
       value: "text-emerald-200",
-      glow: "from-emerald-500/10",
     },
     blue: {
       iconWrap: "bg-blue-500/15 border border-blue-400/20",
       icon: "text-blue-300",
       value: "text-blue-200",
-      glow: "from-blue-500/10",
     },
     purple: {
       iconWrap: "bg-violet-500/15 border border-violet-400/20",
       icon: "text-violet-300",
       value: "text-violet-200",
-      glow: "from-violet-500/10",
     },
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.25em] text-cyan-400/80">
             Admin Overview
@@ -130,39 +126,8 @@ export default function DashboardSection({ data, onRefresh }) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
-        {summaryCards.map((card) => {
-          const Icon = card.icon;
-          const tone = toneMap[card.tone];
-
-          return (
-            <div
-              key={card.label}
-              className={`rounded-2xl border border-gray-800 bg-gradient-to-br ${tone.glow} to-white/[0.02] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
-                    {card.label}
-                  </p>
-                  <p className={`mt-3 text-3xl font-bold ${tone.value}`}>
-                    {card.value}
-                  </p>
-                </div>
-
-                <div
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center ${tone.iconWrap}`}
-                >
-                  <Icon className={`w-5 h-5 ${tone.icon}`} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="grid xl:grid-cols-[minmax(0,1.65fr)_380px] gap-6">
-        <div className="space-y-6">
+      <div className="grid xl:grid-cols-[minmax(0,1.7fr)_360px] gap-5">
+        <div className="space-y-5">
           <div className="rounded-3xl border border-gray-800 bg-[#0c101b] overflow-hidden">
             <div className="px-6 pt-6 pb-4 border-b border-gray-800/80">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -196,7 +161,7 @@ export default function DashboardSection({ data, onRefresh }) {
             </div>
 
             <div className="p-6">
-              <div className="rounded-3xl border border-cyan-500/15 bg-gradient-to-br from-cyan-500/10 via-violet-500/5 to-transparent min-h-[360px] flex items-center justify-center">
+              <div className="rounded-3xl border border-cyan-500/15 bg-gradient-to-br from-cyan-500/10 via-violet-500/5 to-transparent min-h-[340px] flex items-center justify-center">
                 <div className="text-center px-6">
                   <BarChart3 className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
                   <p className="text-white text-lg font-semibold">
@@ -211,11 +176,42 @@ export default function DashboardSection({ data, onRefresh }) {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3">
+            {summaryCards.map((card) => {
+              const Icon = card.icon;
+              const tone = toneMap[card.tone];
+
+              return (
+                <div
+                  key={card.label}
+                  className="rounded-2xl border border-gray-800 bg-[#0c101b] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-gray-500">
+                        {card.label}
+                      </p>
+                      <p className={`mt-2 text-2xl font-bold ${tone.value}`}>
+                        {card.value}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center ${tone.iconWrap}`}
+                    >
+                      <Icon className={`w-4 h-4 ${tone.icon}`} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-3">
             <div className="rounded-2xl border border-gray-800 bg-[#0c101b] p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/20 flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-cyan-300" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-9 h-9 rounded-2xl bg-cyan-500/15 border border-cyan-400/20 flex items-center justify-center">
+                  <ShoppingBag className="w-4 h-4 text-cyan-300" />
                 </div>
                 <p className="text-sm text-gray-400">Total Purchases</p>
               </div>
@@ -225,9 +221,9 @@ export default function DashboardSection({ data, onRefresh }) {
             </div>
 
             <div className="rounded-2xl border border-gray-800 bg-[#0c101b] p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-emerald-300" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-emerald-300" />
                 </div>
                 <p className="text-sm text-gray-400">ZWAP Spent</p>
               </div>
@@ -237,9 +233,9 @@ export default function DashboardSection({ data, onRefresh }) {
             </div>
 
             <div className="rounded-2xl border border-gray-800 bg-[#0c101b] p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-2xl bg-violet-500/15 border border-violet-400/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-violet-300" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-9 h-9 rounded-2xl bg-violet-500/15 border border-violet-400/20 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-violet-300" />
                 </div>
                 <p className="text-sm text-gray-400">zPts Spent</p>
               </div>
@@ -299,7 +295,7 @@ export default function DashboardSection({ data, onRefresh }) {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div className="rounded-3xl border border-gray-800 bg-[#0c101b] p-5">
             <h3 className="text-white font-semibold text-lg mb-4">System Status</h3>
 
