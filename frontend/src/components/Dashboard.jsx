@@ -1,20 +1,17 @@
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import {
   Flame,
-  Footprints,
   Coins,
-  Gamepad2,
   ShoppingBag,
   ArrowRightLeft,
   Wallet,
   Sparkles,
-  ShieldCheck,
   CircleDollarSign,
-  ChevronRight,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "@/App";
 
 function ProgressRing({
@@ -115,9 +112,7 @@ function CompactStat({ icon: Icon, label, value, hint, tone = "cyan" }) {
   };
 
   return (
-    <div
-      className={`rounded-2xl border p-3 ${toneMap[tone] || toneMap.cyan}`}
-    >
+    <div className={`rounded-2xl border p-3 ${toneMap[tone] || toneMap.cyan}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wide text-gray-500">
@@ -256,9 +251,29 @@ export default function Dashboard() {
     requireWallet("shop");
   };
 
+  const handleAdminTap = () => {
+    const now = Date.now();
+    const lastTap = window._adminTapTime || 0;
+    const tapCount =
+      now - lastTap < 500 ? (window._adminTapCount || 0) + 1 : 1;
+
+    window._adminTapTime = now;
+    window._adminTapCount = tapCount;
+
+    if (tapCount >= 3) {
+      window._adminTapCount = 0;
+      navigate("/admin");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#050510] text-white px-3 pb-28 pt-3 sm:px-4">
       <div className="max-w-5xl mx-auto space-y-4">
+        {/* Daily streak first under header */}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+          <StreakStrip streak={streak} />
+        </motion.div>
+
         {/* Compact hero */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -283,12 +298,6 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-2 gap-3">
               <CompactStat
-                icon={Flame}
-                label="Streak"
-                value={`${streak} days`}
-                tone="amber"
-              />
-              <CompactStat
                 icon={Coins}
                 label="Pending ZWAP!"
                 value={pendingZwap.toFixed(2)}
@@ -306,16 +315,17 @@ export default function Dashboard() {
                 value={walletAddress ? "Connected" : "Later"}
                 tone="green"
               />
+              <CompactStat
+                icon={Flame}
+                label="Streak"
+                value={`${streak} days`}
+                tone="amber"
+              />
             </div>
           </div>
         </motion.div>
 
-        {/* Streak */}
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-          <StreakStrip streak={streak} />
-        </motion.div>
-
-        {/* Primary cards first */}
+        {/* Move + Play */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -338,7 +348,7 @@ export default function Dashboard() {
           />
         </motion.div>
 
-        {/* Rewards + actions combined */}
+        {/* Rewards */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -392,7 +402,7 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Slim live activity */}
+        {/* Today */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -419,90 +429,53 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Quick actions compressed */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4"
-        >
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div>
-              <h2 className="text-lg font-bold text-white">Quick Actions</h2>
-              <p className="text-[11px] text-gray-500 mt-1">
-                Jump where you want.
-              </p>
-            </div>
-
-            <button
-              onClick={() => navigate("/move")}
-              className="inline-flex items-center gap-1 text-[11px] text-cyan-300"
-            >
-              Open
-              <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            <Button
-              onClick={() => navigate("/move")}
-              variant="outline"
-              className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06] px-2"
-            >
-              <Footprints className="w-4 h-4" />
-            </Button>
-
-            <Button
-              onClick={() => navigate("/play")}
-              variant="outline"
-              className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06] px-2"
-            >
-              <Gamepad2 className="w-4 h-4" />
-            </Button>
-
-            <Button
-              onClick={handleSwap}
-              variant="outline"
-              className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06] px-2"
-            >
-              <ArrowRightLeft className="w-4 h-4" />
-            </Button>
-
-            <Button
-              onClick={handleShop}
-              variant="outline"
-              className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06] px-2"
-            >
-              <ShoppingBag className="w-4 h-4" />
-            </Button>
-          </div>
-        </motion.div>
-
-        {/* Tiny footer status */}
+        {/* Footer status + shield/admin access */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           className="pb-1"
         >
           <div className="rounded-[1.25rem] border border-white/10 bg-gradient-to-r from-cyan-500/8 via-violet-500/6 to-pink-500/8 px-4 py-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  Today’s rhythm is building
-                </p>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  {stepsPercent >= 100
-                    ? "Move goal complete."
-                    : `${stepsLeft.toLocaleString()} steps left to finish today’s move goal.`}
-                </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    Today’s rhythm is building
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    {stepsPercent >= 100
+                      ? "Move goal complete."
+                      : `${stepsLeft.toLocaleString()} steps left to finish today’s move goal.`}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-gray-300">
+                  <span className="px-2 py-1 rounded-xl bg-white/[0.05] border border-white/10">
+                    Move {Math.round(stepsPercent)}%
+                  </span>
+                  <span className="px-2 py-1 rounded-xl bg-white/[0.05] border border-white/10">
+                    Play {Math.round(playPercent)}%
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 text-[11px] text-gray-300">
-                <span className="px-2 py-1 rounded-xl bg-white/[0.05] border border-white/10">
-                  Move {Math.round(stepsPercent)}%
-                </span>
-                <span className="px-2 py-1 rounded-xl bg-white/[0.05] border border-white/10">
-                  Play {Math.round(playPercent)}%
-                </span>
+              <div className="pt-2 border-t border-white/10 flex items-center justify-center">
+                <motion.div
+                  animate={{
+                    filter: [
+                      "drop-shadow(0 0 8px rgba(0,245,255,0.22))",
+                      "drop-shadow(0 0 18px rgba(0,245,255,0.42))",
+                      "drop-shadow(0 0 8px rgba(0,245,255,0.22))",
+                    ],
+                  }}
+                  transition={{ duration: 2.2, repeat: Infinity }}
+                >
+                  <Shield
+                    className="w-8 h-8 text-cyan-400 cursor-pointer"
+                    onClick={handleAdminTap}
+                    title="Admin access"
+                  />
+                </motion.div>
               </div>
             </div>
           </div>
