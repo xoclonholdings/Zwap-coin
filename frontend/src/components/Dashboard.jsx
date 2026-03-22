@@ -21,8 +21,9 @@ function ProgressRing({
   label,
   sublabel,
 }) {
-  const safeMax = Math.max(max, 1);
-  const percent = Math.max(0, Math.min((value / safeMax) * 100, 100));
+  const safeMax = Math.max(Number(max) || 0, 1);
+  const safeValue = Math.max(Number(value) || 0, 0);
+  const percent = Math.max(0, Math.min((safeValue / safeMax) * 100, 100));
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (percent / 100) * circumference;
@@ -85,7 +86,7 @@ function ProgressRing({
             textAnchor="middle"
             className="fill-white text-[18px] font-bold"
           >
-            {typeof value === "number" ? Math.round(value) : value}
+            {Math.round(safeValue)}
           </text>
           <text
             x="50%"
@@ -93,7 +94,7 @@ function ProgressRing({
             textAnchor="middle"
             className="fill-gray-500 text-[10px]"
           >
-            {max}
+            {safeMax}
           </text>
         </svg>
       </div>
@@ -131,6 +132,7 @@ function CompactStat({ icon: Icon, label, value, hint, tone = "cyan" }) {
 function StreakStrip({ streak = 0 }) {
   const today = new Date().getDay();
   const labels = ["S", "M", "T", "W", "T", "F", "S"];
+  const safeStreak = Math.max(Number(streak) || 0, 0);
 
   return (
     <div className="rounded-[1.5rem] border border-orange-400/15 bg-gradient-to-r from-orange-500/10 via-pink-500/5 to-transparent p-4">
@@ -144,7 +146,9 @@ function StreakStrip({ streak = 0 }) {
         </div>
 
         <div className="text-right shrink-0">
-          <p className="text-2xl font-black text-orange-300 leading-none">{streak}</p>
+          <p className="text-2xl font-black text-orange-300 leading-none">
+            {safeStreak}
+          </p>
           <p className="text-[10px] text-gray-500 mt-1">days</p>
         </div>
       </div>
@@ -152,7 +156,7 @@ function StreakStrip({ streak = 0 }) {
       <div className="grid grid-cols-7 gap-2">
         {labels.map((label, index) => {
           const isToday = index === today;
-          const isActive = index < Math.min(streak, 7);
+          const isActive = index < Math.min(safeStreak, 7);
 
           return (
             <div
@@ -198,20 +202,30 @@ export default function Dashboard() {
 
   const profile = user || authUser || {};
 
-  const streak = profile?.daily_streak || 3;
-  const todaySteps = profile?.today_steps || 4826;
-  const stepGoal = profile?.step_goal || 8000;
-  const pendingZwap =
-    Number(profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0) || 0;
-  const zpts = Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 0) || 0;
-  const gamesPlayed = Number(profile?.games_played_today ?? 1) || 0;
-  const gameGoal = Number(profile?.daily_game_goal ?? 3) || 3;
+  const streak = Math.max(Number(profile?.daily_streak) || 0, 0);
+  const todaySteps = Math.max(Number(profile?.today_steps) || 0, 0);
+  const stepGoal = Math.max(Number(profile?.step_goal) || 0, 0);
+  const pendingZwap = Number(
+    profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0
+  ) || 0;
+  const zpts = Number(
+    profile?.zpts_pending ?? profile?.zpts_balance ?? 0
+  ) || 0;
+  const gamesPlayed = Math.max(Number(profile?.games_played_today) || 0, 0);
+  const gameGoal = Math.max(Number(profile?.daily_game_goal) || 0, 0);
+
   const username =
-    profile?.username || profile?.email?.split("@")[0] || "Zwapper";
+    profile?.custom_username ||
+    profile?.username ||
+    profile?.email?.split("@")[0] ||
+    "Zwapper";
+
+  const safeStepGoal = Math.max(stepGoal, 1);
+  const safeGameGoal = Math.max(gameGoal, 1);
 
   const stepsLeft = Math.max(stepGoal - todaySteps, 0);
-  const stepsPercent = Math.min((todaySteps / Math.max(stepGoal, 1)) * 100, 100);
-  const playPercent = Math.min((gamesPlayed / Math.max(gameGoal, 1)) * 100, 100);
+  const stepsPercent = Math.min((todaySteps / safeStepGoal) * 100, 100);
+  const playPercent = Math.min((gamesPlayed / safeGameGoal) * 100, 100);
 
   const recentActivity = useMemo(() => {
     const items = [];
@@ -226,19 +240,32 @@ export default function Dashboard() {
     if (todaySteps > 0) {
       items.push({
         title: `👟 ${todaySteps.toLocaleString()} steps recorded`,
-        meta: `${stepsLeft.toLocaleString()} to goal`,
+        meta:
+          stepGoal > 0
+            ? `${stepsLeft.toLocaleString()} to goal`
+            : "No step goal set yet",
       });
     }
 
     if (gamesPlayed > 0) {
       items.push({
         title: `🎮 ${gamesPlayed} game session${gamesPlayed > 1 ? "s" : ""} today`,
-        meta: `${Math.max(gameGoal - gamesPlayed, 0)} left for daily target`,
+        meta:
+          gameGoal > 0
+            ? `${Math.max(gameGoal - gamesPlayed, 0)} left for daily target`
+            : "No game goal set yet",
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        title: "No activity yet",
+        meta: "Move, play, and earn in ZWAP!",
       });
     }
 
     return items.slice(0, 2);
-  }, [streak, todaySteps, stepsLeft, gamesPlayed, gameGoal]);
+  }, [streak, todaySteps, stepsLeft, stepGoal, gamesPlayed, gameGoal]);
 
   const handleSwap = () => {
     requireWallet("swap");
@@ -251,12 +278,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#050510] text-white px-3 pb-28 pt-3 sm:px-4">
       <div className="max-w-5xl mx-auto space-y-4">
-        {/* Daily streak first under header */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
           <StreakStrip streak={streak} />
         </motion.div>
 
-        {/* Compact hero */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -307,7 +332,6 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Move + Play */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -315,22 +339,21 @@ export default function Dashboard() {
         >
           <ProgressRing
             value={todaySteps}
-            max={stepGoal}
+            max={safeStepGoal}
             label="Move Goal"
-            sublabel="Stack rewards"
+            sublabel={stepGoal > 0 ? "Stack rewards" : "Goal not set yet"}
             accent="cyan"
           />
 
           <ProgressRing
             value={gamesPlayed}
-            max={gameGoal}
+            max={safeGameGoal}
             label="Play Progress"
-            sublabel="Daily rhythm"
+            sublabel={gameGoal > 0 ? "Daily rhythm" : "Goal not set yet"}
             accent="purple"
           />
         </motion.div>
 
-        {/* Rewards */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -384,7 +407,6 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Today */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -411,7 +433,6 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Footer status */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -425,9 +446,11 @@ export default function Dashboard() {
                     Today’s rhythm is building
                   </p>
                   <p className="text-[11px] text-gray-400 mt-1">
-                    {stepsPercent >= 100
-                      ? "Move goal complete."
-                      : `${stepsLeft.toLocaleString()} steps left to finish today’s move goal.`}
+                    {stepGoal > 0
+                      ? stepsPercent >= 100
+                        ? "Move goal complete."
+                        : `${stepsLeft.toLocaleString()} steps left to finish today’s move goal.`
+                      : "Set your goals and start building momentum."}
                   </p>
                 </div>
 
