@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "@/App";
 import {
   Dialog,
@@ -8,7 +9,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mail, Wallet, Sparkles, ChevronRight, ArrowLeft, Lock } from "lucide-react";
+import {
+  Mail,
+  Wallet,
+  Sparkles,
+  ChevronRight,
+  ArrowLeft,
+  Lock,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const API_BASE =
@@ -16,28 +24,37 @@ const API_BASE =
   "/api";
 
 export default function OnboardingModal({ open, onOpenChange }) {
-  const { setIsWalletModalOpen } = useApp();
+  const navigate = useNavigate();
+  const { setIsWalletModalOpen, completeEmailAuth } = useApp();
 
   const [mode, setMode] = useState("choices");
   const [email, setEmail] = useState(localStorage.getItem("zwap_email") || "");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const isValidEmail = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()), [email]);
+  const isValidEmail = useMemo(
+    () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
+    [email]
+  );
+
   const isValidPassword = password.trim().length >= 8;
 
-  const closeAndReset = () => {
+  const resetState = () => {
     setMode("choices");
-    setSaving(false);
     setPassword("");
+    setSaving(false);
+  };
+
+  const closeAndReset = () => {
+    resetState();
     onOpenChange(false);
   };
 
   const closeAndOpenWalletModal = () => {
     onOpenChange(false);
+
     setTimeout(() => {
-      setMode("choices");
-      setPassword("");
+      resetState();
       setIsWalletModalOpen(true);
     }, 100);
   };
@@ -45,6 +62,7 @@ export default function OnboardingModal({ open, onOpenChange }) {
   const handleGuest = () => {
     closeAndReset();
     toast.success("Continuing as guest");
+    navigate("/dashboard");
   };
 
   const handleGetWallet = () => {
@@ -67,13 +85,15 @@ export default function OnboardingModal({ open, onOpenChange }) {
     setSaving(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           password,
           source: "app",
           status: "active",
@@ -87,9 +107,16 @@ export default function OnboardingModal({ open, onOpenChange }) {
         throw new Error(data?.detail || "Unable to create account");
       }
 
-      localStorage.setItem("zwap_email", email.trim().toLowerCase());
+      localStorage.setItem("zwap_email", normalizedEmail);
+
+      if (data?.user) {
+        completeEmailAuth(data.user);
+      }
+
+      resetState();
+      onOpenChange(false);
       toast.success("Account created");
-      closeAndReset();
+      navigate("/dashboard");
     } catch (error) {
       console.error("Register error:", error);
       toast.error(error?.message || "Unable to create account");
@@ -124,12 +151,10 @@ export default function OnboardingModal({ open, onOpenChange }) {
                 </div>
 
                 <div className="text-sm leading-relaxed">
-                  <p className="text-white font-semibold mb-1">
-                    Not sure yet?
-                  </p>
+                  <p className="text-white font-semibold mb-1">Not sure yet?</p>
                   <p className="text-gray-400">
-                    Start with email to save progress and keep earning while you learn.
-                    Get a wallet later when you’re ready to claim rewards.
+                    Start with email to save progress and keep earning while you
+                    learn. Get a wallet later when you’re ready to claim rewards.
                   </p>
                 </div>
               </div>
@@ -183,7 +208,10 @@ export default function OnboardingModal({ open, onOpenChange }) {
             <form onSubmit={handleRegister} className="space-y-4 mt-4">
               <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 space-y-4">
                 <div>
-                  <label htmlFor="zwap-email" className="block text-sm text-gray-300 mb-2">
+                  <label
+                    htmlFor="zwap-email"
+                    className="block text-sm text-gray-300 mb-2"
+                  >
                     Email address
                   </label>
                   <input
@@ -200,7 +228,10 @@ export default function OnboardingModal({ open, onOpenChange }) {
                 </div>
 
                 <div>
-                  <label htmlFor="zwap-password" className="block text-sm text-gray-300 mb-2">
+                  <label
+                    htmlFor="zwap-password"
+                    className="block text-sm text-gray-300 mb-2"
+                  >
                     Password
                   </label>
                   <div className="relative">
@@ -219,7 +250,8 @@ export default function OnboardingModal({ open, onOpenChange }) {
                 </div>
 
                 <p className="text-[11px] text-gray-500 leading-relaxed">
-                  This saves your progress now. You can still connect a wallet later when you want to claim rewards.
+                  This saves your progress now. You can still connect a wallet
+                  later when you want to claim rewards.
                 </p>
               </div>
 
