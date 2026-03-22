@@ -86,6 +86,7 @@ export const TIERS = {
 
 function AppProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
 
   const [isGetWalletPromptOpen, setIsGetWalletPromptOpen] = useState(false);
@@ -99,12 +100,24 @@ function AppProvider({ children }) {
   const [showSplash, setShowSplash] = useState(true);
   const [onchainBalance, setOnchainBalance] = useState(null);
 
+  const isAuthenticated = !!walletAddress || !!authUser;
+
   useEffect(() => {
     const savedWallet = localStorage.getItem("zwap_wallet");
+    const savedAuthUser = localStorage.getItem("zwap_auth_user");
+
+    if (savedAuthUser) {
+      try {
+        setAuthUser(JSON.parse(savedAuthUser));
+      } catch (error) {
+        console.log("Failed to parse saved auth user");
+        localStorage.removeItem("zwap_auth_user");
+      }
+    }
 
     if (savedWallet) {
       setWalletAddress(savedWallet);
-      loadUser(savedWallet).finally(() => setInitialized(true));
+      loadWalletUser(savedWallet).finally(() => setInitialized(true));
     } else {
       setIsLoading(false);
       setInitialized(true);
@@ -130,7 +143,7 @@ function AppProvider({ children }) {
     }
   };
 
-  const loadUser = async (address) => {
+  const loadWalletUser = async (address) => {
     try {
       setIsLoading(true);
       const userData = await api.getUser(address);
@@ -177,6 +190,17 @@ function AppProvider({ children }) {
     }
   };
 
+  const completeEmailAuth = (emailUser) => {
+    setAuthUser(emailUser);
+    localStorage.setItem("zwap_auth_user", JSON.stringify(emailUser));
+
+    setIsGetWalletPromptOpen(false);
+    setIsOnboardingModalOpen(false);
+    setIsReturningUserPromptOpen(false);
+
+    toast.success("Signed in");
+  };
+
   const disconnectWallet = () => {
     setUser(null);
     setWalletAddress(null);
@@ -185,15 +209,27 @@ function AppProvider({ children }) {
     toast.success("Wallet disconnected");
   };
 
+  const logoutEmailUser = () => {
+    setAuthUser(null);
+    localStorage.removeItem("zwap_auth_user");
+    localStorage.removeItem("zwap_email");
+    toast.success("Signed out");
+  };
+
+  const logoutAll = () => {
+    disconnectWallet();
+    logoutEmailUser();
+  };
+
   const refreshUser = async () => {
     if (walletAddress) {
-      await loadUser(walletAddress);
+      await loadWalletUser(walletAddress);
       await fetchOnchainBalance(walletAddress);
     }
   };
 
   const requireWallet = (action) => {
-    if (!walletAddress) {
+    if (!isAuthenticated) {
       setPendingAction(action);
       setIsWalletModalOpen(false);
       setIsOnboardingModalOpen(false);
@@ -208,7 +244,11 @@ function AppProvider({ children }) {
     <AppContext.Provider
       value={{
         user,
+        setUser,
+        authUser,
+        setAuthUser,
         walletAddress,
+        isAuthenticated,
 
         isGetWalletPromptOpen,
         setIsGetWalletPromptOpen,
@@ -225,7 +265,10 @@ function AppProvider({ children }) {
         pendingAction,
         setPendingAction,
         connectWallet,
+        completeEmailAuth,
         disconnectWallet,
+        logoutEmailUser,
+        logoutAll,
         refreshUser,
         requireWallet,
 
@@ -246,6 +289,7 @@ function AppProvider({ children }) {
 function AppContent() {
   const {
     walletAddress,
+    isAuthenticated,
     isGetWalletPromptOpen,
     setIsGetWalletPromptOpen,
     isOnboardingModalOpen,
@@ -265,7 +309,7 @@ function AppContent() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (walletAddress && pendingAction) {
+    if (isAuthenticated && pendingAction) {
       setPendingAction(null);
 
       switch (pendingAction) {
@@ -282,7 +326,7 @@ function AppContent() {
           navigate("/dashboard");
       }
     }
-  }, [walletAddress, pendingAction, navigate, setPendingAction]);
+  }, [isAuthenticated, pendingAction, navigate, setPendingAction]);
 
   if (showSplash && location.pathname === "/") {
     return (
@@ -298,7 +342,7 @@ function AppContent() {
         onReturningUser={() => {
           setShowSplash(false);
 
-          if (walletAddress) {
+          if (isAuthenticated) {
             navigate("/dashboard");
           } else {
             setIsGetWalletPromptOpen(false);
@@ -401,12 +445,12 @@ function AppContent() {
   }
 
   if (location.pathname === "/") {
-    navigate(walletAddress ? "/dashboard" : "/wallet");
+    navigate(isAuthenticated ? "/dashboard" : "/wallet");
     return null;
   }
 
   const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
-  if (protectedRoutes.includes(location.pathname) && !walletAddress) {
+  if (protectedRoutes.includes(location.pathname) && !isAuthenticated) {
     setIsWalletModalOpen(false);
     setIsOnboardingModalOpen(false);
     setIsReturningUserPromptOpen(false);
