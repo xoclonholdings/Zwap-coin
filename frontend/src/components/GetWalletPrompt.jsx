@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Wallet, Sparkles } from "lucide-react";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 
 export default function GetWalletPrompt({ open, onOpenChange }) {
+  const navigate = useNavigate();
   const { setIsOnboardingModalOpen } = useApp();
 
   const handleGetWallet = () => {
@@ -19,38 +21,43 @@ export default function GetWalletPrompt({ open, onOpenChange }) {
 
     setTimeout(() => {
       setIsOnboardingModalOpen(true);
-    }, 100);
+    }, 120);
+  };
+
+  const handleContinueAsGuest = () => {
+    onOpenChange(false);
+    navigate("/dashboard");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm bg-[#0f1029] border-cyan-500/30 rounded-[1.75rem] shadow-[0_0_50px_rgba(0,0,0,0.35)]">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md rounded-[1.75rem] bg-[#0f1029] border-cyan-500/30 shadow-[0_0_60px_rgba(0,0,0,0.4)]">
         <DialogHeader>
           <DialogTitle className="text-2xl text-white text-center font-black tracking-tight">
             Get Your Wallet
           </DialogTitle>
+
           <DialogDescription className="text-gray-400 text-center leading-relaxed">
-            You can keep exploring, or set up your wallet now and unlock the
-            full ZWAP experience.
+            You can keep exploring now, or get set up so your rewards and progress stay with you.
           </DialogDescription>
         </DialogHeader>
 
         <motion.div
-          className="py-6 text-center"
-          initial={{ scale: 0.96, opacity: 0 }}
+          className="py-5 text-center"
+          initial={{ scale: 0.97, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
         >
           <motion.div
             className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-5 relative"
             animate={{
               boxShadow: [
-                "0 0 20px rgba(0,245,255,0.18)",
-                "0 0 40px rgba(0,245,255,0.36)",
-                "0 0 20px rgba(0,245,255,0.18)",
+                "0 0 18px rgba(0,245,255,0.16)",
+                "0 0 36px rgba(0,245,255,0.34)",
+                "0 0 18px rgba(0,245,255,0.16)",
               ],
             }}
-            transition={{ duration: 2, repeat: Infinity }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
           >
             <Wallet className="w-10 h-10 text-cyan-400" />
             <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-purple-500/20 border border-purple-400/30 flex items-center justify-center">
@@ -76,7 +83,7 @@ export default function GetWalletPrompt({ open, onOpenChange }) {
                 <li>💰 Earn and save rewards</li>
                 <li>🎮 Keep your progress</li>
                 <li>🛒 Unlock purchases</li>
-                <li>🔐 Create your wallet in-app</li>
+                <li>🔐 Claim when you’re ready</li>
               </ul>
             </div>
           </div>
@@ -92,9 +99,9 @@ export default function GetWalletPrompt({ open, onOpenChange }) {
           </Button>
 
           <Button
-            onClick={() => onOpenChange(false)}
+            onClick={handleContinueAsGuest}
             variant="ghost"
-            className="w-full text-gray-400 hover:text-white"
+            className="w-full h-12 text-gray-400 hover:text-white"
           >
             Continue as Guest
           </Button>
