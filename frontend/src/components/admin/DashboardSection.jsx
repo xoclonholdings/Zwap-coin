@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import {
   Pause,
   Play,
