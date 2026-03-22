@@ -36,6 +36,9 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     user,
     authUser,
     walletAddress,
+    setIsGetWalletPromptOpen,
+    setIsOnboardingModalOpen,
+    setIsReturningUserPromptOpen,
     setIsWalletModalOpen,
     disconnectWallet,
     logoutEmailUser,
@@ -121,19 +124,19 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     );
   }, [displayName]);
 
-  const tier = user?.tier || profile?.tier || (isEmailUser ? "starter" : null);
+  const tier = user?.tier || authUser?.tier || (isEmailUser ? "starter" : null);
   const isPlus = tier === "plus";
   const isAdmin = !!(user?.is_admin || authUser?.is_admin);
 
   const appZwapBalance = Number(
-    user?.zwap_balance ?? authUser?.zwap_pending ?? profile?.zwap_pending ?? 0
+    user?.zwap_balance ?? authUser?.zwap_pending ?? authUser?.zwap_balance ?? 0
   );
 
   const zptsBalance = Number(
-    user?.zpts_balance ?? authUser?.zpts_pending ?? profile?.zpts_balance ?? 0
+    user?.zpts_balance ?? authUser?.zpts_pending ?? authUser?.zpts_balance ?? 0
   );
 
-  const totalEarned = Number(user?.total_earned ?? profile?.total_earned ?? 0);
+  const totalEarned = Number(user?.total_earned ?? authUser?.total_earned ?? 0);
 
   const settingsItems = [
     {
@@ -188,8 +191,13 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
 
   const handleConnectWallet = () => {
     onOpenChange(false);
+
     setTimeout(() => {
-      setIsWalletModalOpen(true);
+      setIsReturningUserPromptOpen(false);
+      setIsGetWalletPromptOpen(false);
+      setIsWalletModalOpen(false);
+      setIsOnboardingModalOpen(true);
+      navigate("/wallet");
     }, 120);
   };
 
@@ -319,7 +327,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                         ? onchainBalance !== null
                           ? onchainBalance.toFixed(2)
                           : "0.00"
-                        : "—"}
+                        : "Not connected"}
                     </p>
                     <p className="flex items-center gap-1 text-xs text-gray-500">
                       <Link2 className="h-3 w-3" /> Linked Wallet
@@ -408,7 +416,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                   <motion.button
                     key={index}
                     onClick={item.action}
-                    className="w-full rounded-lg p-3 text-left transition-colors hover:bg-gray-800/50 flex items-center gap-3"
+                    className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-gray-800/50"
                     whileHover={{ x: 5 }}
                   >
                     <Icon className="h-5 w-5 text-gray-400" />
@@ -449,7 +457,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
             {!isGuest && (
               <motion.button
                 onClick={handleSignOut}
-                className="w-full rounded-lg p-3 text-red-400 transition-colors hover:bg-red-500/10 flex items-center gap-3"
+                className="flex w-full items-center gap-3 rounded-lg p-3 text-red-400 transition-colors hover:bg-red-500/10"
                 whileHover={{ x: 5 }}
               >
                 <LogOut className="h-5 w-5" />
