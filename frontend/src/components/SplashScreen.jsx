@@ -3,6 +3,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ZWAP_LOGO } from "@/App";
 
+const SPRING_SOFT = {
+  type: "spring",
+  damping: 18,
+  stiffness: 110,
+};
+
+const FADE_UP = {
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 },
+  transition: { duration: 0.45, ease: "easeOut" },
+};
+
 export default function SplashScreen({
   onNewUser,
   onReturningUser,
@@ -14,23 +27,26 @@ export default function SplashScreen({
 
   useEffect(() => {
     const shown = sessionStorage.getItem("zwap_splash_shown");
+
     if (shown) {
-      onReturningUser?.();
+      setStage(5);
+      setTaglineComplete(true);
+      setShowButtons(true);
       return;
     }
 
     const timers = [
-      setTimeout(() => setStage(1), 500),
-      setTimeout(() => setStage(2), 1300),
-      setTimeout(() => setStage(3), 2100),
-      setTimeout(() => setStage(4), 3000),
-      setTimeout(() => setTaglineComplete(true), 3950),
-      setTimeout(() => setStage(5), 4650),
-      setTimeout(() => setShowButtons(true), 6100),
+      setTimeout(() => setStage(1), 450),
+      setTimeout(() => setStage(2), 1200),
+      setTimeout(() => setStage(3), 2000),
+      setTimeout(() => setStage(4), 2850),
+      setTimeout(() => setTaglineComplete(true), 3850),
+      setTimeout(() => setStage(5), 4450),
+      setTimeout(() => setShowButtons(true), 5600),
     ];
 
     return () => timers.forEach(clearTimeout);
-  }, [onReturningUser]);
+  }, []);
 
   const handleNewUser = () => {
     sessionStorage.setItem("zwap_splash_shown", "true");
@@ -56,46 +72,49 @@ export default function SplashScreen({
         <motion.div
           className="absolute -top-24 left-1/2 -translate-x-1/2 w-[34rem] h-[34rem] rounded-full bg-cyan-500/10 blur-[130px]"
           animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.18, 0.28, 0.18],
+            scale: [1, 1.08, 1],
+            opacity: [0.16, 0.26, 0.16],
           }}
-          transition={{ duration: 5, repeat: Infinity }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
 
         <motion.div
           className="absolute bottom-[-8rem] right-[-4rem] w-[26rem] h-[26rem] rounded-full bg-purple-500/12 blur-[120px]"
           animate={{
-            scale: [1.08, 1, 1.08],
-            opacity: [0.22, 0.14, 0.22],
+            scale: [1.06, 1, 1.06],
+            opacity: [0.2, 0.13, 0.2],
           }}
-          transition={{ duration: 5.5, repeat: Infinity }}
+          transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
         />
 
         <motion.div
           className="absolute top-1/3 left-[-5rem] w-[20rem] h-[20rem] rounded-full bg-blue-500/10 blur-[110px]"
           animate={{
-            scale: [1, 1.12, 1],
-            opacity: [0.15, 0.22, 0.15],
+            scale: [1, 1.1, 1],
+            opacity: [0.12, 0.2, 0.12],
           }}
-          transition={{ duration: 6, repeat: Infinity }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center px-6">
+      <div className="relative z-10 flex flex-col items-center px-6 w-full">
         {/* Animated center tagline before logo */}
         <AnimatePresence mode="wait">
           {!taglineComplete && stage >= 1 && stage < 5 && (
             <motion.div
               key="words-center"
               className="flex flex-wrap justify-center gap-x-3 gap-y-2 sm:gap-x-4 text-2xl sm:text-4xl font-black tracking-wide"
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.35 }}
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.975, y: -8 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
             >
               {stage >= 1 && (
                 <motion.span
-                  initial={{ x: -120, opacity: 0 }}
+                  initial={{ x: -80, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
+                  transition={{ ...SPRING_SOFT, mass: 0.8 }}
                   className="text-cyan-400"
                   style={{ textShadow: "0 0 18px rgba(0,245,255,0.8)" }}
                 >
@@ -105,9 +124,9 @@ export default function SplashScreen({
 
               {stage >= 2 && (
                 <motion.span
-                  initial={{ opacity: 0, filter: "blur(10px)" }}
+                  initial={{ opacity: 0, filter: "blur(8px)" }}
                   animate={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{ duration: 0.55 }}
+                  transition={{ duration: 0.55, ease: "easeOut" }}
                   className="text-purple-400"
                   style={{ textShadow: "0 0 18px rgba(168,85,247,0.8)" }}
                 >
@@ -117,9 +136,9 @@ export default function SplashScreen({
 
               {stage >= 3 && (
                 <motion.span
-                  initial={{ y: -110, opacity: 0 }}
+                  initial={{ y: -70, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ type: "spring", damping: 11, stiffness: 120 }}
+                  transition={{ ...SPRING_SOFT, mass: 0.75 }}
                   className="text-blue-400"
                   style={{ textShadow: "0 0 18px rgba(59,130,246,0.8)" }}
                 >
@@ -135,9 +154,13 @@ export default function SplashScreen({
                   {"SHOP.".split("").map((letter, i) => (
                     <motion.span
                       key={i}
-                      initial={{ opacity: 0, y: 18 }}
+                      initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.08 }}
+                      transition={{
+                        duration: 0.32,
+                        ease: "easeOut",
+                        delay: i * 0.055,
+                      }}
                     >
                       {letter}
                     </motion.span>
@@ -152,13 +175,14 @@ export default function SplashScreen({
         <AnimatePresence>
           {stage >= 5 && (
             <motion.div
-              initial={{ scale: 0.04, rotate: -760, opacity: 0 }}
+              key="logo-stage"
+              initial={{ scale: 0.08, rotate: -540, opacity: 0 }}
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               transition={{
                 type: "spring",
-                damping: 18,
-                stiffness: 42,
-                duration: 2,
+                damping: 20,
+                stiffness: 55,
+                mass: 0.95,
               }}
               className="mb-3"
             >
@@ -166,14 +190,21 @@ export default function SplashScreen({
                 className="relative"
                 animate={{
                   filter: [
-                    "drop-shadow(0 0 25px rgba(0,245,255,0.35))",
-                    "drop-shadow(0 0 60px rgba(0,245,255,0.75))",
-                    "drop-shadow(0 0 25px rgba(0,245,255,0.35))",
+                    "drop-shadow(0 0 22px rgba(0,245,255,0.28))",
+                    "drop-shadow(0 0 52px rgba(0,245,255,0.68))",
+                    "drop-shadow(0 0 22px rgba(0,245,255,0.28))",
                   ],
                 }}
-                transition={{ duration: 2.6, repeat: Infinity }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
-                <div className="absolute inset-0 rounded-full blur-3xl bg-cyan-500/10 scale-110" />
+                <motion.div
+                  className="absolute inset-0 rounded-full blur-3xl bg-cyan-500/10 scale-110"
+                  animate={{
+                    scale: [1.08, 1.14, 1.08],
+                    opacity: [0.55, 0.8, 0.55],
+                  }}
+                  transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                />
                 <img
                   src={ZWAP_LOGO}
                   alt="ZWAP!"
@@ -188,9 +219,9 @@ export default function SplashScreen({
         <AnimatePresence>
           {stage >= 5 && (
             <motion.div
-              initial={{ opacity: 0, y: -18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.45 }}
+              key="tagline-under-logo"
+              {...FADE_UP}
+              transition={{ duration: 0.5, delay: 0.18, ease: "easeOut" }}
               className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-sm sm:text-lg font-extrabold tracking-wide mt-1"
             >
               <span
@@ -225,16 +256,17 @@ export default function SplashScreen({
         <AnimatePresence>
           {showButtons && (
             <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45 }}
+              key="cta-panel"
+              initial={{ opacity: 0, y: 22, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
               className="mt-10 w-full max-w-sm"
             >
               <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_0_60px_rgba(0,0,0,0.35)] p-4 sm:p-5">
                 <div className="space-y-3">
                   <Button
                     onClick={handleNewUser}
-                    className="w-full h-13 sm:h-14 text-base font-bold rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 shadow-[0_0_25px_rgba(0,245,255,0.22)]"
+                    className="w-full h-14 text-base font-bold rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 shadow-[0_0_25px_rgba(0,245,255,0.22)]"
                     data-testid="splash-new-user"
                   >
                     New User
@@ -242,7 +274,7 @@ export default function SplashScreen({
 
                   <Button
                     onClick={handleReturningUser}
-                    className="w-full h-13 sm:h-14 text-base font-semibold rounded-2xl bg-[#151733] hover:bg-[#1b1e42] text-white border border-cyan-500/20"
+                    className="w-full h-14 text-base font-semibold rounded-2xl bg-[#151733] hover:bg-[#1b1e42] text-white border border-cyan-500/20"
                     data-testid="splash-returning-user"
                   >
                     Returning User
