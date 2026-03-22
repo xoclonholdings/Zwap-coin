@@ -9,6 +9,7 @@ from web3 import Web3
 
 from routers.admin import admin_router
 import routers.wallet_routes as wallet_routes
+from routers import auth_routes
 from routers import blockchain_routes
 from routers import stripe_routes
 from routers import move_routes
@@ -18,8 +19,6 @@ from routers import swap_routes
 from routers import leaderboard_routes
 from routers import learn_routes
 from routers import user_routes
-
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,6 +42,7 @@ STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 app = FastAPI(title="ZWAP! API")
 api_router = APIRouter(prefix="/api")
 
+
 @app.get("/")
 async def app_root():
     return {
@@ -50,9 +50,10 @@ async def app_root():
         "status": "running",
         "version": "2.0.0",
         "docs": "/docs",
-        "health": "/api/health"
+        "health": "/api/health",
     }
-    
+
+
 # ============ ZWAP CONTRACT CONFIG ============
 ZWAP_CONTRACT_ADDRESS = "0xe8898453af13b9496a6e8ada92c6efdaf4967a81"
 ZWAP_CHAIN_ID = 137
@@ -128,6 +129,7 @@ app.state.stripe_api_key = STRIPE_API_KEY
 
 # ============ HEALTH & ROOT ============
 
+
 @api_router.get("/")
 async def root():
     return {"message": "ZWAP! Coin API", "version": "2.0.0"}
@@ -147,6 +149,7 @@ async def health():
 
 api_router.include_router(admin_router)
 api_router.include_router(wallet_routes.router)
+api_router.include_router(auth_routes.router)
 api_router.include_router(blockchain_routes.router)
 api_router.include_router(move_routes.router)
 api_router.include_router(play_routes.router)
@@ -170,6 +173,7 @@ app.add_middleware(
 )
 
 # ============ LIFECYCLE ============
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
