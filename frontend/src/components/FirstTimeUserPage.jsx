@@ -13,16 +13,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { walletModule } from "@/data/education";
 
+const SOFT_TRANSITION = { duration: 0.45, ease: "easeOut" };
+
 export default function FirstTimeUserPage() {
   const navigate = useNavigate();
   const {
-    walletAddress,
+    isAuthenticated,
     setIsGetWalletPromptOpen,
     setIsOnboardingModalOpen,
     setIsWalletModalOpen,
+    setIsReturningUserPromptOpen,
   } = useApp();
 
-  if (walletAddress) {
+  if (isAuthenticated) {
     navigate("/dashboard", { replace: true });
     return null;
   }
@@ -30,6 +33,7 @@ export default function FirstTimeUserPage() {
   const handleGetWallet = () => {
     setIsWalletModalOpen(false);
     setIsOnboardingModalOpen(false);
+    setIsReturningUserPromptOpen(false);
     setIsGetWalletPromptOpen(true);
   };
 
@@ -56,22 +60,22 @@ export default function FirstTimeUserPage() {
           <li className="flex items-start gap-2">
             <ChevronRight className="w-4 h-4 text-cyan-400 mt-1 flex-shrink-0" />
             <span>
-              Your wallet becomes your identity inside ZWAP. It connects your
-              progress, rewards, and purchases to you.
+              A wallet gives you a portable identity inside ZWAP when you are ready
+              to save, claim, swap, or own rewards directly.
             </span>
           </li>
           <li className="flex items-start gap-2">
             <ChevronRight className="w-4 h-4 text-cyan-400 mt-1 flex-shrink-0" />
             <span>
-              Your rewards stay tied to your wallet address, so they can follow
-              you across devices and sessions.
+              It connects your rewards and activity to you, so they can follow
+              you across sessions and devices.
             </span>
           </li>
           <li className="flex items-start gap-2">
             <ChevronRight className="w-4 h-4 text-cyan-400 mt-1 flex-shrink-0" />
             <span>
-              When you are ready to swap, spend, or claim, your wallet is the
-              bridge that makes it possible.
+              You do not need to force the wallet step too early. You can explore
+              first, then connect when it becomes useful.
             </span>
           </li>
         </ul>
@@ -83,10 +87,9 @@ export default function FirstTimeUserPage() {
       color: "green",
       body: (
         <p className="text-gray-300 text-sm sm:text-[15px] leading-relaxed">
-          ZWAP does not store, see, or ask for your private key. We only use
-          your public wallet address to connect your progress and rewards. Your
-          wallet connection is handled by trusted providers, not by us holding
-          your keys.
+          ZWAP does not store, see, or ask for your private key. When you choose
+          to connect a wallet, your keys stay with you. That means you stay in
+          control.
         </p>
       ),
     },
@@ -108,11 +111,6 @@ export default function FirstTimeUserPage() {
       bg: "bg-green-500/15",
       icon: "text-green-400",
     },
-    purple: {
-      border: "border-purple-500/25",
-      bg: "bg-purple-500/15",
-      icon: "text-purple-400",
-    },
   };
 
   return (
@@ -122,26 +120,27 @@ export default function FirstTimeUserPage() {
         <motion.div
           className="absolute top-1/4 left-1/3 w-[480px] h-[480px] bg-cyan-500/10 rounded-full blur-[150px]"
           animate={{ scale: [1, 1.08, 1], opacity: [0.1, 0.18, 0.1] }}
-          transition={{ duration: 5, repeat: Infinity }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute bottom-1/3 right-1/4 w-[380px] h-[380px] bg-blue-500/10 rounded-full blur-[120px]"
           animate={{ scale: [1.08, 1, 1.08], opacity: [0.1, 0.16, 0.1] }}
-          transition={{ duration: 5.6, repeat: Infinity }}
+          transition={{ duration: 6.6, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute top-1/2 left-[-4rem] w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-[120px]"
           animate={{ scale: [1, 1.1, 1], opacity: [0.08, 0.14, 0.08] }}
-          transition={{ duration: 6, repeat: Infinity }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-5 py-10 sm:py-14">
+      <div className="relative z-10 w-full max-w-3xl mx-auto px-4 sm:px-5 py-8 sm:py-12">
         {/* Logo */}
         <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -18 }}
+          className="text-center mb-7"
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={SOFT_TRANSITION}
         >
           <img
             src={ZWAP_LOGO}
@@ -152,23 +151,23 @@ export default function FirstTimeUserPage() {
 
         {/* Hero */}
         <motion.div
-          className="text-center mb-8 rounded-[2rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[0_0_60px_rgba(0,0,0,0.35)] px-6 py-8 sm:px-10"
+          className="text-center mb-7 rounded-[2rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[0_0_60px_rgba(0,0,0,0.35)] px-5 py-7 sm:px-10 sm:py-8"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+          transition={{ ...SOFT_TRANSITION, delay: 0.05 }}
         >
           <h1 className="text-3xl sm:text-4xl font-black mb-4 leading-tight tracking-tight">
             <span className="text-white">Before You Begin,</span>
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
-              You Need a Wallet
+              You Should Understand Wallets
             </span>
           </h1>
 
           <p className="text-gray-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-            A wallet is what lets ZWAP recognize you, save your progress, and
-            connect your rewards to you. Here’s the quick version before you go
-            any further.
+            A wallet helps ZWAP recognize you and eventually lets you claim and
+            own rewards directly. But you do not have to force that step before
+            you understand what it is.
           </p>
         </motion.div>
 
@@ -184,7 +183,7 @@ export default function FirstTimeUserPage() {
                 className={`p-5 sm:p-6 rounded-[1.75rem] border ${styles.border} bg-white/[0.04] backdrop-blur-xl`}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12 + index * 0.06 }}
+                transition={{ ...SOFT_TRANSITION, delay: 0.12 + index * 0.06 }}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <div
@@ -215,7 +214,7 @@ export default function FirstTimeUserPage() {
             className="p-5 sm:p-6 rounded-[1.75rem] border border-purple-500/25 bg-white/[0.04] backdrop-blur-xl"
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ ...SOFT_TRANSITION, delay: 0.3 }}
             data-testid="wallet-learn-hint"
           >
             <div className="flex items-center gap-3 mb-4">
@@ -229,7 +228,7 @@ export default function FirstTimeUserPage() {
 
             <p className="text-gray-300 text-sm sm:text-[15px] leading-relaxed mb-4">
               If you want more context before continuing, go through the Learn
-              modules first. That way you’re not guessing your way into Web3.
+              modules first. That way you are not guessing your way into Web3.
             </p>
 
             <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#0a0b1e] border border-gray-800">
@@ -251,7 +250,7 @@ export default function FirstTimeUserPage() {
                     "0 0 8px rgba(0,245,255,0.25)",
                   ],
                 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
               >
                 <User className="w-4 h-4 text-white" />
                 <span className="absolute -top-1 -right-1 px-1 py-0.5 bg-purple-500 text-[8px] text-white rounded font-bold">
@@ -267,14 +266,14 @@ export default function FirstTimeUserPage() {
           className="text-center mt-8"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.38 }}
+          transition={{ ...SOFT_TRANSITION, delay: 0.38 }}
         >
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => navigate("/learn")}
-              className="w-full sm:w-1/2 py-4 text-sm font-semibold"
+              className="w-full sm:w-1/2 h-12 sm:h-14 text-sm font-semibold"
               data-testid="wallet-learn-button"
             >
               <BookOpen className="w-4 h-4 mr-2" />
@@ -285,14 +284,14 @@ export default function FirstTimeUserPage() {
               type="button"
               onClick={handleGetWallet}
               data-testid="wallet-connect-button"
-              className="w-full sm:w-1/2 py-4 text-sm sm:text-base font-bold bg-gradient-to-r from-cyan-400 via-teal-400 to-purple-500 shadow-[0_0_25px_rgba(0,245,255,0.3)] hover:shadow-[0_0_50px_rgba(0,245,255,0.5)] transition-all"
+              className="w-full sm:w-1/2 h-12 sm:h-14 text-sm sm:text-base font-bold bg-gradient-to-r from-cyan-400 via-teal-400 to-purple-500 shadow-[0_0_25px_rgba(0,245,255,0.3)] hover:shadow-[0_0_50px_rgba(0,245,255,0.5)] transition-all"
             >
               <Wallet className="w-5 h-5 mr-2" />
               Get Wallet
             </Button>
           </div>
 
-          <p className="text-gray-600 text-xs mt-3">
+          <p className="text-gray-600 text-xs mt-3 leading-relaxed">
             You can still continue as a guest on the next step.
           </p>
         </motion.div>
