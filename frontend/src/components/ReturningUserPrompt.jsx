@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useApp } from "@/App";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ const API_BASE =
 
 export default function ReturningUserPrompt({ open, onOpenChange }) {
   const navigate = useNavigate();
+  const { completeEmailAuth } = useApp();
 
   const [email, setEmail] = useState(localStorage.getItem("zwap_email") || "");
   const [password, setPassword] = useState("");
@@ -26,6 +28,7 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
     () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
     [email]
   );
+
   const isValidPassword = password.trim().length >= 8;
 
   const handleLogin = async (e) => {
@@ -39,13 +42,15 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
     setSaving(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           password,
         }),
       });
@@ -56,9 +61,14 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
         throw new Error(data?.detail || "Unable to log in");
       }
 
-      localStorage.setItem("zwap_email", email.trim().toLowerCase());
-      toast.success("Welcome back");
+      localStorage.setItem("zwap_email", normalizedEmail);
+
+      if (data?.user) {
+        completeEmailAuth(data.user);
+      }
+
       onOpenChange(false);
+      toast.success("Welcome back");
       navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
