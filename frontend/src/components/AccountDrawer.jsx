@@ -36,14 +36,11 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     user,
     authUser,
     walletAddress,
-    setIsGetWalletPromptOpen,
-    setIsOnboardingModalOpen,
-    setIsReturningUserPromptOpen,
-    setIsWalletModalOpen,
     disconnectWallet,
     logoutEmailUser,
     logoutAll,
     onchainBalance,
+    openWalletUpgradeFlow,
   } = useApp();
 
   const navigate = useNavigate();
@@ -86,7 +83,6 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
   };
 
-  const profile = user || authUser || null;
   const isWalletUser = !!walletAddress;
   const isEmailUser = !!authUser?.email;
   const isGuest = !isWalletUser && !isEmailUser;
@@ -191,12 +187,8 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
 
   const handleConnectWallet = () => {
     onOpenChange(false);
-
     setTimeout(() => {
-      setIsReturningUserPromptOpen(false);
-      setIsGetWalletPromptOpen(false);
-      setIsWalletModalOpen(false);
-      setIsOnboardingModalOpen(true);
+      openWalletUpgradeFlow();
       navigate("/wallet");
     }, 120);
   };
