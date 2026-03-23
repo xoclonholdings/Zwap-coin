@@ -22,7 +22,11 @@ async function request(method, path, body = null) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Request failed: ${method} ${path}`);
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail?.message || `Request failed: ${method} ${path}`
+    );
   }
 
   return res.json();
@@ -37,46 +41,47 @@ function stub(name, fallback = {}) {
 // Wallet
 // ---------------------------------------------------------------------------
 
-/** POST /api/users/connect — register or reconnect wallet */
 const connectWallet = (walletAddress) =>
   request("POST", "/users/connect", { wallet_address: walletAddress });
 
-/** Stub: GET /api/wallet/status — future: session validity */
 const walletStatus = () => stub("walletStatus", { connected: false });
-
-/** Stub: POST /api/wallet/disconnect */
 const disconnectWallet = () => stub("disconnectWallet", { disconnected: true });
 
 // ---------------------------------------------------------------------------
 // User
 // ---------------------------------------------------------------------------
 
-/** GET /api/users/:address */
 const getUser = async (walletAddress) => {
   const res = await fetch(`${API}/users/${walletAddress}`);
   if (!res.ok) throw new Error("User not found");
   return res.json();
 };
 
-/** PUT /api/users/:address/profile */
 const updateProfile = (walletAddress, username, avatarUrl) =>
   request("PUT", `/users/${walletAddress}/profile`, {
     username,
     avatar_url: avatarUrl,
   });
 
-/** GET /api/blockchain/balance/:address */
 const getOnchainBalance = (walletAddress) =>
   request("GET", `/blockchain/balance/${walletAddress}`);
 
-/** GET /api/blockchain/contract-info */
 const getContractInfo = () => request("GET", "/blockchain/contract-info");
+
+// ---------------------------------------------------------------------------
+// Daily Rewards
+// ---------------------------------------------------------------------------
+
+const getDailyRewardStatus = (walletAddress) =>
+  request("GET", `/rewards/status/${walletAddress}`);
+
+const claimDailyReward = (walletAddress) =>
+  request("POST", `/rewards/daily/${walletAddress}`);
 
 // ---------------------------------------------------------------------------
 // Learn
 // ---------------------------------------------------------------------------
 
-/** POST /api/learn/complete/:address/:moduleId */
 const completeLearnModule = (walletAddress, moduleId) =>
   request("POST", `/learn/complete/${walletAddress}/${moduleId}`);
 
@@ -84,19 +89,12 @@ const completeLearnModule = (walletAddress, moduleId) =>
 // Move-to-Earn
 // ---------------------------------------------------------------------------
 
-/**
- * POST /api/move/steps/:address
- * @param {string} walletAddress
- * @param {number} steps
- */
 const claimStepRewards = (walletAddress, steps) =>
-  request("POST", `/move/steps/${walletAddress}`, { steps });
+  request("POST", `/faucet/steps/${walletAddress}`, { steps });
 
-/** GET /api/move/session/:address */
 const getMoveSession = (walletAddress) =>
   request("GET", `/move/session/${walletAddress}`);
 
-/** Stub for future richer anti-cheat payload handling */
 const submitAntiCheatFlags = (walletAddress, flags) =>
   stub("submitAntiCheatFlags", {
     received: true,
@@ -109,9 +107,6 @@ const submitAntiCheatFlags = (walletAddress, flags) =>
 // Play (Games)
 // ---------------------------------------------------------------------------
 
-/**
- * GET /api/games/trivia/questions?count=N&difficulty=D
- */
 const getTriviaQuestions = async (count = 5, difficulty = 1) => {
   const res = await fetch(
     `${API}/games/trivia/questions?count=${count}&difficulty=${difficulty}`
@@ -120,12 +115,6 @@ const getTriviaQuestions = async (count = 5, difficulty = 1) => {
   return res.json();
 };
 
-/**
- * POST /api/games/trivia/answer
- * @param {string} questionId
- * @param {string} answer
- * @param {number} timeTaken
- */
 const checkTriviaAnswer = (questionId, answer, timeTaken) =>
   request("POST", "/games/trivia/answer", {
     question_id: questionId,
@@ -133,14 +122,6 @@ const checkTriviaAnswer = (questionId, answer, timeTaken) =>
     time_taken: timeTaken,
   });
 
-/**
- * POST /api/games/result/:address
- * @param {string} walletAddress
- * @param {string} gameType
- * @param {number} score
- * @param {number} level
- * @param {number} blocksDestroyed
- */
 const submitGameResult = async (
   walletAddress,
   gameType,
@@ -161,7 +142,11 @@ const submitGameResult = async (
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || "Game submission failed");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail?.message || "Game submission failed"
+    );
   }
 
   return res.json();
@@ -171,15 +156,8 @@ const submitGameResult = async (
 // Shop
 // ---------------------------------------------------------------------------
 
-/** GET /api/shop/items */
 const getShopItems = () => request("GET", "/shop/items");
 
-/**
- * POST /api/shop/purchase/:address
- * @param {string} walletAddress
- * @param {string} itemId
- * @param {"zwap"|"zpts"} paymentType
- */
 const purchaseItem = async (walletAddress, itemId, paymentType = "zwap") => {
   const res = await fetch(`${API}/shop/purchase/${walletAddress}`, {
     method: "POST",
@@ -189,7 +167,11 @@ const purchaseItem = async (walletAddress, itemId, paymentType = "zwap") => {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || "Purchase failed");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail?.message || "Purchase failed"
+    );
   }
 
   return res.json();
@@ -199,16 +181,8 @@ const purchaseItem = async (walletAddress, itemId, paymentType = "zwap") => {
 // Swap
 // ---------------------------------------------------------------------------
 
-/** GET /api/swap/prices */
 const getPrices = () => request("GET", "/swap/prices");
 
-/**
- * POST /api/swap/execute/:address
- * @param {string} walletAddress
- * @param {string} fromToken
- * @param {string} toToken
- * @param {number} amount
- */
 const executeSwap = async (walletAddress, fromToken, toToken, amount) => {
   const res = await fetch(`${API}/swap/execute/${walletAddress}`, {
     method: "POST",
@@ -222,13 +196,16 @@ const executeSwap = async (walletAddress, fromToken, toToken, amount) => {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || "Swap failed");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail?.message || "Swap failed"
+    );
   }
 
   return res.json();
 };
 
-/** Stub: GET /api/swap/quote?from=X&to=Y&amount=N */
 const getSwapQuote = (fromToken, toToken, amount) =>
   stub("getSwapQuote", {
     from: fromToken,
@@ -238,7 +215,6 @@ const getSwapQuote = (fromToken, toToken, amount) =>
     fee: 0,
   });
 
-/** Stub: GET /api/swap/history/:address */
 const getSwapHistory = (walletAddress) =>
   stub("getSwapHistory", { swaps: [], wallet: walletAddress });
 
@@ -246,7 +222,6 @@ const getSwapHistory = (walletAddress) =>
 // Subscription
 // ---------------------------------------------------------------------------
 
-/** POST /api/subscription/checkout */
 const createSubscription = async (walletAddress) => {
   const res = await fetch(`${API}/subscription/checkout`, {
     method: "POST",
@@ -271,11 +246,9 @@ const createSubscription = async (walletAddress) => {
   };
 };
 
-/** GET /api/subscription/status/:sessionId */
 const getSubscriptionStatus = (sessionId) =>
   request("GET", `/subscription/status/${sessionId}`);
 
-/** POST /api/subscription/activate/:address?session_id=X */
 const activateSubscription = async (walletAddress, sessionId) => {
   const res = await fetch(
     `${API}/subscription/activate/${walletAddress}?session_id=${sessionId}`,
@@ -284,13 +257,16 @@ const activateSubscription = async (walletAddress, sessionId) => {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || "Activation failed");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail?.message || "Activation failed"
+    );
   }
 
   return res.json();
 };
 
-/** Stub: POST /api/subscription/cancel/:address */
 const cancelSubscription = (walletAddress) =>
   stub("cancelSubscription", { cancelled: true, wallet: walletAddress });
 
@@ -298,11 +274,6 @@ const cancelSubscription = (walletAddress) =>
 // zPts
 // ---------------------------------------------------------------------------
 
-/**
- * POST /api/zpts/convert/:address
- * @param {string} walletAddress
- * @param {number} zptsAmount
- */
 const convertZptsToZwap = async (walletAddress, zptsAmount) => {
   const res = await fetch(`${API}/zpts/convert/${walletAddress}`, {
     method: "POST",
@@ -312,7 +283,11 @@ const convertZptsToZwap = async (walletAddress, zptsAmount) => {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || "Conversion failed");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail?.message || "Conversion failed"
+    );
   }
 
   return res.json();
@@ -322,7 +297,6 @@ const convertZptsToZwap = async (walletAddress, zptsAmount) => {
 // Treasury / Claims
 // ---------------------------------------------------------------------------
 
-/** Stub: POST /api/claims/request */
 const requestClaim = (walletAddress, amount) =>
   stub("requestClaim", {
     status: "not_implemented",
@@ -330,11 +304,9 @@ const requestClaim = (walletAddress, amount) =>
     amount,
   });
 
-/** Stub: GET /api/claims/status/:claimId */
 const getClaimStatus = (claimId) =>
   stub("getClaimStatus", { claimId, status: "not_implemented" });
 
-/** Stub: GET /api/claims/history/:address */
 const getClaimHistory = (walletAddress) =>
   stub("getClaimHistory", { claims: [], wallet: walletAddress });
 
@@ -342,14 +314,11 @@ const getClaimHistory = (walletAddress) =>
 // Leaderboard
 // ---------------------------------------------------------------------------
 
-/** GET /api/leaderboard/:category?limit=N */
 const getLeaderboard = (category, limit = 10) =>
   request("GET", `/leaderboard/${category}?limit=${limit}`);
 
-/** GET /api/leaderboard/overview */
-const getLeaderboardStats = () => request("GET", "/leaderboard/overview");
+const getLeaderboardStats = () => request("GET", "/leaderboard/stats");
 
-/** GET /api/leaderboard/user/:address/:category */
 const getUserRank = async (walletAddress, category) => {
   const res = await fetch(`${API}/leaderboard/user/${walletAddress}/${category}`);
   if (!res.ok) return null;
@@ -361,55 +330,47 @@ const getUserRank = async (walletAddress, category) => {
 // ---------------------------------------------------------------------------
 
 const api = {
-  // Wallet
   connectWallet,
   walletStatus,
   disconnectWallet,
 
-  // User
   getUser,
   updateProfile,
   getOnchainBalance,
   getContractInfo,
-  
-  // Learn
+
+  getDailyRewardStatus,
+  claimDailyReward,
+
   completeLearnModule,
 
-  // Move
   claimStepRewards,
   getMoveSession,
   submitAntiCheatFlags,
 
-  // Play
   getTriviaQuestions,
   checkTriviaAnswer,
   submitGameResult,
 
-  // Shop
   getShopItems,
   purchaseItem,
 
-  // Swap
   getPrices,
   executeSwap,
   getSwapQuote,
   getSwapHistory,
 
-  // Subscription
   createSubscription,
   getSubscriptionStatus,
   activateSubscription,
   cancelSubscription,
 
-  // zPts
   convertZptsToZwap,
 
-  // Treasury / Claims
   requestClaim,
   getClaimStatus,
   getClaimHistory,
 
-  // Leaderboard
   getLeaderboard,
   getLeaderboardStats,
   getUserRank,
