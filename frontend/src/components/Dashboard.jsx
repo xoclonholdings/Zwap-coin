@@ -359,7 +359,13 @@ export default function Dashboard() {
   const [rewardStatusLoading, setRewardStatusLoading] = useState(false);
   const [claimLoading, setClaimLoading] = useState(false);
 
-  const profile = user || authUser || {};
+  const profile =
+    user && typeof user === "object"
+      ? user
+      : authUser && typeof authUser === "object"
+        ? authUser
+        : {};
+
   const hasWallet = !!walletAddress;
 
   useEffect(() => {
@@ -403,6 +409,7 @@ export default function Dashboard() {
     Number(profile?.today_steps ?? profile?.daily_steps) || 0,
     0
   );
+
   const stepGoal = Math.max(Number(profile?.step_goal) || 5000, 0);
 
   const pendingZwap =
@@ -421,22 +428,37 @@ export default function Dashboard() {
     rewardStatus?.last_daily_claim ?? profile?.last_daily_claim ?? null;
 
   const projectedStreak =
-    Number(rewardStatus?.projected_streak ?? (streak + (canClaimDaily ? 1 : 0))) || 1;
+    Number(
+      rewardStatus?.projected_streak ??
+      (streak + (canClaimDaily ? 1 : 0))
+    ) || 1;
 
   const dailyReward =
-    Number(rewardStatus?.next_reward_zpts) || (() => {
-      const rewardTable = { 1: 10, 2: 15, 3: 20, 4: 25, 5: 30, 6: 35, 7: 100 };
+    Number(rewardStatus?.next_reward_zpts) ||
+    (() => {
+      const rewardTable = {
+        1: 10,
+        2: 15,
+        3: 20,
+        4: 25,
+        5: 30,
+        6: 35,
+        7: 100,
+      };
       return rewardTable[Math.min(Math.max(projectedStreak, 1), 7)] || 10;
     })();
 
   const username = useMemo(() => {
-    if (profile?.custom_username) return profile.custom_username;
-    if (profile?.username) return profile.username;
-    if (authUser?.username) return authUser.username;
-    if (authUser?.email) return authUser.email.split("@")[0];
+    const safeUser = user && typeof user === "object" ? user : null;
+    const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
+
+    if (safeUser?.custom_username) return safeUser.custom_username;
+    if (safeUser?.username) return safeUser.username;
+    if (safeAuthUser?.username) return safeAuthUser.username;
+    if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
     if (walletAddress) return generateUsername(walletAddress);
     return "Guest";
-  }, [profile, authUser, walletAddress]);
+  }, [user, authUser, walletAddress]);
 
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
