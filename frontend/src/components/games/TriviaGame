@@ -1,0 +1,307 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import api from "@/lib/api";
+import { allTrivia } from "@/data/education";
+import { Brain, Loader2, Timer } from "lucide-react";
+
+export default function TriviaGame({
+  onGameEnd,
+  isPlaying,
+  level = 1,
+  round = 1,
+}) {
+  const [questions, setQuestions] = useState([]);
+  const [currentQ, setCurrentQ] = useState(0);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(25);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [correctAnswer, setCorrectAnswer] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const startTimeRef = useRef(Date.now());
+  const mountedRef = useRef(true);
+
+  const safeLevel = Math.max(1, level);
+  const safeRound = Math.max(1, round);
+  const questionCount = 5;
+  const roundDifficulty = Math.min(safeLevel + safeRound - 1, 5);
+
+  const loadFallbackQuestions = useCallback(() => {
+    const shuffled = [...allTrivia]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, questionCount);
+
+    return shuffled.map((item, index) => ({
+      id: `local-${safeRound}-${index}`,
+      question: item.question,
+      options: item.options,
+      correctAnswer: item.answer,
+      module: item.moduleTitle,
+    }));
+  }, [safeRound]);
+
+  const loadQuestions = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.getTriviaQuestions(questionCount, roundDifficulty);
+      const incoming = res?.questions || res;
+
+      if (Array.isArray(incoming) && incoming.length > 0) {
+        setQuestions(incoming);
+      } else {
+        setQuestions(loadFallbackQuestions());
+      }
+    } catch {
+      setQuestions(loadFallbackQuestions());
+    } finally {
+      if (mountedRef.current) {
+        setCurrentQ(0);
+        setScore(0);
+        setTimeLeft(25);
+        setSelectedAnswer(null);
+        setCorrectAnswer(null);
+        startTimeRef.current = Date.now();
+        setIsLoading(false);
+      }
+    }
+  }, [loadFallbackQuestions, roundDifficulty]);
+
+  const finishRound = useCallback(
+    (finalScore) => {
+      onGameEnd?.({
+        score: finalScore,
+        blocksDestroyed: 0,
+        level: roundDifficulty,
+        round: safeRound,
+        cleared: finalScore >= 3,
+      });
+    },
+    [onGameEnd, roundDifficulty, safeRound]
+  );
+
+  const advanceOrFinish = useCallback(
+    (nextScore) => {
+      if (currentQ < questions.length - 1) {
+        setCurrentQ((prev) => prev + 1);
+        setTimeLeft(25);
+        setSelectedAnswer(null);
+        setCorrectAnswer(null);
+        startTimeRef.current = Date.now();
+      } else {
+        finishRound(nextScore);
+      }
+    },
+    [currentQ, questions.length, finishRound]
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isPlaying) {
+      loadQuestions();
+    }
+  }, [isPlaying, loadQuestions]);
+
+  useEffect(() => {
+    if (!isPlaying || isLoading || !questions.length || selectedAnswer) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setSelectedAnswer("__timeout__");
+          setCorrectAnswer(
+            questions[currentQ]?.correct_answer ||
+              questions[currentQ]?.correctAnswer ||
+              questions[currentQ]?.answer ||
+              null
+          );
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            advanceOrFinish(score);
+          }, 900);
+
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [
+    isPlaying,
+    isLoading,
+    questions,
+    currentQ,
+    selectedAnswer,
+    advanceOrFinish,
+    score,
+  ]);
+
+  const handleAnswer = async (answer) => {
+    if (selectedAnswer || !questions[currentQ]) return;
+
+    setSelectedAnswer(answer);
+
+    const question = questions[currentQ];
+    const timeTaken = (Date.now() - startTimeRef.current) / 1000;
+
+    let isCorrect = false;
+    let resolvedCorrectAnswer =
+      question.correct_answer || question.correctAnswer || question.answer;
+
+    try {
+      const res = await api.checkTriviaAnswer(question.id, answer, timeTaken);
+      isCorrect = !!res?.correct;
+      resolvedCorrectAnswer =
+        res?.correct_answer || resolvedCorrectAnswer || question.answer;
+    } catch {
+      isCorrect = answer === resolvedCorrectAnswer;
+    }
+
+    setCorrectAnswer(resolvedCorrectAnswer);
+
+    let nextScore = score;
+    if (isCorrect) {
+      const speedBonus = timeTaken < 6 ? 2 : timeTaken < 12 ? 1 : 0;
+      nextScore = score + 1 + speedBonus;
+      setScore(nextScore);
+    }
+
+    setTimeout(() => {
+      if (!mountedRef.current) return;
+      advanceOrFinish(nextScore);
+    }, 1100);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full rounded-[26px] border border-violet-400/20 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.16),_transparent_35%),linear-gradient(180deg,rgba(17,11,33,0.98),rgba(10,10,22,0.98))] p-5 text-white shadow-[0_12px_40px_rgba(0,0,0,0.28)]">
+        <div className="flex items-center justify-center py-16 text-violet-200/80">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          Loading trivia round...
+        </div>
+      </div>
+    );
+  }
+
+  const q = questions[currentQ];
+  const actualCorrect =
+    correctAnswer || q?.correct_answer || q?.correctAnswer || q?.answer;
+
+  return (
+    <div className="w-full rounded-[26px] border border-violet-400/20 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.18),_transparent_35%),linear-gradient(180deg,rgba(18,11,36,0.98),rgba(11,10,24,0.98))] p-4 text-white shadow-[0_12px_40px_rgba(0,0,0,0.28)]">
+      <div className="mb-4 flex items-center justify-between rounded-2xl border border-violet-400/15 bg-violet-400/10 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-400/10">
+            <Brain className="h-4 w-4 text-violet-300" />
+          </div>
+
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-200/70">
+              Trivia
+            </p>
+            <p className="text-sm font-semibold text-white">Knowledge Round</p>
+          </div>
+        </div>
+
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+            Session
+          </p>
+          <p className="text-sm font-medium text-violet-200">
+            L{safeLevel} • R{safeRound}
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-white/45">
+            Question
+          </p>
+          <p className="mt-1 text-sm font-medium text-white/85">
+            {currentQ + 1}/{questions.length}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-white/45">
+            Score
+          </p>
+          <p className="mt-1 text-sm font-medium text-cyan-300">{score}</p>
+        </div>
+
+        <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-white/45">
+            Timer
+          </p>
+          <p
+            className={`mt-1 flex items-center gap-1 text-sm font-medium ${
+              timeLeft <= 8 ? "text-rose-300" : "text-white/85"
+            }`}
+          >
+            <Timer className="h-3.5 w-3.5" />
+            {timeLeft}s
+          </p>
+        </div>
+      </div>
+
+      {q?.module && (
+        <p className="mb-2 text-center text-[10px] uppercase tracking-[0.16em] text-white/35">
+          {q.module}
+        </p>
+      )}
+
+      <div className="mb-4 rounded-[22px] border border-white/8 bg-black/20 p-4">
+        <p className="text-base font-semibold leading-relaxed text-white">
+          {q?.question}
+        </p>
+      </div>
+
+      <div className="space-y-2.5">
+        {q?.options?.map((option, index) => {
+          const isSelected = selectedAnswer === option;
+          const isCorrect = option === actualCorrect;
+          const showResolved = !!selectedAnswer;
+
+          let stateClass =
+            "border-white/10 bg-white/5 hover:border-violet-400/35 hover:bg-violet-400/10";
+
+          if (showResolved && isSelected && isCorrect) {
+            stateClass = "border-emerald-400/50 bg-emerald-500/20";
+          } else if (showResolved && isSelected && !isCorrect) {
+            stateClass = "border-rose-400/50 bg-rose-500/20";
+          } else if (showResolved && isCorrect) {
+            stateClass = "border-emerald-400/35 bg-emerald-500/10";
+          }
+
+          return (
+            <button
+              key={`${index}-${option}`}
+              onClick={() => handleAnswer(option)}
+              disabled={!!selectedAnswer}
+              className={`w-full rounded-[20px] border p-3 text-left transition ${stateClass}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px] font-medium text-white/70">
+                  {String.fromCharCode(65 + index)}
+                </div>
+
+                <span className="text-sm font-medium leading-relaxed text-white">
+                  {option}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
