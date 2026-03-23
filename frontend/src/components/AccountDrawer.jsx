@@ -231,71 +231,81 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
           className="w-80 overflow-y-auto border-l border-cyan-500/20 bg-[#0a0b1e] sm:w-80"
           aria-describedby="account-drawer-description"
         >
-          <SheetHeader>
-            <SheetTitle className="text-white">Account</SheetTitle>
+          <SheetHeader className="border-b border-white/5 pb-4">
+            <SheetTitle className="text-white text-xl font-black tracking-tight">
+              Account
+            </SheetTitle>
             <p id="account-drawer-description" className="sr-only">
               Manage your ZWAP! account, wallet, balances, settings, and admin access.
             </p>
           </SheetHeader>
 
-          <div className="mt-6 space-y-6 pb-8">
-            <div className="flex items-center gap-3">
-              <motion.div
-                className={`flex h-14 w-14 items-center justify-center rounded-full border text-lg font-bold uppercase ${
-                  isPlus
-                    ? "border-yellow-400/40 bg-gradient-to-br from-yellow-400/30 via-amber-500/20 to-orange-500/30 text-yellow-200"
-                    : "border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 to-purple-500/30 text-white"
-                }`}
-                animate={{
-                  boxShadow: isPlus
-                    ? [
-                        "0 0 10px rgba(250,204,21,0.25)",
-                        "0 0 20px rgba(251,191,36,0.4)",
-                        "0 0 10px rgba(250,204,21,0.25)",
-                      ]
-                    : [
-                        "0 0 10px rgba(0,245,255,0.3)",
-                        "0 0 20px rgba(0,245,255,0.5)",
-                        "0 0 10px rgba(0,245,255,0.3)",
-                      ],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                {initials}
-              </motion.div>
+          <div className="mt-5 space-y-5 pb-6">
+            <div className="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-cyan-500/10 via-violet-500/6 to-transparent p-4">
+              <div className="flex items-center gap-3">
+                <motion.div
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full border text-lg font-bold uppercase ${
+                    isPlus
+                      ? "border-yellow-400/40 bg-gradient-to-br from-yellow-400/30 via-amber-500/20 to-orange-500/30 text-yellow-200"
+                      : "border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 to-purple-500/30 text-white"
+                  }`}
+                  animate={{
+                    boxShadow: isPlus
+                      ? [
+                          "0 0 10px rgba(250,204,21,0.25)",
+                          "0 0 20px rgba(251,191,36,0.4)",
+                          "0 0 10px rgba(250,204,21,0.25)",
+                        ]
+                      : [
+                          "0 0 10px rgba(0,245,255,0.3)",
+                          "0 0 20px rgba(0,245,255,0.5)",
+                          "0 0 10px rgba(0,245,255,0.3)",
+                        ],
+                  }}
+                  transition={{ duration: 2.2, repeat: Infinity }}
+                >
+                  {initials}
+                </motion.div>
 
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-white">{displayName}</p>
-                <p className="truncate text-xs text-gray-500">{displaySubtext}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-white font-semibold text-base">
+                    {displayName}
+                  </p>
+                  <p className="truncate text-xs text-gray-500 mt-0.5">
+                    {displaySubtext}
+                  </p>
 
-                <div className="mt-1 flex items-center gap-2 flex-wrap">
-                  {isPlus ? (
-                    <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[11px] font-semibold text-black">
-                      <Crown className="h-3 w-3" /> Plus
-                    </span>
-                  ) : isGuest ? (
-                    <span className="text-xs text-gray-500">Try first, connect later</span>
-                  ) : (
-                    <>
-                      <span className="text-xs text-gray-400">Starter</span>
-                      <button
-                        onClick={() => {
-                          onOpenChange(false);
-                          navigate("/plus");
-                        }}
-                        className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-semibold text-black hover:opacity-90 transition"
-                      >
-                        Upgrade
-                      </button>
-                    </>
-                  )}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {isPlus ? (
+                      <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[11px] font-semibold text-black">
+                        <Crown className="h-3 w-3" /> Plus
+                      </span>
+                    ) : isGuest ? (
+                      <span className="text-xs text-gray-500">
+                        Try first, connect later
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-xs text-gray-400">Starter</span>
+                        <button
+                          onClick={() => {
+                            onOpenChange(false);
+                            navigate("/plus");
+                          }}
+                          className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-semibold text-black hover:opacity-90 transition"
+                        >
+                          Upgrade
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
             {(isWalletUser || isEmailUser) && (
-              <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 p-4">
-                <div className="mb-3 flex items-center justify-between">
+              <div className="rounded-[1.5rem] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-wider text-gray-500">
                     Reward Balances
                   </p>
@@ -307,44 +317,44 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs text-cyan-400 transition-colors hover:text-cyan-300"
                     >
-                      View on PolygonScan <ExternalLink className="h-3 w-3" />
+                      PolygonScan <ExternalLink className="h-3 w-3" />
                     </a>
                   ) : null}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
                     <p className="text-lg font-bold text-cyan-400">
                       {walletAddress
                         ? onchainBalance !== null
                           ? onchainBalance.toFixed(2)
                           : "0.00"
-                        : "Not connected"}
+                        : "—"}
                     </p>
-                    <p className="flex items-center gap-1 text-xs text-gray-500">
+                    <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                       <Link2 className="h-3 w-3" /> Linked Wallet
                     </p>
                   </div>
 
-                  <div>
-                    <p className="text-lg font-bold text-cyan-400/80">
+                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
+                    <p className="text-lg font-bold text-cyan-300">
                       {appZwapBalance.toFixed(2)}
                     </p>
-                    <p className="text-xs text-gray-500">In-App Rewards</p>
+                    <p className="mt-1 text-xs text-gray-500">In-App Rewards</p>
                   </div>
 
-                  <div>
+                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
                     <p className="text-lg font-bold text-purple-400">
                       {zptsBalance}
                     </p>
-                    <p className="text-xs text-gray-500">zPts</p>
+                    <p className="mt-1 text-xs text-gray-500">zPts</p>
                   </div>
 
-                  <div>
-                    <p className="text-lg font-bold text-green-400">
+                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
+                    <p className="text-lg font-bold text-emerald-400">
                       {totalEarned.toFixed(0)}
                     </p>
-                    <p className="text-xs text-gray-500">Total Earned</p>
+                    <p className="mt-1 text-xs text-gray-500">Total Earned</p>
                   </div>
                 </div>
 
@@ -356,7 +366,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                   <Button
                     type="button"
                     onClick={handleConvert}
-                    className="mt-3 w-full border border-purple-500/30 bg-purple-600/20 text-purple-200 hover:bg-purple-600/30"
+                    className="mt-3 w-full rounded-xl border border-purple-500/30 bg-purple-600/20 text-purple-200 hover:bg-purple-600/30"
                     variant="outline"
                   >
                     Convert zPts → ZWAP!
@@ -381,26 +391,26 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
             {!isWalletUser && (
               <motion.button
                 onClick={handleConnectWallet}
-                className="w-full rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 p-4 text-left"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="w-full rounded-[1.5rem] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 p-4 text-left shadow-[0_0_20px_rgba(34,211,238,0.08)]"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.985 }}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="flex items-center gap-2 font-semibold text-cyan-400">
                       <Wallet className="h-4 w-4" />
                       Connect Wallet
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-400 mt-1">
                       Save progress & earn rewards
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-cyan-400" />
+                  <ChevronRight className="h-5 w-5 text-cyan-400 shrink-0" />
                 </div>
               </motion.button>
             )}
 
-            <div className="space-y-1">
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-2">
               {settingsItems.map((item, index) => {
                 const Icon = item.icon;
 
@@ -408,52 +418,66 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                   <motion.button
                     key={index}
                     onClick={item.action}
-                    className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-gray-800/50"
-                    whileHover={{ x: 5 }}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-white/[0.05]"
+                    whileHover={{ x: 4 }}
                   >
-                    <Icon className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-300">{item.label}</span>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/20 shrink-0">
+                      <Icon className="h-4 w-4 text-gray-300" />
+                    </div>
+                    <span className="text-gray-200 font-medium">{item.label}</span>
                   </motion.button>
                 );
               })}
             </div>
 
-            {isAdmin && (
-              <div className="flex justify-center pt-2">
-                <div className="text-center">
-                  <motion.button
-                    onClick={() => {
-                      onOpenChange(false);
-                      navigate("/admin");
-                    }}
-                    className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 to-purple-500/10"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    animate={{
-                      boxShadow: [
-                        "0 0 8px rgba(34,211,238,0.15)",
-                        "0 0 16px rgba(34,211,238,0.35)",
-                        "0 0 8px rgba(34,211,238,0.15)",
-                      ],
-                    }}
-                    transition={{ duration: 2.5, repeat: Infinity }}
-                    title="Admin Panel"
-                  >
-                    <Shield className="h-5 w-5 text-cyan-300" />
-                  </motion.button>
-                  <p className="mt-2 text-[10px] text-gray-500">Admin</p>
-                </div>
+            <div className="flex justify-center pt-1">
+              <div className="text-center">
+                <motion.button
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate("/admin");
+                  }}
+                  className={`flex h-12 w-12 items-center justify-center rounded-full border ${
+                    isAdmin
+                      ? "border-cyan-400/25 bg-gradient-to-br from-cyan-500/12 to-purple-500/12"
+                      : "border-white/10 bg-white/[0.03]"
+                  }`}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={{
+                    boxShadow: isAdmin
+                      ? [
+                          "0 0 8px rgba(34,211,238,0.15)",
+                          "0 0 18px rgba(34,211,238,0.35)",
+                          "0 0 8px rgba(34,211,238,0.15)",
+                        ]
+                      : [
+                          "0 0 0 rgba(255,255,255,0)",
+                          "0 0 8px rgba(255,255,255,0.05)",
+                          "0 0 0 rgba(255,255,255,0)",
+                        ],
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                  title="Admin Panel"
+                >
+                  <Shield
+                    className={`h-5 w-5 ${
+                      isAdmin ? "text-cyan-300" : "text-gray-400"
+                    }`}
+                  />
+                </motion.button>
+                <p className="mt-2 text-[10px] text-gray-500">Admin</p>
               </div>
-            )}
+            </div>
 
             {!isGuest && (
               <motion.button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-lg p-3 text-red-400 transition-colors hover:bg-red-500/10"
-                whileHover={{ x: 5 }}
+                className="flex w-full items-center gap-3 rounded-[1.25rem] border border-red-500/15 bg-red-500/[0.04] px-4 py-3 text-red-400 transition-colors hover:bg-red-500/10"
+                whileHover={{ x: 4 }}
               >
-                <LogOut className="h-5 w-5" />
-                <span>
+                <LogOut className="h-5 w-5 shrink-0" />
+                <span className="font-medium">
                   {walletAddress && authUser
                     ? "Sign Out"
                     : walletAddress
