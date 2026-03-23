@@ -86,6 +86,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
   const isWalletUser = !!walletAddress;
   const isEmailUser = !!authUser?.email;
   const isGuest = !isWalletUser && !isEmailUser;
+  const isAdmin = !!(user?.is_admin || authUser?.is_admin);
 
   const displayName = useMemo(() => {
     if (user?.custom_username) return user.custom_username;
@@ -122,7 +123,6 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
 
   const tier = user?.tier || authUser?.tier || (isEmailUser ? "starter" : null);
   const isPlus = tier === "plus";
-  const isAdmin = !!(user?.is_admin || authUser?.is_admin);
 
   const appZwapBalance = Number(
     user?.zwap_balance ?? authUser?.zwap_pending ?? authUser?.zwap_balance ?? 0
@@ -213,6 +213,17 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     navigate("/wallet");
   };
 
+  const handleShieldPress = () => {
+    onOpenChange(false);
+
+    if (isAdmin) {
+      navigate("/admin");
+      return;
+    }
+
+    navigate("/about");
+  };
+
   return (
     <>
       <ConvertZPtsModal
@@ -232,11 +243,11 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
           aria-describedby="account-drawer-description"
         >
           <SheetHeader className="border-b border-white/5 pb-4">
-            <SheetTitle className="text-white text-xl font-black tracking-tight">
+            <SheetTitle className="text-xl font-black tracking-tight text-white">
               Account
             </SheetTitle>
             <p id="account-drawer-description" className="sr-only">
-              Manage your ZWAP! account, wallet, balances, settings, and admin access.
+              Manage your ZWAP! account, wallet, balances, settings, and secure access.
             </p>
           </SheetHeader>
 
@@ -268,14 +279,14 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                 </motion.div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-white font-semibold text-base">
+                  <p className="truncate text-base font-semibold text-white">
                     {displayName}
                   </p>
-                  <p className="truncate text-xs text-gray-500 mt-0.5">
+                  <p className="mt-0.5 truncate text-xs text-gray-500">
                     {displaySubtext}
                   </p>
 
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     {isPlus ? (
                       <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[11px] font-semibold text-black">
                         <Crown className="h-3 w-3" /> Plus
@@ -292,7 +303,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                             onOpenChange(false);
                             navigate("/plus");
                           }}
-                          className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-semibold text-black hover:opacity-90 transition"
+                          className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-semibold text-black transition hover:opacity-90"
                         >
                           Upgrade
                         </button>
@@ -401,11 +412,11 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                       <Wallet className="h-4 w-4" />
                       Connect Wallet
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="mt-1 text-xs text-gray-400">
                       Save progress & earn rewards
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-cyan-400 shrink-0" />
+                  <ChevronRight className="h-5 w-5 shrink-0 text-cyan-400" />
                 </div>
               </motion.button>
             )}
@@ -421,10 +432,10 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-white/[0.05]"
                     whileHover={{ x: 4 }}
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/20 shrink-0">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
                       <Icon className="h-4 w-4 text-gray-300" />
                     </div>
-                    <span className="text-gray-200 font-medium">{item.label}</span>
+                    <span className="font-medium text-gray-200">{item.label}</span>
                   </motion.button>
                 );
               })}
@@ -433,10 +444,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
             <div className="flex justify-center pt-1">
               <div className="text-center">
                 <motion.button
-                  onClick={() => {
-                    onOpenChange(false);
-                    navigate("/admin");
-                  }}
+                  onClick={handleShieldPress}
                   className={`flex h-12 w-12 items-center justify-center rounded-full border ${
                     isAdmin
                       ? "border-cyan-400/25 bg-gradient-to-br from-cyan-500/12 to-purple-500/12"
@@ -458,7 +466,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                         ],
                   }}
                   transition={{ duration: 2.5, repeat: Infinity }}
-                  title="Admin Panel"
+                  title={isAdmin ? "Admin Panel" : "ZWAP! Secure"}
                 >
                   <Shield
                     className={`h-5 w-5 ${
@@ -466,7 +474,9 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                     }`}
                   />
                 </motion.button>
-                <p className="mt-2 text-[10px] text-gray-500">Admin</p>
+                <p className="mt-2 text-[10px] text-gray-500">
+                  {isAdmin ? "Admin" : "Secure"}
+                </p>
               </div>
             </div>
 
