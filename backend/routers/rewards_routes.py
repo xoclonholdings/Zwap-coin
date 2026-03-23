@@ -1,4 +1,3 @@
-# rewards_routes.py
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 
@@ -6,7 +5,6 @@ from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter(prefix="/rewards", tags=["rewards"])
 
-# Example daily reward ladder
 DAILY_REWARD_TABLE = {
     1: 10,
     2: 15,
@@ -14,7 +12,7 @@ DAILY_REWARD_TABLE = {
     4: 25,
     5: 30,
     6: 35,
-    7: 100,  # bonus reward
+    7: 100,
 }
 
 CLAIM_WINDOW_HOURS = 24
@@ -26,7 +24,6 @@ def utc_now() -> datetime:
 
 
 def get_reward_for_streak(streak: int) -> int:
-    # cap at day 7 reward, or loop if you want later
     return DAILY_REWARD_TABLE.get(min(streak, 7), DAILY_REWARD_TABLE[7])
 
 
@@ -108,9 +105,8 @@ async def claim_daily_reward(wallet_address: str, request: Request):
     now = utc_now()
     last_claim = parse_dt(user.get("last_daily_claim"))
     current_streak = user.get("daily_streak", 0)
-    current_zpts = user.get("zpts", 0)
+    current_zpts_balance = user.get("zpts_balance", 0)
 
-    # Determine claim eligibility and next streak
     if last_claim:
         elapsed = now - last_claim
 
@@ -133,16 +129,16 @@ async def claim_daily_reward(wallet_address: str, request: Request):
         new_streak = 1
 
     reward_amount = get_reward_for_streak(new_streak)
-    new_zpts_balance = current_zpts + reward_amount
+    new_zpts_balance = current_zpts_balance + reward_amount
 
     update_doc = {
         "$set": {
             "daily_streak": new_streak,
-            "last_daily_claim": now,
-            "updated_at": now,
+            "last_daily_claim": now.isoformat(),
+            "updated_at": now.isoformat(),
         },
         "$inc": {
-            "zpts": reward_amount
+            "zpts_balance": reward_amount
         }
     }
 
@@ -154,14 +150,13 @@ async def claim_daily_reward(wallet_address: str, request: Request):
     if result.modified_count != 1:
         raise HTTPException(status_code=500, detail="Failed to update daily reward")
 
-    # Optional ledger entry for audit/history
     await db.reward_claims.insert_one({
         "wallet_address": wallet,
         "reward_type": "daily",
         "streak_day": new_streak,
         "reward_zpts": reward_amount,
-        "claimed_at": now,
-        "created_at": now,
+        "claimed_at": now.isoformat(),
+        "created_at": now.isoformat(),
     })
 
     return {
