@@ -93,8 +93,8 @@ const completeLearnModule = (walletAddress, moduleId) =>
 // ---------------------------------------------------------------------------
 
 const claimStepRewards = (walletAddress, steps) =>
-  request("POST", `/faucet/steps/${walletAddress}`, { steps });
-
+  request("POST", `/move/steps/${walletAddress}`, { steps });
+  
 const getMoveSession = (walletAddress) =>
   request("GET", `/move/session/${walletAddress}`);
 
