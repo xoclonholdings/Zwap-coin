@@ -13,26 +13,39 @@ console.log("ZWAP API BASE =", API);
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function request(method, path, body = null) {
-  const opts = { method, headers: {} };
+async function parseJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
 
-  if (body) {
+async function request(method, path, body = null, extraHeaders = {}) {
+  const opts = {
+    method,
+    headers: {
+      ...extraHeaders,
+    },
+  };
+
+  if (body !== null && body !== undefined) {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(body);
   }
 
   const res = await fetch(`${API}${path}`, opts);
+  const data = await parseJsonSafe(res);
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
     throw new Error(
-      typeof err.detail === "string"
-        ? err.detail
-        : err.detail?.message || `Request failed: ${method} ${path}`
+      typeof data.detail === "string"
+        ? data.detail
+        : data.detail?.message || `Request failed: ${method} ${path}`
     );
   }
 
-  return res.json();
+  return data;
 }
 
 function stub(name, fallback = {}) {
@@ -54,11 +67,7 @@ const disconnectWallet = () => stub("disconnectWallet", { disconnected: true });
 // User
 // ---------------------------------------------------------------------------
 
-const getUser = async (walletAddress) => {
-  const res = await fetch(`${API}/users/${walletAddress}`);
-  if (!res.ok) throw new Error("User not found");
-  return res.json();
-};
+const getUser = (walletAddress) => request("GET", `/users/${walletAddress}`);
 
 const updateProfile = (walletAddress, username, avatarUrl) =>
   request("PUT", `/users/${walletAddress}/profile`, {
@@ -94,7 +103,7 @@ const completeLearnModule = (walletAddress, moduleId) =>
 
 const claimStepRewards = (walletAddress, steps) =>
   request("POST", `/move/steps/${walletAddress}`, { steps });
-  
+
 const getMoveSession = (walletAddress) =>
   request("GET", `/move/session/${walletAddress}`);
 
@@ -110,13 +119,13 @@ const submitAntiCheatFlags = (walletAddress, flags) =>
 // Play (Games)
 // ---------------------------------------------------------------------------
 
-const getTriviaQuestions = async (count = 5, difficulty = 1) => {
-  const res = await fetch(
-    `${API}/games/trivia/questions?count=${count}&difficulty=${difficulty}`
+const getTriviaQuestions = (count = 5, difficulty = 1) =>
+  request(
+    "GET",
+    `/games/trivia/questions?count=${encodeURIComponent(
+      count
+    )}&difficulty=${encodeURIComponent(difficulty)}`
   );
-  if (!res.ok) throw new Error("Failed to load trivia questions");
-  return res.json();
-};
 
 const checkTriviaAnswer = (questionId, answer, timeTaken) =>
   request("POST", "/games/trivia/answer", {
@@ -125,35 +134,91 @@ const checkTriviaAnswer = (questionId, answer, timeTaken) =>
     time_taken: timeTaken,
   });
 
-const submitGameResult = async (
+const submitGameResult = (
   walletAddress,
   gameType,
   score,
   level = 1,
   blocksDestroyed = 0
-) => {
-  const res = await fetch(`${API}/games/result/${walletAddress}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      game_type: gameType,
-      score,
-      level,
-      blocks_destroyed: blocksDestroyed,
-    }),
+) =>
+  request("POST", `/games/result/${walletAddress}`, {
+    game_type: gameType,
+    score,
+    level,
+    blocks_destroyed: blocksDestroyed,
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string"
-        ? err.detail
-        : err.detail?.message || "Game submission failed"
-    );
+// ---------------------------------------------------------------------------
+// Game Submission Portal
+// ---------------------------------------------------------------------------
+
+const submitGame = (payload) => request("POST", "/games/submit", payload);
+
+const getApprovedGames = () => request("GET", "/games/list?approved_only=true");
+
+const getAllSubmittedGames = (params = {}) => {
+  const query = new URLSearchParams();
+
+  if (params.approved_only !== undefined) {
+    query.set("approved_only", String(params.approved_only));
   }
 
-  return res.json();
+  if (params.developer_wallet) {
+    query.set("developer_wallet", params.developer_wallet);
+  }
+
+  if (params.status) {
+    query.set("status", params.status);
+  }
+
+  const qs = query.toString();
+  return request("GET", `/games/list${qs ? `?${qs}` : ""}`);
 };
+
+const approveGame = (gameId, approvedBy, reviewNotes = "", adminKey) =>
+  request(
+    "POST",
+    `/games/approve/${gameId}`,
+    {
+      approved_by: approvedBy,
+      review_notes: reviewNotes || null,
+    },
+    adminKey ? { "X-Admin-Key": adminKey } : {}
+  );
+
+const rejectGame = (gameId, rejectedBy, reviewNotes = "", adminKey) =>
+  request(
+    "POST",
+    `/games/reject/${gameId}`,
+    {
+      rejected_by: rejectedBy,
+      review_notes: reviewNotes || null,
+    },
+    adminKey ? { "X-Admin-Key": adminKey } : {}
+  );
+
+// ---------------------------------------------------------------------------
+// Game Sessions / Rounds (future-ready)
+// ---------------------------------------------------------------------------
+
+const startGameSession = (payload) =>
+  stub("startGameSession", {
+    session_id: `local-${Date.now()}`,
+    status: "started",
+    ...payload,
+  });
+
+const submitRoundResult = (payload) =>
+  stub("submitRoundResult", {
+    accepted: true,
+    ...payload,
+  });
+
+const completeGameSession = (payload) =>
+  stub("completeGameSession", {
+    completed: true,
+    ...payload,
+  });
 
 // ---------------------------------------------------------------------------
 // Shop
@@ -161,24 +226,11 @@ const submitGameResult = async (
 
 const getShopItems = () => request("GET", "/shop/items");
 
-const purchaseItem = async (walletAddress, itemId, paymentType = "zwap") => {
-  const res = await fetch(`${API}/shop/purchase/${walletAddress}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ item_id: itemId, payment_type: paymentType }),
+const purchaseItem = (walletAddress, itemId, paymentType = "zwap") =>
+  request("POST", `/shop/purchase/${walletAddress}`, {
+    item_id: itemId,
+    payment_type: paymentType,
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string"
-        ? err.detail
-        : err.detail?.message || "Purchase failed"
-    );
-  }
-
-  return res.json();
-};
 
 // ---------------------------------------------------------------------------
 // Swap
@@ -186,28 +238,12 @@ const purchaseItem = async (walletAddress, itemId, paymentType = "zwap") => {
 
 const getPrices = () => request("GET", "/swap/prices");
 
-const executeSwap = async (walletAddress, fromToken, toToken, amount) => {
-  const res = await fetch(`${API}/swap/execute/${walletAddress}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from_token: fromToken,
-      to_token: toToken,
-      amount,
-    }),
+const executeSwap = (walletAddress, fromToken, toToken, amount) =>
+  request("POST", `/swap/execute/${walletAddress}`, {
+    from_token: fromToken,
+    to_token: toToken,
+    amount,
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string"
-        ? err.detail
-        : err.detail?.message || "Swap failed"
-    );
-  }
-
-  return res.json();
-};
 
 const getSwapQuote = (fromToken, toToken, amount) =>
   stub("getSwapQuote", {
@@ -226,25 +262,13 @@ const getSwapHistory = (walletAddress) =>
 // ---------------------------------------------------------------------------
 
 const createSubscription = async (walletAddress) => {
-  const res = await fetch(`${API}/subscription/checkout`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      wallet_address: walletAddress,
-      origin_url: window.location.origin,
-    }),
+  const data = await request("POST", "/subscription/checkout", {
+    wallet_address: walletAddress,
+    origin_url: window.location.origin,
   });
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.detail || "Failed to create subscription checkout");
-  }
-
   return {
-    checkout_url: data.url,
+    checkout_url: data.url || data.checkout_url,
     session_id: data.session_id,
   };
 };
@@ -252,23 +276,13 @@ const createSubscription = async (walletAddress) => {
 const getSubscriptionStatus = (sessionId) =>
   request("GET", `/subscription/status/${sessionId}`);
 
-const activateSubscription = async (walletAddress, sessionId) => {
-  const res = await fetch(
-    `${API}/subscription/activate/${walletAddress}?session_id=${sessionId}`,
-    { method: "POST" }
+const activateSubscription = (walletAddress, sessionId) =>
+  request(
+    "POST",
+    `/subscription/activate/${walletAddress}?session_id=${encodeURIComponent(
+      sessionId
+    )}`
   );
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string"
-        ? err.detail
-        : err.detail?.message || "Activation failed"
-    );
-  }
-
-  return res.json();
-};
 
 const cancelSubscription = (walletAddress) =>
   stub("cancelSubscription", { cancelled: true, wallet: walletAddress });
@@ -277,24 +291,10 @@ const cancelSubscription = (walletAddress) =>
 // zPts
 // ---------------------------------------------------------------------------
 
-const convertZptsToZwap = async (walletAddress, zptsAmount) => {
-  const res = await fetch(`${API}/zpts/convert/${walletAddress}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ zpts_amount: zptsAmount }),
+const convertZptsToZwap = (walletAddress, zptsAmount) =>
+  request("POST", `/zpts/convert/${walletAddress}`, {
+    zpts_amount: zptsAmount,
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string"
-        ? err.detail
-        : err.detail?.message || "Conversion failed"
-    );
-  }
-
-  return res.json();
-};
 
 // ---------------------------------------------------------------------------
 // Treasury / Claims
@@ -318,15 +318,55 @@ const getClaimHistory = (walletAddress) =>
 // ---------------------------------------------------------------------------
 
 const getLeaderboard = (category, limit = 10) =>
-  request("GET", `/leaderboard/${category}?limit=${limit}`);
+  request(
+    "GET",
+    `/leaderboard/${encodeURIComponent(category)}?limit=${encodeURIComponent(
+      limit
+    )}`
+  );
 
-const getLeaderboardStats = () => request("GET", "/leaderboard/stats");
+const getLeaderboardStats = (category = "earned", limit = 10) =>
+  request(
+    "GET",
+    `/leaderboard/stats?category=${encodeURIComponent(
+      category
+    )}&limit=${encodeURIComponent(limit)}`
+  );
 
-const getUserRank = async (walletAddress, category) => {
-  const res = await fetch(`${API}/leaderboard/user/${walletAddress}/${category}`);
-  if (!res.ok) return null;
-  return res.json();
+const getUserRank = async (walletAddress, category, neighbors = 0) => {
+  try {
+    return await request(
+      "GET",
+      `/leaderboard/user/${encodeURIComponent(
+        walletAddress
+      )}/${encodeURIComponent(category)}?neighbors=${encodeURIComponent(
+        neighbors
+      )}`
+    );
+  } catch {
+    return null;
+  }
 };
+
+// ---------------------------------------------------------------------------
+// Per-Game Leaderboards (future-ready)
+// ---------------------------------------------------------------------------
+
+const getGameLeaderboard = (gameId, scope = "global", limit = 10) =>
+  stub("getGameLeaderboard", {
+    game_id: gameId,
+    scope,
+    limit,
+    entries: [],
+  });
+
+const getGameLeaderboardChart = (gameId, scope = "global", limit = 5) =>
+  stub("getGameLeaderboardChart", {
+    game_id: gameId,
+    scope,
+    limit,
+    entries: [],
+  });
 
 // ---------------------------------------------------------------------------
 // Export all methods as default object
@@ -355,6 +395,16 @@ const api = {
   checkTriviaAnswer,
   submitGameResult,
 
+  submitGame,
+  getApprovedGames,
+  getAllSubmittedGames,
+  approveGame,
+  rejectGame,
+
+  startGameSession,
+  submitRoundResult,
+  completeGameSession,
+
   getShopItems,
   purchaseItem,
 
@@ -377,6 +427,8 @@ const api = {
   getLeaderboard,
   getLeaderboardStats,
   getUserRank,
+  getGameLeaderboard,
+  getGameLeaderboardChart,
 };
 
 export default api;
