@@ -19,6 +19,7 @@ from routers import swap_routes
 from routers import leaderboard_routes
 from routers import learn_routes
 from routers import user_routes
+from routers import rewards_routes
 
 logging.basicConfig(
     level=logging.INFO,
