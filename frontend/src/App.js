@@ -21,7 +21,7 @@ import WalletModal from "@/components/WalletModal";
 import AppHeader from "@/components/AppHeader";
 import NewsTicker from "@/components/NewsTicker";
 import Dashboard from "@/components/Dashboard";
-import MoveTab from "@/components/MoveTab";
+import MoveTab from "@/components/move/MoveTab";
 import PlayTab from "@/components/play/PlayTab"; 
 import ShopTab from "@/components/ShopTab";
 import SwapTab from "@/components/SwapTab";
