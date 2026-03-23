@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { useApp } from "@/App";
 import { motion } from "framer-motion";
-import AudioHub from "@/components/AudioHub";
+import StreamHub from "@/components/StreamHub";
 import AccountDrawer from "@/components/AccountDrawer";
-import { Music4, Play } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
 
 export default function AppHeader() {
   const { user, authUser, walletAddress, onchainBalance } = useApp();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [audioHubOpen, setAudioHubOpen] = useState(false);
+  const [streamHubOpen, setStreamHubOpen] = useState(false);
 
   const adjectives = [
     "Nova",
@@ -83,7 +83,7 @@ export default function AppHeader() {
       <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-3">
         <motion.button
           type="button"
-          onClick={() => setAudioHubOpen(true)}
+          onClick={() => setStreamHubOpen(true)}
           className="relative min-w-[132px] max-w-[152px] overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_rgba(20,26,48,0.92)_45%,_rgba(15,18,34,0.98)_100%)] px-3 py-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -100,16 +100,16 @@ export default function AppHeader() {
 
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-400/20 bg-gradient-to-br from-cyan-500/18 to-purple-500/18">
-              <Music4 className="h-4 w-4 text-cyan-300" />
+              <Sparkles className="h-4 w-4 text-cyan-300" />
             </div>
 
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-300/90">
-                Audio
+                Stream
               </p>
               <div className="flex items-center gap-1 text-[11px] text-gray-300">
                 <Play className="h-3 w-3" />
-                <span>Open Hub</span>
+                <span>Open</span>
               </div>
             </div>
           </div>
@@ -138,7 +138,9 @@ export default function AppHeader() {
               }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              {walletAddress && onchainBalance !== null ? onchainBalance.toFixed(2) : "--"}
+              {walletAddress && onchainBalance !== null
+                ? onchainBalance.toFixed(2)
+                : "--"}
             </motion.p>
             <p className="text-[10px] text-gray-500">Wallet</p>
           </div>
@@ -213,7 +215,7 @@ export default function AppHeader() {
           }
         />
 
-        <AudioHub open={audioHubOpen} onOpenChange={setAudioHubOpen} />
+        <StreamHub open={streamHubOpen} onOpenChange={setStreamHubOpen} />
       </div>
     </header>
   );
