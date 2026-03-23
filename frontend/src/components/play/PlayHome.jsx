@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Gamepad2,
-  Crown,
   ShieldCheck,
   PlayCircle,
   RefreshCw,
   ExternalLink,
   Plus,
+  ChevronRight,
 } from "lucide-react";
 import GameLeaderboard from "@/components/play/GameLeaderboard";
 
@@ -33,16 +33,23 @@ export default function PlayHome({
     >
       <div className="mx-auto w-full max-w-md space-y-4">
         <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.14),_transparent_30%),linear-gradient(180deg,rgba(11,10,24,0.96),rgba(9,12,18,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-          <div className="mb-4 flex items-start justify-between">
+          <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">
-                Play
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">
+                  Play
+                </p>
+
+                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
+                  {isPlus ? "Plus" : "Starter"}
+                </div>
+              </div>
+
               <h1 className="mt-1 text-2xl font-semibold tracking-tight">
                 Play & Earn
               </h1>
               <p className="mt-1 text-sm text-white/55">
-                Games, rounds, rewards, and leaderboard heat.
+                Progress through rounds, stack rewards, and climb the board.
               </p>
             </div>
 
@@ -54,11 +61,19 @@ export default function PlayHome({
           <div className="mb-4 grid grid-cols-3 gap-2">
             <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
               <p className="text-[10px] uppercase tracking-wide text-white/45">
-                Tier
+                ZWAP
               </p>
-              <p className="mt-1 flex items-center gap-1 text-sm font-medium text-amber-300">
-                {isPlus && <Crown className="h-3.5 w-3.5" />}
-                {isPlus ? "Plus" : "Starter"}
+              <p className="mt-1 text-sm font-medium text-violet-300">
+                {user?.zwap_balance ?? 0}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/45">
+                zPts
+              </p>
+              <p className="mt-1 text-sm font-medium text-cyan-300">
+                {user?.zpts_balance ?? 0}
               </p>
             </div>
 
@@ -70,38 +85,29 @@ export default function PlayHome({
                 {user?.daily_zpts_earned || 0}/{dailyZptsCap}
               </p>
             </div>
-
-            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/45">
-                Balance
-              </p>
-              <p className="mt-1 text-sm font-medium text-cyan-300">
-                {user?.zpts_balance || 0} zPts
-              </p>
-            </div>
           </div>
 
           <div className="rounded-[24px] border border-cyan-400/12 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_32%),linear-gradient(180deg,rgba(8,16,23,0.96),rgba(7,12,18,0.98))] p-4">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-white/45">
-                  Internal Arcade
+                  Core Arcade
                 </p>
                 <h3 className="mt-1 text-lg font-semibold text-white">
-                  Core Games
+                  Game Modes
                 </h3>
               </div>
 
               <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-300">
-                Starter Standard
+                Infinite Play
               </div>
             </div>
 
-            <p className="mb-3 text-sm text-white/55">
-              All four internal games are available to every user.
+            <p className="mb-4 text-sm text-white/55">
+              Progress through rounds, increase difficulty, and stack rewards.
             </p>
 
-            <div className="space-y-2.5">
+            <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {internalGames.map((game) => {
                 const Icon = game.icon;
                 const theme = themes[game.color];
@@ -109,11 +115,11 @@ export default function PlayHome({
                 return (
                   <motion.button
                     key={game.id}
-                    whileTap={{ scale: 0.985 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => onStartGame(game)}
-                    className={`w-full rounded-[22px] border px-3 py-3 text-left shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition ${theme.shell}`}
+                    className={`min-w-[260px] max-w-[260px] rounded-[22px] border p-4 text-left shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition ${theme.shell}`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       <div
                         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${theme.icon}`}
                       >
@@ -125,18 +131,15 @@ export default function PlayHome({
                           <h3 className="truncate text-[15px] font-semibold text-white">
                             {game.name}
                           </h3>
-                          <span className={`text-[11px] font-medium ${theme.accent}`}>
-                            {game.rounds} Rounds
-                          </span>
                         </div>
 
-                        <p className="mt-0.5 truncate text-sm text-white/60">
+                        <p className="mt-1 line-clamp-2 text-sm text-white/60">
                           {game.description}
                         </p>
 
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[11px] uppercase tracking-wide text-white/38">
-                            Level {baseLevel} start
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className={`text-[11px] font-medium ${theme.accent}`}>
+                            Round progression
                           </span>
 
                           <span className="inline-flex items-center gap-1 text-sm font-medium text-white">
@@ -144,6 +147,10 @@ export default function PlayHome({
                             <PlayCircle className="h-4 w-4 text-cyan-300" />
                           </span>
                         </div>
+
+                        <p className="mt-1 text-[11px] uppercase tracking-wide text-white/35">
+                          Level {baseLevel} start
+                        </p>
                       </div>
                     </div>
                   </motion.button>
@@ -178,15 +185,13 @@ export default function PlayHome({
           </div>
 
           <div className="rounded-[22px] border border-cyan-400/14 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_26%),linear-gradient(180deg,rgba(8,16,23,0.94),rgba(7,12,18,0.98))] p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] uppercase tracking-wide text-cyan-200/65">
-                  Approved Community Games
-                </p>
-                <p className="mt-1 text-sm text-white/60">
-                  Browser games from the submission portal.
-                </p>
-              </div>
+            <div className="mb-2">
+              <p className="text-[11px] uppercase tracking-wide text-cyan-200/65">
+                Approved Community Games
+              </p>
+              <p className="mt-1 text-sm text-white/60">
+                Browser games from the submission portal.
+              </p>
             </div>
 
             {portalLoading ? (
@@ -248,12 +253,6 @@ export default function PlayHome({
                   </p>
                 </div>
               </div>
-
-              {isPlus && (
-                <div className="rounded-xl border border-violet-400/20 bg-violet-400/10 px-3 py-1 text-xs font-medium text-violet-200">
-                  Plus
-                </div>
-              )}
             </div>
 
             {isPlus ? (
