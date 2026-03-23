@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
-  Broadcast,
   Headphones,
   Lock,
   PlayCircle,
@@ -30,7 +29,7 @@ const connectTwitch = () => {
 const tabs = [
   { id: "watch", label: "Watch", icon: Video },
   { id: "listen", label: "Listen", icon: Headphones },
-  { id: "live", label: "Live", icon: Broadcast },
+  { id: "live", label: "Live", icon: Radio },
   { id: "library", label: "Library", icon: BookOpen },
 ];
 
@@ -232,16 +231,18 @@ function PlayerSurface({ item, activeTab }) {
         </div>
 
         <div className="mt-5 rounded-[20px] border border-white/10 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-          {(isWatch || isLive) && item.type !== "youtube" && item.type !== "twitch" && (
-            <div className="flex min-h-[132px] items-center justify-center rounded-[18px] border border-white/10 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),_rgba(0,0,0,0.22))]">
-              <motion.div
-                whileTap={{ scale: 0.96 }}
-                className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/10 backdrop-blur"
-              >
-                <PlayCircle className="h-8 w-8 text-white" />
-              </motion.div>
-            </div>
-          )}
+          {(isWatch || isLive) &&
+            item.type !== "youtube" &&
+            item.type !== "twitch" && (
+              <div className="flex min-h-[132px] items-center justify-center rounded-[18px] border border-white/10 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),_rgba(0,0,0,0.22))]">
+                <motion.div
+                  whileTap={{ scale: 0.96 }}
+                  className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/10 backdrop-blur"
+                >
+                  <PlayCircle className="h-8 w-8 text-white" />
+                </motion.div>
+              </div>
+            )}
 
           {isWatch && item.type === "youtube" && (
             <div className="space-y-4">
@@ -301,7 +302,7 @@ function PlayerSurface({ item, activeTab }) {
             <div className="space-y-4">
               <div className="flex min-h-[108px] items-center justify-center rounded-[18px] border border-violet-400/20 bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.16),_rgba(0,0,0,0.22))] px-4 text-center">
                 <div>
-                  <Broadcast className="mx-auto mb-3 h-8 w-8 text-violet-300" />
+                  <Radio className="mx-auto mb-3 h-8 w-8 text-violet-300" />
                   <p className="font-medium text-white">Primary Live Source</p>
                   <p className="mt-1 text-sm text-gray-300">
                     Connect Twitch for creator streams, gaming, and live events.
@@ -350,7 +351,7 @@ function StreamCard({ item, active, onClick, tabId }) {
   const iconMap = {
     watch: Video,
     listen: Headphones,
-    live: Broadcast,
+    live: Radio,
     library: BookOpen,
   };
 
@@ -375,7 +376,9 @@ function StreamCard({ item, active, onClick, tabId }) {
               : "border-white/10 bg-white/[0.04]"
           }`}
         >
-          <Icon className={`h-5 w-5 ${active ? "text-cyan-300" : "text-gray-300"}`} />
+          <Icon
+            className={`h-5 w-5 ${active ? "text-cyan-300" : "text-gray-300"}`}
+          />
         </div>
 
         <div className="min-w-0 flex-1">
@@ -434,7 +437,9 @@ export default function StreamHub({ open, onOpenChange }) {
 
   const selectedItem = useMemo(() => {
     const currentId = selectedItems[activeTab];
-    return activeItems.find((item) => item.id === currentId) || activeItems[0] || null;
+    return (
+      activeItems.find((item) => item.id === currentId) || activeItems[0] || null
+    );
   }, [activeItems, activeTab, selectedItems]);
 
   const setSelectedForActiveTab = (itemId) => {
@@ -474,7 +479,9 @@ export default function StreamHub({ open, onOpenChange }) {
               <SheetTitle className="text-left text-xl font-semibold tracking-wide text-white">
                 Stream
               </SheetTitle>
-              <p className="text-xs text-gray-400">Watch • Listen • Live • Library</p>
+              <p className="text-xs text-gray-400">
+                Watch • Listen • Live • Library
+              </p>
             </div>
           </div>
         </SheetHeader>
@@ -509,7 +516,11 @@ export default function StreamHub({ open, onOpenChange }) {
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-6">
           <div className="space-y-4">
             <AnimatePresence mode="wait">
-              <PlayerSurface key={selectedItem?.id || activeTab} item={selectedItem} activeTab={activeTab} />
+              <PlayerSurface
+                key={selectedItem?.id || activeTab}
+                item={selectedItem}
+                activeTab={activeTab}
+              />
             </AnimatePresence>
 
             <div className="px-1">
