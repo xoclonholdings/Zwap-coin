@@ -22,7 +22,7 @@ import AppHeader from "@/components/AppHeader";
 import NewsTicker from "@/components/NewsTicker";
 import Dashboard from "@/components/Dashboard";
 import MoveTab from "@/components/MoveTab";
-import PlayTab from "@/components/play/PlayTab";
+import PlayTab from "@/components/play/PlayTab"; 
 import ShopTab from "@/components/ShopTab";
 import SwapTab from "@/components/SwapTab";
 import TabNavigation from "@/components/TabNavigation";
