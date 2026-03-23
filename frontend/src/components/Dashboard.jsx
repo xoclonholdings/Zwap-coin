@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Flame,
@@ -13,13 +13,50 @@ import {
   Footprints,
   Brain,
   CheckCircle2,
-  Lock,
   Crown,
   UserCircle2,
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useApp } from "@/App";
+import { toast } from "sonner";
+import { useApp, api } from "@/App";
+
+function generateUsername(wallet) {
+  if (!wallet) return "Guest";
+
+  const adjectives = [
+    "Nova",
+    "Pixel",
+    "Quantum",
+    "Echo",
+    "Neon",
+    "Solar",
+    "Cyber",
+    "Hyper",
+    "Shadow",
+    "Turbo",
+  ];
+
+  const nouns = [
+    "Runner",
+    "Walker",
+    "Strider",
+    "Pilot",
+    "Glider",
+    "Breaker",
+    "Phantom",
+    "Rider",
+    "Explorer",
+    "Voyager",
+  ];
+
+  const seed = parseInt(wallet.slice(2, 10), 16);
+  const adjIndex = Math.abs(seed) % adjectives.length;
+  const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
+  const num = Math.abs(seed) % 999;
+
+  return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
+}
 
 function ProgressRing({
   value = 0,
@@ -56,12 +93,6 @@ function ProgressRing({
       stroke: "#34d399",
       glow: "drop-shadow(0 0 8px rgba(52,211,153,0.28))",
       text: "text-emerald-300",
-    },
-    amber: {
-      track: "rgba(251, 191, 36, 0.14)",
-      stroke: "#fbbf24",
-      glow: "drop-shadow(0 0 8px rgba(251,191,36,0.28))",
-      text: "text-amber-300",
     },
   };
 
@@ -121,34 +152,9 @@ function ProgressRing({
         </svg>
       </div>
 
-      {footer ? <p className="mt-3 text-center text-[11px] text-gray-500">{footer}</p> : null}
-    </div>
-  );
-}
-
-function CompactStat({ icon: Icon, label, value, hint, tone = "cyan" }) {
-  const toneMap = {
-    cyan: "border-cyan-400/15 bg-cyan-500/8 text-cyan-300",
-    purple: "border-violet-400/15 bg-violet-500/8 text-violet-300",
-    green: "border-emerald-400/15 bg-emerald-500/8 text-emerald-300",
-    amber: "border-amber-400/15 bg-amber-500/8 text-amber-300",
-  };
-
-  return (
-    <div className={`rounded-2xl border p-3 ${toneMap[tone] || toneMap.cyan}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wide text-gray-500">
-            {label}
-          </p>
-          <p className="mt-1 text-xl font-bold leading-none text-white">{value}</p>
-          {hint ? <p className="mt-1 text-[11px] text-gray-500">{hint}</p> : null}
-        </div>
-
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
+      {footer ? (
+        <p className="mt-3 text-center text-[11px] text-gray-500">{footer}</p>
+      ) : null}
     </div>
   );
 }
@@ -215,11 +221,7 @@ function StreakStrip({ streak = 0 }) {
                       : "border-white/10 bg-white/[0.03] text-gray-500"
                 }`}
               >
-                {isBonus ? (
-                  <Crown className="h-4 w-4" />
-                ) : (
-                  <span>{label}</span>
-                )}
+                {isBonus ? <Crown className="h-4 w-4" /> : <span>{label}</span>}
               </div>
               <p
                 className={`text-[10px] ${
@@ -240,73 +242,67 @@ function StreakStrip({ streak = 0 }) {
   );
 }
 
-function DailyClaimCard({
+function DailyClaimPanel({
   streak = 0,
   canClaim = true,
   reward = 10,
   lastClaimText,
   onClaim,
+  claimLoading = false,
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[1.75rem] border border-emerald-400/15 bg-gradient-to-br from-emerald-500/10 via-cyan-500/6 to-transparent p-4">
-      <div className="pointer-events-none absolute right-[-1rem] top-[-1rem] h-24 w-24 rounded-full bg-emerald-500/10 blur-3xl" />
-
-      <div className="relative z-10">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">
-              Daily Claim
-            </p>
-            <h2 className="mt-2 text-xl font-black text-white">
-              {canClaim ? `+${reward} zPts ready` : "Claimed for today"}
-            </h2>
-            <p className="mt-1 text-sm text-gray-300">
-              {canClaim
-                ? `Day ${Math.max(streak, 0) + 1} reward is waiting.`
-                : lastClaimText || "Your next daily claim unlocks tomorrow."}
-            </p>
-          </div>
-
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10">
-            <Gift className="h-5 w-5 text-emerald-300" />
-          </div>
+    <div className="rounded-[1.5rem] border border-emerald-400/15 bg-gradient-to-br from-emerald-500/10 via-cyan-500/6 to-transparent p-4">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">
+            Daily Claim
+          </p>
+          <h2 className="mt-2 text-xl font-black text-white">
+            {canClaim ? `+${reward} zPts ready` : "Claimed for today"}
+          </h2>
+          <p className="mt-1 text-sm text-gray-300">
+            {canClaim
+              ? `Day ${Math.max(streak, 0) + 1} reward is waiting.`
+              : lastClaimText || "Your next daily claim unlocks tomorrow."}
+          </p>
         </div>
 
-        <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/10 bg-black/15 px-3 py-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-gray-500">Current streak</p>
-            <p className="mt-1 text-lg font-bold text-white">{streak} days</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wide text-gray-500">Next bonus</p>
-            <p className="mt-1 text-lg font-bold text-amber-300">Day 7</p>
-          </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10">
+          <Gift className="h-5 w-5 text-emerald-300" />
         </div>
-
-        <Button
-          onClick={onClaim}
-          disabled={!canClaim}
-          className={`h-11 w-full rounded-xl font-semibold ${
-            canClaim
-              ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-400 hover:to-cyan-400"
-              : "bg-white/[0.06] text-gray-400 hover:bg-white/[0.06]"
-          }`}
-        >
-          {canClaim ? "Claim Daily Reward" : "Already Claimed"}
-        </Button>
       </div>
+
+      <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/10 bg-black/15 px-3 py-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-gray-500">Current streak</p>
+          <p className="mt-1 text-lg font-bold text-white">{streak} days</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-wide text-gray-500">Next bonus</p>
+          <p className="mt-1 text-lg font-bold text-amber-300">Day 7</p>
+        </div>
+      </div>
+
+      <Button
+        onClick={onClaim}
+        disabled={!canClaim || claimLoading}
+        className={`h-11 w-full rounded-xl font-semibold ${
+          canClaim
+            ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-400 hover:to-cyan-400"
+            : "bg-white/[0.06] text-gray-400 hover:bg-white/[0.06]"
+        }`}
+      >
+        {claimLoading
+          ? "Claiming..."
+          : canClaim
+            ? "Claim Daily Reward"
+            : "Already Claimed"}
+      </Button>
     </div>
   );
 }
 
-function TaskCard({
-  icon: Icon,
-  title,
-  reward,
-  completed = false,
-  locked = false,
-  hint,
-}) {
+function TaskCard({ icon: Icon, title, reward, completed = false, hint }) {
   return (
     <div
       className={`rounded-2xl border p-3 ${
@@ -322,8 +318,6 @@ function TaskCard({
 
         {completed ? (
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" />
-        ) : locked ? (
-          <Lock className="h-4 w-4 shrink-0 text-gray-500" />
         ) : (
           <div className="rounded-full border border-cyan-400/15 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
             +{reward}
@@ -358,32 +352,92 @@ export default function Dashboard() {
     onchainBalance,
     requireWallet,
     openWalletUpgradeFlow,
+    refreshUser,
   } = useApp();
 
-  const profile = user || authUser || {};
+  const [rewardStatus, setRewardStatus] = useState(null);
+  const [rewardStatusLoading, setRewardStatusLoading] = useState(false);
+  const [claimLoading, setClaimLoading] = useState(false);
 
-  const streak = Math.max(Number(profile?.daily_streak) || 0, 0);
+  const profile = user || authUser || {};
+  const hasWallet = !!walletAddress;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadRewardStatus = async () => {
+      if (!walletAddress || !api?.getDailyRewardStatus) {
+        setRewardStatus(null);
+        return;
+      }
+
+      try {
+        setRewardStatusLoading(true);
+        const data = await api.getDailyRewardStatus(walletAddress);
+        if (active) {
+          setRewardStatus(data);
+        }
+      } catch (error) {
+        if (active) {
+          console.log("Failed to load daily reward status:", error);
+          setRewardStatus(null);
+        }
+      } finally {
+        if (active) {
+          setRewardStatusLoading(false);
+        }
+      }
+    };
+
+    loadRewardStatus();
+
+    return () => {
+      active = false;
+    };
+  }, [walletAddress]);
+
+  const streak =
+    Number(rewardStatus?.current_streak ?? profile?.daily_streak ?? 0) || 0;
+
   const todaySteps = Math.max(
     Number(profile?.today_steps ?? profile?.daily_steps) || 0,
     0
   );
   const stepGoal = Math.max(Number(profile?.step_goal) || 5000, 0);
+
   const pendingZwap =
     Number(profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0) || 0;
+
   const zpts = Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 0) || 0;
   const gamesPlayed = Math.max(Number(profile?.games_played_today) || 0, 0);
   const gameGoal = Math.max(Number(profile?.daily_game_goal) || 1, 0);
   const currentTier = String(profile?.tier || "starter").toLowerCase();
-  const lastDailyClaim = profile?.last_daily_claim || null;
-  const canClaimDaily = !!profile?.can_claim_daily || !lastDailyClaim;
 
-  const username =
-    profile?.custom_username ||
-    profile?.username ||
-    profile?.email?.split("@")[0] ||
-    "Zwapper";
+  const canClaimDaily = hasWallet
+    ? Boolean(rewardStatus?.can_claim)
+    : false;
 
-  const hasWallet = !!walletAddress;
+  const lastDailyClaim =
+    rewardStatus?.last_daily_claim ?? profile?.last_daily_claim ?? null;
+
+  const projectedStreak =
+    Number(rewardStatus?.projected_streak ?? (streak + (canClaimDaily ? 1 : 0))) || 1;
+
+  const dailyReward =
+    Number(rewardStatus?.next_reward_zpts) || (() => {
+      const rewardTable = { 1: 10, 2: 15, 3: 20, 4: 25, 5: 30, 6: 35, 7: 100 };
+      return rewardTable[Math.min(Math.max(projectedStreak, 1), 7)] || 10;
+    })();
+
+  const username = useMemo(() => {
+    if (profile?.custom_username) return profile.custom_username;
+    if (profile?.username) return profile.username;
+    if (authUser?.username) return authUser.username;
+    if (authUser?.email) return authUser.email.split("@")[0];
+    if (walletAddress) return generateUsername(walletAddress);
+    return "Guest";
+  }, [profile, authUser, walletAddress]);
+
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
 
@@ -395,26 +449,17 @@ export default function Dashboard() {
   const stepsPercent = Math.min((todaySteps / safeStepGoal) * 100, 100);
   const playPercent = Math.min((gamesPlayed / safeGameGoal) * 100, 100);
 
-  const dailyReward = useMemo(() => {
-    const rewardTable = {
-      1: 10,
-      2: 15,
-      3: 20,
-      4: 25,
-      5: 30,
-      6: 35,
-      7: 50,
-    };
-    const day = Math.min(Math.max(streak + (canClaimDaily ? 1 : 0), 1), 7);
-    return rewardTable[day] || 10;
-  }, [streak, canClaimDaily]);
-
-  const loginComplete = !canClaimDaily;
+  const loginComplete = hasWallet ? !canClaimDaily && !!lastDailyClaim : false;
   const playComplete = gamesPlayed >= 1;
   const stepsComplete = stepGoal > 0 ? todaySteps >= stepGoal : false;
   const triviaComplete = !!profile?.daily_trivia_complete;
 
-  const completedTaskCount = [loginComplete, playComplete, stepsComplete, triviaComplete].filter(Boolean).length;
+  const completedTaskCount = [
+    loginComplete,
+    playComplete,
+    stepsComplete,
+    triviaComplete,
+  ].filter(Boolean).length;
 
   const tasks = [
     {
@@ -422,7 +467,7 @@ export default function Dashboard() {
       title: "Daily Login",
       reward: dailyReward,
       completed: loginComplete,
-      hint: canClaimDaily ? "Claim today’s login reward" : "Come back tomorrow",
+      hint: hasWallet ? "Claim today’s login reward" : "Connect wallet to claim",
     },
     {
       icon: Gamepad2,
@@ -452,7 +497,7 @@ export default function Dashboard() {
 
     if (loginComplete) {
       items.push({
-        title: `✨ Daily claim secured`,
+        title: "✨ Daily claim secured",
         meta: `+${dailyReward} zPts added to your loop`,
       });
     }
@@ -493,7 +538,7 @@ export default function Dashboard() {
       });
     }
 
-    return items.slice(0, 4);
+    return items.slice(0, 2);
   }, [
     loginComplete,
     dailyReward,
@@ -518,17 +563,45 @@ export default function Dashboard() {
     requireWallet("shop");
   };
 
-  const handleClaimDaily = () => {
+  const handleClaimDaily = async () => {
     if (!hasWallet) {
       openWalletUpgradeFlow();
       return;
     }
-    requireWallet("daily");
+
+    if (!api?.claimDailyReward) {
+      toast.error("Daily reward API not connected yet.");
+      return;
+    }
+
+    try {
+      setClaimLoading(true);
+      const result = await api.claimDailyReward(walletAddress);
+
+      toast.success(result?.message || "Daily reward claimed!");
+
+      const [freshStatus] = await Promise.all([
+        api.getDailyRewardStatus ? api.getDailyRewardStatus(walletAddress) : null,
+        refreshUser?.(),
+      ]);
+
+      if (freshStatus) {
+        setRewardStatus(freshStatus);
+      }
+    } catch (error) {
+      const message =
+        error?.message || "Failed to claim daily reward";
+      toast.error(message);
+    } finally {
+      setClaimLoading(false);
+    }
   };
 
-  const lastClaimText = lastDailyClaim
-    ? "Reward already claimed today"
-    : "Claim now and keep the streak burning";
+  const lastClaimText = rewardStatusLoading
+    ? "Checking reward status..."
+    : lastDailyClaim
+      ? "Reward already claimed today"
+      : "Claim now and keep the streak burning";
 
   return (
     <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4">
@@ -562,37 +635,6 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <CompactStat
-                icon={Coins}
-                label="Pending ZWAP!"
-                value={pendingZwap.toFixed(2)}
-                hint="Reward stack"
-                tone="cyan"
-              />
-              <CompactStat
-                icon={Sparkles}
-                label="zPts"
-                value={zpts}
-                hint={zpts >= 1000 ? "Ready to convert" : `${zptsToConvert} to 1 ZWAP`}
-                tone="purple"
-              />
-              <CompactStat
-                icon={Wallet}
-                label="Wallet"
-                value={hasWallet ? "Connected" : "Upgrade"}
-                hint={hasWallet ? "Ready to claim" : "Connect when ready"}
-                tone="green"
-              />
-              <CompactStat
-                icon={Flame}
-                label="Streak"
-                value={`${streak} days`}
-                hint={streak >= 6 ? "Bonus almost unlocked" : "Build momentum"}
-                tone="amber"
-              />
-            </div>
           </div>
         </motion.div>
 
@@ -603,28 +645,33 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 gap-3 lg:grid-cols-[1.1fr_0.9fr]"
+          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl"
         >
-          <DailyClaimCard
-            streak={streak}
-            canClaim={canClaimDaily}
-            reward={dailyReward}
-            lastClaimText={lastClaimText}
-            onClaim={handleClaimDaily}
-          />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+            <DailyClaimPanel
+              streak={streak}
+              canClaim={canClaimDaily}
+              reward={dailyReward}
+              lastClaimText={lastClaimText}
+              onClaim={handleClaimDaily}
+              claimLoading={claimLoading}
+            />
 
-          <ProgressRing
-            value={zpts}
-            max={zptsGoal}
-            label="zPts Progress"
-            sublabel="Convert to 1 ZWAP"
-            accent="purple"
-            footer={
-              zpts >= zptsGoal
-                ? "Conversion threshold reached"
-                : `${zptsToConvert} zPts left to convert`
-            }
-          />
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-2">
+              <ProgressRing
+                value={zpts}
+                max={zptsGoal}
+                label="zPts Progress"
+                sublabel="Convert to 1 ZWAP"
+                accent="purple"
+                footer={
+                  zpts >= zptsGoal
+                    ? "Conversion threshold reached"
+                    : `${zptsToConvert} zPts left to convert`
+                }
+              />
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -645,7 +692,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {tasks.map((task) => (
               <TaskCard
                 key={task.title}
@@ -662,37 +709,76 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 gap-3"
+          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl"
         >
-          <ProgressRing
-            value={todaySteps}
-            max={safeStepGoal}
-            label="Move Goal"
-            sublabel={stepGoal > 0 ? "Daily movement snapshot" : "Goal not set yet"}
-            accent="cyan"
-            footer={
-              stepGoal > 0
-                ? stepsPercent >= 100
-                  ? "Move goal complete"
-                  : `${stepsLeft.toLocaleString()} steps left`
-                : "Set a goal to start tracking"
-            }
-          />
+          <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <ProgressRing
+                value={todaySteps}
+                max={safeStepGoal}
+                label="Move Goal"
+                sublabel={stepGoal > 0 ? "Daily movement snapshot" : "Goal not set yet"}
+                accent="cyan"
+                footer={
+                  stepGoal > 0
+                    ? stepsPercent >= 100
+                      ? "Move goal complete"
+                      : `${stepsLeft.toLocaleString()} steps left`
+                    : "Set a goal to start tracking"
+                }
+              />
 
-          <ProgressRing
-            value={gamesPlayed}
-            max={safeGameGoal}
-            label="Play Progress"
-            sublabel={gameGoal > 0 ? "Daily game rhythm" : "Goal not set yet"}
-            accent="green"
-            footer={
-              gameGoal > 0
-                ? playPercent >= 100
-                  ? "Play target complete"
-                  : `${gamesLeft} game${gamesLeft === 1 ? "" : "s"} left`
-                : "Start a game session"
-            }
-          />
+              <ProgressRing
+                value={gamesPlayed}
+                max={safeGameGoal}
+                label="Play Progress"
+                sublabel={gameGoal > 0 ? "Daily game rhythm" : "Goal not set yet"}
+                accent="green"
+                footer={
+                  gameGoal > 0
+                    ? playPercent >= 100
+                      ? "Play target complete"
+                      : `${gamesLeft} game${gamesLeft === 1 ? "" : "s"} left`
+                    : "Start a game session"
+                }
+              />
+            </div>
+
+            <div className="rounded-[1.5rem] border border-white/10 bg-black/10 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Today</h2>
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    Live rhythm, recent wins.
+                  </p>
+                </div>
+                <Sparkles className="h-4 w-4 shrink-0 text-cyan-300" />
+              </div>
+
+              <div className="space-y-2">
+                {recentActivity.map((item, index) => (
+                  <ActivityRow
+                    key={`${item.title}-${index}`}
+                    title={item.title}
+                    meta={item.meta}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/15 px-3 py-2.5 text-left transition hover:bg-white/[0.04]"
+              >
+                <div>
+                  <p className="text-sm font-medium text-white">Open activity feed</p>
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    Ticker-ready events and latest movement
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -712,8 +798,8 @@ export default function Dashboard() {
             <CircleDollarSign className="mt-1 h-4 w-4 shrink-0 text-emerald-300" />
           </div>
 
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/10 px-3 py-3">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/10 p-3">
               <p className="text-[10px] uppercase tracking-wide text-cyan-300/80">
                 Pending ZWAP!
               </p>
@@ -722,15 +808,13 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-violet-400/15 bg-violet-500/10 px-3 py-3">
+            <div className="rounded-2xl border border-violet-400/15 bg-violet-500/10 p-3">
               <p className="text-[10px] uppercase tracking-wide text-violet-300/80">
                 zPts
               </p>
               <p className="mt-1 text-2xl font-black text-white">{zpts}</p>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
             <Button
               onClick={handleSwap}
               className="h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 font-semibold text-white hover:from-cyan-400 hover:to-blue-400"
@@ -753,74 +837,33 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl"
-        >
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-white">Today</h2>
-              <p className="mt-1 text-[11px] text-gray-500">
-                Live rhythm, recent wins.
-              </p>
-            </div>
-            <Sparkles className="h-4 w-4 shrink-0 text-cyan-300" />
-          </div>
-
-          <div className="space-y-2">
-            {recentActivity.map((item, index) => (
-              <ActivityRow
-                key={`${item.title}-${index}`}
-                title={item.title}
-                meta={item.meta}
-              />
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/15 px-3 py-2.5 text-left transition hover:bg-white/[0.04]"
-          >
-            <div>
-              <p className="text-sm font-medium text-white">Open activity feed</p>
-              <p className="mt-1 text-[11px] text-gray-500">
-                Ticker-ready events and latest movement
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-gray-500" />
-          </button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
           className="pb-1"
         >
           <div className="rounded-[1.25rem] border border-white/10 bg-gradient-to-r from-cyan-500/8 via-violet-500/6 to-pink-500/8 px-4 py-3">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    Today’s rhythm is building
-                  </p>
-                  <p className="mt-1 text-[11px] text-gray-400">
-                    {stepGoal > 0
-                      ? stepsPercent >= 100
-                        ? "Move goal complete."
-                        : `${stepsLeft.toLocaleString()} steps left to finish today’s move goal.`
-                      : "Set your goals and start building momentum."}
-                  </p>
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Today’s rhythm is building
+                </p>
+                <p className="mt-1 text-[11px] text-gray-400">
+                  {stepGoal > 0
+                    ? stepsPercent >= 100
+                      ? "Move goal complete."
+                      : `${stepsLeft.toLocaleString()} steps left to finish today’s move goal.`
+                    : "Set your goals and start building momentum."}
+                </p>
+              </div>
 
-                <div className="flex items-center gap-2 text-[11px] text-gray-300">
-                  <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
-                    Move {Math.round(stepsPercent)}%
-                  </span>
-                  <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
-                    Play {Math.round(playPercent)}%
-                  </span>
-                  <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
-                    Tasks {completedTaskCount}/4
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 text-[11px] text-gray-300">
+                <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
+                  Move {Math.round(stepsPercent)}%
+                </span>
+                <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
+                  Play {Math.round(playPercent)}%
+                </span>
+                <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
+                  Tasks {completedTaskCount}/4
+                </span>
               </div>
             </div>
           </div>
