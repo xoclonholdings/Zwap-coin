@@ -31,20 +31,8 @@ const getPolygonScanUrl = (address, type = "address") => {
   return `https://polygonscan.com/${type}/${address}`;
 };
 
-export default function AccountDrawer({ open, onOpenChange, trigger }) {
-  const {
-    user,
-    authUser,
-    walletAddress,
-    disconnectWallet,
-    logoutEmailUser,
-    logoutAll,
-    onchainBalance,
-    openWalletUpgradeFlow,
-  } = useApp();
-
-  const navigate = useNavigate();
-  const [convertOpen, setConvertOpen] = useState(false);
+function generateUsername(wallet) {
+  if (!wallet) return "Guest";
 
   const adjectives = [
     "Nova",
@@ -72,40 +60,55 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     "Voyager",
   ];
 
-  const generateUsername = (wallet) => {
-    if (!wallet) return "Guest";
+  const seed = parseInt(wallet.slice(2, 10), 16);
+  const adjIndex = Math.abs(seed) % adjectives.length;
+  const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
+  const num = Math.abs(seed) % 999;
 
-    const seed = parseInt(wallet.slice(2, 10), 16);
-    const adjIndex = Math.abs(seed) % adjectives.length;
-    const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
-    const num = Math.abs(seed) % 999;
+  return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
+}
 
-    return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
-  };
+export default function AccountDrawer({ open, onOpenChange, trigger }) {
+  const {
+    user,
+    authUser,
+    walletAddress,
+    disconnectWallet,
+    logoutEmailUser,
+    logoutAll,
+    onchainBalance,
+    openWalletUpgradeFlow,
+  } = useApp();
+
+  const navigate = useNavigate();
+  const [convertOpen, setConvertOpen] = useState(false);
+
+  const safeUser = user && typeof user === "object" ? user : null;
+  const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
 
   const isWalletUser = !!walletAddress;
-  const isEmailUser = !!authUser?.email;
+  const isEmailUser = !!safeAuthUser?.email;
   const isGuest = !isWalletUser && !isEmailUser;
-  const isAdmin = !!(user?.is_admin || authUser?.is_admin);
+  const isAdmin = !!(safeUser?.is_admin || safeAuthUser?.is_admin);
 
   const displayName = useMemo(() => {
-    if (user?.custom_username) return user.custom_username;
-    if (user?.username) return user.username;
-    if (authUser?.username) return authUser.username;
-    if (authUser?.email) return authUser.email.split("@")[0];
+    if (safeUser?.custom_username) return safeUser.custom_username;
+    if (safeUser?.username) return safeUser.username;
+    if (safeAuthUser?.username) return safeAuthUser.username;
+    if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
     if (walletAddress) return generateUsername(walletAddress);
     return "Guest";
-  }, [user, authUser, walletAddress]);
+  }, [safeUser, safeAuthUser, walletAddress]);
 
   const displaySubtext = useMemo(() => {
     if (walletAddress) {
       return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
     }
-    if (authUser?.email) {
-      return authUser.email;
+    if (safeAuthUser?.email) {
+      return safeAuthUser.email;
     }
     return "Not connected";
-  }, [walletAddress, authUser]);
+  }, [walletAddress, safeAuthUser]);
 
   const initials = useMemo(() => {
     const base = displayName || "Z";
@@ -121,18 +124,27 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     );
   }, [displayName]);
 
-  const tier = user?.tier || authUser?.tier || (isEmailUser ? "starter" : null);
+  const tier =
+    safeUser?.tier || safeAuthUser?.tier || (isEmailUser ? "starter" : null);
   const isPlus = tier === "plus";
 
   const appZwapBalance = Number(
-    user?.zwap_balance ?? authUser?.zwap_pending ?? authUser?.zwap_balance ?? 0
+    safeUser?.zwap_balance ??
+      safeAuthUser?.zwap_pending ??
+      safeAuthUser?.zwap_balance ??
+      0
   );
 
   const zptsBalance = Number(
-    user?.zpts_balance ?? authUser?.zpts_pending ?? authUser?.zpts_balance ?? 0
+    safeUser?.zpts_balance ??
+      safeAuthUser?.zpts_pending ??
+      safeAuthUser?.zpts_balance ??
+      0
   );
 
-  const totalEarned = Number(user?.total_earned ?? authUser?.total_earned ?? 0);
+  const totalEarned = Number(
+    safeUser?.total_earned ?? safeAuthUser?.total_earned ?? 0
+  );
 
   const settingsItems = [
     {
@@ -201,11 +213,11 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
   };
 
   const handleSignOut = () => {
-    if (walletAddress && authUser) {
+    if (walletAddress && safeAuthUser) {
       logoutAll();
     } else if (walletAddress) {
       disconnectWallet();
-    } else if (authUser) {
+    } else if (safeAuthUser) {
       logoutEmailUser();
     }
 
@@ -247,7 +259,8 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
               Account
             </SheetTitle>
             <p id="account-drawer-description" className="sr-only">
-              Manage your ZWAP! account, wallet, balances, settings, and secure access.
+              Manage your ZWAP! account, wallet, balances, settings, and secure
+              access.
             </p>
           </SheetHeader>
 
@@ -488,7 +501,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
               >
                 <LogOut className="h-5 w-5 shrink-0" />
                 <span className="font-medium">
-                  {walletAddress && authUser
+                  {walletAddress && safeAuthUser
                     ? "Sign Out"
                     : walletAddress
                       ? "Disconnect Wallet"
