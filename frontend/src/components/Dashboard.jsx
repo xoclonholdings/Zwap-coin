@@ -47,10 +47,10 @@ function ProgressRing({
 
   return (
     <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4">
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-white font-semibold text-sm">{label}</p>
-          <p className="text-[11px] text-gray-500 mt-1">{sublabel}</p>
+          <p className="text-sm font-semibold text-white">{label}</p>
+          <p className="mt-1 text-[11px] text-gray-500">{sublabel}</p>
         </div>
         <div className={`text-[11px] font-semibold ${theme.text}`}>
           {Math.round(percent)}%
@@ -104,10 +104,10 @@ function ProgressRing({
 
 function CompactStat({ icon: Icon, label, value, hint, tone = "cyan" }) {
   const toneMap = {
-    cyan: "text-cyan-300 border-cyan-400/15 bg-cyan-500/8",
-    purple: "text-violet-300 border-violet-400/15 bg-violet-500/8",
-    green: "text-emerald-300 border-emerald-400/15 bg-emerald-500/8",
-    amber: "text-amber-300 border-amber-400/15 bg-amber-500/8",
+    cyan: "border-cyan-400/15 bg-cyan-500/8 text-cyan-300",
+    purple: "border-violet-400/15 bg-violet-500/8 text-violet-300",
+    green: "border-emerald-400/15 bg-emerald-500/8 text-emerald-300",
+    amber: "border-amber-400/15 bg-amber-500/8 text-amber-300",
   };
 
   return (
@@ -117,12 +117,12 @@ function CompactStat({ icon: Icon, label, value, hint, tone = "cyan" }) {
           <p className="text-[10px] uppercase tracking-wide text-gray-500">
             {label}
           </p>
-          <p className="mt-1 text-xl font-bold text-white leading-none">{value}</p>
+          <p className="mt-1 text-xl font-bold leading-none text-white">{value}</p>
           {hint ? <p className="mt-1 text-[11px] text-gray-500">{hint}</p> : null}
         </div>
 
-        <div className="w-8 h-8 rounded-xl bg-black/20 border border-white/10 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
+          <Icon className="h-4 w-4" />
         </div>
       </div>
     </div>
@@ -136,20 +136,20 @@ function StreakStrip({ streak = 0 }) {
 
   return (
     <div className="rounded-[1.5rem] border border-orange-400/15 bg-gradient-to-r from-orange-500/10 via-pink-500/5 to-transparent p-4">
-      <div className="flex items-center justify-between gap-4 mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <Flame className="w-4 h-4 text-orange-300 shrink-0" />
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Flame className="h-4 w-4 shrink-0 text-orange-300" />
           <div className="min-w-0">
-            <p className="text-white font-semibold text-sm">Daily Streak</p>
+            <p className="text-sm font-semibold text-white">Daily Streak</p>
             <p className="text-[11px] text-gray-500">Momentum multiplies.</p>
           </div>
         </div>
 
-        <div className="text-right shrink-0">
-          <p className="text-2xl font-black text-orange-300 leading-none">
+        <div className="shrink-0 text-right">
+          <p className="text-2xl font-black leading-none text-orange-300">
             {safeStreak}
           </p>
-          <p className="text-[10px] text-gray-500 mt-1">days</p>
+          <p className="mt-1 text-[10px] text-gray-500">days</p>
         </div>
       </div>
 
@@ -191,26 +191,31 @@ function StreakStrip({ streak = 0 }) {
 function ActivityRow({ title, meta }) {
   return (
     <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2.5">
-      <p className="text-white text-sm font-medium truncate">{title}</p>
-      <p className="text-[11px] text-gray-500 mt-1 truncate">{meta}</p>
+      <p className="truncate text-sm font-medium text-white">{title}</p>
+      <p className="mt-1 truncate text-[11px] text-gray-500">{meta}</p>
     </div>
   );
 }
 
 export default function Dashboard() {
-  const { user, authUser, walletAddress, onchainBalance, requireWallet } = useApp();
+  const {
+    user,
+    authUser,
+    walletAddress,
+    onchainBalance,
+    requireWallet,
+    openWalletUpgradeFlow,
+  } = useApp();
 
   const profile = user || authUser || {};
 
   const streak = Math.max(Number(profile?.daily_streak) || 0, 0);
   const todaySteps = Math.max(Number(profile?.today_steps) || 0, 0);
   const stepGoal = Math.max(Number(profile?.step_goal) || 0, 0);
-  const pendingZwap = Number(
-    profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0
-  ) || 0;
-  const zpts = Number(
-    profile?.zpts_pending ?? profile?.zpts_balance ?? 0
-  ) || 0;
+  const pendingZwap =
+    Number(profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0) || 0;
+  const zpts =
+    Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 0) || 0;
   const gamesPlayed = Math.max(Number(profile?.games_played_today) || 0, 0);
   const gameGoal = Math.max(Number(profile?.daily_game_goal) || 0, 0);
 
@@ -220,6 +225,7 @@ export default function Dashboard() {
     profile?.email?.split("@")[0] ||
     "Zwapper";
 
+  const hasWallet = !!walletAddress;
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
 
@@ -268,7 +274,11 @@ export default function Dashboard() {
   }, [streak, todaySteps, stepsLeft, stepGoal, gamesPlayed, gameGoal]);
 
   const handleSwap = () => {
-    requireWallet("swap");
+    if (hasWallet) {
+      requireWallet("swap");
+      return;
+    }
+    openWalletUpgradeFlow();
   };
 
   const handleShop = () => {
@@ -276,8 +286,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050510] text-white px-3 pb-28 pt-3 sm:px-4">
-      <div className="max-w-5xl mx-auto space-y-4">
+    <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4">
+      <div className="mx-auto max-w-5xl space-y-4">
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
           <StreakStrip streak={streak} />
         </motion.div>
@@ -287,18 +297,18 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-cyan-500/10 via-violet-500/5 to-pink-500/8 p-4"
         >
-          <div className="absolute -top-8 right-[-2rem] w-32 h-32 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-[-2rem] left-[-1rem] w-28 h-28 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="pointer-events-none absolute -top-8 right-[-2rem] h-32 w-32 rounded-full bg-cyan-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-[-2rem] left-[-1rem] h-28 w-28 rounded-full bg-violet-500/10 blur-3xl" />
 
           <div className="relative z-10 space-y-4">
             <div>
               <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-300/80">
                 Move. Play. Swap. Shop.
               </p>
-              <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight">
+              <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
                 Welcome back, {username}
               </h1>
-              <p className="mt-1 text-sm text-gray-300 leading-relaxed">
+              <p className="mt-1 text-sm leading-relaxed text-gray-300">
                 Your ZWAP! daily pulse in one glance.
               </p>
             </div>
@@ -319,7 +329,8 @@ export default function Dashboard() {
               <CompactStat
                 icon={Wallet}
                 label="Wallet"
-                value={walletAddress ? "Connected" : "Later"}
+                value={hasWallet ? "Connected" : "Upgrade"}
+                hint={hasWallet ? "Ready to claim" : "Connect when ready"}
                 tone="green"
               />
               <CompactStat
@@ -357,24 +368,26 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4"
+          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl"
         >
-          <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-white">Rewards</h2>
-              <p className="text-[11px] text-gray-500 mt-1">
-                Claim later, keep building now.
+              <p className="mt-1 text-[11px] text-gray-500">
+                {hasWallet
+                  ? "Claim and use your rewards."
+                  : "Keep building now, connect a wallet when ready."}
               </p>
             </div>
-            <CircleDollarSign className="w-4 h-4 text-emerald-300 mt-1 shrink-0" />
+            <CircleDollarSign className="mt-1 h-4 w-4 shrink-0 text-emerald-300" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="mb-3 grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/10 px-3 py-3">
               <p className="text-[10px] uppercase tracking-wide text-cyan-300/80">
                 Pending ZWAP!
               </p>
-              <p className="text-2xl font-black text-white mt-1">
+              <p className="mt-1 text-2xl font-black text-white">
                 {pendingZwap.toFixed(2)}
               </p>
             </div>
@@ -383,17 +396,17 @@ export default function Dashboard() {
               <p className="text-[10px] uppercase tracking-wide text-violet-300/80">
                 zPts
               </p>
-              <p className="text-2xl font-black text-white mt-1">{zpts}</p>
+              <p className="mt-1 text-2xl font-black text-white">{zpts}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Button
               onClick={handleSwap}
-              className="h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-semibold"
+              className="h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 font-semibold text-white hover:from-cyan-400 hover:to-blue-400"
             >
-              <ArrowRightLeft className="w-4 h-4 mr-2" />
-              Swap
+              <ArrowRightLeft className="mr-2 h-4 w-4" />
+              {hasWallet ? "Swap" : "Get Wallet"}
             </Button>
 
             <Button
@@ -401,7 +414,7 @@ export default function Dashboard() {
               variant="outline"
               className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06]"
             >
-              <ShoppingBag className="w-4 h-4 mr-2" />
+              <ShoppingBag className="mr-2 h-4 w-4" />
               Shop
             </Button>
           </div>
@@ -410,16 +423,16 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4"
+          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl"
         >
-          <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-white">Today</h2>
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="mt-1 text-[11px] text-gray-500">
                 The essentials only.
               </p>
             </div>
-            <Sparkles className="w-4 h-4 text-cyan-300 shrink-0" />
+            <Sparkles className="h-4 w-4 shrink-0 text-cyan-300" />
           </div>
 
           <div className="space-y-2">
@@ -445,7 +458,7 @@ export default function Dashboard() {
                   <p className="text-sm font-semibold text-white">
                     Today’s rhythm is building
                   </p>
-                  <p className="text-[11px] text-gray-400 mt-1">
+                  <p className="mt-1 text-[11px] text-gray-400">
                     {stepGoal > 0
                       ? stepsPercent >= 100
                         ? "Move goal complete."
@@ -455,10 +468,10 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex items-center gap-2 text-[11px] text-gray-300">
-                  <span className="px-2 py-1 rounded-xl bg-white/[0.05] border border-white/10">
+                  <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
                     Move {Math.round(stepsPercent)}%
                   </span>
-                  <span className="px-2 py-1 rounded-xl bg-white/[0.05] border border-white/10">
+                  <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
                     Play {Math.round(playPercent)}%
                   </span>
                 </div>
