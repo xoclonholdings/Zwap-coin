@@ -5,11 +5,8 @@ import { useApp } from "@/App";
 import StreamHub from "@/components/StreamHub";
 import AccountDrawer from "@/components/AccountDrawer";
 
-export default function AppHeader() {
-  const { user, authUser, walletAddress, onchainBalance } = useApp();
-
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [streamHubOpen, setStreamHubOpen] = useState(false);
+function generateUsername(wallet) {
+  if (!wallet) return "Guest";
 
   const adjectives = [
     "Nova",
@@ -37,22 +34,28 @@ export default function AppHeader() {
     "Voyager",
   ];
 
-  const generateUsername = (wallet) => {
-    if (!wallet) return "Guest";
+  const seed = parseInt(wallet.slice(2, 10), 16);
+  const adjIndex = Math.abs(seed) % adjectives.length;
+  const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
+  const num = Math.abs(seed) % 999;
 
-    const seed = parseInt(wallet.slice(2, 10), 16);
-    const adjIndex = Math.abs(seed) % adjectives.length;
-    const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
-    const num = Math.abs(seed) % 999;
+  return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
+}
 
-    return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
-  };
+export default function AppHeader() {
+  const { user, authUser, walletAddress, onchainBalance } = useApp();
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [streamHubOpen, setStreamHubOpen] = useState(false);
 
   const displayName = useMemo(() => {
-    if (user?.custom_username) return user.custom_username;
-    if (user?.username) return user.username;
-    if (authUser?.username) return authUser.username;
-    if (authUser?.email) return authUser.email.split("@")[0];
+    const safeUser = user && typeof user === "object" ? user : null;
+    const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
+
+    if (safeUser?.custom_username) return safeUser.custom_username;
+    if (safeUser?.username) return safeUser.username;
+    if (safeAuthUser?.username) return safeAuthUser.username;
+    if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
     if (walletAddress) return generateUsername(walletAddress);
     return "Guest";
   }, [user, authUser, walletAddress]);
