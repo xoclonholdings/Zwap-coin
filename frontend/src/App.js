@@ -1,6 +1,13 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
@@ -33,7 +40,8 @@ export { default as api } from "@/lib/api";
 
 console.log("ZWAP LOCAL APP.JS LOADED");
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_URL =
+  process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
 const API = `${BACKEND_URL}/api`;
 console.log("ZWAP API BASE =", API);
 
@@ -102,6 +110,23 @@ function AppProvider({ children }) {
 
   const isAuthenticated = !!walletAddress || !!authUser;
 
+  const closeAllAuthModals = () => {
+    setIsGetWalletPromptOpen(false);
+    setIsOnboardingModalOpen(false);
+    setIsReturningUserPromptOpen(false);
+    setIsWalletModalOpen(false);
+  };
+
+  const openWalletUpgradeFlow = () => {
+    closeAllAuthModals();
+    setIsOnboardingModalOpen(true);
+  };
+
+  const openGuestWalletFlow = () => {
+    closeAllAuthModals();
+    setIsGetWalletPromptOpen(true);
+  };
+
   useEffect(() => {
     const savedWallet = localStorage.getItem("zwap_wallet");
     const savedAuthUser = localStorage.getItem("zwap_auth_user");
@@ -135,7 +160,10 @@ function AppProvider({ children }) {
   const fetchOnchainBalance = async (address) => {
     try {
       const data = await api.getOnchainBalance(address);
-      if (data.onchain_balance !== null && data.onchain_balance !== undefined) {
+      if (
+        data?.onchain_balance !== null &&
+        data?.onchain_balance !== undefined
+      ) {
         setOnchainBalance(data.onchain_balance);
       }
     } catch (error) {
@@ -160,23 +188,6 @@ function AppProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const closeAllAuthModals = () => {
-    setIsGetWalletPromptOpen(false);
-    setIsOnboardingModalOpen(false);
-    setIsReturningUserPromptOpen(false);
-    setIsWalletModalOpen(false);
-  };
-
-  const openWalletUpgradeFlow = () => {
-    closeAllAuthModals();
-    setIsOnboardingModalOpen(true);
-  };
-
-  const openGuestWalletFlow = () => {
-    closeAllAuthModals();
-    setIsGetWalletPromptOpen(true);
   };
 
   const connectWallet = async (address) => {
@@ -321,6 +332,10 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
+  const isProtectedRoute =
+    protectedRoutes.includes(location.pathname) && !isAuthenticated;
+
   useEffect(() => {
     if (isAuthenticated && pendingAction) {
       setPendingAction(null);
@@ -340,6 +355,12 @@ function AppContent() {
       }
     }
   }, [isAuthenticated, pendingAction, navigate, setPendingAction]);
+
+  useEffect(() => {
+    if (isProtectedRoute) {
+      openGuestWalletFlow();
+    }
+  }, [isProtectedRoute, openGuestWalletFlow]);
 
   if (showSplash && location.pathname === "/") {
     return (
@@ -451,15 +472,11 @@ function AppContent() {
   }
 
   if (location.pathname === "/") {
-    navigate(isAuthenticated ? "/dashboard" : "/wallet");
-    return null;
+    return <Navigate to={isAuthenticated ? "/dashboard" : "/wallet"} replace />;
   }
 
-  const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
-  if (protectedRoutes.includes(location.pathname) && !isAuthenticated) {
-    openGuestWalletFlow();
-    navigate("/wallet");
-    return null;
+  if (isProtectedRoute) {
+    return <Navigate to="/wallet" replace />;
   }
 
   const showLayout = [
