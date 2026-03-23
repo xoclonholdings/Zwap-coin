@@ -8,6 +8,15 @@ import {
   Wallet,
   Sparkles,
   CircleDollarSign,
+  Gift,
+  Gamepad2,
+  Footprints,
+  Brain,
+  CheckCircle2,
+  Lock,
+  Crown,
+  UserCircle2,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/App";
@@ -20,6 +29,7 @@ function ProgressRing({
   accent = "cyan",
   label,
   sublabel,
+  footer,
 }) {
   const safeMax = Math.max(Number(max) || 0, 1);
   const safeValue = Math.max(Number(value) || 0, 0);
@@ -41,12 +51,24 @@ function ProgressRing({
       glow: "drop-shadow(0 0 8px rgba(168,85,247,0.28))",
       text: "text-violet-300",
     },
+    green: {
+      track: "rgba(52, 211, 153, 0.14)",
+      stroke: "#34d399",
+      glow: "drop-shadow(0 0 8px rgba(52,211,153,0.28))",
+      text: "text-emerald-300",
+    },
+    amber: {
+      track: "rgba(251, 191, 36, 0.14)",
+      stroke: "#fbbf24",
+      glow: "drop-shadow(0 0 8px rgba(251,191,36,0.28))",
+      text: "text-amber-300",
+    },
   };
 
   const theme = accentMap[accent] || accentMap.cyan;
 
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4">
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-white">{label}</p>
@@ -98,6 +120,8 @@ function ProgressRing({
           </text>
         </svg>
       </div>
+
+      {footer ? <p className="mt-3 text-center text-[11px] text-gray-500">{footer}</p> : null}
     </div>
   );
 }
@@ -129,6 +153,23 @@ function CompactStat({ icon: Icon, label, value, hint, tone = "cyan" }) {
   );
 }
 
+function TierPill({ tier = "starter" }) {
+  const isPlus = String(tier).toLowerCase() === "plus";
+
+  return (
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+        isPlus
+          ? "border-amber-400/20 bg-amber-500/10 text-amber-300"
+          : "border-cyan-400/20 bg-cyan-500/10 text-cyan-300"
+      }`}
+    >
+      {isPlus ? <Crown className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+      {isPlus ? "Plus" : "Starter"}
+    </div>
+  );
+}
+
 function StreakStrip({ streak = 0 }) {
   const today = new Date().getDay();
   const labels = ["S", "M", "T", "W", "T", "F", "S"];
@@ -138,10 +179,12 @@ function StreakStrip({ streak = 0 }) {
     <div className="rounded-[1.5rem] border border-orange-400/15 bg-gradient-to-r from-orange-500/10 via-pink-500/5 to-transparent p-4">
       <div className="mb-3 flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2">
-          <Flame className="h-4 w-4 shrink-0 text-orange-300" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/10">
+            <Flame className="h-4 w-4 shrink-0 text-orange-300" />
+          </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white">Daily Streak</p>
-            <p className="text-[11px] text-gray-500">Momentum multiplies.</p>
+            <p className="text-[11px] text-gray-500">Come back daily. Stack the heat.</p>
           </div>
         </div>
 
@@ -157,24 +200,33 @@ function StreakStrip({ streak = 0 }) {
         {labels.map((label, index) => {
           const isToday = index === today;
           const isActive = index < Math.min(safeStreak, 7);
+          const isBonus = index === 6;
 
           return (
-            <div
-              key={`${label}-${index}`}
-              className={`rounded-xl border py-2 text-center ${
-                isToday
-                  ? "border-cyan-400/35 bg-cyan-500/12"
-                  : isActive
-                    ? "border-orange-400/20 bg-orange-500/10"
-                    : "border-white/10 bg-white/[0.03]"
-              }`}
-            >
+            <div key={`${label}-${index}`} className="flex flex-col items-center gap-1">
+              <div
+                className={`flex h-11 w-11 items-center justify-center rounded-full border text-[11px] font-bold transition-all ${
+                  isToday
+                    ? "border-cyan-400/40 bg-cyan-500/12 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.12)]"
+                    : isActive
+                      ? isBonus
+                        ? "border-amber-400/35 bg-amber-500/12 text-amber-300"
+                        : "border-orange-400/20 bg-orange-500/10 text-orange-300"
+                      : "border-white/10 bg-white/[0.03] text-gray-500"
+                }`}
+              >
+                {isBonus ? (
+                  <Crown className="h-4 w-4" />
+                ) : (
+                  <span>{label}</span>
+                )}
+              </div>
               <p
-                className={`text-[10px] font-semibold ${
+                className={`text-[10px] ${
                   isToday
                     ? "text-cyan-300"
                     : isActive
-                      ? "text-orange-300"
+                      ? "text-white"
                       : "text-gray-500"
                 }`}
               >
@@ -183,6 +235,107 @@ function StreakStrip({ streak = 0 }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function DailyClaimCard({
+  streak = 0,
+  canClaim = true,
+  reward = 10,
+  lastClaimText,
+  onClaim,
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-[1.75rem] border border-emerald-400/15 bg-gradient-to-br from-emerald-500/10 via-cyan-500/6 to-transparent p-4">
+      <div className="pointer-events-none absolute right-[-1rem] top-[-1rem] h-24 w-24 rounded-full bg-emerald-500/10 blur-3xl" />
+
+      <div className="relative z-10">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300/80">
+              Daily Claim
+            </p>
+            <h2 className="mt-2 text-xl font-black text-white">
+              {canClaim ? `+${reward} zPts ready` : "Claimed for today"}
+            </h2>
+            <p className="mt-1 text-sm text-gray-300">
+              {canClaim
+                ? `Day ${Math.max(streak, 0) + 1} reward is waiting.`
+                : lastClaimText || "Your next daily claim unlocks tomorrow."}
+            </p>
+          </div>
+
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10">
+            <Gift className="h-5 w-5 text-emerald-300" />
+          </div>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/10 bg-black/15 px-3 py-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-gray-500">Current streak</p>
+            <p className="mt-1 text-lg font-bold text-white">{streak} days</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wide text-gray-500">Next bonus</p>
+            <p className="mt-1 text-lg font-bold text-amber-300">Day 7</p>
+          </div>
+        </div>
+
+        <Button
+          onClick={onClaim}
+          disabled={!canClaim}
+          className={`h-11 w-full rounded-xl font-semibold ${
+            canClaim
+              ? "bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-400 hover:to-cyan-400"
+              : "bg-white/[0.06] text-gray-400 hover:bg-white/[0.06]"
+          }`}
+        >
+          {canClaim ? "Claim Daily Reward" : "Already Claimed"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TaskCard({
+  icon: Icon,
+  title,
+  reward,
+  completed = false,
+  locked = false,
+  hint,
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-3 ${
+        completed
+          ? "border-emerald-400/20 bg-emerald-500/10"
+          : "border-white/10 bg-white/[0.04]"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
+          <Icon className={`h-4 w-4 ${completed ? "text-emerald-300" : "text-cyan-300"}`} />
+        </div>
+
+        {completed ? (
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" />
+        ) : locked ? (
+          <Lock className="h-4 w-4 shrink-0 text-gray-500" />
+        ) : (
+          <div className="rounded-full border border-cyan-400/15 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
+            +{reward}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3">
+        <p className="text-sm font-semibold text-white">{title}</p>
+        <p className="mt-1 text-[11px] text-gray-500">
+          {completed ? "Complete" : hint}
+        </p>
       </div>
     </div>
   );
@@ -210,14 +363,19 @@ export default function Dashboard() {
   const profile = user || authUser || {};
 
   const streak = Math.max(Number(profile?.daily_streak) || 0, 0);
-  const todaySteps = Math.max(Number(profile?.today_steps) || 0, 0);
-  const stepGoal = Math.max(Number(profile?.step_goal) || 0, 0);
+  const todaySteps = Math.max(
+    Number(profile?.today_steps ?? profile?.daily_steps) || 0,
+    0
+  );
+  const stepGoal = Math.max(Number(profile?.step_goal) || 5000, 0);
   const pendingZwap =
     Number(profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0) || 0;
-  const zpts =
-    Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 0) || 0;
+  const zpts = Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 0) || 0;
   const gamesPlayed = Math.max(Number(profile?.games_played_today) || 0, 0);
-  const gameGoal = Math.max(Number(profile?.daily_game_goal) || 0, 0);
+  const gameGoal = Math.max(Number(profile?.daily_game_goal) || 1, 0);
+  const currentTier = String(profile?.tier || "starter").toLowerCase();
+  const lastDailyClaim = profile?.last_daily_claim || null;
+  const canClaimDaily = !!profile?.can_claim_daily || !lastDailyClaim;
 
   const username =
     profile?.custom_username ||
@@ -229,17 +387,80 @@ export default function Dashboard() {
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
 
+  const zptsGoal = 1000;
+  const zptsToConvert = Math.max(zptsGoal - zpts, 0);
+
   const stepsLeft = Math.max(stepGoal - todaySteps, 0);
+  const gamesLeft = Math.max(gameGoal - gamesPlayed, 0);
   const stepsPercent = Math.min((todaySteps / safeStepGoal) * 100, 100);
   const playPercent = Math.min((gamesPlayed / safeGameGoal) * 100, 100);
+
+  const dailyReward = useMemo(() => {
+    const rewardTable = {
+      1: 10,
+      2: 15,
+      3: 20,
+      4: 25,
+      5: 30,
+      6: 35,
+      7: 50,
+    };
+    const day = Math.min(Math.max(streak + (canClaimDaily ? 1 : 0), 1), 7);
+    return rewardTable[day] || 10;
+  }, [streak, canClaimDaily]);
+
+  const loginComplete = !canClaimDaily;
+  const playComplete = gamesPlayed >= 1;
+  const stepsComplete = stepGoal > 0 ? todaySteps >= stepGoal : false;
+  const triviaComplete = !!profile?.daily_trivia_complete;
+
+  const completedTaskCount = [loginComplete, playComplete, stepsComplete, triviaComplete].filter(Boolean).length;
+
+  const tasks = [
+    {
+      icon: Gift,
+      title: "Daily Login",
+      reward: dailyReward,
+      completed: loginComplete,
+      hint: canClaimDaily ? "Claim today’s login reward" : "Come back tomorrow",
+    },
+    {
+      icon: Gamepad2,
+      title: "Play 1 Game",
+      reward: 10,
+      completed: playComplete,
+      hint: playComplete ? "Complete" : `${gamesLeft} left today`,
+    },
+    {
+      icon: Footprints,
+      title: "Reach Step Goal",
+      reward: 15,
+      completed: stepsComplete,
+      hint: stepsComplete ? "Complete" : `${stepsLeft.toLocaleString()} steps left`,
+    },
+    {
+      icon: Brain,
+      title: "Complete Trivia",
+      reward: 10,
+      completed: triviaComplete,
+      hint: triviaComplete ? "Complete" : "Finish today’s trivia task",
+    },
+  ];
 
   const recentActivity = useMemo(() => {
     const items = [];
 
+    if (loginComplete) {
+      items.push({
+        title: `✨ Daily claim secured`,
+        meta: `+${dailyReward} zPts added to your loop`,
+      });
+    }
+
     if (streak > 0) {
       items.push({
         title: `🔥 ${streak}-day streak active`,
-        meta: "Keep it going tomorrow",
+        meta: streak >= 6 ? "Bonus day is almost here" : "Keep it alive tomorrow",
       });
     }
 
@@ -248,7 +469,9 @@ export default function Dashboard() {
         title: `👟 ${todaySteps.toLocaleString()} steps recorded`,
         meta:
           stepGoal > 0
-            ? `${stepsLeft.toLocaleString()} to goal`
+            ? stepsPercent >= 100
+              ? "Move goal complete"
+              : `${stepsLeft.toLocaleString()} to goal`
             : "No step goal set yet",
       });
     }
@@ -266,12 +489,22 @@ export default function Dashboard() {
     if (items.length === 0) {
       items.push({
         title: "No activity yet",
-        meta: "Move, play, and earn in ZWAP!",
+        meta: "Move, play, and stack rewards in ZWAP!",
       });
     }
 
-    return items.slice(0, 2);
-  }, [streak, todaySteps, stepsLeft, stepGoal, gamesPlayed, gameGoal]);
+    return items.slice(0, 4);
+  }, [
+    loginComplete,
+    dailyReward,
+    streak,
+    todaySteps,
+    stepGoal,
+    stepsPercent,
+    stepsLeft,
+    gamesPlayed,
+    gameGoal,
+  ]);
 
   const handleSwap = () => {
     if (hasWallet) {
@@ -285,13 +518,21 @@ export default function Dashboard() {
     requireWallet("shop");
   };
 
+  const handleClaimDaily = () => {
+    if (!hasWallet) {
+      openWalletUpgradeFlow();
+      return;
+    }
+    requireWallet("daily");
+  };
+
+  const lastClaimText = lastDailyClaim
+    ? "Reward already claimed today"
+    : "Claim now and keep the streak burning";
+
   return (
     <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4">
       <div className="mx-auto max-w-5xl space-y-4">
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-          <StreakStrip streak={streak} />
-        </motion.div>
-
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -301,16 +542,25 @@ export default function Dashboard() {
           <div className="pointer-events-none absolute bottom-[-2rem] left-[-1rem] h-28 w-28 rounded-full bg-violet-500/10 blur-3xl" />
 
           <div className="relative z-10 space-y-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-300/80">
-                Move. Play. Swap. Shop.
-              </p>
-              <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
-                Welcome back, {username}
-              </h1>
-              <p className="mt-1 text-sm leading-relaxed text-gray-300">
-                Your ZWAP! daily pulse in one glance.
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-300/80">
+                  Home
+                </p>
+                <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+                  Welcome back, {username}
+                </h1>
+                <p className="mt-1 text-sm leading-relaxed text-gray-300">
+                  Your ZWAP! daily pulse in one glance.
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <TierPill tier={currentTier} />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
+                  <UserCircle2 className="h-6 w-6 text-white/80" />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -318,12 +568,14 @@ export default function Dashboard() {
                 icon={Coins}
                 label="Pending ZWAP!"
                 value={pendingZwap.toFixed(2)}
+                hint="Reward stack"
                 tone="cyan"
               />
               <CompactStat
                 icon={Sparkles}
                 label="zPts"
                 value={zpts}
+                hint={zpts >= 1000 ? "Ready to convert" : `${zptsToConvert} to 1 ZWAP`}
                 tone="purple"
               />
               <CompactStat
@@ -337,9 +589,73 @@ export default function Dashboard() {
                 icon={Flame}
                 label="Streak"
                 value={`${streak} days`}
+                hint={streak >= 6 ? "Bonus almost unlocked" : "Build momentum"}
                 tone="amber"
               />
             </div>
+          </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+          <StreakStrip streak={streak} />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 gap-3 lg:grid-cols-[1.1fr_0.9fr]"
+        >
+          <DailyClaimCard
+            streak={streak}
+            canClaim={canClaimDaily}
+            reward={dailyReward}
+            lastClaimText={lastClaimText}
+            onClaim={handleClaimDaily}
+          />
+
+          <ProgressRing
+            value={zpts}
+            max={zptsGoal}
+            label="zPts Progress"
+            sublabel="Convert to 1 ZWAP"
+            accent="purple"
+            footer={
+              zpts >= zptsGoal
+                ? "Conversion threshold reached"
+                : `${zptsToConvert} zPts left to convert`
+            }
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-white">Daily Tasks</h2>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Complete the loop. Build the habit.
+              </p>
+            </div>
+
+            <div className="rounded-full border border-cyan-400/15 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300">
+              {completedTaskCount}/4 done
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {tasks.map((task) => (
+              <TaskCard
+                key={task.title}
+                icon={task.icon}
+                title={task.title}
+                reward={task.reward}
+                completed={task.completed}
+                hint={task.hint}
+              />
+            ))}
           </div>
         </motion.div>
 
@@ -352,16 +668,30 @@ export default function Dashboard() {
             value={todaySteps}
             max={safeStepGoal}
             label="Move Goal"
-            sublabel={stepGoal > 0 ? "Stack rewards" : "Goal not set yet"}
+            sublabel={stepGoal > 0 ? "Daily movement snapshot" : "Goal not set yet"}
             accent="cyan"
+            footer={
+              stepGoal > 0
+                ? stepsPercent >= 100
+                  ? "Move goal complete"
+                  : `${stepsLeft.toLocaleString()} steps left`
+                : "Set a goal to start tracking"
+            }
           />
 
           <ProgressRing
             value={gamesPlayed}
             max={safeGameGoal}
             label="Play Progress"
-            sublabel={gameGoal > 0 ? "Daily rhythm" : "Goal not set yet"}
-            accent="purple"
+            sublabel={gameGoal > 0 ? "Daily game rhythm" : "Goal not set yet"}
+            accent="green"
+            footer={
+              gameGoal > 0
+                ? playPercent >= 100
+                  ? "Play target complete"
+                  : `${gamesLeft} game${gamesLeft === 1 ? "" : "s"} left`
+                : "Start a game session"
+            }
           />
         </motion.div>
 
@@ -375,7 +705,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-bold text-white">Rewards</h2>
               <p className="mt-1 text-[11px] text-gray-500">
                 {hasWallet
-                  ? "Claim and use your rewards."
+                  ? "Claim, swap, and use what you earn."
                   : "Keep building now, connect a wallet when ready."}
               </p>
             </div>
@@ -429,7 +759,7 @@ export default function Dashboard() {
             <div>
               <h2 className="text-lg font-bold text-white">Today</h2>
               <p className="mt-1 text-[11px] text-gray-500">
-                The essentials only.
+                Live rhythm, recent wins.
               </p>
             </div>
             <Sparkles className="h-4 w-4 shrink-0 text-cyan-300" />
@@ -444,6 +774,19 @@ export default function Dashboard() {
               />
             ))}
           </div>
+
+          <button
+            type="button"
+            className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/15 px-3 py-2.5 text-left transition hover:bg-white/[0.04]"
+          >
+            <div>
+              <p className="text-sm font-medium text-white">Open activity feed</p>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Ticker-ready events and latest movement
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-gray-500" />
+          </button>
         </motion.div>
 
         <motion.div
@@ -473,6 +816,9 @@ export default function Dashboard() {
                   </span>
                   <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
                     Play {Math.round(playPercent)}%
+                  </span>
+                  <span className="rounded-xl border border-white/10 bg-white/[0.05] px-2 py-1">
+                    Tasks {completedTaskCount}/4
                   </span>
                 </div>
               </div>
