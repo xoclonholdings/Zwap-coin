@@ -1,6 +1,5 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRightLeft, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowRightLeft } from "lucide-react";
 
 import SwapCoreCard from "@/components/swap/SwapCoreCard";
 import SwapFeedback from "@/components/swap/SwapFeedback";
@@ -10,11 +9,9 @@ import SwapEmbeddedFlow from "@/components/swap/SwapEmbeddedFlow";
 export default function SwapHome({
   user,
   isPlus,
-  prices,
   isLoadingPrices,
   tokens,
   tokenLogos,
-  services,
   modes,
   activeMode,
   fromToken,
@@ -26,24 +23,17 @@ export default function SwapHome({
   activeService,
   isFullscreen,
   isRouteLoading,
-  externalSwapNotice,
   feedback,
   history,
   availableToConvert,
   readyNowLabel,
   bestRouteLabel,
   primaryActionLabel,
-  portalData,
-  onSetFromToken,
-  onSetToToken,
   onSetFromAmount,
   onSwapTokens,
   onSelectMode,
   onSetMax,
-  onRefresh,
   onPrimaryAction,
-  onOpenRoute,
-  onDismissExternalNotice,
   onCloseFeedback,
   onToggleFullscreen,
   onCloseSwapService,
@@ -141,85 +131,11 @@ export default function SwapHome({
           isLoadingPrices={isLoadingPrices}
           primaryActionLabel={primaryActionLabel}
           bestRouteLabel={bestRouteLabel}
-          portalData={portalData}
-          onSetFromToken={onSetFromToken}
-          onSetToToken={onSetToToken}
           onSetFromAmount={onSetFromAmount}
           onSwapTokens={onSwapTokens}
           onSetMax={onSetMax}
           onPrimaryAction={onPrimaryAction}
-          onOpenRoute={onOpenRoute}
         />
-
-        <AnimatePresence>
-          {externalSwapNotice && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              className="rounded-[24px] border border-cyan-400/20 bg-[linear-gradient(180deg,rgba(18,40,56,0.92),rgba(8,19,28,0.96))] p-4 shadow-[0_10px_35px_rgba(34,211,238,0.08)]"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-                    <ShieldCheck className="h-4 w-4 text-cyan-300" />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-white">
-                      Route opened
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-white/60">
-                      Your conversion flow was opened securely. Complete the
-                      wallet confirmation there, then return here to refresh
-                      balances.
-                    </p>
-                    <p className="mt-2 text-xs font-medium text-cyan-300">
-                      {externalSwapNotice.fromAmount || "0"}{" "}
-                      {externalSwapNotice.fromToken} →{" "}
-                      {externalSwapNotice.toToken}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onDismissExternalNotice}
-                  className="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/60 transition hover:bg-white/10 hover:text-white"
-                >
-                  Dismiss
-                </button>
-              </div>
-
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={onRefresh}
-                  className="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/12"
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (externalSwapNotice?.url) {
-                      window.open(
-                        externalSwapNotice.url,
-                        "_blank",
-                        "noopener,noreferrer"
-                      );
-                    }
-                  }}
-                  className="inline-flex flex-1 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/15"
-                >
-                  Open Again
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <SwapHistory history={history} />
 
