@@ -73,36 +73,26 @@ function getModeMeta(mode) {
   switch (mode?.id) {
     case "convert-zpts":
       return {
-        title: "Convert",
-        subtitle: "Points → ZWAP",
         shortLabel: "zPts",
         Icon: Coins,
       };
     case "swap-btc":
       return {
-        title: "Bitcoin",
-        subtitle: "ZWAP → BTC",
         shortLabel: "BTC",
         Icon: Bitcoin,
       };
     case "swap-eth":
       return {
-        title: "Ethereum",
-        subtitle: "ZWAP → ETH",
         shortLabel: "ETH",
         Icon: ArrowRightLeft,
       };
     case "swap-usdc":
       return {
-        title: "Stable",
-        subtitle: "ZWAP → USDC",
         shortLabel: "USDC",
         Icon: ArrowRightLeft,
       };
     default:
       return {
-        title: mode?.name || "Mode",
-        subtitle: `${mode?.fromToken || ""} → ${mode?.toToken || ""}`,
         shortLabel: mode?.name || "Mode",
         Icon: ArrowRightLeft,
       };
@@ -125,12 +115,10 @@ export default function SwapCoreCard({
   isLoadingPrices,
   primaryActionLabel,
   bestRouteLabel,
-  portalData,
   onSetFromAmount,
   onSwapTokens,
   onSetMax,
   onPrimaryAction,
-  onOpenRoute,
 }) {
   const canSubmit =
     fromAmount &&
@@ -139,17 +127,11 @@ export default function SwapCoreCard({
 
   const disableFlip = fromToken === "zPTS" || toToken === "zPTS";
   const visibleModes = modes.slice(0, 4);
-  const activeModeConfig =
-    visibleModes.find((mode) => mode.id === activeMode) || visibleModes[0];
-  const activeModeMeta = getModeMeta(activeModeConfig);
 
-  const infoText =
+  const helperLine =
     activeMode === "convert-zpts"
-      ? "zPts convert directly into ZWAP inside your reward flow."
-      : "Some swaps may continue in a secure external confirmation step after you choose your amount.";
-
-  const featuredService =
-    portalData?.featuredServiceName || "Secure Route";
+      ? "Direct conversion inside ZWAP"
+      : "You’ll confirm in your wallet";
 
   return (
     <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_34%),linear-gradient(180deg,rgba(9,18,30,0.98),rgba(7,13,24,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.30)]">
@@ -179,17 +161,12 @@ export default function SwapCoreCard({
 
       <div className="mb-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
-              Conversion Modes
-            </p>
-            <p className="mt-1 text-sm font-semibold text-white">
-              Choose your utility path
-            </p>
-          </div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
+            Conversion Modes
+          </p>
 
-          <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300">
-            {activeModeMeta?.shortLabel || "Mode"}
+          <div className="rounded-xl border border-white/8 bg-white/5 px-2.5 py-1 text-[11px] text-white/50">
+            Tap to switch
           </div>
         </div>
 
@@ -204,44 +181,18 @@ export default function SwapCoreCard({
                 type="button"
                 key={mode.id}
                 onClick={() => onSelectMode(mode.id)}
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.04 }}
+                transition={{ delay: index * 0.03 }}
                 whileTap={{ scale: 0.98 }}
-                className={`rounded-[20px] border p-3 text-left transition ${
+                className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-semibold transition ${
                   isActive
-                    ? "border-cyan-400/30 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]"
-                    : "border-white/8 bg-white/5 hover:bg-white/8"
+                    ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_0_1px_rgba(34,211,238,0.10)]"
+                    : "border-white/8 bg-white/5 text-white/72 hover:bg-white/8"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${
-                      isActive
-                        ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
-                        : "border-white/10 bg-white/6 text-white/70"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-
-                  <div
-                    className={`rounded-xl px-2 py-1 text-[10px] font-medium ${
-                      isActive
-                        ? "bg-cyan-400/10 text-cyan-300"
-                        : "bg-white/6 text-white/45"
-                    }`}
-                  >
-                    {isActive ? "Selected" : "Open"}
-                  </div>
-                </div>
-
-                <p className="mt-3 text-sm font-semibold text-white">
-                  {meta.title}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-white/55">
-                  {meta.subtitle}
-                </p>
+                <Icon className="h-4 w-4" />
+                <span>{meta.shortLabel}</span>
               </motion.button>
             );
           })}
@@ -259,7 +210,7 @@ export default function SwapCoreCard({
               <button
                 type="button"
                 onClick={onSetMax}
-                className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300 transition hover:bg-cyan-400/15"
+                className="inline-flex h-8 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 text-[11px] font-medium text-cyan-300 transition hover:bg-cyan-400/15"
               >
                 Max
               </button>
@@ -279,7 +230,7 @@ export default function SwapCoreCard({
                   placeholder="0.00"
                   value={fromAmount}
                   onChange={(e) => onSetFromAmount(e.target.value)}
-                  className="block w-full truncate bg-transparent text-right text-[28px] font-semibold leading-none text-white outline-none placeholder:text-white/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="block w-full bg-transparent text-right text-[28px] font-semibold leading-none text-white outline-none placeholder:text-white/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <p className="mt-2 truncate text-xs text-white/40">≈ ${fromUsd}</p>
               </div>
@@ -302,10 +253,10 @@ export default function SwapCoreCard({
               disabled={disableFlip}
               whileHover={disableFlip ? {} : { rotate: 180 }}
               whileTap={disableFlip ? {} : { scale: 0.92 }}
-              className={`flex h-11 w-11 items-center justify-center rounded-full border-4 border-[#081017] shadow-[0_0_18px_rgba(34,211,238,0.18)] transition ${
+              className={`flex h-11 w-11 items-center justify-center rounded-full border-4 border-[#081017] transition ${
                 disableFlip
                   ? "cursor-not-allowed bg-white/6 text-white/25"
-                  : "bg-white/8 text-cyan-300 hover:bg-white/12"
+                  : "bg-white/8 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)] hover:bg-white/12"
               }`}
             >
               <ArrowDown className="h-5 w-5" />
@@ -333,43 +284,35 @@ export default function SwapCoreCard({
               </p>
               <p className="mt-2 truncate text-xs text-white/40">
                 {isLoadingPrices
-                  ? "Updating route data..."
+                  ? "Updating price..."
                   : `1 ${fromToken} ≈ ${rate} ${toToken}`}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-3 rounded-2xl border border-white/8 bg-white/5 p-3">
-          <div className="flex items-start gap-2">
-            <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-300" />
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-wide text-white/45">
-                Helpful Context
-              </p>
-              <p className="mt-1 text-xs leading-5 text-white/58">
-                {infoText}
-              </p>
-              <p className="mt-2 text-xs font-medium text-cyan-300">
-                {bestRouteLabel}
-              </p>
-            </div>
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-white/8 bg-white/5 px-3 py-2.5">
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-300" />
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-white/80">{helperLine}</p>
+            <p className="mt-0.5 text-[11px] text-cyan-300">{bestRouteLabel}</p>
           </div>
         </div>
 
-        <button
+        <motion.button
           type="button"
           onClick={onPrimaryAction}
           disabled={!canSubmit}
+          whileTap={canSubmit ? { scale: 0.985, y: 2 } : {}}
           className={`mt-4 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3.5 text-sm font-semibold transition ${
             canSubmit
-              ? "bg-cyan-500 text-[#04121a] shadow-[0_12px_30px_rgba(34,211,238,0.25)] hover:bg-cyan-400"
-              : "cursor-not-allowed bg-white/8 text-white/35"
+              ? "border border-cyan-300/30 bg-cyan-400 text-[#04121a] shadow-[0_10px_0_rgba(8,95,111,0.95),0_16px_28px_rgba(34,211,238,0.24),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(8,95,111,0.95),0_14px_24px_rgba(34,211,238,0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
+              : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
           }`}
         >
           <ArrowRightLeft className="mr-2 h-4 w-4" />
           {primaryActionLabel}
-        </button>
+        </motion.button>
       </div>
     </div>
   );
