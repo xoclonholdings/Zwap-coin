@@ -8,39 +8,6 @@ import {
   X,
 } from "lucide-react";
 
-function ServiceLogo({ service, size = "md" }) {
-  const sizeClasses = {
-    sm: "h-8 w-8",
-    md: "h-10 w-10",
-    lg: "h-12 w-12",
-  };
-
-  const [useFallback, setUseFallback] = React.useState(false);
-
-  if (useFallback) {
-    return (
-      <div
-        className={`${sizeClasses[size]} flex items-center justify-center rounded-xl border border-white/10 bg-white/6 text-lg`}
-      >
-        <span>{service?.fallbackLogo || "↗"}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`${sizeClasses[size]} overflow-hidden rounded-xl border border-white/10 bg-white`}
-    >
-      <img
-        src={service?.logo}
-        alt={service?.name || "Route"}
-        className="h-full w-full object-contain p-1.5"
-        onError={() => setUseFallback(true)}
-      />
-    </div>
-  );
-}
-
 export default function SwapEmbeddedFlow({
   activeService,
   isFullscreen,
@@ -51,6 +18,9 @@ export default function SwapEmbeddedFlow({
   onToggleFullscreen,
   onClose,
 }) {
+  const flowTitle = "Swap Flow";
+  const routeLabel = `${fromAmount || "0"} ${fromToken} → ${toToken}`;
+
   return (
     <div
       className={`fixed inset-0 z-50 bg-[#081017] ${
@@ -64,27 +34,21 @@ export default function SwapEmbeddedFlow({
             : "overflow-hidden rounded-[28px] border border-white/10 bg-[#0b1220] shadow-[0_24px_60px_rgba(0,0,0,0.4)]"
         }`}
       >
-        <div
-          className={`flex items-center justify-between border-b border-white/10 bg-[linear-gradient(180deg,rgba(11,20,32,0.98),rgba(8,14,24,0.98))] ${
-            isFullscreen ? "px-4 py-3" : "px-4 py-3"
-          }`}
-        >
+        <div className="flex items-center justify-between border-b border-white/10 bg-[linear-gradient(180deg,rgba(11,20,32,0.98),rgba(8,14,24,0.98))] px-4 py-3">
           <div className="flex items-center gap-3">
-            <ServiceLogo service={activeService} size="sm" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <ArrowRightLeft className="h-5 w-5 text-cyan-300" />
+            </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-white">
-                  {activeService?.name || "Route"}
-                </p>
+                <p className="text-sm font-semibold text-white">{flowTitle}</p>
                 <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-medium text-cyan-300">
-                  Secure Flow
+                  Secure
                 </div>
               </div>
 
-              <p className="mt-1 text-[11px] text-white/45">
-                {fromAmount || "0"} {fromToken} → {toToken}
-              </p>
+              <p className="mt-1 text-[11px] text-white/45">{routeLabel}</p>
             </div>
           </div>
 
@@ -108,7 +72,7 @@ export default function SwapEmbeddedFlow({
               type="button"
               onClick={onClose}
               className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/60 transition hover:bg-rose-500/10 hover:text-rose-300"
-              aria-label="Close route"
+              aria-label="Close swap flow"
             >
               <X className="h-4 w-4" />
             </button>
@@ -137,10 +101,10 @@ export default function SwapEmbeddedFlow({
                   </motion.div>
 
                   <p className="text-base font-semibold text-white">
-                    Preparing route...
+                    Preparing swap flow...
                   </p>
                   <p className="mt-1 text-sm text-white/55">
-                    Opening {fromAmount || "0"} {fromToken} → {toToken}
+                    Opening {routeLabel}
                   </p>
                 </div>
               </motion.div>
@@ -149,7 +113,7 @@ export default function SwapEmbeddedFlow({
 
           <iframe
             src={activeService?.url}
-            title={activeService?.name || "Swap route"}
+            title="ZWAP Swap Flow"
             className="h-full w-full border-0"
             allow="clipboard-write; clipboard-read"
             sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals"
@@ -165,11 +129,11 @@ export default function SwapEmbeddedFlow({
 
               <div>
                 <p className="text-xs font-medium text-white">
-                  Complete confirmation in the secure route
+                  Close this window to return to ZWAP
                 </p>
                 <p className="mt-1 text-[11px] leading-5 text-white/45">
-                  Wallet connection and signing happen in the supported route
-                  flow. Return to ZWAP after completion to refresh balances.
+                  Complete your swap step here, then tap X to jump right back
+                  into the app.
                 </p>
               </div>
             </div>
