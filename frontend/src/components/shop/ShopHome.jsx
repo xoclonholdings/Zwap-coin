@@ -162,14 +162,45 @@ export default function ShopHome({
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-cyan-400/12 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_32%),linear-gradient(180deg,rgba(8,16,23,0.96),rgba(7,12,18,0.98))] p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 overflow-hidden rounded-[24px] border border-pink-500/20 bg-[linear-gradient(135deg,rgba(236,72,153,0.10),rgba(139,92,246,0.08),rgba(8,16,23,0.94))] px-4 py-3 shadow-[0_0_24px_rgba(236,72,153,0.10)]"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-pink-200/80">
+                  External Store
+                </p>
+                <div className="mt-1 flex items-center gap-3">
+                  <img
+                    src={ZUPREME_LOGO}
+                    alt="Zupreme Imports"
+                    className="h-9 w-auto object-contain"
+                    style={{
+                      filter: "drop-shadow(0 0 12px rgba(236,72,153,0.25))",
+                    }}
+                  />
+                  <p className="text-xs text-white/60">
+                    Your commerce portal for branded goods and store-linked rewards.
+                  </p>
+                </div>
+              </div>
+
+              <div className="shrink-0 rounded-full border border-white/10 bg-white/5 p-2">
+                <Store className="h-4 w-4 text-pink-300" />
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="rounded-[24px] bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_32%),linear-gradient(180deg,rgba(8,16,23,0.96),rgba(7,12,18,0.98))] p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-[11px] uppercase tracking-wide text-white/45">
                   Marketplace
                 </p>
                 <h3 className="mt-1 text-lg font-semibold text-white">
-                  Reward Catalog
+                  Marketplace
                 </h3>
               </div>
 
@@ -203,9 +234,9 @@ export default function ShopHome({
               })}
             </div>
 
-            <div className="rounded-[22px] border border-cyan-400/14 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_26%),linear-gradient(180deg,rgba(8,16,23,0.94),rgba(7,12,18,0.98))] p-3">
+            <div className="bg-white/[0.03] rounded-[20px] p-2">
               {isLoading ? (
-                <div className="flex items-center justify-center rounded-2xl border border-white/8 bg-black/20 px-4 py-10 text-white/55">
+                <div className="flex items-center justify-center rounded-2xl bg-black/20 px-4 py-10 text-white/55">
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                   Loading shop...
                 </div>
@@ -240,11 +271,11 @@ export default function ShopHome({
                       exit={{ opacity: 0, x: -18 }}
                       transition={{ duration: 0.2 }}
                       onClick={() => onOpenItem(currentItem)}
-                      className="w-full rounded-[22px] border border-cyan-400/12 bg-cyan-400/[0.05] p-3 text-left transition hover:bg-cyan-400/[0.09]"
+                      className="w-full rounded-[22px] bg-cyan-400/[0.05] p-3 text-left transition hover:bg-cyan-400/[0.09]"
                       type="button"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/25">
+                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black/25">
                           {currentItem.image_url ? (
                             <img
                               src={currentItem.image_url}
@@ -316,7 +347,7 @@ export default function ShopHome({
                   ) : null}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-8 text-center">
+                <div className="rounded-2xl bg-black/20 px-4 py-8 text-center">
                   <p className="text-sm text-white/60">
                     No items in this section yet.
                   </p>
@@ -395,37 +426,6 @@ export default function ShopHome({
             </motion.div>
           ) : null}
         </AnimatePresence>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="overflow-hidden rounded-[24px] border border-pink-500/20 bg-[linear-gradient(135deg,rgba(236,72,153,0.10),rgba(139,92,246,0.08),rgba(8,16,23,0.94))] px-4 py-3 shadow-[0_0_24px_rgba(236,72,153,0.10)]"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-pink-200/80">
-                External Store
-              </p>
-              <div className="mt-1 flex items-center gap-3">
-                <img
-                  src={ZUPREME_LOGO}
-                  alt="Zupreme Imports"
-                  className="h-9 w-auto object-contain"
-                  style={{
-                    filter: "drop-shadow(0 0 12px rgba(236,72,153,0.25))",
-                  }}
-                />
-                <p className="text-xs text-white/60">
-                  Your commerce portal for branded goods and store-linked rewards.
-                </p>
-              </div>
-            </div>
-
-            <div className="shrink-0 rounded-full border border-white/10 bg-white/5 p-2">
-              <Store className="h-4 w-4 text-pink-300" />
-            </div>
-          </div>
-        </motion.div>
 
         <div className="flex items-center justify-between gap-3">
           <div className="rounded-[20px] border border-white/10 bg-white/[0.04] px-3 py-2 shadow-[0_12px_24px_rgba(0,0,0,0.18)]">
