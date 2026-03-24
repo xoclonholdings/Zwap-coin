@@ -1,58 +1,11 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowRightLeft,
-  Bitcoin,
-  Coins,
-  RefreshCw,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowRightLeft, RefreshCw, ShieldCheck } from "lucide-react";
 
 import SwapCoreCard from "@/components/swap/SwapCoreCard";
-import SwapPortal from "@/components/swap/SwapPortal";
 import SwapFeedback from "@/components/swap/SwapFeedback";
 import SwapHistory from "@/components/swap/SwapHistory";
 import SwapEmbeddedFlow from "@/components/swap/SwapEmbeddedFlow";
-
-function getModeButtonMeta(mode) {
-  switch (mode?.id) {
-    case "convert-zpts":
-      return {
-        shortLabel: "zPts",
-        title: "Convert",
-        subtitle: "Points → ZWAP",
-        Icon: Coins,
-      };
-    case "swap-btc":
-      return {
-        shortLabel: "BTC",
-        title: "Bitcoin",
-        subtitle: "ZWAP → BTC",
-        Icon: Bitcoin,
-      };
-    case "swap-eth":
-      return {
-        shortLabel: "ETH",
-        title: "Ethereum",
-        subtitle: "ZWAP → ETH",
-        Icon: ArrowRightLeft,
-      };
-    case "swap-usdc":
-      return {
-        shortLabel: "USDC",
-        title: "Stable",
-        subtitle: "ZWAP → USDC",
-        Icon: ArrowRightLeft,
-      };
-    default:
-      return {
-        shortLabel: mode?.name || "Mode",
-        title: mode?.name || "Mode",
-        subtitle: `${mode?.fromToken || ""} → ${mode?.toToken || ""}`,
-        Icon: ArrowRightLeft,
-      };
-  }
-}
 
 export default function SwapHome({
   user,
@@ -109,11 +62,6 @@ export default function SwapHome({
       />
     );
   }
-
-  const visibleModes = (modes || []).slice(0, 4);
-  const activeModeConfig =
-    visibleModes.find((mode) => mode.id === activeMode) || visibleModes[0];
-  const activeMeta = getModeButtonMeta(activeModeConfig);
 
   return (
     <div
@@ -177,80 +125,12 @@ export default function SwapHome({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(13,24,36,0.96),rgba(9,16,26,0.98))] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.24)]">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
-                Conversion Modes
-              </p>
-              <h3 className="mt-1 text-sm font-semibold text-white">
-                Choose your utility path
-              </h3>
-            </div>
-
-            <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300">
-              {activeMeta?.shortLabel || "Mode"}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            {visibleModes.map((mode, index) => {
-              const meta = getModeButtonMeta(mode);
-              const isActive = activeMode === mode.id;
-              const Icon = meta.Icon;
-
-              return (
-                <motion.button
-                  type="button"
-                  key={mode.id}
-                  onClick={() => onSelectMode(mode.id)}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.04 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`rounded-[20px] border p-3 text-left transition ${
-                    isActive
-                      ? "border-cyan-400/30 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]"
-                      : "border-white/8 bg-white/5 hover:bg-white/8"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${
-                        isActive
-                          ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
-                          : "border-white/10 bg-white/6 text-white/70"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </div>
-
-                    <div
-                      className={`rounded-xl px-2 py-1 text-[10px] font-medium ${
-                        isActive
-                          ? "bg-cyan-400/10 text-cyan-300"
-                          : "bg-white/6 text-white/45"
-                      }`}
-                    >
-                      {isActive ? "Selected" : "Open"}
-                    </div>
-                  </div>
-
-                  <p className="mt-3 text-sm font-semibold text-white">
-                    {meta.title}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-white/55">
-                    {meta.subtitle}
-                  </p>
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-
         <SwapCoreCard
           tokens={tokens}
           tokenLogos={tokenLogos}
+          modes={modes}
+          activeMode={activeMode}
+          onSelectMode={onSelectMode}
           fromToken={fromToken}
           toToken={toToken}
           fromAmount={fromAmount}
@@ -260,12 +140,15 @@ export default function SwapHome({
           availableToConvert={availableToConvert}
           isLoadingPrices={isLoadingPrices}
           primaryActionLabel={primaryActionLabel}
+          bestRouteLabel={bestRouteLabel}
+          portalData={portalData}
           onSetFromToken={onSetFromToken}
           onSetToToken={onSetToToken}
           onSetFromAmount={onSetFromAmount}
           onSwapTokens={onSwapTokens}
           onSetMax={onSetMax}
           onPrimaryAction={onPrimaryAction}
+          onOpenRoute={onOpenRoute}
         />
 
         <AnimatePresence>
@@ -338,26 +221,9 @@ export default function SwapHome({
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SwapPortal
-            services={services}
-            portalData={portalData}
-            fromToken={fromToken}
-            toToken={toToken}
-            prices={prices}
-            bestRouteLabel={bestRouteLabel}
-            onOpenRoute={onOpenRoute}
-          />
-
-          <SwapHistory history={history} />
-        </div>
+        <SwapHistory history={history} />
 
         <SwapFeedback feedback={feedback} onClose={onCloseFeedback} />
-
-        <p className="px-1 text-center text-[11px] text-white/35">
-          Swap keeps reward utility simple while supported routes handle secure
-          confirmation when needed.
-        </p>
       </div>
     </div>
   );
