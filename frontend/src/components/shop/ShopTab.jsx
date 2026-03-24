@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
 import { useApp } from "@/App";
 import api from "@/lib/api";
-import { toast } from "sonner";
-import { useLocation, useNavigate } from "react-router-dom";
 
 import ShopHome from "@/components/shop/ShopHome";
 import ShopInventoryDialog from "@/components/shop/ShopInventoryDialog";
 import ShopPurchaseDialog from "@/components/shop/ShopPurchaseDialog";
+import ShopRewardsFeedback from "@/components/shop/ShopRewardsFeedback";
 
 const API_BASE = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -18,6 +20,8 @@ export default function ShopTab() {
   const query = new URLSearchParams(location.search);
   const paymentSuccess = query.get("payment") === "success";
   const purchasedItemId = query.get("item");
+
+  const [feedback, setFeedback] = useState(null);
 
   const [items, setItems] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
@@ -34,47 +38,35 @@ export default function ShopTab() {
   const [purchasedItem, setPurchasedItem] = useState(null);
   const [showInventory, setShowInventory] = useState(false);
 
-  useEffect(() => {
-    loadItems();
-  }, []);
-
-  useEffect(() => {
-    if (walletAddress) {
-      loadInventory();
-    } else {
-      setInventoryItems([]);
-    }
-  }, [walletAddress]);
-
-  useEffect(() => {
-    if (!purchasedItemId || items.length === 0) return;
-    const found = items.find((item) => item.id === purchasedItemId);
-    if (found) setPurchasedItem(found);
-  }, [purchasedItemId, items]);
-
   const loadItems = useCallback(async () => {
     setIsLoading(true);
+
     try {
       const data = await api.getShopItems();
       const loaded = Array.isArray(data) ? data : data?.items || [];
+
       setItems(loaded);
 
-      const categoryList = [...new Set(loaded.map((item) => item.category).filter(Boolean))];
-      if (categoryList.length > 0 && !activeCategory) {
-        setActiveCategory(categoryList[0]);
+      const categoryList = [
+        ...new Set(loaded.map((item) => item.category).filter(Boolean)),
+      ];
+
+      if (categoryList.length > 0) {
+        setActiveCategory((prev) => prev || categoryList[0]);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Failed to load shop items:", error);
       toast.error("Failed to load items");
     } finally {
       setIsLoading(false);
     }
-  }, [activeCategory]);
+  }, []);
 
   const loadInventory = useCallback(async () => {
     if (!walletAddress) return;
 
     setInventoryLoading(true);
+
     try {
       const res = await fetch(`${API_BASE}/users/${walletAddress}/inventory`);
       const data = await res.json();
@@ -87,66 +79,11 @@ export default function ShopTab() {
     }
   }, [walletAddress]);
 
-  const ownedItemIds = useMemo(
-    () => new Set(inventoryItems.map((item) => item.item_id)),
-    [inventoryItems]
-  );
-
-  const balances = useMemo(
-    () => ({
-      zwap: Number(user?.zwap_balance || 0),
-      zpts: Number(user?.zpts_balance || 0),
-      tier: user?.tier || "starter",
-    }),
-    [user]
-  );
-
-  const categories = useMemo(
-    () => [...new Set(items.map((item) => item.category).filter(Boolean))],
-    [items]
-  );
-
-  const groupedItems = useMemo(() => {
-    const groups = {};
-
-    categories.forEach((category) => {
-      groups[category] = items.filter((item) => item.category === category);
-    });
-
-    groups.Featured = items.filter(
-      (item) =>
-        item.is_featured ||
-        item.featured ||
-        item.category === "featured" ||
-        item.category === "Featured"
-    );
-
-    if (!groups.Featured.length) {
-      groups.Featured = items.slice(0, 6);
-    }
-
-    groups.All = items;
-
-    return groups;
-  }, [items, categories]);
-
-  const clearSuccessState = useCallback(() => {
-    query.delete("payment");
-    query.delete("item");
-
-    navigate(
-      {
-        pathname: location.pathname,
-        search: query.toString() ? `?${query.toString()}` : "",
-      },
-      { replace: true }
-    );
-  }, [location.pathname, navigate]);
-
   const getPaymentMethod = useCallback((item) => {
     if (!item) return "zwap";
     if (item.payment_method) return item.payment_method;
     if (item.price_stripe && Number(item.price_stripe) > 0) return "stripe";
+
     if (
       item.price_zpts &&
       Number(item.price_zpts) > 0 &&
@@ -154,6 +91,7 @@ export default function ShopTab() {
     ) {
       return "zpts";
     }
+
     return "zwap";
   }, []);
 
@@ -164,7 +102,8 @@ export default function ShopTab() {
 
   const canAffordZpts = useCallback(
     (price) =>
-      Number(price || 0) > 0 && (user?.zpts_balance || 0) >= Number(price || 0),
+      Number(price || 0) > 0 &&
+      (user?.zpts_balance || 0) >= Number(price || 0),
     [user]
   );
 
@@ -183,18 +122,45 @@ export default function ShopTab() {
     setPaymentType("zwap");
   }, []);
 
+  const clearSuccessState = useCallback(() => {
+    const nextQuery = new URLSearchParams(location.search);
+    nextQuery.delete("payment");
+    nextQuery.delete("item");
+
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextQuery.toString() ? `?${nextQuery.toString()}` : "",
+      },
+      { replace: true }
+    );
+  }, [location.pathname, location.search, navigate]);
+
   const handlePurchase = useCallback(async () => {
     if (!selectedItem || !walletAddress) return;
 
     setIsPurchasing(true);
+
     try {
       await api.purchaseItem(walletAddress, selectedItem.id, paymentType);
       setPurchaseSuccess(true);
+
+      setFeedback({
+        id: Date.now(),
+        title: "Purchase Complete",
+        subtitle: selectedItem.name,
+        priceLabel:
+          paymentType === "zpts"
+            ? `${Number(selectedItem.price_zpts || 0)} zPts`
+            : `${Number(selectedItem.price_zwap || 0)} ZWAP`,
+      });
+
       await refreshUser();
       await loadInventory();
+
       toast.success(`Purchased ${selectedItem.name}!`);
     } catch (error) {
-      console.error(error);
+      console.error("Purchase failed:", error);
       toast.error(error?.message || "Purchase failed");
     } finally {
       setIsPurchasing(false);
@@ -205,6 +171,7 @@ export default function ShopTab() {
     if (!selectedItem || !walletAddress) return;
 
     setIsPurchasing(true);
+
     try {
       const isPlusSubscription =
         selectedItem.id === "plus_subscription" ||
@@ -242,19 +209,88 @@ export default function ShopTab() {
 
       window.location.href = data.url;
     } catch (error) {
-      console.error(error);
+      console.error("Stripe checkout failed:", error);
       toast.error(error?.message || "Stripe checkout failed");
     } finally {
       setIsPurchasing(false);
     }
   }, [selectedItem, walletAddress]);
 
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  useEffect(() => {
+    if (walletAddress) {
+      loadInventory();
+    } else {
+      setInventoryItems([]);
+    }
+  }, [walletAddress, loadInventory]);
+
+  useEffect(() => {
+    if (!purchasedItemId || items.length === 0) return;
+
+    const found = items.find(
+      (item) => item.id === purchasedItemId || item._id === purchasedItemId
+    );
+
+    if (found) {
+      setPurchasedItem(found);
+    }
+  }, [purchasedItemId, items]);
+
+  const ownedItemIds = useMemo(() => {
+    return new Set(inventoryItems.map((item) => item.item_id));
+  }, [inventoryItems]);
+
+  const balances = useMemo(() => {
+    return {
+      zwap: Number(user?.zwap_balance || 0),
+      zpts: Number(user?.zpts_balance || 0),
+      tier: user?.tier || "starter",
+    };
+  }, [user]);
+
+  const categories = useMemo(() => {
+    return [...new Set(items.map((item) => item.category).filter(Boolean))];
+  }, [items]);
+
+  const groupedItems = useMemo(() => {
+    const groups = {};
+
+    categories.forEach((category) => {
+      groups[category] = items.filter((item) => item.category === category);
+    });
+
+    groups.Featured = items.filter(
+      (item) =>
+        item.is_featured ||
+        item.featured ||
+        item.category === "featured" ||
+        item.category === "Featured"
+    );
+
+    if (!groups.Featured.length) {
+      groups.Featured = items.slice(0, 6);
+    }
+
+    groups.All = items;
+
+    return groups;
+  }, [items, categories]);
+
   const selectedPaymentMethod = getPaymentMethod(selectedItem);
-  const selectedItemOwned = selectedItem ? ownedItemIds.has(selectedItem.id) : false;
+  const selectedItemOwned = selectedItem
+    ? ownedItemIds.has(selectedItem.id)
+    : false;
 
   const inventoryDisplayItems = useMemo(() => {
     return inventoryItems.map((owned) => {
-      const fullItem = items.find((item) => item.id === owned.item_id);
+      const fullItem = items.find(
+        (item) => item.id === owned.item_id || item._id === owned.item_id
+      );
+
       return {
         ...owned,
         name: owned.item_name || fullItem?.name || "Owned Item",
@@ -284,6 +320,11 @@ export default function ShopTab() {
         onOpenInventory={() => setShowInventory(true)}
         onRefresh={loadItems}
         onOpenItem={openItem}
+      />
+
+      <ShopRewardsFeedback
+        feedback={feedback}
+        onDismiss={() => setFeedback(null)}
       />
 
       <ShopPurchaseDialog
