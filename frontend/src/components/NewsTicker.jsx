@@ -12,6 +12,8 @@ import {
   ExternalLink,
   X,
   Globe,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 
 const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
@@ -20,6 +22,12 @@ const COINGECKO_KEY = process.env.REACT_APP_COINGECKO_API_KEY;
 const NEWS_API_KEY = process.env.REACT_APP_NEWS_API_KEY;
 
 const TICKER_TYPES = {
+  LEARN: {
+    icon: Sparkles,
+    color: "text-violet-300",
+    chip: "zLEARN",
+    chipClass: "bg-violet-500/15 text-violet-300 border-violet-400/20",
+  },
   LEADERBOARD: {
     icon: Trophy,
     color: "text-cyan-300",
@@ -62,6 +70,15 @@ const TICKER_TYPES = {
     chip: "WEB3",
     chipClass: "bg-sky-500/15 text-sky-300 border-sky-400/20",
   },
+};
+
+const shuffleArray = (items) => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 };
 
 const formatPct = (value) => {
@@ -173,6 +190,7 @@ export default function NewsTicker() {
   const [marketItems, setMarketItems] = useState([]);
   const [trendingItems, setTrendingItems] = useState([]);
   const [web3Headlines, setWeb3Headlines] = useState([]);
+  const [learnItems, setLearnItems] = useState([]);
   const [sourceItem, setSourceItem] = useState(null);
 
   useEffect(() => {
@@ -209,6 +227,29 @@ export default function NewsTicker() {
 
     fetchUserRank();
   }, [walletAddress]);
+
+  useEffect(() => {
+    const fetchLearnTicker = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/api/learn/ticker?limit=12`
+        );
+        if (!response.ok) {
+          throw new Error("Failed learn ticker request");
+        }
+
+        const data = await response.json();
+        setLearnItems(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch zLearn ticker items:", error);
+        setLearnItems([]);
+      }
+    };
+
+    fetchLearnTicker();
+    const interval = setInterval(fetchLearnTicker, 180000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchMarketData = async () => {
@@ -315,6 +356,19 @@ export default function NewsTicker() {
   const tickerContent = useMemo(() => {
     const content = [];
 
+    learnItems.forEach((item, index) => {
+      if (!item?.text) return;
+
+      content.push({
+        id: `learn-${item.module_id || "module"}-${index}`,
+        type: "LEARN",
+        text: item.type === "tip" ? `Tip: ${item.text}` : `Did you know? ${item.text}`,
+        clickable: false,
+        url: null,
+        sourceLabel: item.module_title || "zLearn",
+      });
+    });
+
     if (marketItems.length) {
       content.push({
         id: "market-summary",
@@ -366,22 +420,6 @@ export default function NewsTicker() {
           sourceLabel: "CoinGecko",
         });
       }
-
-      trendingItems.forEach((entry, index) => {
-        const coin = entry?.item;
-        if (!coin?.name) return;
-
-        content.push({
-          id: `trending-${coin.coin_id || coin.id || index}`,
-          type: "TRENDING",
-          text: `${coin.name}${coin.symbol ? ` (${coin.symbol})` : ""} is trending`,
-          clickable: true,
-          url: coin?.id
-            ? `https://www.coingecko.com/en/coins/${coin.id}`
-            : "https://www.coingecko.com/en/search/trending-crypto",
-          sourceLabel: "CoinGecko",
-        });
-      });
     }
 
     if (leaderboardStats) {
@@ -472,8 +510,8 @@ export default function NewsTicker() {
       });
     });
 
-    return content;
-  }, [leaderboardStats, userRank, marketItems, trendingItems, web3Headlines]);
+    return shuffleArray(content);
+  }, [learnItems, leaderboardStats, userRank, marketItems, trendingItems, web3Headlines]);
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -547,29 +585,23 @@ export default function NewsTicker() {
                         <button
                           type="button"
                           onClick={handleOpenSource}
-                          className="group flex w-full items-center gap-2 overflow-hidden text-left"
+                          className="flex w-full items-center gap-2 overflow-hidden text-left"
                           title={`${current?.text || ""} • Source: ${
                             current?.sourceLabel || "External"
                           }`}
                         >
                           <motion.span
-                            className="whitespace-nowrap pr-4 text-[13px] text-gray-100 group-hover:text-white"
+                            className="whitespace-nowrap text-[13px] text-gray-100"
                             initial={{ x: "100%" }}
                             animate={{ x: "-100%" }}
                             transition={{ duration: 12, ease: "linear" }}
                           >
                             {current?.text || ""}
                           </motion.span>
-
-                          <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] text-gray-300 group-hover:bg-white/[0.08] group-hover:text-white">
-                            {current?.sourceLabel || "Source"}
-                          </span>
-
-                          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-400 group-hover:text-cyan-300" />
                         </button>
                       ) : (
                         <motion.p
-                          className="whitespace-nowrap pr-10 text-[13px] text-gray-100"
+                          className="whitespace-nowrap text-[13px] text-gray-100"
                           title={current?.text || ""}
                           initial={{ x: "100%" }}
                           animate={{ x: "-100%" }}
@@ -582,6 +614,26 @@ export default function NewsTicker() {
                   )}
                 </AnimatePresence>
               </div>
+
+              <button
+                type="button"
+                onClick={handleOpenSource}
+                disabled={!isClickable}
+                className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold transition ${
+                  isClickable
+                    ? "border-white/10 bg-white/[0.05] text-gray-200 hover:bg-white/[0.10] hover:text-white"
+                    : "border-white/5 bg-white/[0.03] text-gray-500"
+                }`}
+              >
+                {isClickable ? (
+                  <span className="inline-flex items-center gap-1">
+                    See More
+                    <ChevronRight className="h-3 w-3" />
+                  </span>
+                ) : (
+                  current?.sourceLabel || "ZWAP"
+                )}
+              </button>
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5">
