@@ -5,13 +5,6 @@ import { toast } from "sonner";
 
 import SwapHome from "@/components/swap/SwapHome";
 
-/**
- * COMPLIANCE NOTE:
- * Swaps are processed by external third-party services embedded in an iframe
- * or opened in a new tab. ZWAP does not custody or control user transactions.
- * External services handle wallet connection and signing.
- */
-
 // Official token logos
 export const TOKEN_LOGOS = {
   ZWAP:
@@ -21,11 +14,8 @@ export const TOKEN_LOGOS = {
   MATIC: "https://cryptologos.cc/logos/polygon-matic-logo.png",
   USDC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
   USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png",
-  WETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-  WBTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
 };
 
-// Token configurations
 export const TOKENS = {
   ZWAP: {
     name: "ZWAP!",
@@ -46,7 +36,7 @@ export const TOKENS = {
   BTC: {
     name: "Bitcoin",
     symbol: "BTC",
-    // Under the hood this routes through Polygon WBTC
+    // Polygon WBTC under the hood
     address: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
     decimals: 8,
     color: "text-orange-400",
@@ -55,19 +45,11 @@ export const TOKENS = {
   ETH: {
     name: "Ethereum",
     symbol: "ETH",
-    // Under the hood this routes through Polygon WETH
+    // Polygon WETH under the hood
     address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
     decimals: 18,
     color: "text-indigo-300",
     category: "wrapped-display",
-  },
-  MATIC: {
-    name: "Polygon",
-    symbol: "MATIC",
-    address: "0x0000000000000000000000000000000000001010",
-    decimals: 18,
-    color: "text-violet-400",
-    category: "network",
   },
   USDC: {
     name: "USD Coin",
@@ -77,48 +59,7 @@ export const TOKENS = {
     color: "text-blue-400",
     category: "stable",
   },
-  USDT: {
-    name: "Tether",
-    symbol: "USDT",
-    address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-    decimals: 6,
-    color: "text-green-400",
-    category: "stable",
-  },
 };
-
-export const SWAP_SERVICES = [
-  {
-    id: "quickswap",
-    name: "QuickSwap",
-    description: "Polygon route",
-    baseUrl: "https://quickswap.exchange/#/swap",
-    logo: "https://quickswap.exchange/logo_circle.png",
-    fallbackLogo: "⚡",
-    recommended: true,
-    iframeSupported: true,
-  },
-  {
-    id: "1inch",
-    name: "1inch",
-    description: "Aggregated route",
-    baseUrl: "https://app.1inch.io/#/137/simple/swap/MATIC/",
-    logo: "https://app.1inch.io/assets/images/logo.svg",
-    fallbackLogo: "🦄",
-    recommended: false,
-    iframeSupported: false,
-  },
-  {
-    id: "jumper",
-    name: "Jumper",
-    description: "Extended routing",
-    baseUrl: "https://jumper.exchange/?fromChain=137&toChain=137",
-    logo: "https://jumper.exchange/jumper-icon.svg",
-    fallbackLogo: "🌉",
-    recommended: false,
-    iframeSupported: false,
-  },
-];
 
 export const SWAP_MODES = [
   {
@@ -155,64 +96,32 @@ export const SWAP_MODES = [
   },
 ];
 
+// Single embedded provider config for now
+export const SWAP_PROVIDER = {
+  id: "embedded-swap",
+  name: "ZWAP Swap Flow",
+  description: "Embedded conversion flow",
+  iframeSupported: true,
+};
+
 const mapTokenToRouteAddress = (tokenKey) => {
-  if (tokenKey === "BTC") return TOKENS.BTC.address;
-  if (tokenKey === "ETH") return TOKENS.ETH.address;
   return TOKENS[tokenKey]?.address || "";
 };
 
-const oneInchTokenParam = (tokenKey) => {
-  if (tokenKey === "MATIC") return "MATIC";
-  return mapTokenToRouteAddress(tokenKey);
-};
+// For now we keep a single embeddable URL flow.
+// Replace this later with the chosen widget embed/config implementation.
+const buildEmbeddedSwapUrl = ({ fromToken, toToken, amount }) => {
+  const fromAddress = mapTokenToRouteAddress(fromToken);
+  const toAddress = mapTokenToRouteAddress(toToken);
+  const fromAmount = amount ? String(amount) : "";
 
-const quickswapTokenParam = (tokenKey) => {
-  if (tokenKey === "MATIC") return "ETH";
-  return mapTokenToRouteAddress(tokenKey);
-};
-
-const jumperTokenParam = (tokenKey) => {
-  return mapTokenToRouteAddress(tokenKey);
-};
-
-const buildSwapUrl = (service, fromToken, toToken, amount) => {
-  switch (service.id) {
-    case "jumper": {
-      const fromAddr = jumperTokenParam(fromToken);
-      const toAddr = jumperTokenParam(toToken);
-      const fromAmt = amount ? String(amount) : "";
-
-      return `https://jumper.exchange/?fromChain=137&toChain=137&fromToken=${encodeURIComponent(
-        fromAddr
-      )}&toToken=${encodeURIComponent(toAddr)}${
-        fromAmt ? `&fromAmount=${encodeURIComponent(fromAmt)}` : ""
-      }`;
-    }
-
-    case "1inch": {
-      const fromParam = oneInchTokenParam(fromToken);
-      const toParam = oneInchTokenParam(toToken);
-      const amt = amount ? String(amount) : "";
-
-      return `https://app.1inch.io/#/137/simple/swap/${encodeURIComponent(
-        fromParam
-      )}/${encodeURIComponent(toParam)}${
-        amt ? `?amount=${encodeURIComponent(amt)}` : ""
-      }`;
-    }
-
-    case "quickswap": {
-      const inputCurrency = quickswapTokenParam(fromToken);
-      const outputCurrency = quickswapTokenParam(toToken);
-
-      return `https://quickswap.exchange/#/swap?inputCurrency=${encodeURIComponent(
-        inputCurrency
-      )}&outputCurrency=${encodeURIComponent(outputCurrency)}`;
-    }
-
-    default:
-      return service.baseUrl;
-  }
+  // Temporary single-flow URL shell using Jumper because it is known to accept token params.
+  // Later this function becomes the dedicated LI.FI / chosen widget config source.
+  return `https://jumper.exchange/?fromChain=137&toChain=137&fromToken=${encodeURIComponent(
+    fromAddress
+  )}&toToken=${encodeURIComponent(toAddress)}${
+    fromAmount ? `&fromAmount=${encodeURIComponent(fromAmount)}` : ""
+  }`;
 };
 
 const formatAmount = (value, digits = 6) => {
@@ -249,7 +158,14 @@ export default function SwapTab() {
   const loadPrices = useCallback(async () => {
     try {
       const data = await api.getPrices();
-      setPrices(data || {});
+
+      const normalizedPrices = {
+        ...(data || {}),
+        BTC: data?.BTC ?? data?.WBTC ?? null,
+        ETH: data?.ETH ?? data?.WETH ?? null,
+      };
+
+      setPrices(normalizedPrices);
     } catch (error) {
       console.error("Failed to load prices", error);
     } finally {
@@ -271,10 +187,6 @@ export default function SwapTab() {
     setToToken(mode.toToken);
     setFromAmount("");
   }, [activeMode]);
-
-  const availableAssets = useMemo(() => {
-    return ["ZWAP", "BTC", "ETH", "USDC"];
-  }, []);
 
   const walletZwapBalance = Number(user?.zwap_balance ?? 0);
   const walletZptsBalance = Number(user?.zpts_balance ?? 0);
@@ -306,7 +218,7 @@ export default function SwapTab() {
     const fromValue = amt * prices[fromToken];
     const toAmt = fromValue / (prices[toToken] || 1);
 
-    return formatAmount(toAmt, toToken === "USDC" || toToken === "USDT" ? 2 : 6);
+    return formatAmount(toAmt, toToken === "USDC" ? 2 : 6);
   }, [fromAmount, fromToken, toToken, prices]);
 
   const rate = useMemo(() => {
@@ -320,11 +232,11 @@ export default function SwapTab() {
   }, [fromToken, toToken, prices]);
 
   const bestRouteLabel = useMemo(() => {
-    if (fromToken === "zPTS" && toToken === "ZWAP") return "Internal conversion";
-    if (toToken === "BTC") return "Bitcoin route ready";
-    if (toToken === "ETH") return "Ethereum route ready";
-    if (toToken === "USDC") return "Stable route ready";
-    return "Best route ready";
+    if (fromToken === "zPTS" && toToken === "ZWAP") return "Direct conversion";
+    if (toToken === "BTC") return "Bitcoin path selected";
+    if (toToken === "ETH") return "Ethereum path selected";
+    if (toToken === "USDC") return "Stable path selected";
+    return "Swap path selected";
   }, [fromToken, toToken]);
 
   const readyNowLabel = useMemo(() => {
@@ -345,17 +257,6 @@ export default function SwapTab() {
   const handleSelectMode = (modeId) => {
     const mode = SWAP_MODES.find((item) => item.id === modeId);
     if (!mode) return;
-
-    if (mode.status === "locked") {
-      toast.message("This route is locked for now.");
-      return;
-    }
-
-    if (mode.status === "future") {
-      toast.message("This route is coming soon.");
-      return;
-    }
-
     setActiveMode(modeId);
   };
 
@@ -410,63 +311,45 @@ export default function SwapTab() {
     ]);
   }, []);
 
-  const openSwapService = useCallback(
-    (service) => {
-      if (!fromAmount || parseFloat(fromAmount) <= 0) {
-        toast.error("Enter an amount first");
-        return;
-      }
+  const openEmbeddedSwapFlow = useCallback(() => {
+    if (!fromAmount || parseFloat(fromAmount) <= 0) {
+      toast.error("Enter an amount first");
+      return;
+    }
 
-      if (fromToken === toToken) {
-        toast.error("Select two different assets");
-        return;
-      }
+    if (fromToken === toToken) {
+      toast.error("Select two different assets");
+      return;
+    }
 
-      const url = buildSwapUrl(service, fromToken, toToken, fromAmount);
+    const url = buildEmbeddedSwapUrl({
+      fromToken,
+      toToken,
+      amount: fromAmount,
+    });
 
-      if (!service.iframeSupported) {
-        window.open(url, "_blank", "noopener,noreferrer");
+    setIsRouteLoading(true);
+    setActiveService({
+      ...SWAP_PROVIDER,
+      url,
+    });
 
-        setExternalSwapNotice({
-          serviceName: service.name,
-          fromToken,
-          toToken,
-          fromAmount,
-          url,
-        });
+    setFeedback({
+      type: "pending",
+      title: "Preparing swap flow",
+      message: `Opening ${fromAmount} ${fromToken} → ${toToken}`,
+    });
 
-        setFeedback({
-          type: "route",
-          title: "Route opened",
-          message:
-            "Your conversion path was opened in a secure external flow. Complete the confirmation, then return to refresh balances.",
-        });
+    recordHistoryItem({
+      type: "route-opened",
+      label: `${fromAmount} ${fromToken} → ${toToken}`,
+      status: "Opened in app",
+    });
 
-        recordHistoryItem({
-          type: "route-opened",
-          label: `${fromAmount} ${fromToken} → ${toToken}`,
-          status: "External route opened",
-        });
-
-        toast.success("Conversion route opened");
-        return;
-      }
-
-      setIsRouteLoading(true);
-      setActiveService({ ...service, url });
-
-      setFeedback({
-        type: "pending",
-        title: "Preparing route",
-        message: `Opening ${fromAmount} ${fromToken} → ${toToken}`,
-      });
-
-      window.setTimeout(() => {
-        setIsRouteLoading(false);
-      }, 1500);
-    },
-    [fromAmount, fromToken, toToken, recordHistoryItem]
-  );
+    window.setTimeout(() => {
+      setIsRouteLoading(false);
+    }, 1200);
+  }, [fromAmount, fromToken, toToken, recordHistoryItem]);
 
   const executePrimaryAction = async () => {
     const amountNum = parseFloat(fromAmount);
@@ -537,11 +420,7 @@ export default function SwapTab() {
       }
     }
 
-    const bestService =
-      SWAP_SERVICES.find((service) => service.id === "quickswap") ||
-      SWAP_SERVICES[0];
-
-    openSwapService(bestService);
+    openEmbeddedSwapFlow();
   };
 
   const closeSwapService = () => {
@@ -551,11 +430,11 @@ export default function SwapTab() {
 
     setFeedback({
       type: "info",
-      title: "Route closed",
-      message: "You can return to the utility flow whenever you're ready.",
+      title: "Swap flow closed",
+      message: "You are back in the app.",
     });
 
-    toast.success("Swap window closed");
+    toast.success("Returned to ZWAP");
   };
 
   const primaryActionLabel = useMemo(() => {
@@ -563,20 +442,8 @@ export default function SwapTab() {
     if (toToken === "BTC") return "Continue to BTC";
     if (toToken === "ETH") return "Continue to ETH";
     if (toToken === "USDC") return "Continue to USDC";
-    return "Continue Swap";
+    return "Continue";
   }, [fromToken, toToken]);
-
-  const portalData = useMemo(() => {
-    return {
-      supportedAssets: ["ZWAP", "BTC", "ETH", "USDC"],
-      routeStatus: bestRouteLabel,
-      infoLines: [
-        "Choose a familiar asset path and let ZWAP prepare the route for you.",
-        "Some routes may require wallet confirmation in a secure external flow.",
-        "More advanced details stay behind the scenes so the experience stays simple.",
-      ],
-    };
-  }, [bestRouteLabel]);
 
   return (
     <SwapHome
@@ -586,9 +453,8 @@ export default function SwapTab() {
       isLoadingPrices={isLoadingPrices}
       tokens={TOKENS}
       tokenLogos={TOKEN_LOGOS}
-      services={SWAP_SERVICES}
+      services={[SWAP_PROVIDER]}
       modes={SWAP_MODES}
-      availableAssets={availableAssets}
       activeMode={activeMode}
       fromToken={fromToken}
       toToken={toToken}
@@ -606,7 +472,6 @@ export default function SwapTab() {
       readyNowLabel={readyNowLabel}
       bestRouteLabel={bestRouteLabel}
       primaryActionLabel={primaryActionLabel}
-      portalData={portalData}
       onSetFromToken={setFromToken}
       onSetToToken={setToToken}
       onSetFromAmount={setFromAmount}
@@ -615,7 +480,7 @@ export default function SwapTab() {
       onSetMax={handleSetMax}
       onRefresh={refreshSwapData}
       onPrimaryAction={executePrimaryAction}
-      onOpenRoute={openSwapService}
+      onOpenRoute={openEmbeddedSwapFlow}
       onDismissExternalNotice={() => setExternalSwapNotice(null)}
       onCloseFeedback={() => setFeedback(null)}
       onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
