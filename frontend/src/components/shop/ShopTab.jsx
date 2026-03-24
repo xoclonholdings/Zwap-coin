@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import ShopHome from "@/views/shop/ShopHome";
+import ShopHome from "@/components/shop/ShopHome";
 import ShopInventoryDialog from "@/components/shop/ShopInventoryDialog";
 import ShopPurchaseDialog from "@/components/shop/ShopPurchaseDialog";
 
