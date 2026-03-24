@@ -7,6 +7,7 @@ from services.zlearn_service import (
     get_module_summaries,
     create_trivia_session,
     check_trivia_answer,
+    get_ticker_education_items,
 )
 
 learn_router = APIRouter(prefix="/learn", tags=["Learn"])
@@ -39,8 +40,13 @@ async def list_learn_modules():
 async def get_learn_module(module_id: str):
     module = get_module(module_id)
     if not module:
-      raise HTTPException(status_code=404, detail="Module not found")
+        raise HTTPException(status_code=404, detail="Module not found")
     return module
+
+
+@learn_router.get("/ticker")
+async def get_learn_ticker_items(limit: int = 10):
+    return get_ticker_education_items(limit=limit)
 
 
 @learn_router.get("/trivia/questions")
