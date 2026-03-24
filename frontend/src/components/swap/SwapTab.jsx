@@ -36,7 +36,6 @@ export const TOKENS = {
   BTC: {
     name: "Bitcoin",
     symbol: "BTC",
-    // Polygon WBTC under the hood
     address: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
     decimals: 8,
     color: "text-orange-400",
@@ -45,7 +44,6 @@ export const TOKENS = {
   ETH: {
     name: "Ethereum",
     symbol: "ETH",
-    // Polygon WETH under the hood
     address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
     decimals: 18,
     color: "text-indigo-300",
@@ -96,7 +94,6 @@ export const SWAP_MODES = [
   },
 ];
 
-// Single embedded provider config for now
 export const SWAP_PROVIDER = {
   id: "embedded-swap",
   name: "ZWAP Swap Flow",
@@ -108,15 +105,11 @@ const mapTokenToRouteAddress = (tokenKey) => {
   return TOKENS[tokenKey]?.address || "";
 };
 
-// For now we keep a single embeddable URL flow.
-// Replace this later with the chosen widget embed/config implementation.
 const buildEmbeddedSwapUrl = ({ fromToken, toToken, amount }) => {
   const fromAddress = mapTokenToRouteAddress(fromToken);
   const toAddress = mapTokenToRouteAddress(toToken);
   const fromAmount = amount ? String(amount) : "";
 
-  // Temporary single-flow URL shell using Jumper because it is known to accept token params.
-  // Later this function becomes the dedicated LI.FI / chosen widget config source.
   return `https://jumper.exchange/?fromChain=137&toChain=137&fromToken=${encodeURIComponent(
     fromAddress
   )}&toToken=${encodeURIComponent(toAddress)}${
@@ -149,7 +142,6 @@ export default function SwapTab() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
 
-  const [externalSwapNotice, setExternalSwapNotice] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [history, setHistory] = useState([]);
 
@@ -449,11 +441,9 @@ export default function SwapTab() {
     <SwapHome
       user={user}
       isPlus={isPlus}
-      prices={prices}
       isLoadingPrices={isLoadingPrices}
       tokens={TOKENS}
       tokenLogos={TOKEN_LOGOS}
-      services={[SWAP_PROVIDER]}
       modes={SWAP_MODES}
       activeMode={activeMode}
       fromToken={fromToken}
@@ -465,23 +455,18 @@ export default function SwapTab() {
       activeService={activeService}
       isFullscreen={isFullscreen}
       isRouteLoading={isRouteLoading}
-      externalSwapNotice={externalSwapNotice}
       feedback={feedback}
       history={history}
       availableToConvert={availableToConvert}
       readyNowLabel={readyNowLabel}
       bestRouteLabel={bestRouteLabel}
       primaryActionLabel={primaryActionLabel}
-      onSetFromToken={setFromToken}
-      onSetToToken={setToToken}
       onSetFromAmount={setFromAmount}
       onSwapTokens={swapTokens}
       onSelectMode={handleSelectMode}
       onSetMax={handleSetMax}
       onRefresh={refreshSwapData}
       onPrimaryAction={executePrimaryAction}
-      onOpenRoute={openEmbeddedSwapFlow}
-      onDismissExternalNotice={() => setExternalSwapNotice(null)}
       onCloseFeedback={() => setFeedback(null)}
       onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
       onCloseSwapService={closeSwapService}
