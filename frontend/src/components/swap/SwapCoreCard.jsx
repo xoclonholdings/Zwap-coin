@@ -1,6 +1,13 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowRightLeft, Sparkles } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRightLeft,
+  Bitcoin,
+  Coins,
+  Info,
+  Sparkles,
+} from "lucide-react";
 
 function TokenIcon({ token, tokenLogos, size = "md" }) {
   const sizeClasses = {
@@ -59,13 +66,55 @@ function AssetChip({ token, tokens, tokenLogos }) {
 function formatBalance(value, token) {
   const num = Number(value || 0);
   if (!Number.isFinite(num)) return "0";
-
   return num.toFixed(token === "zPTS" ? 0 : 2);
+}
+
+function getModeMeta(mode) {
+  switch (mode?.id) {
+    case "convert-zpts":
+      return {
+        title: "Convert",
+        subtitle: "Points → ZWAP",
+        shortLabel: "zPts",
+        Icon: Coins,
+      };
+    case "swap-btc":
+      return {
+        title: "Bitcoin",
+        subtitle: "ZWAP → BTC",
+        shortLabel: "BTC",
+        Icon: Bitcoin,
+      };
+    case "swap-eth":
+      return {
+        title: "Ethereum",
+        subtitle: "ZWAP → ETH",
+        shortLabel: "ETH",
+        Icon: ArrowRightLeft,
+      };
+    case "swap-usdc":
+      return {
+        title: "Stable",
+        subtitle: "ZWAP → USDC",
+        shortLabel: "USDC",
+        Icon: ArrowRightLeft,
+      };
+    default:
+      return {
+        title: mode?.name || "Mode",
+        subtitle: `${mode?.fromToken || ""} → ${mode?.toToken || ""}`,
+        shortLabel: mode?.name || "Mode",
+        Icon: ArrowRightLeft,
+      };
+  }
 }
 
 export default function SwapCoreCard({
   tokens,
   tokenLogos,
+  modes = [],
+  activeMode,
+  onSelectMode,
   fromToken,
   toToken,
   fromAmount,
@@ -75,10 +124,13 @@ export default function SwapCoreCard({
   availableToConvert,
   isLoadingPrices,
   primaryActionLabel,
+  bestRouteLabel,
+  portalData,
   onSetFromAmount,
   onSwapTokens,
   onSetMax,
   onPrimaryAction,
+  onOpenRoute,
 }) {
   const canSubmit =
     fromAmount &&
@@ -86,6 +138,18 @@ export default function SwapCoreCard({
     parseFloat(fromAmount) > 0;
 
   const disableFlip = fromToken === "zPTS" || toToken === "zPTS";
+  const visibleModes = modes.slice(0, 4);
+  const activeModeConfig =
+    visibleModes.find((mode) => mode.id === activeMode) || visibleModes[0];
+  const activeModeMeta = getModeMeta(activeModeConfig);
+
+  const infoText =
+    activeMode === "convert-zpts"
+      ? "zPts convert directly into ZWAP inside your reward flow."
+      : "Some swaps may continue in a secure external confirmation step after you choose your amount.";
+
+  const featuredService =
+    portalData?.featuredServiceName || "Secure Route";
 
   return (
     <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_34%),linear-gradient(180deg,rgba(9,18,30,0.98),rgba(7,13,24,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.30)]">
@@ -110,6 +174,77 @@ export default function SwapCoreCard({
 
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-400/10">
           <Sparkles className="h-5 w-5 text-violet-300" />
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
+              Conversion Modes
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Choose your utility path
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300">
+            {activeModeMeta?.shortLabel || "Mode"}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {visibleModes.map((mode, index) => {
+            const meta = getModeMeta(mode);
+            const Icon = meta.Icon;
+            const isActive = activeMode === mode.id;
+
+            return (
+              <motion.button
+                type="button"
+                key={mode.id}
+                onClick={() => onSelectMode(mode.id)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
+                whileTap={{ scale: 0.98 }}
+                className={`rounded-[20px] border p-3 text-left transition ${
+                  isActive
+                    ? "border-cyan-400/30 bg-cyan-400/10 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]"
+                    : "border-white/8 bg-white/5 hover:bg-white/8"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${
+                      isActive
+                        ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-300"
+                        : "border-white/10 bg-white/6 text-white/70"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+
+                  <div
+                    className={`rounded-xl px-2 py-1 text-[10px] font-medium ${
+                      isActive
+                        ? "bg-cyan-400/10 text-cyan-300"
+                        : "bg-white/6 text-white/45"
+                    }`}
+                  >
+                    {isActive ? "Selected" : "Open"}
+                  </div>
+                </div>
+
+                <p className="mt-3 text-sm font-semibold text-white">
+                  {meta.title}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-white/55">
+                  {meta.subtitle}
+                </p>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
@@ -200,6 +335,23 @@ export default function SwapCoreCard({
                 {isLoadingPrices
                   ? "Updating route data..."
                   : `1 ${fromToken} ≈ ${rate} ${toToken}`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-2xl border border-white/8 bg-white/5 p-3">
+          <div className="flex items-start gap-2">
+            <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-300" />
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-wide text-white/45">
+                Helpful Context
+              </p>
+              <p className="mt-1 text-xs leading-5 text-white/58">
+                {infoText}
+              </p>
+              <p className="mt-2 text-xs font-medium text-cyan-300">
+                {bestRouteLabel}
               </p>
             </div>
           </div>
