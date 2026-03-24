@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "@/App";
 import api from "@/lib/api";
 import {
   Trophy,
   Newspaper,
-  Lightbulb,
-  Gift,
   Bell,
   Users,
   Bitcoin,
@@ -15,7 +13,6 @@ import {
   X,
   Globe,
 } from "lucide-react";
-import { allDidYouKnow } from "@/data/education";
 
 const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
 const NEWS_API_BASE = "https://newsapi.org/v2";
@@ -23,12 +20,6 @@ const COINGECKO_KEY = process.env.REACT_APP_COINGECKO_API_KEY;
 const NEWS_API_KEY = process.env.REACT_APP_NEWS_API_KEY;
 
 const TICKER_TYPES = {
-  DEAL: {
-    icon: Gift,
-    color: "text-yellow-300",
-    chip: "DEAL",
-    chipClass: "bg-yellow-500/15 text-yellow-300 border-yellow-400/20",
-  },
   LEADERBOARD: {
     icon: Trophy,
     color: "text-cyan-300",
@@ -40,12 +31,6 @@ const TICKER_TYPES = {
     color: "text-blue-300",
     chip: "NEWS",
     chipClass: "bg-blue-500/15 text-blue-300 border-blue-400/20",
-  },
-  TIP: {
-    icon: Lightbulb,
-    color: "text-purple-300",
-    chip: "TIP",
-    chipClass: "bg-purple-500/15 text-purple-300 border-purple-400/20",
   },
   UPDATE: {
     icon: Bell,
@@ -78,57 +63,6 @@ const TICKER_TYPES = {
     chipClass: "bg-sky-500/15 text-sky-300 border-sky-400/20",
   },
 };
-
-const staticContent = [
-  {
-    id: "deal-plus-boost",
-    type: "DEAL",
-    text: "Plus subscribers get 1.5x rewards on all earnings!",
-    clickable: false,
-    url: null,
-    sourceLabel: "ZWAP",
-  },
-  {
-    id: "deal-weekend-bonus",
-    type: "DEAL",
-    text: "Weekend bonus: Double Z Points on games (Sat-Sun)",
-    clickable: false,
-    url: null,
-    sourceLabel: "ZWAP",
-  },
-  {
-    id: "update-ztetris",
-    type: "UPDATE",
-    text: "New: zTetris game now available for Plus members!",
-    clickable: false,
-    url: null,
-    sourceLabel: "ZWAP",
-  },
-  {
-    id: "tip-play-zpts",
-    type: "TIP",
-    text: "Tip: Play games to earn Z Points. Walking only gives ZWAP.",
-    clickable: false,
-    url: null,
-    sourceLabel: "ZWAP",
-  },
-  {
-    id: "tip-game-levels",
-    type: "TIP",
-    text: "Pro tip: Higher game levels = better rewards!",
-    clickable: false,
-    url: null,
-    sourceLabel: "ZWAP",
-  },
-  ...allDidYouKnow.map((item, index) => ({
-    id: `dyk-${item.moduleId}-${index}`,
-    type: "TIP",
-    text: `Did you know? ${item.fact}`,
-    clickable: false,
-    url: null,
-    sourceLabel: item.moduleTitle || "zLearn",
-  })),
-];
 
 const formatPct = (value) => {
   const num = Number(value);
@@ -205,12 +139,10 @@ function SourceBrowserModal({ item, onClose }) {
                   <Globe className="h-5 w-5 text-cyan-300" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">
-                    Loading source...
-                  </p>
+                  <p className="text-sm font-medium text-white">Loading source...</p>
                   <p className="mt-1 text-xs text-gray-400">
-                    Some websites may block in-app embedding. If that happens,
-                    use the open button above.
+                    Some websites block in-app embedding. If that happens, use the
+                    open button above.
                   </p>
                 </div>
               </div>
@@ -236,7 +168,6 @@ export default function NewsTicker() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-  const [tickerContent, setTickerContent] = useState([]);
   const [leaderboardStats, setLeaderboardStats] = useState(null);
   const [userRank, setUserRank] = useState(null);
   const [marketItems, setMarketItems] = useState([]);
@@ -381,8 +312,8 @@ export default function NewsTicker() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const content = [...staticContent];
+  const tickerContent = useMemo(() => {
+    const content = [];
 
     if (marketItems.length) {
       content.push({
@@ -541,8 +472,12 @@ export default function NewsTicker() {
       });
     });
 
-    setTickerContent(content);
+    return content;
   }, [leaderboardStats, userRank, marketItems, trendingItems, web3Headlines]);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [tickerContent.length]);
 
   useEffect(() => {
     if (tickerContent.length === 0) return;
@@ -558,12 +493,6 @@ export default function NewsTicker() {
 
     return () => clearInterval(interval);
   }, [tickerContent.length]);
-
-  useEffect(() => {
-    if (currentIndex >= tickerContent.length && tickerContent.length > 0) {
-      setCurrentIndex(0);
-    }
-  }, [tickerContent.length, currentIndex]);
 
   if (tickerContent.length === 0) return null;
 
