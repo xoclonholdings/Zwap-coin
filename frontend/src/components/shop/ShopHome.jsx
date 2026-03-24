@@ -7,9 +7,6 @@ import {
   RefreshCw,
   ShoppingBag,
   Sparkles,
-  TrendingUp,
-  Wallet,
-  Coins,
   Download,
   ExternalLink,
   ChevronLeft,
@@ -24,7 +21,7 @@ const DISPLAY_ORDER = ["Featured", "All"];
 
 function tierLabel(tier) {
   return String(tier || "starter").toLowerCase() === "plus"
-    ? "Starter"
+    ? "Plus"
     : "Starter";
 }
 
@@ -102,90 +99,235 @@ export default function ShopHome({
 
   return (
     <div
-      className="min-h-[calc(100dvh-160px)] bg-[#081017] px-4 py-4 text-white"
+      className="min-h-[calc(100dvh-140px)] bg-[#081017] px-4 py-4 text-white"
       data-testid="shop-tab"
     >
       <div className="mx-auto w-full max-w-md space-y-4">
-        {/* HERO */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,#15283b_0%,#0c1621_45%,#081017_100%)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
-        >
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(34,211,238,0.08),transparent_35%,rgba(168,85,247,0.10)_70%,transparent)]" />
+        <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.14),_transparent_30%),linear-gradient(180deg,rgba(11,10,24,0.96),rgba(9,12,18,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">
+                  Shop
+                </p>
 
-          <div className="relative space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
-                    Shop
-                  </span>
-
-                  <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/20 bg-yellow-400/10 px-2.5 py-1 text-[11px] font-semibold text-yellow-200">
-                    <Crown className="h-3.5 w-3.5" />
-                    {tierLabel(balances?.tier)}
-                  </span>
-                </div>
-
-                <div>
-                  <h1 className="text-[28px] font-semibold leading-tight tracking-tight">
-                    Spend &amp; Redeem
-                  </h1>
-                  <p className="mt-1 text-sm text-white/65">
-                    Turn rewards into real value.
-                  </p>
+                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
+                  {tierLabel(balances?.tier)}
                 </div>
               </div>
 
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={onRefresh}
-                className="rounded-2xl border border-white/10 bg-white/5 text-white hover:bg-white/10"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+                Spend &amp; Redeem
+              </h1>
+              <p className="mt-1 text-sm text-white/55">
+                Turn rewards into real value.
+              </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-[22px] border border-cyan-400/15 bg-cyan-400/10 p-3 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
-                <div className="mb-2 flex items-center gap-2 text-cyan-200/90">
-                  <Wallet className="h-4 w-4" />
-                  <span className="text-[11px] uppercase tracking-[0.16em]">ZWAP</span>
-                </div>
-                <div className="text-lg font-semibold">
-                  {Number(balances?.zwap || 0).toFixed(2)}
-                </div>
-              </div>
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-400/10"
+            >
+              <RefreshCw className="h-5 w-5 text-violet-300" />
+            </button>
+          </div>
 
-              <div className="rounded-[22px] border border-emerald-400/15 bg-emerald-400/10 p-3 shadow-[0_0_24px_rgba(16,185,129,0.08)]">
-                <div className="mb-2 flex items-center gap-2 text-emerald-200/90">
-                  <Coins className="h-4 w-4" />
-                  <span className="text-[11px] uppercase tracking-[0.16em]">zPts</span>
-                </div>
-                <div className="text-lg font-semibold">
-                  {Number(balances?.zpts || 0).toLocaleString()}
-                </div>
-              </div>
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/45">
+                ZWAP
+              </p>
+              <p className="mt-1 text-sm font-medium text-violet-300">
+                {Number(balances?.zwap || 0).toFixed(2)}
+              </p>
+            </div>
 
-              <div className="rounded-[22px] border border-violet-400/15 bg-violet-400/10 p-3 shadow-[0_0_24px_rgba(168,85,247,0.08)]">
-                <div className="mb-2 flex items-center gap-2 text-violet-200/90">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="text-[11px] uppercase tracking-[0.16em]">Status</span>
-                </div>
-                <div className="text-sm font-semibold leading-snug">
-                  {items?.length ? "Ready to redeem" : "Earn to unlock rewards"}
-                </div>
-              </div>
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/45">
+                zPts
+              </p>
+              <p className="mt-1 text-sm font-medium text-cyan-300">
+                {Number(balances?.zpts || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/45">
+                Status
+              </p>
+              <p className="mt-1 text-sm font-medium text-white/85">
+                {items?.length ? "Ready" : "Locked"}
+              </p>
             </div>
           </div>
-        </motion.section>
 
-        {/* SUCCESS BANNER */}
+          <div className="rounded-[24px] border border-cyan-400/12 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_32%),linear-gradient(180deg,rgba(8,16,23,0.96),rgba(7,12,18,0.98))] p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-white/45">
+                  Marketplace
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-white">
+                  Reward Catalog
+                </h3>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-300">
+                Live Items
+              </div>
+            </div>
+
+            <p className="mb-4 text-sm text-white/55">
+              Browse categories, shuffle rewards, and open items to redeem.
+            </p>
+
+            <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {orderedSections.map((category) => {
+                const isActive = activeCategory === category;
+
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setActiveCategory(category)}
+                    className={`whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium transition ${
+                      isActive
+                        ? "border border-cyan-400/18 bg-cyan-400/10 text-cyan-300"
+                        : "border border-white/8 bg-white/[0.03] text-white/55 hover:text-white"
+                    }`}
+                    type="button"
+                  >
+                    {String(category).replaceAll("_", " ")}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="rounded-[22px] border border-cyan-400/14 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_26%),linear-gradient(180deg,rgba(8,16,23,0.94),rgba(7,12,18,0.98))] p-3">
+              {isLoading ? (
+                <div className="flex items-center justify-center rounded-2xl border border-white/8 bg-black/20 px-4 py-10 text-white/55">
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Loading shop...
+                </div>
+              ) : currentItem ? (
+                <div className="relative">
+                  {marketplaceItems.length > 1 ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={prevItem}
+                        className="absolute left-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/35 text-white hover:bg-cyan-400/10"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={nextItem}
+                        className="absolute right-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/35 text-white hover:bg-cyan-400/10"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </>
+                  ) : null}
+
+                  <AnimatePresence mode="wait">
+                    <motion.button
+                      key={currentItem.id || currentItem._id}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, x: 18 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -18 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => onOpenItem(currentItem)}
+                      className="w-full rounded-[22px] border border-cyan-400/12 bg-cyan-400/[0.05] p-3 text-left transition hover:bg-cyan-400/[0.09]"
+                      type="button"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/25">
+                          {currentItem.image_url ? (
+                            <img
+                              src={currentItem.image_url}
+                              alt={currentItem.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <ShoppingBag className="h-8 w-8 text-white/25" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="truncate text-[15px] font-semibold text-white">
+                              {currentItem.name}
+                            </h3>
+
+                            {currentItem.plus_only ? (
+                              <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+                                Plus
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <p className="mt-1 line-clamp-2 text-sm text-white/60">
+                            {currentItem.description ||
+                              "Redeem your rewards for something worth having."}
+                          </p>
+
+                          <div className="mt-3 flex items-center justify-between">
+                            <span className="text-[11px] font-medium text-cyan-300">
+                              {String(activeCategory || "Marketplace").replaceAll("_", " ")}
+                            </span>
+
+                            <span className="text-sm font-medium text-white">
+                              {getDisplayPrice(currentItem)}
+                            </span>
+                          </div>
+
+                          <div className="mt-1 flex items-center justify-between">
+                            <p className="text-[11px] uppercase tracking-wide text-white/35">
+                              {ownedItemIds.has(currentItem.id) ? "Owned item" : "Tap to view"}
+                            </p>
+
+                            <span className="text-[11px] text-white/45">
+                              Open
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.button>
+                  </AnimatePresence>
+
+                  {marketplaceItems.length > 1 ? (
+                    <div className="mt-3 flex justify-center gap-2">
+                      {marketplaceItems.map((item, idx) => (
+                        <button
+                          key={item.id || item._id || idx}
+                          onClick={() => setCarouselIndex(idx)}
+                          className={`h-2 rounded-full transition-all ${
+                            idx === carouselIndex
+                              ? "w-6 bg-cyan-400"
+                              : "w-2 bg-white/20 hover:bg-white/35"
+                          }`}
+                          type="button"
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-8 text-center">
+                  <p className="text-sm text-white/60">
+                    No items in this section yet.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <AnimatePresence>
-          {paymentSuccess && purchasedItem && (
+          {paymentSuccess && purchasedItem ? (
             <motion.div
               initial={{ opacity: 0, y: -14 }}
               animate={{ opacity: 1, y: 0 }}
@@ -217,7 +359,7 @@ export default function ShopHome({
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {purchasedItem.download_url && (
+                {purchasedItem.download_url ? (
                   <a
                     href={purchasedItem.download_url}
                     target="_blank"
@@ -227,9 +369,9 @@ export default function ShopHome({
                     <Download className="h-4 w-4" />
                     Download
                   </a>
-                )}
+                ) : null}
 
-                {purchasedItem.external_url && (
+                {purchasedItem.external_url ? (
                   <a
                     href={purchasedItem.external_url}
                     target="_blank"
@@ -239,7 +381,7 @@ export default function ShopHome({
                     <ExternalLink className="h-4 w-4" />
                     Open Item
                   </a>
-                )}
+                ) : null}
 
                 <Button
                   type="button"
@@ -251,10 +393,9 @@ export default function ShopHome({
                 </Button>
               </div>
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
 
-        {/* ZUPREME STRIP */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -286,7 +427,6 @@ export default function ShopHome({
           </div>
         </motion.div>
 
-        {/* TOP UTILITY */}
         <div className="flex items-center justify-between gap-3">
           <div className="rounded-[20px] border border-white/10 bg-white/[0.04] px-3 py-2 shadow-[0_12px_24px_rgba(0,0,0,0.18)]">
             <div className="flex items-center gap-3">
@@ -311,164 +451,8 @@ export default function ShopHome({
           </Button>
         </div>
 
-        {/* MARKETPLACE FIRST */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <ShoppingBag className="h-4 w-4 text-emerald-300" />
-            <h2 className="text-base font-semibold">Marketplace</h2>
-          </div>
-
-          <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(32,48,74,0.55),rgba(10,16,23,0.96))] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <div className="rounded-[24px] border border-cyan-400/12 bg-[radial-gradient(circle_at_top,#20375a_0%,#101926_46%,#0a1017_100%)] p-3">
-              <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
-                {orderedSections.map((category) => {
-                  const isActive = activeCategory === category;
-
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => setActiveCategory(category)}
-                      className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                        isActive
-                          ? "bg-gradient-to-r from-cyan-400/25 to-violet-400/25 text-white border border-cyan-300/30 shadow-[0_0_18px_rgba(34,211,238,0.18)]"
-                          : "border border-white/10 bg-white/[0.03] text-white/60 hover:border-cyan-400/25 hover:text-white"
-                      }`}
-                      type="button"
-                    >
-                      {String(category).replaceAll("_", " ")}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="rounded-[24px] border border-white/10 bg-[#0b1320] p-3 shadow-inner">
-                {isLoading ? (
-                  <div className="flex min-h-[280px] items-center justify-center text-white/55">
-                    Loading shop...
-                  </div>
-                ) : currentItem ? (
-                  <div className="relative">
-                    {marketplaceItems.length > 1 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={prevItem}
-                          className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/35 text-white hover:bg-cyan-500/20"
-                        >
-                          <ChevronLeft className="h-5 w-5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={nextItem}
-                          className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/35 text-white hover:bg-cyan-500/20"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                      </>
-                    )}
-
-                    <AnimatePresence mode="wait">
-                      <motion.button
-                        key={currentItem.id || currentItem._id}
-                        initial={{ opacity: 0, x: 18 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -18 }}
-                        transition={{ duration: 0.2 }}
-                        onClick={() => onOpenItem(currentItem)}
-                        className="w-full text-left"
-                        type="button"
-                      >
-                        <div className="overflow-hidden rounded-[24px] border border-cyan-400/12 bg-[linear-gradient(180deg,rgba(21,34,53,0.86),rgba(8,16,23,0.98))] shadow-[0_0_24px_rgba(34,211,238,0.08)]">
-                          <div className="relative aspect-[16/10] overflow-hidden">
-                            {currentItem.image_url ? (
-                              <img
-                                src={currentItem.image_url}
-                                alt={currentItem.name}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-[#0d1622]">
-                                <ShoppingBag className="h-12 w-12 text-white/20" />
-                              </div>
-                            )}
-
-                            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#081017] to-transparent" />
-
-                            {currentItem.plus_only && (
-                              <div className="absolute right-3 top-3 rounded-full border border-yellow-400/20 bg-yellow-400/15 px-2.5 py-1 text-xs font-semibold text-yellow-200">
-                                Plus
-                              </div>
-                            )}
-
-                            {ownedItemIds.has(currentItem.id) && (
-                              <div className="absolute left-3 top-3 rounded-full border border-emerald-400/20 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
-                                Owned
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="space-y-3 p-4">
-                            <div>
-                              <div className="flex items-center justify-between gap-3">
-                                <h3 className="line-clamp-1 text-xl font-semibold text-white">
-                                  {currentItem.name}
-                                </h3>
-                                <span className="rounded-full border border-cyan-400/15 bg-cyan-400/10 px-2.5 py-1 text-xs font-semibold text-cyan-200">
-                                  {getDisplayPrice(currentItem)}
-                                </span>
-                              </div>
-
-                              <p className="mt-2 line-clamp-2 text-sm text-white/62">
-                                {currentItem.description || "Redeem your rewards for something worth having."}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="text-xs uppercase tracking-[0.18em] text-white/35">
-                                {String(activeCategory || "Marketplace").replaceAll("_", " ")}
-                              </div>
-
-                              <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/80">
-                                Tap to view
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.button>
-                    </AnimatePresence>
-
-                    {marketplaceItems.length > 1 && (
-                      <div className="mt-3 flex justify-center gap-2">
-                        {marketplaceItems.map((item, idx) => (
-                          <button
-                            key={item.id || item._id || idx}
-                            onClick={() => setCarouselIndex(idx)}
-                            className={`h-2 rounded-full transition-all ${
-                              idx === carouselIndex
-                                ? "w-6 bg-cyan-400"
-                                : "w-2 bg-white/20 hover:bg-white/35"
-                            }`}
-                            type="button"
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex min-h-[280px] items-center justify-center text-center text-white/45">
-                    No items in this section yet
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SPONSORED SECOND */}
         <ShopPortal isPlus={String(user?.tier || "").toLowerCase() === "plus"} />
 
-        {/* TRENDING */}
         <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
           <div className="mb-2 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-violet-300" />
