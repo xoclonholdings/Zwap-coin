@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, timedelta, timezone
 
-router = APIRouter(prefix="/api/activity", tags=["activity"])
+router = APIRouter(prefix="/activity", tags=["activity"])
 
 
 @router.get("/stream/{wallet_address}")
