@@ -17,6 +17,7 @@ from services.reward_service import (
     get_tier_multipliers,
     enforce_daily_caps,
 )
+from .activity_service import emit_activity_event
 
 router = APIRouter(prefix="/move", tags=["Move"])
 
@@ -153,6 +154,22 @@ async def claim_step_rewards(
     )
 
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+
+    await emit_activity_event(
+        db=db,
+        event_type="MOVEMENT_ACTIVITY",
+        message=f"{steps_data.steps} steps were just logged nearby",
+        actor_user_id=str(user.get("_id")) if user.get("_id") else None,
+        actor_display=user.get("display_name") or user.get("username") or "A Zwapper nearby",
+        region_key=user.get("region_key"),
+        local_key=user.get("local_key"),
+        metadata={
+            "source": "move_steps_claim",
+            "steps": steps_data.steps,
+            "reward_zwap": round(rewards, 2),
+            "tier": tier,
+        },
+    )
 
     return {
         "steps_counted": steps_data.steps,
