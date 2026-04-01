@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 ACTIVITY_TTL_MINUTES = 20
@@ -12,15 +12,15 @@ def utc_now() -> datetime:
 def build_activity_event(
     event_type: str,
     message: str,
-    scope_flags: Dict[str, bool] | None = None,
-    actor_user_id: str | None = None,
-    actor_display: str | None = None,
-    actor_badge: str | None = None,
-    target_user_id: str | None = None,
-    target_display: str | None = None,
-    region_key: str | None = None,
-    local_key: str | None = None,
-    metadata: Dict[str, Any] | None = None,
+    scope_flags: Optional[Dict[str, bool]] = None,
+    actor_user_id: Optional[str] = None,
+    actor_display: Optional[str] = None,
+    actor_badge: Optional[str] = None,
+    target_user_id: Optional[str] = None,
+    target_display: Optional[str] = None,
+    region_key: Optional[str] = None,
+    local_key: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     now = utc_now()
 
@@ -53,6 +53,37 @@ def build_activity_event(
 async def create_activity_event(db, event: Dict[str, Any]) -> str:
     result = await db.activity_events.insert_one(event)
     return str(result.inserted_id)
+
+
+async def emit_activity_event(
+    db,
+    event_type: str,
+    message: str,
+    scope_flags: Optional[Dict[str, bool]] = None,
+    actor_user_id: Optional[str] = None,
+    actor_display: Optional[str] = None,
+    actor_badge: Optional[str] = None,
+    target_user_id: Optional[str] = None,
+    target_display: Optional[str] = None,
+    region_key: Optional[str] = None,
+    local_key: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> str:
+    event = build_activity_event(
+        event_type=event_type,
+        message=message,
+        scope_flags=scope_flags,
+        actor_user_id=actor_user_id,
+        actor_display=actor_display,
+        actor_badge=actor_badge,
+        target_user_id=target_user_id,
+        target_display=target_display,
+        region_key=region_key,
+        local_key=local_key,
+        metadata=metadata,
+    )
+
+    return await create_activity_event(db=db, event=event)
 
 
 async def get_activity_stream_for_user(
