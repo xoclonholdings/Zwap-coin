@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, Request
-from .activity_service import get_activity_stream_for_user
+from .activity_service import get_activity_stream_for_user, build_activity_event, create_activity_event
 
 router = APIRouter(prefix="/activity", tags=["activity"])
 
