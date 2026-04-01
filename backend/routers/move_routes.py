@@ -17,7 +17,8 @@ from services.reward_service import (
     get_tier_multipliers,
     enforce_daily_caps,
 )
-from .activity_service import emit_activity_event
+
+from services.activity_service import emit_activity_event
 
 router = APIRouter(prefix="/move", tags=["Move"])
 
