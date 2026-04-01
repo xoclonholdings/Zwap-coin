@@ -45,3 +45,51 @@ async def seed_activity_event(request: Request):
         "event_id": event_id,
         "message": "Seed activity event created",
     }
+
+
+@router.post("/seed/batch")
+async def seed_activity_batch(request: Request):
+    db = request.app.state.db
+
+    events = [
+        build_activity_event(
+            event_type="RING_COMPLETION",
+            message="A Zwapper nearby just completed their rings",
+            region_key="us-oh-springfield",
+            local_key="springfield-core",
+        ),
+        build_activity_event(
+            event_type="MOVEMENT_ACTIVITY",
+            message="3 people are active in this area",
+            region_key="us-oh-springfield",
+            local_key="springfield-core",
+        ),
+        build_activity_event(
+            event_type="ASSIST_SENT",
+            message="An assist was just sent to Echo",
+            target_user_id="seed_user_2",
+            target_display="Echo",
+            region_key="us-oh-springfield",
+            local_key="springfield-core",
+        ),
+        build_activity_event(
+            event_type="BADGE_MILESTONE",
+            message="Kai just became a Finisher",
+            actor_user_id="seed_user_3",
+            actor_display="Kai",
+            actor_badge="Finisher",
+            region_key="us-oh-springfield",
+            local_key="springfield-core",
+        ),
+    ]
+
+    ids = []
+    for event in events:
+        event_id = await create_activity_event(db=db, event=event)
+        ids.append(event_id)
+
+    return {
+        "status": "ok",
+        "created": len(ids),
+        "event_ids": ids,
+    }
