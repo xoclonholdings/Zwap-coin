@@ -13,8 +13,12 @@ export default function StartOptionsCard({
     <div className="space-y-6">
       {/* Title */}
       <div className="text-center">
-        <h2 className="text-2xl sm:text-3xl font-black">
-          Start ZWAP Your Way
+        <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+          Start{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.35)]">
+            ZWAP!
+          </span>{" "}
+          Your Way
         </h2>
 
         <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
