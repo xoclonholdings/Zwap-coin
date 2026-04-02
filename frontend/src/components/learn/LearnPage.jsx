@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   BookOpen,
-  Loader2,
   Compass,
   Sparkles,
   GraduationCap,
@@ -12,39 +11,21 @@ import {
 import { useApp } from "@/app/AppProvider";
 import SectionHeader from "@/components/learn/SectionHeader";
 import ModuleCard from "@/components/learn/ModuleCard";
-
-const BACKEND_URL =
-  process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
-const API = `${BACKEND_URL}/api`;
+import { learnModules } from "@/data/learnModules";
 
 export default function LearnPage() {
   const navigate = useNavigate();
   const { walletAddress } = useApp();
-  const [modules, setModules] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
+  const modules = useMemo(() => {
+    if (Array.isArray(learnModules)) return learnModules;
 
-    async function loadModules() {
-      try {
-        const res = await fetch(`${API}/learn/modules`);
-        if (!res.ok) throw new Error("Failed to load modules");
-        const data = await res.json();
-        if (active) setModules(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Error loading learn modules:", err);
-        if (active) setModules([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    loadModules();
-
-    return () => {
-      active = false;
-    };
+    return [
+      ...(learnModules?.beginner || []),
+      ...(learnModules?.intermediate || []),
+      ...(learnModules?.advanced || []),
+      ...(learnModules?.expert || []),
+    ];
   }, []);
 
   const startHereIds = useMemo(
@@ -66,6 +47,7 @@ export default function LearnPage() {
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
+
           <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-purple-400" />
             <h1 className="text-lg font-bold text-white">Learn</h1>
@@ -80,13 +62,18 @@ export default function LearnPage() {
           animate={{ opacity: 1 }}
         >
           <h2 className="text-xl font-bold mb-2">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
               Crypto Made Simple
             </span>
           </h2>
+
           <p className="text-gray-400 text-sm max-w-md mx-auto">
             Start with the essentials, then explore the deeper parts of Web3,
-            tokens, wallets, and how ZWAP fits together.
+            tokens, wallets, and how{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 font-semibold">
+              ZWAP!
+            </span>{" "}
+            fits together.
           </p>
         </motion.div>
 
@@ -99,6 +86,7 @@ export default function LearnPage() {
             <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center shrink-0">
               <GraduationCap className="w-5 h-5 text-cyan-300" />
             </div>
+
             <div>
               <h3 className="text-white font-semibold mb-1">Start here first</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
@@ -110,56 +98,49 @@ export default function LearnPage() {
           </div>
         </motion.div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12 text-gray-400">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            Loading lessons...
-          </div>
-        ) : (
-          <>
-            <section className="mb-8">
-              <SectionHeader
-                icon={Sparkles}
-                title="Start Here"
-                subtitle="The beginner runway. These are the essentials."
-                colorClass="text-cyan-300"
-              />
-              <div className="space-y-3" data-testid="learn-start-here-list">
-                {startHereModules.map((module, i) => (
-                  <ModuleCard
-                    key={module.id}
-                    module={module}
-                    index={i}
-                    defaultOpen={i === 0}
-                    walletAddress={walletAddress}
-                  />
-                ))}
-              </div>
-            </section>
+        <section className="mb-8">
+          <SectionHeader
+            icon={Sparkles}
+            title="Start Here"
+            subtitle="The beginner runway. These are the essentials."
+            colorClass="text-cyan-300"
+          />
 
-            <section>
-              <SectionHeader
-                icon={Compass}
-                title="Explore More"
-                subtitle="Deeper context you can open whenever you're ready."
-                colorClass="text-purple-300"
+          <div className="space-y-3" data-testid="learn-start-here-list">
+            {startHereModules.map((module, i) => (
+              <ModuleCard
+                key={module.id}
+                module={module}
+                index={i}
+                defaultOpen={i === 0}
+                walletAddress={walletAddress}
               />
-              <div
-                className="space-y-3"
-                data-testid="learn-explore-more-list"
-              >
-                {exploreModules.map((module, i) => (
-                  <ModuleCard
-                    key={module.id}
-                    module={module}
-                    index={i + startHereModules.length}
-                    walletAddress={walletAddress}
-                  />
-                ))}
-              </div>
-            </section>
-          </>
-        )}
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeader
+            icon={Compass}
+            title="Explore More"
+            subtitle="Deeper context you can open whenever you're ready."
+            colorClass="text-purple-300"
+          />
+
+          <div
+            className="space-y-3"
+            data-testid="learn-explore-more-list"
+          >
+            {exploreModules.map((module, i) => (
+              <ModuleCard
+                key={module.id}
+                module={module}
+                index={i + startHereModules.length}
+                walletAddress={walletAddress}
+              />
+            ))}
+          </div>
+        </section>
 
         <motion.p
           className="text-center text-gray-600 text-xs mt-8"
