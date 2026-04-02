@@ -10,6 +10,8 @@ import {
 } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import useNetworkStatus from "@/hooks/useNetworkStatus";
+import OfflineNotice from "@/components/ui/OfflineNotice";
 
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
@@ -331,6 +333,7 @@ function AppContent() {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { isOnline } = useNetworkStatus();
 
   const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
   const isProtectedRoute =
