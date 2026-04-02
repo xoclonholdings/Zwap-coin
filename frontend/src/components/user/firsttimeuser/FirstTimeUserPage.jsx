@@ -25,10 +25,10 @@ export default function FirstTimeUserPage() {
   }
 
   const handleGetWallet = () => {
-    setIsWalletModalOpen(false);
+    setIsGetWalletPromptOpen(false);
     setIsOnboardingModalOpen(false);
     setIsReturningUserPromptOpen(false);
-    setIsGetWalletPromptOpen(true);
+    setIsWalletModalOpen(true);
   };
 
   const handleContinueEmail = () => {
@@ -96,7 +96,6 @@ export default function FirstTimeUserPage() {
               </div>
 
               <div className="space-y-5">
-                {/* What it is */}
                 <div className="rounded-2xl border border-blue-500/20 bg-blue-500/8 px-4 py-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Wallet className="w-4 h-4 text-blue-300" />
@@ -119,7 +118,6 @@ export default function FirstTimeUserPage() {
                   </div>
                 </div>
 
-                {/* Why it matters + safety in two-column feel */}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.07] px-4 py-4">
                     <div className="flex items-center gap-2 mb-3">
