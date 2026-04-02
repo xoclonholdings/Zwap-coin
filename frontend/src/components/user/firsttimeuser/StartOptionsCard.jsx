@@ -56,23 +56,21 @@ export default function StartOptionsCard({
           <div className="flex items-center gap-3 mb-3">
             <Wallet className="w-5 h-5 text-purple-400" />
             <h3 className="font-bold text-white text-lg">
-              Connect{" "}
-              <TermTrigger term="wallet">Wallet</TermTrigger>
+              Connect <TermTrigger term="wallet">Wallet</TermTrigger>
             </h3>
           </div>
 
           <ul className="text-sm text-gray-300 space-y-2 mb-5">
             <li>
-              • Claim your{" "}
-              <TermTrigger term="zwap">ZWAP</TermTrigger>
+              • Claim your <TermTrigger term="zwap">ZWAP</TermTrigger>
             </li>
             <li>
               • <TermTrigger term="swap">Swap</TermTrigger> rewards
             </li>
             <li>
-              • Full{" "}
-              <TermTrigger term="ownership">ownership</TermTrigger>
+              • Full <TermTrigger term="ownership">ownership</TermTrigger>
             </li>
+            <li>• Track rewards across devices</li>
           </ul>
 
           <Button
@@ -96,9 +94,9 @@ export default function StartOptionsCard({
 
       {/* Note */}
       <p className="text-xs text-gray-500 text-center max-w-md mx-auto leading-relaxed">
-        You can start without a{" "}
-        <TermTrigger term="wallet">wallet</TermTrigger>. You’ll need one later to claim{" "}
-        <TermTrigger term="zwap">ZWAP</TermTrigger> and unlock full features.
+        You can start without a <TermTrigger term="wallet">wallet</TermTrigger>.
+        You’ll need one later to claim <TermTrigger term="zwap">ZWAP</TermTrigger>{" "}
+        and unlock full features.
       </p>
     </div>
   );
