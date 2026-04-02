@@ -7,8 +7,11 @@ import {
   Lightbulb,
   Loader2,
   Sparkles,
+  WifiOff,
 } from "lucide-react";
 import api from "@/lib/api";
+import useNetworkStatus from "@/hooks/useNetworkStatus";
+import { queuePendingReward } from "@/lib/pendingRewards";
 
 const BACKEND_URL =
   process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
@@ -50,17 +53,20 @@ export default function ModuleCard({
   defaultOpen = false,
   walletAddress,
 }) {
+  const { isOnline } = useNetworkStatus();
+
   const [expanded, setExpanded] = useState(defaultOpen);
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [completedReward, setCompletedReward] = useState(null);
+  const [pendingSync, setPendingSync] = useState(false);
 
   const colors = categoryColors[module.category] || categoryColors.foundations;
   const display = details || module;
 
   async function loadDetails() {
-    if (details || loading) return;
+    if (details || loading || !isOnline) return;
 
     setLoading(true);
     try {
@@ -92,14 +98,47 @@ export default function ModuleCard({
   }
 
   async function handleComplete() {
-    if (!walletAddress || completing || completedReward !== null) return;
+    if (completing || completedReward !== null || pendingSync) return;
 
     setCompleting(true);
+
     try {
+      // Offline or not wallet-connected: save locally and sync later
+      if (!walletAddress || !isOnline) {
+        queuePendingReward({
+          type: "learn_module_completion",
+          source: "learn",
+          walletAddress: walletAddress || null,
+          payload: {
+            moduleId: module.id,
+            title: module.title,
+          },
+        });
+
+        setPendingSync(true);
+        setCompletedReward(0);
+        return;
+      }
+
+      // Online and wallet-connected: complete immediately
       const result = await api.completeLearnModule(walletAddress, module.id);
       setCompletedReward(result?.reward ?? 0);
     } catch (err) {
       console.error("Error completing learn module:", err);
+
+      // Fallback: save locally if live completion fails
+      queuePendingReward({
+        type: "learn_module_completion",
+        source: "learn",
+        walletAddress: walletAddress || null,
+        payload: {
+          moduleId: module.id,
+          title: module.title,
+        },
+      });
+
+      setPendingSync(true);
+      setCompletedReward(0);
     } finally {
       setCompleting(false);
     }
@@ -233,35 +272,48 @@ export default function ModuleCard({
                     </div>
                   )}
 
-                  {walletAddress && (
-                    <div className="pt-2">
-                      <button
-                        onClick={handleComplete}
-                        disabled={completing || completedReward !== null}
-                        className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-60"
-                      >
-                        {completing
-                          ? "Saving..."
-                          : completedReward !== null
-                          ? "Completed"
-                          : "Mark as Complete"}
-                      </button>
+                  <div className="pt-2">
+                    <button
+                      onClick={handleComplete}
+                      disabled={completing || completedReward !== null || pendingSync}
+                      className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-60"
+                    >
+                      {completing
+                        ? "Saving..."
+                        : pendingSync
+                        ? "Saved Offline"
+                        : completedReward !== null
+                        ? "Completed"
+                        : "Mark as Complete"}
+                    </button>
 
-                      {completedReward !== null && (
-                        <p
-                          className={`mt-2 text-center text-xs ${
-                            completedReward > 0
-                              ? "text-green-400"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          {completedReward > 0
-                            ? `+${completedReward} zPts earned`
-                            : "Already completed"}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                    {pendingSync && (
+                      <p className="mt-2 text-center text-xs text-yellow-400 flex items-center justify-center gap-1">
+                        <WifiOff className="w-3 h-3" />
+                        Saved offline • Pending sync
+                      </p>
+                    )}
+
+                    {!pendingSync && completedReward !== null && (
+                      <p
+                        className={`mt-2 text-center text-xs ${
+                          completedReward > 0
+                            ? "text-green-400"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {completedReward > 0
+                          ? `+${completedReward} zPts earned`
+                          : "Already completed"}
+                      </p>
+                    )}
+
+                    {!walletAddress && !pendingSync && completedReward === null && (
+                      <p className="mt-2 text-center text-xs text-gray-500">
+                        Complete now, rewards will tally once connected.
+                      </p>
+                    )}
+                  </div>
 
                   {display.quick_check?.question && (
                     <div className="pt-2 border-t border-gray-800/50">
