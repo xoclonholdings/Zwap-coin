@@ -494,10 +494,14 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-[#0a0b1e]">
       {showLayout ? (
-        <div className="h-screen flex flex-col overflow-hidden">
-          <AppHeader />
+                <div className="h-screen flex flex-col overflow-hidden">
+                  <AppHeader />
+        
+                  <div className="px-4 pt-20 pb-2 max-w-lg mx-auto w-full">
+                    <OfflineNotice isOnline={isOnline} />
+                  </div>
 
-          <main className="flex-1 overflow-y-auto pt-20">
+          <main className="flex-1 overflow-y-auto">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/about" element={<AboutPage />} />
