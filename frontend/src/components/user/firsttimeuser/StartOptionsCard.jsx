@@ -22,7 +22,7 @@ export default function StartOptionsCard({
         </h2>
 
         <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
-          Use email for instant access, or connect a{" "}
+          Use email for instant access, or set up a{" "}
           <TermTrigger term="wallet">wallet</TermTrigger> for full ownership.
         </p>
       </div>
@@ -44,7 +44,7 @@ export default function StartOptionsCard({
             <li>
               • Earn <TermTrigger term="zpts">zPts</TermTrigger>
             </li>
-            <li>• Connect wallet later</li>
+            <li>• Set up wallet anytime</li>
           </ul>
 
           <Button
@@ -60,28 +60,27 @@ export default function StartOptionsCard({
           <div className="flex items-center gap-3 mb-3">
             <Wallet className="w-5 h-5 text-purple-400" />
             <h3 className="font-bold text-white text-lg">
-              Connect <TermTrigger term="wallet">Wallet</TermTrigger>
+              Set Up{" "}
+              <TermTrigger term="wallet">Wallet</TermTrigger>
             </h3>
           </div>
 
           <ul className="text-sm text-gray-300 space-y-2 mb-5">
+            <li>• Create or connect a wallet</li>
             <li>
               • Claim your <TermTrigger term="zwap">ZWAP</TermTrigger>
             </li>
             <li>
               • <TermTrigger term="swap">Swap</TermTrigger> rewards
             </li>
-            <li>
-              • Full <TermTrigger term="ownership">ownership</TermTrigger>
-            </li>
-            <li>• Track rewards across devices</li>
+            <li>• Sync progress across devices</li>
           </ul>
 
           <Button
             onClick={onGetWallet}
             className="w-full bg-gradient-to-r from-purple-400 to-pink-500 font-semibold"
           >
-            Get Wallet
+            Set Up Wallet
           </Button>
         </div>
       </div>
@@ -98,9 +97,9 @@ export default function StartOptionsCard({
 
       {/* Note */}
       <p className="text-xs text-gray-500 text-center max-w-md mx-auto leading-relaxed">
-        You can start without a <TermTrigger term="wallet">wallet</TermTrigger>.
-        You’ll need one later to claim <TermTrigger term="zwap">ZWAP</TermTrigger>{" "}
-        and unlock full features.
+        You can start without a{" "}
+        <TermTrigger term="wallet">wallet</TermTrigger>. Set one up later to claim{" "}
+        <TermTrigger term="zwap">ZWAP</TermTrigger> and unlock full features.
       </p>
     </div>
   );
