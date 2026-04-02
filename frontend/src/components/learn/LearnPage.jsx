@@ -15,7 +15,9 @@ import {
 import { useApp } from "@/App";
 import api from "@/lib/api";
 
-const API = process.env.REACT_APP_BACKEND_URL + "/api";
+const BACKEND_URL =
+  process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
+const API = `${BACKEND_URL}/api`;
 
 const categoryColors = {
   foundations: {
