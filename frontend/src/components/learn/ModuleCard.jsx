@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
-import { queuePendingReward } from "@/lib/pendingRewards";
+import { queuePendingReward } from "@/hooks/pendingRewards";
 
 const BACKEND_URL =
   process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
