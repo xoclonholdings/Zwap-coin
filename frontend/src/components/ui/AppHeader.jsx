@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Play, Sparkles } from "lucide-react";
 import { useApp } from "@/App";
 import StreamHub from "@/components/StreamHub";
-import AccountDrawer from "@/components/AccountDrawer";
+import AccountDrawer from "@/components/user/AccountDrawer";
 
 function generateUsername(wallet) {
   if (!wallet) return "Guest";
