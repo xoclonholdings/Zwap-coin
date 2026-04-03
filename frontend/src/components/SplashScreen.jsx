@@ -5,8 +5,8 @@ import { ZWAP_LOGO } from "@/App";
 
 const SPRING_SOFT = {
   type: "spring",
-  damping: 18,
-  stiffness: 110,
+  damping: 20,
+  stiffness: 95,
 };
 
 const FADE_UP = {
@@ -41,8 +41,8 @@ export default function SplashScreen({
       setTimeout(() => setStage(3), 2000),
       setTimeout(() => setStage(4), 2850),
       setTimeout(() => setTaglineComplete(true), 3850),
-      setTimeout(() => setStage(5), 4450),
-      setTimeout(() => setShowButtons(true), 5600),
+      setTimeout(() => setStage(5), 4300),
+      setTimeout(() => setShowButtons(true), 5200),
     ];
 
     return () => timers.forEach(clearTimeout);
@@ -65,7 +65,6 @@ export default function SplashScreen({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-[#04040d] flex flex-col items-center justify-center">
-      {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,245,255,0.08),transparent_35%),radial-gradient(circle_at_bottom,rgba(168,85,247,0.10),transparent_40%)]" />
 
@@ -97,9 +96,7 @@ export default function SplashScreen({
         />
       </div>
 
-      {/* Content */}
       <div className="relative z-10 flex flex-col items-center px-6 w-full">
-        {/* Animated center tagline before logo */}
         <AnimatePresence mode="wait">
           {!taglineComplete && stage >= 1 && stage < 5 && (
             <motion.div
@@ -107,12 +104,12 @@ export default function SplashScreen({
               className="flex flex-wrap justify-center gap-x-3 gap-y-2 sm:gap-x-4 text-2xl sm:text-4xl font-black tracking-wide"
               initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 0.975, y: -8 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
+              exit={{ opacity: 0, scale: 0.985, y: -8 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
             >
               {stage >= 1 && (
                 <motion.span
-                  initial={{ x: -80, opacity: 0 }}
+                  initial={{ x: -70, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ ...SPRING_SOFT, mass: 0.8 }}
                   className="text-cyan-400"
@@ -126,7 +123,7 @@ export default function SplashScreen({
                 <motion.span
                   initial={{ opacity: 0, filter: "blur(8px)" }}
                   animate={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{ duration: 0.55, ease: "easeOut" }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
                   className="text-purple-400"
                   style={{ textShadow: "0 0 18px rgba(168,85,247,0.8)" }}
                 >
@@ -136,7 +133,7 @@ export default function SplashScreen({
 
               {stage >= 3 && (
                 <motion.span
-                  initial={{ y: -70, opacity: 0 }}
+                  initial={{ y: -55, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ ...SPRING_SOFT, mass: 0.75 }}
                   className="text-blue-400"
@@ -157,9 +154,9 @@ export default function SplashScreen({
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{
-                        duration: 0.32,
+                        duration: 0.28,
                         ease: "easeOut",
-                        delay: i * 0.055,
+                        delay: i * 0.05,
                       }}
                     >
                       {letter}
@@ -171,18 +168,15 @@ export default function SplashScreen({
           )}
         </AnimatePresence>
 
-        {/* Logo swirl-in */}
         <AnimatePresence>
           {stage >= 5 && (
             <motion.div
               key="logo-stage"
-              initial={{ scale: 0.08, rotate: -540, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              initial={{ scale: 0.72, y: 18, opacity: 0, rotate: -8, filter: "blur(8px)" }}
+              animate={{ scale: 1, y: 0, opacity: 1, rotate: 0, filter: "blur(0px)" }}
               transition={{
-                type: "spring",
-                damping: 20,
-                stiffness: 55,
-                mass: 0.95,
+                duration: 0.75,
+                ease: [0.22, 1, 0.36, 1],
               }}
               className="mb-3"
             >
@@ -190,9 +184,9 @@ export default function SplashScreen({
                 className="relative"
                 animate={{
                   filter: [
-                    "drop-shadow(0 0 22px rgba(0,245,255,0.28))",
-                    "drop-shadow(0 0 52px rgba(0,245,255,0.68))",
-                    "drop-shadow(0 0 22px rgba(0,245,255,0.28))",
+                    "drop-shadow(0 0 18px rgba(0,245,255,0.24))",
+                    "drop-shadow(0 0 38px rgba(0,245,255,0.55))",
+                    "drop-shadow(0 0 18px rgba(0,245,255,0.24))",
                   ],
                 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -200,8 +194,8 @@ export default function SplashScreen({
                 <motion.div
                   className="absolute inset-0 rounded-full blur-3xl bg-cyan-500/10 scale-110"
                   animate={{
-                    scale: [1.08, 1.14, 1.08],
-                    opacity: [0.55, 0.8, 0.55],
+                    scale: [1.06, 1.12, 1.06],
+                    opacity: [0.45, 0.72, 0.45],
                   }}
                   transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
                 />
@@ -209,19 +203,19 @@ export default function SplashScreen({
                   src={ZWAP_LOGO}
                   alt="ZWAP!"
                   className="relative h-40 sm:h-56 md:h-64 select-none"
+                  draggable="false"
                 />
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Repositioned tagline under logo */}
         <AnimatePresence>
           {stage >= 5 && (
             <motion.div
               key="tagline-under-logo"
               {...FADE_UP}
-              transition={{ duration: 0.5, delay: 0.18, ease: "easeOut" }}
+              transition={{ duration: 0.45, delay: 0.14, ease: "easeOut" }}
               className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-sm sm:text-lg font-extrabold tracking-wide mt-1"
             >
               <span
@@ -252,36 +246,33 @@ export default function SplashScreen({
           )}
         </AnimatePresence>
 
-        {/* CTA panel */}
         <AnimatePresence>
           {showButtons && (
             <motion.div
               key="cta-panel"
-              initial={{ opacity: 0, y: 22, scale: 0.985 }}
+              initial={{ opacity: 0, y: 20, scale: 0.99 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              transition={{ duration: 0.42, ease: "easeOut" }}
               className="mt-10 w-full max-w-sm"
             >
-              <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_0_60px_rgba(0,0,0,0.35)] p-4 sm:p-5">
-                <div className="space-y-3">
-                  <Button
-                    onClick={handleNewUser}
-                    className="w-full h-14 text-base font-bold rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 shadow-[0_0_25px_rgba(0,245,255,0.22)]"
-                    data-testid="splash-new-user"
-                  >
-                    New User
-                  </Button>
+              <div className="space-y-3">
+                <Button
+                  onClick={handleNewUser}
+                  className="w-full h-14 text-base font-bold rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 shadow-[0_0_25px_rgba(0,245,255,0.22)]"
+                  data-testid="splash-new-user"
+                >
+                  New User
+                </Button>
 
-                  <Button
-                    onClick={handleReturningUser}
-                    className="w-full h-14 text-base font-semibold rounded-2xl bg-[#151733] hover:bg-[#1b1e42] text-white border border-cyan-500/20"
-                    data-testid="splash-returning-user"
-                  >
-                    Returning User
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleReturningUser}
+                  className="w-full h-14 text-base font-semibold rounded-2xl bg-[#151733]/80 hover:bg-[#1b1e42] text-white border border-cyan-500/20"
+                  data-testid="splash-returning-user"
+                >
+                  Returning User
+                </Button>
 
-                <div className="mt-4 flex justify-center">
+                <div className="pt-1 flex justify-center">
                   <button
                     onClick={handleWhatIsZwap}
                     className="text-sm font-medium text-cyan-300/90 hover:text-cyan-200 transition-colors"
