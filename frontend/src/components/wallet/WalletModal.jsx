@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useLogin } from "@privy-io/react-auth";
 import { useApp } from "@/App";
 import {
   Dialog,
@@ -25,6 +26,20 @@ export default function WalletModal({ open, onOpenChange }) {
     setMode("root");
     onOpenChange(false);
   };
+
+  const { login } = useLogin({
+    onComplete: (user, isNewUser) => {
+      toast.success(
+        isNewUser
+          ? "Wallet created in ZWAP!"
+          : "Signed in to your wallet."
+      );
+      close();
+    },
+    onError: (error) => {
+      toast.error(error?.message || "Failed to open wallet setup.");
+    },
+  });
 
   const switchToPolygon = async (provider) => {
     try {
@@ -147,22 +162,22 @@ export default function WalletModal({ open, onOpenChange }) {
   };
 
   const handleEmbeddedWalletSetup = () => {
-    toast.info("In-app wallet setup coming next.");
+    login();
   };
 
   const title =
     mode === "create"
       ? "Create a Wallet"
       : mode === "connect"
-      ? "Connect Existing Wallet"
-      : "Set Up Wallet";
+        ? "Connect Existing Wallet"
+        : "Set Up Wallet";
 
   const description =
     mode === "create"
       ? "Start with in-app setup first, or use another wallet app."
       : mode === "connect"
-      ? "Choose a wallet you already use."
-      : "Create a new wallet or connect one you already have.";
+        ? "Choose a wallet you already use."
+        : "Create a new wallet or connect one you already have.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
