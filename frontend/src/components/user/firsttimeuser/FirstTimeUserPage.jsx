@@ -19,11 +19,6 @@ export default function FirstTimeUserPage() {
     setIsReturningUserPromptOpen,
   } = useApp();
 
-  if (isAuthenticated) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
-
   const handleGetWallet = () => {
     setIsGetWalletPromptOpen(false);
     setIsOnboardingModalOpen(false);
