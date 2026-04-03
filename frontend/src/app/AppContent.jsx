@@ -48,7 +48,6 @@ export default function AppContent() {
     setShowSplash,
     openGuestWalletFlow,
     closeAllAuthModals,
-    logoutAll,
   } = useApp();
 
   const location = useLocation();
@@ -89,10 +88,12 @@ export default function AppContent() {
     return (
       <SplashScreen
         onNewUser={() => {
-          logoutAll();
+          localStorage.removeItem("zwap_wallet");
+          localStorage.removeItem("zwap_auth_user");
+          localStorage.removeItem("zwap_email");
           setShowSplash(false);
           closeAllAuthModals();
-          navigate("/wallet");
+          window.location.replace("/wallet");
         }}
         onReturningUser={() => {
           setShowSplash(false);
