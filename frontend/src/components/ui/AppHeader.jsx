@@ -6,7 +6,7 @@ import StreamHub from "@/components/StreamHub";
 import AccountDrawer from "@/components/user/AccountDrawer";
 
 function generateUsername(wallet) {
-  if (!wallet) return "Guest";
+  if (!wallet) return "Zwapper";
 
   const adjectives = [
     "Nova",
@@ -57,19 +57,19 @@ export default function AppHeader() {
     if (safeAuthUser?.username) return safeAuthUser.username;
     if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
     if (walletAddress) return generateUsername(walletAddress);
-    return "Guest";
+    return "Zwapper";
   }, [user, authUser, walletAddress]);
 
   const initials = useMemo(() => {
     return (
-      (displayName || "Z")
+      (displayName || "ZW")
         .replace(/[^a-zA-Z0-9 ]/g, "")
         .split(" ")
         .filter(Boolean)
         .slice(0, 2)
         .map((p) => p[0])
         .join("")
-        .toUpperCase() || "Z"
+        .toUpperCase() || "ZW"
     );
   }, [displayName]);
 
@@ -91,8 +91,8 @@ export default function AppHeader() {
     walletAddress && onchainBalance !== null
       ? onchainBalance.toFixed(2)
       : walletAddress
-        ? "0.00"
-        : "--";
+      ? "0.00"
+      : "--";
 
   return (
     <>
