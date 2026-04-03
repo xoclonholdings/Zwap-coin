@@ -7,7 +7,6 @@ import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
 import FirstTimeUserPage from "@/components/user/firsttimeuser/FirstTimeUserPage";
-import OnboardingModal from "@/components/user/firsttimeuser/OnboardingModal";
 import ReturningUserPrompt from "@/components/user/ReturningUserPrompt";
 import WalletModal from "@/components/wallet/WalletModal";
 import AppHeader from "@/components/ui/AppHeader";
@@ -15,8 +14,8 @@ import NewsTicker from "@/components/ui/NewsTicker";
 import Dashboard from "@/components/ui/Dashboard";
 import MoveTab from "@/components/move/MoveTab";
 import PlayTab from "@/components/play/PlayTab";
-import ShopTab from "@/components/shop/ShopTab";
 import SwapTab from "@/components/swap/SwapTab";
+import ShopTab from "@/components/shop/ShopTab";
 import TabNavigation from "@/components/TabNavigation";
 import SubscriptionSuccess from "@/components/SubscriptionSuccess";
 import ProfilePage from "@/components/user/ProfilePage";
@@ -32,8 +31,6 @@ import { useApp } from "@/app/AppProvider";
 export default function AppContent() {
   const {
     isAuthenticated,
-    isOnboardingModalOpen,
-    setIsOnboardingModalOpen,
     isReturningUserPromptOpen,
     setIsReturningUserPromptOpen,
     isWalletModalOpen,
@@ -43,7 +40,6 @@ export default function AppContent() {
     initialized,
     showSplash,
     setShowSplash,
-    openGuestWalletFlow,
     closeAllAuthModals,
   } = useApp();
 
@@ -54,37 +50,6 @@ export default function AppContent() {
   const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
   const isProtectedRoute =
     protectedRoutes.includes(location.pathname) && !isAuthenticated;
-
-  useEffect(() => {
-    console.log(
-      "[APPCONTENT TRACE]",
-      JSON.stringify(
-        {
-          path: location.pathname,
-          isAuthenticated,
-          showSplash,
-          initialized,
-          isOnboardingModalOpen,
-          isReturningUserPromptOpen,
-          isWalletModalOpen,
-          forceNewUser: sessionStorage.getItem("zwap_force_new_user"),
-          zwap_wallet: localStorage.getItem("zwap_wallet"),
-          zwap_auth_user: localStorage.getItem("zwap_auth_user"),
-          zwap_email: localStorage.getItem("zwap_email"),
-        },
-        null,
-        2
-      )
-    );
-  }, [
-    location.pathname,
-    isAuthenticated,
-    showSplash,
-    initialized,
-    isOnboardingModalOpen,
-    isReturningUserPromptOpen,
-    isWalletModalOpen,
-  ]);
 
   useEffect(() => {
     if (isAuthenticated && pendingAction) {
@@ -105,12 +70,6 @@ export default function AppContent() {
       }
     }
   }, [isAuthenticated, pendingAction, navigate, setPendingAction]);
-
-  useEffect(() => {
-    if (isProtectedRoute) {
-      openGuestWalletFlow();
-    }
-  }, [isProtectedRoute, openGuestWalletFlow]);
 
   if (showSplash && location.pathname === "/") {
     return (
@@ -176,26 +135,19 @@ export default function AppContent() {
       <>
         <FirstTimeUserPage />
 
-        <OnboardingModal
-          open={!isReturningUserPromptOpen && isOnboardingModalOpen}
-          onOpenChange={setIsOnboardingModalOpen}
-        />
-
         <ReturningUserPrompt
           open={isReturningUserPromptOpen}
           onOpenChange={setIsReturningUserPromptOpen}
         />
 
-        <PrivyProviderWrapper>
-          <WalletModal
-            open={
-              !isReturningUserPromptOpen &&
-              !isOnboardingModalOpen &&
-              isWalletModalOpen
-            }
-            onOpenChange={setIsWalletModalOpen}
-          />
-        </PrivyProviderWrapper>
+        {isWalletModalOpen && !isReturningUserPromptOpen && (
+          <PrivyProviderWrapper>
+            <WalletModal
+              open={true}
+              onOpenChange={setIsWalletModalOpen}
+            />
+          </PrivyProviderWrapper>
+        )}
       </>
     );
   }
@@ -236,8 +188,8 @@ export default function AppContent() {
     "/dashboard",
     "/move",
     "/play",
-    "/shop",
     "/swap",
+    "/shop",
     "/success",
   ].includes(location.pathname);
 
@@ -258,8 +210,8 @@ export default function AppContent() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/move" element={<MoveTab />} />
               <Route path="/play" element={<PlayTab />} />
-              <Route path="/shop" element={<ShopTab />} />
               <Route path="/swap" element={<SwapTab />} />
+              <Route path="/shop" element={<ShopTab />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/plus" element={<PlusPage />} />
               <Route path="/contact" element={<ContactPage />} />
@@ -285,8 +237,8 @@ export default function AppContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/move" element={<MoveTab />} />
             <Route path="/play" element={<PlayTab />} />
-            <Route path="/shop" element={<ShopTab />} />
             <Route path="/swap" element={<SwapTab />} />
+            <Route path="/shop" element={<ShopTab />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/plus" element={<PlusPage />} />
             <Route path="/contact" element={<ContactPage />} />
