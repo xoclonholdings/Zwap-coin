@@ -14,6 +14,8 @@ import {
   PlusCircle,
   Link2,
   ArrowLeft,
+  Sparkles,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -27,15 +29,6 @@ const WALLET_CONFIG = {
     checkInstalled: () =>
       typeof window !== "undefined" && !!window.ethereum?.isMetaMask,
   },
-  trust: {
-    name: "Trust Wallet",
-    color: "#3375BB",
-    icon: "🛡️",
-    setupUrl: "https://trustwallet.com/download",
-    checkInstalled: () =>
-      typeof window !== "undefined" &&
-      (!!window.trustwallet || !!window.ethereum?.isTrust),
-  },
   coinbase: {
     name: "Coinbase Wallet",
     color: "#1652F0",
@@ -44,6 +37,15 @@ const WALLET_CONFIG = {
     checkInstalled: () =>
       typeof window !== "undefined" &&
       (!!window.ethereum?.isCoinbaseWallet || !!window.coinbaseWalletExtension),
+  },
+  trust: {
+    name: "Trust Wallet",
+    color: "#3375BB",
+    icon: "🛡️",
+    setupUrl: "https://trustwallet.com/download",
+    checkInstalled: () =>
+      typeof window !== "undefined" &&
+      (!!window.trustwallet || !!window.ethereum?.isTrust),
   },
 };
 
@@ -164,18 +166,18 @@ export default function WalletModal({ open, onOpenChange }) {
         installed: WALLET_CONFIG.metamask.checkInstalled(),
       },
       {
-        id: "trust",
-        name: "Trust Wallet",
-        color: WALLET_CONFIG.trust.color,
-        icon: WALLET_CONFIG.trust.icon,
-        installed: WALLET_CONFIG.trust.checkInstalled(),
-      },
-      {
         id: "coinbase",
         name: "Coinbase Wallet",
         color: WALLET_CONFIG.coinbase.color,
         icon: WALLET_CONFIG.coinbase.icon,
         installed: WALLET_CONFIG.coinbase.checkInstalled(),
+      },
+      {
+        id: "trust",
+        name: "Trust Wallet",
+        color: WALLET_CONFIG.trust.color,
+        icon: WALLET_CONFIG.trust.icon,
+        installed: WALLET_CONFIG.trust.checkInstalled(),
       },
     ],
     [open]
@@ -185,6 +187,10 @@ export default function WalletModal({ open, onOpenChange }) {
     const url = WALLET_CONFIG[walletId]?.setupUrl;
     if (!url) return;
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleEmbeddedWalletSetup = () => {
+    toast.message("In-app wallet setup comes next.");
   };
 
   const renderRoot = () => (
@@ -203,7 +209,7 @@ export default function WalletModal({ open, onOpenChange }) {
           <div className="flex-1">
             <p className="text-white font-semibold">Create New Wallet</p>
             <p className="text-xs text-gray-400 mt-1">
-              New to Web3? Pick a wallet app and create one first.
+              Start fresh with in-app setup or another wallet app.
             </p>
           </div>
 
@@ -243,31 +249,63 @@ export default function WalletModal({ open, onOpenChange }) {
   );
 
   const renderCreate = () => (
-    <div className="space-y-3 mt-4">
-      {walletOptions.map((wallet) => (
+    <div className="space-y-4 mt-4">
+      <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-11 h-11 rounded-xl bg-cyan-500/15 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-cyan-300" />
+          </div>
+
+          <div className="flex-1">
+            <p className="text-white font-semibold">Create Wallet in App</p>
+            <p className="text-xs text-cyan-100/80 mt-1 leading-relaxed">
+              This is the smoothest setup path. Create a wallet here and stay inside ZWAP.
+            </p>
+          </div>
+        </div>
+
         <motion.button
-          key={wallet.id}
-          onClick={() => openSetup(wallet.id)}
-          className="w-full h-16 flex items-center gap-4 px-4 rounded-xl bg-[#141530] hover:bg-[#1a1b40] transition-colors"
+          onClick={handleEmbeddedWalletSetup}
+          className="w-full mt-4 h-12 rounded-xl bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-bold hover:opacity-95 transition"
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
         >
-          <WalletIcon color={wallet.color}>{wallet.icon}</WalletIcon>
-
-          <div className="flex-1 text-left">
-            <div className="font-medium text-white">{wallet.name}</div>
-            <div className="text-xs text-gray-500">
-              Open setup page to create a new wallet
-            </div>
-          </div>
-
-          <ChevronRight className="w-5 h-5 text-gray-400" />
+          Create Wallet in App
         </motion.button>
-      ))}
+      </div>
 
-      <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3 mt-4">
+      <div className="pt-1">
+        <p className="text-xs uppercase tracking-wider text-gray-500 mb-2 px-1">
+          Other Wallet Apps
+        </p>
+
+        <div className="space-y-3">
+          {walletOptions.map((wallet) => (
+            <motion.button
+              key={wallet.id}
+              onClick={() => openSetup(wallet.id)}
+              className="w-full min-h-[72px] flex items-center gap-4 px-4 rounded-xl bg-[#141530] hover:bg-[#1a1b40] transition-colors text-left"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <WalletIcon color={wallet.color}>{wallet.icon}</WalletIcon>
+
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white">{wallet.name}</div>
+                <div className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  Opens {wallet.name} setup outside ZWAP. Return here after your wallet is created.
+                </div>
+              </div>
+
+              <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3">
         <p className="text-xs text-cyan-100 leading-relaxed">
-          After creating your wallet, come back here and choose{" "}
+          If another wallet app opens, finish setup there, then come back and choose{" "}
           <span className="text-white font-medium">Connect Existing Wallet</span>.
         </p>
       </div>
@@ -328,7 +366,7 @@ export default function WalletModal({ open, onOpenChange }) {
 
   const description =
     mode === "create"
-      ? "Choose a wallet app to create a new wallet."
+      ? "Start with in-app setup first, or use another wallet app."
       : mode === "connect"
       ? "Choose a wallet you already use."
       : "Create a new wallet or connect one you already have.";
