@@ -7,7 +7,6 @@ import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
 import FirstTimeUserPage from "@/components/user/firsttimeuser/FirstTimeUserPage";
-import GetWalletPrompt from "@/components/wallet/GetWalletPrompt";
 import OnboardingModal from "@/components/user/firsttimeuser/OnboardingModal";
 import ReturningUserPrompt from "@/components/user/ReturningUserPrompt";
 import WalletModal from "@/components/wallet/WalletModal";
@@ -33,8 +32,6 @@ import { useApp } from "@/app/AppProvider";
 export default function AppContent() {
   const {
     isAuthenticated,
-    isGetWalletPromptOpen,
-    setIsGetWalletPromptOpen,
     isOnboardingModalOpen,
     setIsOnboardingModalOpen,
     isReturningUserPromptOpen,
@@ -67,7 +64,6 @@ export default function AppContent() {
           isAuthenticated,
           showSplash,
           initialized,
-          isGetWalletPromptOpen,
           isOnboardingModalOpen,
           isReturningUserPromptOpen,
           isWalletModalOpen,
@@ -85,7 +81,6 @@ export default function AppContent() {
     isAuthenticated,
     showSplash,
     initialized,
-    isGetWalletPromptOpen,
     isOnboardingModalOpen,
     isReturningUserPromptOpen,
     isWalletModalOpen,
@@ -181,17 +176,8 @@ export default function AppContent() {
       <>
         <FirstTimeUserPage />
 
-        <GetWalletPrompt
-          open={!isReturningUserPromptOpen && isGetWalletPromptOpen}
-          onOpenChange={setIsGetWalletPromptOpen}
-        />
-
         <OnboardingModal
-          open={
-            !isReturningUserPromptOpen &&
-            !isGetWalletPromptOpen &&
-            isOnboardingModalOpen
-          }
+          open={!isReturningUserPromptOpen && isOnboardingModalOpen}
           onOpenChange={setIsOnboardingModalOpen}
         />
 
@@ -204,7 +190,6 @@ export default function AppContent() {
           <WalletModal
             open={
               !isReturningUserPromptOpen &&
-              !isGetWalletPromptOpen &&
               !isOnboardingModalOpen &&
               isWalletModalOpen
             }
