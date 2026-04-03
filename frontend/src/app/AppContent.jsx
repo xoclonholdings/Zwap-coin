@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
+import useZwapAuthState from "@/app/useZwapAuthState";
 import OfflineNotice from "@/components/ui/OfflineNotice";
 
 import SplashScreen from "@/components/SplashScreen";
@@ -31,7 +32,6 @@ import { useApp } from "@/app/AppProvider";
 
 export default function AppContent() {
   const {
-    isAuthenticated,
     isGetWalletPromptOpen,
     setIsGetWalletPromptOpen,
     isOnboardingModalOpen,
@@ -52,10 +52,20 @@ export default function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isOnline } = useNetworkStatus();
+  const zwapAuth = useZwapAuthState();
+  const isAuthenticated = zwapAuth.authenticated;
 
   const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
   const isProtectedRoute =
     protectedRoutes.includes(location.pathname) && !isAuthenticated;
+
+  useEffect(() => {
+    if (!zwapAuth.ready) return;
+
+    if (zwapAuth.authenticated && location.pathname === "/wallet") {
+      navigate("/dashboard");
+    }
+  }, [zwapAuth.ready, zwapAuth.authenticated, location.pathname, navigate]);
 
   useEffect(() => {
     if (isAuthenticated && pendingAction) {
