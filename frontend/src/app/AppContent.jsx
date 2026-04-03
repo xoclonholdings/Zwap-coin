@@ -81,7 +81,7 @@ export default function AppContent() {
           localStorage.removeItem("zwap_email");
           setShowSplash(false);
           closeAllAuthModals();
-          window.location.replace("/wallet");
+          navigate("/wallet", { replace: true });
         }}
         onReturningUser={() => {
           setShowSplash(false);
