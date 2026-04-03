@@ -32,7 +32,7 @@ import { useApp } from "@/app/AppProvider";
 
 export default function AppContent() {
   const {
-    isAuthenticated, // ✅ back to your original system ONLY
+    isAuthenticated,
     isGetWalletPromptOpen,
     setIsGetWalletPromptOpen,
     isOnboardingModalOpen,
@@ -48,6 +48,7 @@ export default function AppContent() {
     setShowSplash,
     openGuestWalletFlow,
     closeAllAuthModals,
+    logoutAll,
   } = useApp();
 
   const location = useLocation();
@@ -88,6 +89,7 @@ export default function AppContent() {
     return (
       <SplashScreen
         onNewUser={() => {
+          logoutAll();
           setShowSplash(false);
           closeAllAuthModals();
           navigate("/wallet");
@@ -163,7 +165,6 @@ export default function AppContent() {
           onOpenChange={setIsReturningUserPromptOpen}
         />
 
-        {/* ✅ Privy only exists HERE */}
         <PrivyProviderWrapper>
           <WalletModal
             open={
