@@ -190,7 +190,7 @@ export default function WalletModal({ open, onOpenChange }) {
   };
 
   const handleEmbeddedWalletSetup = () => {
-    toast.message("In-app wallet setup comes next.");
+    toast.info("In-app wallet setup coming next.");
   };
 
   const renderRoot = () => (
@@ -250,33 +250,39 @@ export default function WalletModal({ open, onOpenChange }) {
 
   const renderCreate = () => (
     <div className="space-y-4 mt-4">
-      <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-xl bg-cyan-500/15 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5 text-cyan-300" />
-          </div>
-
-          <div className="flex-1">
-            <p className="text-white font-semibold">Create Wallet in App</p>
-            <p className="text-xs text-cyan-100/80 mt-1 leading-relaxed">
-              This is the smoothest setup path. Create a wallet here and stay inside ZWAP.
-            </p>
-          </div>
-        </div>
+      <div>
+        <p className="text-xs text-gray-400 mb-2 px-1">
+          Create inside ZWAP
+        </p>
 
         <motion.button
           onClick={handleEmbeddedWalletSetup}
-          className="w-full mt-4 h-12 rounded-xl bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-bold hover:opacity-95 transition"
+          className="w-full h-16 flex items-center gap-4 px-4 rounded-xl bg-[#141530] hover:bg-[#1a1b40] transition-colors border border-cyan-500/30"
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
         >
-          Create Wallet in App
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/15 flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-cyan-300" />
+          </div>
+
+          <div className="flex-1 text-left">
+            <div className="font-medium text-white">
+              Create Wallet in App
+            </div>
+            <div className="text-xs text-gray-500">
+              Fast setup without leaving ZWAP
+            </div>
+          </div>
+
+          <ChevronRight className="w-5 h-5 text-gray-400" />
         </motion.button>
       </div>
 
-      <div className="pt-1">
-        <p className="text-xs uppercase tracking-wider text-gray-500 mb-2 px-1">
-          Other Wallet Apps
+      <div className="border-t border-white/10 my-2" />
+
+      <div>
+        <p className="text-xs text-gray-400 mb-2 px-1">
+          Use a wallet app
         </p>
 
         <div className="space-y-3">
@@ -284,29 +290,33 @@ export default function WalletModal({ open, onOpenChange }) {
             <motion.button
               key={wallet.id}
               onClick={() => openSetup(wallet.id)}
-              className="w-full min-h-[72px] flex items-center gap-4 px-4 rounded-xl bg-[#141530] hover:bg-[#1a1b40] transition-colors text-left"
+              className="w-full h-16 flex items-center gap-4 px-4 rounded-xl bg-[#141530] hover:bg-[#1a1b40] transition-colors"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
               <WalletIcon color={wallet.color}>{wallet.icon}</WalletIcon>
 
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-white">{wallet.name}</div>
-                <div className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  Opens {wallet.name} setup outside ZWAP. Return here after your wallet is created.
+              <div className="flex-1 text-left">
+                <div className="font-medium text-white">
+                  {wallet.name}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Opens setup. Return here after creating your wallet.
                 </div>
               </div>
 
-              <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <ExternalLink className="w-4 h-4 text-gray-400" />
             </motion.button>
           ))}
         </div>
       </div>
 
-      <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3">
+      <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3 mt-2">
         <p className="text-xs text-cyan-100 leading-relaxed">
-          If another wallet app opens, finish setup there, then come back and choose{" "}
-          <span className="text-white font-medium">Connect Existing Wallet</span>.
+          External wallet apps may open outside ZWAP. Once finished, come back and choose{" "}
+          <span className="text-white font-medium">
+            Connect Existing Wallet
+          </span>.
         </p>
       </div>
     </div>
