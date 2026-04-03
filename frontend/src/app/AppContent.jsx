@@ -88,6 +88,7 @@ export default function AppContent() {
     return (
       <SplashScreen
         onNewUser={() => {
+          sessionStorage.setItem("zwap_force_new_user", "1");
           localStorage.removeItem("zwap_wallet");
           localStorage.removeItem("zwap_auth_user");
           localStorage.removeItem("zwap_email");
@@ -199,6 +200,13 @@ export default function AppContent() {
   }
 
   if (location.pathname === "/") {
+    const forceNewUser = sessionStorage.getItem("zwap_force_new_user") === "1";
+
+    if (forceNewUser) {
+      sessionStorage.removeItem("zwap_force_new_user");
+      return <Navigate to="/wallet" replace />;
+    }
+
     return <Navigate to={isAuthenticated ? "/dashboard" : "/wallet"} replace />;
   }
 
