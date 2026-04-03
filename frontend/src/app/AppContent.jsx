@@ -60,14 +60,6 @@ export default function AppContent() {
     protectedRoutes.includes(location.pathname) && !isAuthenticated;
 
   useEffect(() => {
-    if (!zwapAuth.ready) return;
-
-    if (zwapAuth.authenticated && location.pathname === "/wallet") {
-      navigate("/dashboard");
-    }
-  }, [zwapAuth.ready, zwapAuth.authenticated, location.pathname, navigate]);
-
-  useEffect(() => {
     if (isAuthenticated && pendingAction) {
       setPendingAction(null);
 
