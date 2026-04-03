@@ -10,8 +10,6 @@ export function AppProvider({ children }) {
   const [authUser, setAuthUser] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
 
-  const [isGetWalletPromptOpen, setIsGetWalletPromptOpen] = useState(false);
-  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
@@ -30,20 +28,13 @@ export function AppProvider({ children }) {
     !!walletAddress || (!!authUser && !isPrivyOnlyAuth);
 
   const closeAllAuthModals = () => {
-    setIsGetWalletPromptOpen(false);
-    setIsOnboardingModalOpen(false);
     setIsReturningUserPromptOpen(false);
     setIsWalletModalOpen(false);
   };
 
   const openWalletUpgradeFlow = () => {
     closeAllAuthModals();
-    setIsOnboardingModalOpen(true);
-  };
-
-  const openGuestWalletFlow = () => {
-    closeAllAuthModals();
-    setIsGetWalletPromptOpen(true);
+    setIsWalletModalOpen(true);
   };
 
   const fetchOnchainBalance = async (address) => {
@@ -110,12 +101,9 @@ export function AppProvider({ children }) {
   }, [walletAddress]);
 
   const connectWallet = async (address) => {
-    console.log("🔌 connectWallet called with:", address);
-
     try {
       setIsLoading(true);
       const userData = await api.connectWallet(address);
-      console.log("✅ api.connectWallet response:", userData);
 
       setUser(userData);
       setWalletAddress(address);
@@ -135,7 +123,7 @@ export function AppProvider({ children }) {
       toast.success("Wallet connected!");
       return userData;
     } catch (error) {
-      console.error("❌ api.connectWallet failed:", error);
+      console.error("api.connectWallet failed:", error);
       toast.error("Failed to connect wallet");
       throw error;
     } finally {
@@ -199,7 +187,8 @@ export function AppProvider({ children }) {
   const requireWallet = (action) => {
     if (!walletAddress) {
       setPendingAction(action);
-      openGuestWalletFlow();
+      closeAllAuthModals();
+      setIsWalletModalOpen(true);
       return false;
     }
     return true;
@@ -214,12 +203,6 @@ export function AppProvider({ children }) {
         setAuthUser,
         walletAddress,
         isAuthenticated,
-
-        isGetWalletPromptOpen,
-        setIsGetWalletPromptOpen,
-
-        isOnboardingModalOpen,
-        setIsOnboardingModalOpen,
 
         isReturningUserPromptOpen,
         setIsReturningUserPromptOpen,
@@ -240,7 +223,6 @@ export function AppProvider({ children }) {
 
         closeAllAuthModals,
         openWalletUpgradeFlow,
-        openGuestWalletFlow,
 
         isLoading,
         initialized,
