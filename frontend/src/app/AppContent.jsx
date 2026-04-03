@@ -59,6 +59,19 @@ export default function AppContent() {
     protectedRoutes.includes(location.pathname) && !isAuthenticated;
 
   useEffect(() => {
+    console.log("[APPCONTENT TRACE]", {
+      path: location.pathname,
+      isAuthenticated,
+      showSplash,
+      initialized,
+      forceNewUser: sessionStorage.getItem("zwap_force_new_user"),
+      zwap_wallet: localStorage.getItem("zwap_wallet"),
+      zwap_auth_user: localStorage.getItem("zwap_auth_user"),
+      zwap_email: localStorage.getItem("zwap_email"),
+    });
+  }, [location.pathname, isAuthenticated, showSplash, initialized]);
+  
+  useEffect(() => {
     if (isAuthenticated && pendingAction) {
       setPendingAction(null);
 
