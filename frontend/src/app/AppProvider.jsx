@@ -21,7 +21,13 @@ export function AppProvider({ children }) {
   const [showSplash, setShowSplash] = useState(true);
   const [onchainBalance, setOnchainBalance] = useState(null);
 
-  const isAuthenticated = !!walletAddress || !!authUser;
+  const isPrivyOnlyAuth =
+    !!authUser &&
+    authUser?.authProvider === "privy" &&
+    !walletAddress;
+
+  const isAuthenticated =
+    !!walletAddress || (!!authUser && !isPrivyOnlyAuth);
 
   const closeAllAuthModals = () => {
     setIsGetWalletPromptOpen(false);
@@ -115,6 +121,15 @@ export function AppProvider({ children }) {
       setWalletAddress(address);
       localStorage.setItem("zwap_wallet", address);
 
+      if (authUser && !authUser.walletAddress) {
+        const updatedAuthUser = {
+          ...authUser,
+          walletAddress: address,
+        };
+        setAuthUser(updatedAuthUser);
+        localStorage.setItem("zwap_auth_user", JSON.stringify(updatedAuthUser));
+      }
+
       closeAllAuthModals();
 
       toast.success("Wallet connected!");
@@ -135,24 +150,43 @@ export function AppProvider({ children }) {
     toast.success("Signed in");
   };
 
-  const disconnectWallet = () => {
+  const disconnectWallet = (showToast = true) => {
     setUser(null);
     setWalletAddress(null);
     setOnchainBalance(null);
     localStorage.removeItem("zwap_wallet");
-    toast.success("Wallet disconnected");
+
+    if (authUser?.authProvider === "privy") {
+      setAuthUser(null);
+      localStorage.removeItem("zwap_auth_user");
+    } else if (authUser?.walletAddress) {
+      const updatedAuthUser = {
+        ...authUser,
+        walletAddress: null,
+      };
+      setAuthUser(updatedAuthUser);
+      localStorage.setItem("zwap_auth_user", JSON.stringify(updatedAuthUser));
+    }
+
+    if (showToast) {
+      toast.success("Wallet disconnected");
+    }
   };
 
-  const logoutEmailUser = () => {
+  const logoutEmailUser = (showToast = true) => {
     setAuthUser(null);
     localStorage.removeItem("zwap_auth_user");
     localStorage.removeItem("zwap_email");
-    toast.success("Signed out");
+
+    if (showToast) {
+      toast.success("Signed out");
+    }
   };
 
   const logoutAll = () => {
-    disconnectWallet();
-    logoutEmailUser();
+    disconnectWallet(false);
+    logoutEmailUser(false);
+    toast.success("Signed out");
   };
 
   const refreshUser = async () => {
@@ -163,7 +197,7 @@ export function AppProvider({ children }) {
   };
 
   const requireWallet = (action) => {
-    if (!isAuthenticated) {
+    if (!walletAddress) {
       setPendingAction(action);
       openGuestWalletFlow();
       return false;
