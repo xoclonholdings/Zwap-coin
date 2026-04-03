@@ -11,6 +11,7 @@ export function AppProvider({ children }) {
   const [walletAddress, setWalletAddress] = useState(null);
 
   const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] = useState(false);
+  const [isEmailAuthModalOpen, setIsEmailAuthModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
   const [pendingAction, setPendingAction] = useState(null);
@@ -29,6 +30,7 @@ export function AppProvider({ children }) {
 
   const closeAllAuthModals = () => {
     setIsReturningUserPromptOpen(false);
+    setIsEmailAuthModalOpen(false);
     setIsWalletModalOpen(false);
   };
 
@@ -206,6 +208,9 @@ export function AppProvider({ children }) {
 
         isReturningUserPromptOpen,
         setIsReturningUserPromptOpen,
+
+        isEmailAuthModalOpen,
+        setIsEmailAuthModalOpen,
 
         isWalletModalOpen,
         setIsWalletModalOpen,
