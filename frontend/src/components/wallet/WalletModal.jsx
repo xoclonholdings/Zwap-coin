@@ -7,56 +7,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Wallet,
-  Loader2,
-  ChevronRight,
-  PlusCircle,
-  Link2,
-  ArrowLeft,
-  Sparkles,
-  ExternalLink,
-} from "lucide-react";
+import { Wallet, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 
-const WALLET_CONFIG = {
-  metamask: {
-    name: "MetaMask",
-    color: "#F6851B",
-    icon: "🦊",
-    setupUrl: "https://metamask.io/download/",
-    checkInstalled: () =>
-      typeof window !== "undefined" && !!window.ethereum?.isMetaMask,
-  },
-  coinbase: {
-    name: "Coinbase Wallet",
-    color: "#1652F0",
-    icon: "🔵",
-    setupUrl: "https://www.coinbase.com/wallet/downloads",
-    checkInstalled: () =>
-      typeof window !== "undefined" &&
-      (!!window.ethereum?.isCoinbaseWallet || !!window.coinbaseWalletExtension),
-  },
-  trust: {
-    name: "Trust Wallet",
-    color: "#3375BB",
-    icon: "🛡️",
-    setupUrl: "https://trustwallet.com/download",
-    checkInstalled: () =>
-      typeof window !== "undefined" &&
-      (!!window.trustwallet || !!window.ethereum?.isTrust),
-  },
-};
-
-const WalletIcon = ({ color, children }) => (
-  <div
-    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-    style={{ background: `${color}20` }}
-  >
-    {children}
-  </div>
-);
+import { WALLET_CONFIG } from "@/components/wallet/walletConfig";
+import WalletRootView from "@/components/wallet/WalletRootView";
+import WalletCreateView from "@/components/wallet/WalletCreateView";
+import WalletConnectView from "@/components/wallet/WalletConnectView";
 
 export default function WalletModal({ open, onOpenChange }) {
   const { connectWallet } = useApp();
@@ -193,180 +150,6 @@ export default function WalletModal({ open, onOpenChange }) {
     toast.info("In-app wallet setup coming next.");
   };
 
-  const renderRoot = () => (
-    <div className="space-y-3 mt-4">
-      <motion.button
-        onClick={() => setMode("create")}
-        className="w-full rounded-2xl border border-cyan-500/30 bg-[#141530] hover:bg-[#1a1b40] p-4 text-left transition-colors"
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-cyan-500/15 flex items-center justify-center">
-            <PlusCircle className="w-6 h-6 text-cyan-400" />
-          </div>
-
-          <div className="flex-1">
-            <p className="text-white font-semibold">Create New Wallet</p>
-            <p className="text-xs text-gray-400 mt-1">
-              Start fresh with in-app setup or another wallet app.
-            </p>
-          </div>
-
-          <ChevronRight className="w-5 h-5 text-cyan-400" />
-        </div>
-      </motion.button>
-
-      <motion.button
-        onClick={() => setMode("connect")}
-        className="w-full rounded-2xl border border-purple-500/30 bg-[#141530] hover:bg-[#1a1b40] p-4 text-left transition-colors"
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/15 flex items-center justify-center">
-            <Link2 className="w-6 h-6 text-purple-400" />
-          </div>
-
-          <div className="flex-1">
-            <p className="text-white font-semibold">Connect Existing Wallet</p>
-            <p className="text-xs text-gray-400 mt-1">
-              Already have one? Connect it and use it with ZWAP!
-            </p>
-          </div>
-
-          <ChevronRight className="w-5 h-5 text-purple-400" />
-        </div>
-      </motion.button>
-
-      <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3 mt-4">
-        <p className="text-xs text-cyan-100 leading-relaxed">
-          You can skip wallet setup for now. Your offline activity and progress
-          can still be saved and synced later.
-        </p>
-      </div>
-    </div>
-  );
-
-  const renderCreate = () => (
-    <div className="space-y-4 mt-4">
-      <div>
-        <p className="text-xs text-gray-400 mb-2 px-1">
-          Create inside ZWAP
-        </p>
-
-        <motion.button
-          onClick={handleEmbeddedWalletSetup}
-          className="w-full h-16 flex items-center gap-4 px-4 rounded-xl bg-[#141530] hover:bg-[#1a1b40] transition-colors border border-cyan-500/30"
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-        >
-          <div className="w-12 h-12 rounded-xl bg-cyan-500/15 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-cyan-300" />
-          </div>
-
-          <div className="flex-1 text-left">
-            <div className="font-medium text-white">
-              Create Wallet in App
-            </div>
-            <div className="text-xs text-gray-500">
-              Fast setup without leaving ZWAP
-            </div>
-          </div>
-
-          <ChevronRight className="w-5 h-5 text-gray-400" />
-        </motion.button>
-      </div>
-
-      <div className="border-t border-white/10 my-2" />
-
-      <div>
-        <p className="text-xs text-gray-400 mb-2 px-1">
-          Use a wallet app
-        </p>
-
-        <div className="space-y-3">
-          {walletOptions.map((wallet) => (
-            <motion.button
-              key={wallet.id}
-              onClick={() => openSetup(wallet.id)}
-              className="w-full h-16 flex items-center gap-4 px-4 rounded-xl bg-[#141530] hover:bg-[#1a1b40] transition-colors"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-            >
-              <WalletIcon color={wallet.color}>{wallet.icon}</WalletIcon>
-
-              <div className="flex-1 text-left">
-                <div className="font-medium text-white">
-                  {wallet.name}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Opens setup. Return here after creating your wallet.
-                </div>
-              </div>
-
-              <ExternalLink className="w-4 h-4 text-gray-400" />
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3 mt-2">
-        <p className="text-xs text-cyan-100 leading-relaxed">
-          External wallet apps may open outside ZWAP. Once finished, come back and choose{" "}
-          <span className="text-white font-medium">
-            Connect Existing Wallet
-          </span>.
-        </p>
-      </div>
-    </div>
-  );
-
-  const renderConnect = () => (
-    <div className="space-y-3 mt-4">
-      {walletOptions.map((wallet) => (
-        <motion.button
-          key={wallet.id}
-          onClick={() => connectInjectedWallet(wallet.id)}
-          disabled={!wallet.installed || isConnecting}
-          className={`w-full h-16 flex items-center gap-4 px-4 rounded-xl transition-colors ${
-            wallet.installed
-              ? "bg-[#141530] hover:bg-[#1a1b40]"
-              : "bg-[#141530]/40 opacity-50 cursor-not-allowed"
-          }`}
-          whileHover={wallet.installed ? { scale: 1.01 } : {}}
-          whileTap={wallet.installed ? { scale: 0.99 } : {}}
-        >
-          <WalletIcon color={wallet.color}>{wallet.icon}</WalletIcon>
-
-          <div className="flex-1 text-left">
-            <div className="font-medium text-white flex items-center gap-2">
-              {wallet.name}
-              {wallet.installed && (
-                <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-                  Available
-                </span>
-              )}
-            </div>
-            <div className="text-xs text-gray-500">
-              {wallet.installed ? "Tap to connect" : "Not detected right now"}
-            </div>
-          </div>
-
-          {isConnecting && connectingWallet === wallet.id ? (
-            <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
-          ) : null}
-        </motion.button>
-      ))}
-
-      <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3 mt-4">
-        <p className="text-xs text-cyan-100 leading-relaxed">
-          This option is for wallets already set up on your device.
-        </p>
-      </div>
-    </div>
-  );
-
   const title =
     mode === "create"
       ? "Create a Wallet"
@@ -407,9 +190,29 @@ export default function WalletModal({ open, onOpenChange }) {
           </DialogDescription>
         </DialogHeader>
 
-        {mode === "root" && renderRoot()}
-        {mode === "create" && renderCreate()}
-        {mode === "connect" && renderConnect()}
+        {mode === "root" && (
+          <WalletRootView
+            onCreate={() => setMode("create")}
+            onConnect={() => setMode("connect")}
+          />
+        )}
+
+        {mode === "create" && (
+          <WalletCreateView
+            walletOptions={walletOptions}
+            onEmbeddedSetup={handleEmbeddedWalletSetup}
+            onOpenSetup={openSetup}
+          />
+        )}
+
+        {mode === "connect" && (
+          <WalletConnectView
+            walletOptions={walletOptions}
+            isConnecting={isConnecting}
+            connectingWallet={connectingWallet}
+            onConnect={connectInjectedWallet}
+          />
+        )}
 
         <div className="text-center pt-1">
           <p className="text-xs text-gray-500">
