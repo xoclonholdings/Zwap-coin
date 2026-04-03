@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useLogin } from "@privy-io/react-auth";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "@/App";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import WalletCreateView from "@/components/wallet/WalletCreateView";
 import WalletConnectView from "@/components/wallet/WalletConnectView";
 
 export default function WalletModal({ open, onOpenChange }) {
+  const navigate = useNavigate();
   const { connectWallet } = useApp();
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState(null);
@@ -28,13 +30,14 @@ export default function WalletModal({ open, onOpenChange }) {
   };
 
   const { login } = useLogin({
-    onComplete: (user, isNewUser) => {
+    onComplete: (_user, isNewUser) => {
       toast.success(
         isNewUser
           ? "Wallet created in ZWAP!"
           : "Signed in to your wallet."
       );
       close();
+      navigate("/dashboard");
     },
     onError: (error) => {
       toast.error(error?.message || "Failed to open wallet setup.");
@@ -119,6 +122,7 @@ export default function WalletModal({ open, onOpenChange }) {
         `Connected: ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`
       );
       close();
+      navigate("/dashboard");
     } catch (error) {
       console.error(`${config.name} connection error:`, error);
       toast.error(error?.message || `Failed to connect ${config.name}`);
@@ -169,15 +173,15 @@ export default function WalletModal({ open, onOpenChange }) {
     mode === "create"
       ? "Create a Wallet"
       : mode === "connect"
-        ? "Connect Existing Wallet"
-        : "Set Up Wallet";
+      ? "Connect Existing Wallet"
+      : "Set Up Wallet";
 
   const description =
     mode === "create"
       ? "Start with in-app setup first, or use another wallet app."
       : mode === "connect"
-        ? "Choose a wallet you already use."
-        : "Create a new wallet or connect one you already have.";
+      ? "Choose a wallet you already use."
+      : "Create a new wallet or connect one you already have.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
