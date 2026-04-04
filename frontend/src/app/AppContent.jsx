@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
 import OfflineNotice from "@/components/ui/OfflineNotice";
-import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
 
 import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
@@ -84,7 +83,7 @@ export default function AppContent() {
           localStorage.removeItem("zwap_email");
           setShowSplash(false);
           closeAllAuthModals();
-          navigate("/wallet", { replace: true });
+          navigate("/start", { replace: true });
         }}
         onReturningUser={() => {
           setShowSplash(false);
@@ -94,7 +93,7 @@ export default function AppContent() {
           } else {
             closeAllAuthModals();
             setIsReturningUserPromptOpen(true);
-            navigate("/wallet");
+            navigate("/start");
           }
         }}
         onWhatIsZwap={() => {
@@ -133,11 +132,11 @@ export default function AppContent() {
     return <AdminPanel />;
   }
 
-  if (location.pathname === "/wallet") {
+  if (location.pathname === "/start") {
     return (
       <>
         <FirstTimeUserPage />
-        
+
         <EmailAuthModal
           open={isEmailAuthModalOpen}
           onOpenChange={setIsEmailAuthModalOpen}
@@ -148,14 +147,16 @@ export default function AppContent() {
           onOpenChange={setIsReturningUserPromptOpen}
         />
 
-        <PrivyProviderWrapper>
-          <WalletModal
-            open={isWalletModalOpen && !isReturningUserPromptOpen}
-            onOpenChange={setIsWalletModalOpen}
-          />
-        </PrivyProviderWrapper>
+        <WalletModal
+          open={isWalletModalOpen && !isReturningUserPromptOpen}
+          onOpenChange={setIsWalletModalOpen}
+        />
       </>
     );
+  }
+
+  if (location.pathname === "/wallet") {
+    return <Navigate to="/start" replace />;
   }
 
   if (location.pathname === "/learn") {
@@ -180,14 +181,14 @@ export default function AppContent() {
 
     if (forceNewUser) {
       sessionStorage.removeItem("zwap_force_new_user");
-      return <Navigate to="/wallet" replace />;
+      return <Navigate to="/start" replace />;
     }
 
-    return <Navigate to={isAuthenticated ? "/dashboard" : "/wallet"} replace />;
+    return <Navigate to={isAuthenticated ? "/dashboard" : "/start"} replace />;
   }
 
   if (isProtectedRoute) {
-    return <Navigate to="/wallet" replace />;
+    return <Navigate to="/start" replace />;
   }
 
   const showLayout = [
