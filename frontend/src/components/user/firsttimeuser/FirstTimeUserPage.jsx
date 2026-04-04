@@ -21,11 +21,13 @@ export default function FirstTimeUserPage() {
     setIsEmailAuthModalOpen,
   } = useApp();
 
-  const hasKnownExistingUser =
-    !!authUser ||
-    !!walletAddress ||
+  const hasEmailReturningSignals =
+    !!authUser?.email ||
     !!localStorage.getItem("zwap_email") ||
-    !!localStorage.getItem("zwap_auth_user") ||
+    !!localStorage.getItem("zwap_auth_user");
+
+  const hasWalletReturningSignals =
+    !!walletAddress ||
     !!localStorage.getItem("zwap_wallet") ||
     !!privyAuthenticated;
 
@@ -36,26 +38,44 @@ export default function FirstTimeUserPage() {
     toast("Looks like you may already have an account. Sign in to continue.");
   };
 
-  const handleGetWallet = () => {
-    if (hasKnownExistingUser) {
-      openReturningUserFlow();
-      return;
-    }
-
+  const openWalletFlow = () => {
     setIsReturningUserPromptOpen(false);
     setIsEmailAuthModalOpen(false);
     setIsWalletModalOpen(true);
   };
 
+  const openEmailSignupFlow = () => {
+    setIsWalletModalOpen(false);
+    setIsReturningUserPromptOpen(false);
+    setIsEmailAuthModalOpen(true);
+  };
+
+  const handleGetWallet = () => {
+    if (hasWalletReturningSignals) {
+      openWalletFlow();
+      return;
+    }
+
+    if (hasEmailReturningSignals) {
+      openWalletFlow();
+      return;
+    }
+
+    openWalletFlow();
+  };
+
   const handleContinueEmail = () => {
-    if (hasKnownExistingUser) {
+    if (hasEmailReturningSignals) {
       openReturningUserFlow();
       return;
     }
 
-    setIsWalletModalOpen(false);
-    setIsReturningUserPromptOpen(false);
-    setIsEmailAuthModalOpen(true);
+    if (hasWalletReturningSignals) {
+      openWalletFlow();
+      return;
+    }
+
+    openEmailSignupFlow();
   };
 
   return (
