@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { X, Wallet, Shield, Sparkles } from "lucide-react";
@@ -20,6 +20,9 @@ export default function WalletModal({ open, onOpenChange }) {
   const [isLaunching, setIsLaunching] = useState(false);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
 
+  const hasStartedWalletFlowRef = useRef(false);
+  const hasFinalizedWalletRef = useRef(false);
+
   const primaryWalletAddress = useMemo(() => {
     if (!wallets || wallets.length === 0) return null;
     return wallets[0]?.address || null;
@@ -28,6 +31,8 @@ export default function WalletModal({ open, onOpenChange }) {
   const handleClose = () => {
     if (isLaunching || isConnectingWallet) return;
     onOpenChange(false);
+    hasStartedWalletFlowRef.current = false;
+    hasFinalizedWalletRef.current = false;
   };
 
   const handleBackdropClick = (e) => {
@@ -40,10 +45,13 @@ export default function WalletModal({ open, onOpenChange }) {
     try {
       setIsReturningUserPromptOpen(false);
       setIsEmailAuthModalOpen(false);
+      hasStartedWalletFlowRef.current = true;
+      hasFinalizedWalletRef.current = false;
       setIsLaunching(true);
       await login();
     } catch (error) {
       console.error("Privy login launch failed:", error);
+      hasStartedWalletFlowRef.current = false;
       toast.error("Unable to open wallet setup");
     } finally {
       setIsLaunching(false);
@@ -51,12 +59,20 @@ export default function WalletModal({ open, onOpenChange }) {
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      hasStartedWalletFlowRef.current = false;
+      hasFinalizedWalletRef.current = false;
+      return;
+    }
+
     if (!ready) return;
     if (!authenticated) return;
     if (!primaryWalletAddress) return;
+    if (!hasStartedWalletFlowRef.current) return;
+    if (hasFinalizedWalletRef.current) return;
 
     let isMounted = true;
+    hasFinalizedWalletRef.current = true;
 
     const finalizeWalletConnection = async () => {
       try {
@@ -66,10 +82,11 @@ export default function WalletModal({ open, onOpenChange }) {
         if (!isMounted) return;
 
         onOpenChange(false);
-        toast.success("Wallet setup complete");
+        hasStartedWalletFlowRef.current = false;
         navigate("/dashboard", { replace: true });
       } catch (error) {
         console.error("Wallet connection finalization failed:", error);
+        hasFinalizedWalletRef.current = false;
         if (!isMounted) return;
         toast.error("Wallet connected, but app sync failed");
       } finally {
@@ -129,8 +146,8 @@ export default function WalletModal({ open, onOpenChange }) {
                       Create a Wallet
                     </h2>
                     <p className="mt-1 text-sm text-gray-400">
-                      ZWAP will open secure wallet setup through Privy and bring you
-                      straight into your account.
+                      ZWAP will open secure wallet setup through Privy and bring
+                      you straight into your account.
                     </p>
                   </div>
                 </div>
@@ -151,8 +168,8 @@ export default function WalletModal({ open, onOpenChange }) {
                   <div className="flex items-start gap-3">
                     <Sparkles className="mt-0.5 h-4 w-4 text-cyan-300 shrink-0" />
                     <p className="text-sm leading-relaxed text-gray-300">
-                      If you do not already have a wallet, Privy can create one for
-                      you during setup.
+                      If you do not already have a wallet, Privy can create one
+                      for you during setup.
                     </p>
                   </div>
                 </div>
