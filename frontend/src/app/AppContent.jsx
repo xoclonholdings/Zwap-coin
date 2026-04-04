@@ -1,14 +1,12 @@
 import React, { useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
-import useNetworkStatus from "@/hooks/useNetworkStatus";
-import OfflineNotice from "../components/ui/OfflineNotice";
+import useNetworkStatus from "../hooks/useNetworkStatus";
+import OfflineNotice from "../components/ui/dashboard/OfflineNotice";
 
-// ✅ FIXED PATHS
 import AppHeader from "../components/ui/dashboard/AppHeader";
 import Dashboard from "../components/ui/dashboard/Dashboard";
-
-import NewsTicker from "../components/ui/NewsTicker";
-import TabNavigation from "../components/TabNavigation";
+import NewsTicker from "../components/ui/dashboard/NewsTicker";
+import TabNavigation from "../components/ui/dashboard/TabNavigation";
 
 import SplashScreen from "../components/SplashScreen";
 import AboutPage from "../components/AboutPage";
@@ -24,11 +22,10 @@ import ShopTab from "../components/shop/ShopTab";
 
 import SubscriptionSuccess from "../components/SubscriptionSuccess";
 
-// ⚠️ verify if these need deeper paths if errors persist
-import ProfilePage from "../components/user/ProfilePage";
+import ProfilePage from "../components/user/profile/ProfilePage";
 import ContactPage from "../components/ContactPage";
-import PrivacyPage from "../components/PrivacyPage";
-import TermsPage from "../components/TermsPage";
+import PrivacyPage from "../components/docs/PrivacyPage";
+import TermsPage from "../components/docs/TermsPage";
 import AdminPanel from "../components/admin/AdminPanel";
 import LearnPage from "../components/learn/LearnPage";
 import PlusPage from "../components/PlusPage";
