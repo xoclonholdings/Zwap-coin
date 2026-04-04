@@ -176,6 +176,7 @@ export function AppProvider({ children }) {
   const logoutAll = () => {
     disconnectWallet(false);
     logoutEmailUser(false);
+    closeAllAuthModals();
     toast.success("Signed out");
   };
 
