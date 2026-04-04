@@ -30,13 +30,60 @@ export function generateDailyTasks({
   let randIndex = 0;
   const rand = () => seededRandom(seed + randIndex++);
 
-  // --- LOGIN
+  // LOGIN
   const loginComplete = hasWallet ? !canClaimDaily && !!lastDailyClaim : false;
 
-  // --- LEARN (always present)
-  const learnComplete = !!profile?.daily_learn_complete;
+  // REAL DAILY PROGRESS FIELDS
+  const triviaComplete = !!profile?.daily_trivia_complete;
+  const reviewedModulesToday = Number(profile?.daily_modules_reviewed ?? 0);
+  const continuedModulesToday = Number(profile?.daily_modules_continued ?? 0);
+  const completedModulesToday = Number(profile?.daily_modules_completed ?? 0);
 
-  // --- PLAY
+  const assistsSentToday = Number(profile?.daily_assists_sent ?? 0);
+  const assistsAcceptedToday = Number(profile?.daily_assists_accepted ?? 0);
+  const streamReactionsToday = Number(profile?.daily_stream_reactions ?? 0);
+
+  // LEARN
+  const learnTypes = [
+    {
+      type: "trivia",
+      title: "Complete Trivia",
+      reward: 10,
+      progress: triviaComplete ? 1 : 0,
+      target: 1,
+      incompleteHint: "Finish today’s trivia challenge",
+    },
+    {
+      type: "review_module",
+      title: "Review 1 Learn Module",
+      reward: 8,
+      progress: reviewedModulesToday,
+      target: 1,
+      incompleteHint: "Review one learning module",
+    },
+    {
+      type: "continue_module",
+      title: "Continue 1 Learn Module",
+      reward: 10,
+      progress: continuedModulesToday,
+      target: 1,
+      incompleteHint: "Continue a saved module",
+    },
+    {
+      type: "finish_module",
+      title: "Finish 1 Learn Module",
+      reward: 12,
+      progress: completedModulesToday,
+      target: 1,
+      incompleteHint: "Complete one learning module",
+    },
+  ];
+
+  const selectedLearn =
+    learnTypes[Math.floor(rand() * learnTypes.length)];
+  const learnComplete = selectedLearn.progress >= selectedLearn.target;
+
+  // PLAY
   const gameOptions = ["zbrickles", "ztrivia", "ztetris"];
   const selectedGame =
     gameOptions[Math.floor(rand() * gameOptions.length)];
@@ -44,18 +91,36 @@ export function generateDailyTasks({
   const gameTarget = Math.floor(rand() * 3) + 1;
   const playComplete = gamesPlayed >= gameTarget;
 
-  // --- SOCIAL
+  // SOCIAL / STREAM
   const socialTypes = [
-    { type: "assist", label: "Send Assists" },
-    { type: "react", label: "React in Stream" },
+    {
+      type: "send_assist",
+      label: "Send Assists",
+      rewardBase: 5,
+      progress: assistsSentToday,
+      unit: "assist",
+    },
+    {
+      type: "accept_assist",
+      label: "Accept Assists",
+      rewardBase: 5,
+      progress: assistsAcceptedToday,
+      unit: "assist",
+    },
+    {
+      type: "stream_react",
+      label: "React in Stream",
+      rewardBase: 5,
+      progress: streamReactionsToday,
+      unit: "reaction",
+    },
   ];
 
   const selectedSocial =
     socialTypes[Math.floor(rand() * socialTypes.length)];
 
-  const socialTarget = Math.floor(rand() * 3) + 1;
-  const socialProgress = profile?.daily_social_count ?? 0;
-  const socialComplete = socialProgress >= socialTarget;
+  const socialTarget = Math.floor(rand() * 2) + 1;
+  const socialComplete = selectedSocial.progress >= socialTarget;
 
   return [
     {
@@ -63,18 +128,20 @@ export function generateDailyTasks({
       title: "Daily Login",
       reward: dailyReward,
       completed: loginComplete,
-      hint: hasWallet
-        ? "Claim today’s login reward"
-        : "Connect wallet to claim",
+      hint: loginComplete
+        ? "Complete"
+        : hasWallet
+          ? "Claim today’s login reward"
+          : "Connect wallet to claim",
     },
     {
       key: "learn",
-      title: "Learn",
-      reward: 15,
+      title: selectedLearn.title,
+      reward: selectedLearn.reward,
       completed: learnComplete,
       hint: learnComplete
         ? "Complete"
-        : "Review or complete a module",
+        : selectedLearn.incompleteHint,
     },
     {
       key: "play",
@@ -88,11 +155,11 @@ export function generateDailyTasks({
     {
       key: "social",
       title: `${selectedSocial.label} (${socialTarget})`,
-      reward: 10 + socialTarget * 5,
+      reward: selectedSocial.rewardBase + socialTarget * 2,
       completed: socialComplete,
       hint: socialComplete
         ? "Complete"
-        : `${Math.max(socialTarget - socialProgress, 0)} left`,
+        : `${Math.max(socialTarget - selectedSocial.progress, 0)} ${selectedSocial.unit}${Math.max(socialTarget - selectedSocial.progress, 0) === 1 ? "" : "s"} left`,
     },
   ];
 }
