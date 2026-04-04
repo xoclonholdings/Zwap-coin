@@ -34,6 +34,8 @@ export default function AppContent() {
     isAuthenticated,
     isReturningUserPromptOpen,
     setIsReturningUserPromptOpen,
+    isEmailAuthModalOpen,
+    setIsEmailAuthModalOpen,
     isWalletModalOpen,
     setIsWalletModalOpen,
     pendingAction,
