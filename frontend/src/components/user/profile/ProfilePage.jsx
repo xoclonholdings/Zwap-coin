@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import BadgeStrip from "@/components/user/badges/BadgeStrip";
-import WalletCard from "@/components/user/WalletCard";
-import ProfileIdentityCard from "@/components/user/ProfileIdentityCard";
+import BadgeStrip from "@/components/user/profile/BadgeStrip";
+import WalletCard from "@/components/user/profile/WalletCard";
+import ProfileIdentityCard from "@/components/user/profile/ProfileIdentityCard";
 
 const API_BASE = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
