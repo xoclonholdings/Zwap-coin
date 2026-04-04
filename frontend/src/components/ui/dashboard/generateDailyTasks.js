@@ -1,3 +1,20 @@
+function seededRandom(seed) {
+  let x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function getSeed(wallet, date) {
+  const base = `${wallet || "guest"}-${date}`;
+  let hash = 0;
+
+  for (let i = 0; i < base.length; i++) {
+    hash = (hash << 5) - hash + base.charCodeAt(i);
+    hash |= 0;
+  }
+
+  return Math.abs(hash);
+}
+
 export function generateDailyTasks({
   hasWallet,
   canClaimDaily,
@@ -5,30 +22,38 @@ export function generateDailyTasks({
   dailyReward,
   gamesPlayed,
   profile,
+  walletAddress,
 }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const seed = getSeed(walletAddress, today);
+
+  let randIndex = 0;
+  const rand = () => seededRandom(seed + randIndex++);
+
+  // --- LOGIN
   const loginComplete = hasWallet ? !canClaimDaily && !!lastDailyClaim : false;
 
   // --- LEARN (always present)
   const learnComplete = !!profile?.daily_learn_complete;
 
-  // --- PLAY (dynamic)
+  // --- PLAY
   const gameOptions = ["zbrickles", "ztrivia", "ztetris"];
   const selectedGame =
-    gameOptions[Math.floor(Math.random() * gameOptions.length)];
+    gameOptions[Math.floor(rand() * gameOptions.length)];
 
-  const gameTarget = Math.floor(Math.random() * 3) + 1;
+  const gameTarget = Math.floor(rand() * 3) + 1;
   const playComplete = gamesPlayed >= gameTarget;
 
-  // --- SOCIAL (dynamic)
+  // --- SOCIAL
   const socialTypes = [
     { type: "assist", label: "Send Assists" },
     { type: "react", label: "React in Stream" },
   ];
 
   const selectedSocial =
-    socialTypes[Math.floor(Math.random() * socialTypes.length)];
+    socialTypes[Math.floor(rand() * socialTypes.length)];
 
-  const socialTarget = Math.floor(Math.random() * 3) + 1;
+  const socialTarget = Math.floor(rand() * 3) + 1;
   const socialProgress = profile?.daily_social_count ?? 0;
   const socialComplete = socialProgress >= socialTarget;
 
