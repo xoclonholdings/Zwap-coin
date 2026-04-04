@@ -163,9 +163,10 @@ export default function Dashboard() {
   
     if (safeUser?.custom_username) return safeUser.custom_username;
     if (safeUser?.username) return safeUser.username;
+    if (walletAddress) return generateUsername(walletAddress);
     if (safeAuthUser?.username) return safeAuthUser.username;
     if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
-    if (walletAddress) return generateUsername(walletAddress);
+  
     return "";
   }, [user, authUser, walletAddress]);
   
