@@ -148,14 +148,12 @@ export default function AppContent() {
           onOpenChange={setIsReturningUserPromptOpen}
         />
 
-        {isWalletModalOpen && !isReturningUserPromptOpen && (
-          <PrivyProviderWrapper>
-            <WalletModal
-              open={true}
-              onOpenChange={setIsWalletModalOpen}
-            />
-          </PrivyProviderWrapper>
-        )}
+        <PrivyProviderWrapper>
+          <WalletModal
+            open={isWalletModalOpen && !isReturningUserPromptOpen}
+            onOpenChange={setIsWalletModalOpen}
+          />
+        </PrivyProviderWrapper>
       </>
     );
   }
