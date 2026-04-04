@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { usePrivy } from "@privy-io/react-auth";
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -10,30 +9,23 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import ConvertZPtsModal from "@/components/ConvertZPtsModal";
 import {
   Wallet,
   User,
   LogOut,
-  FileText,
   HelpCircle,
   Lock,
   ChevronRight,
   Crown,
   Mail,
-  Link2,
-  ExternalLink,
   BookOpen,
   Shield,
 } from "lucide-react";
-import { useApp, ZWAP_CONTRACT } from "@/App";
-
-const getPolygonScanUrl = (address, type = "address") => {
-  return `https://polygonscan.com/${type}/${address}`;
-};
+import { useApp } from "@/App";
+import ProfilePage from "@/pages/ProfilePage";
 
 function generateUsername(wallet) {
-  if (!wallet) return "Guest";
+  if (!wallet) return "Zwapper";
 
   const adjectives = [
     "Nova",
@@ -70,6 +62,7 @@ function generateUsername(wallet) {
 }
 
 export default function AccountDrawer({ open, onOpenChange, trigger }) {
+  const navigate = useNavigate();
   const { logout: privyLogout } = usePrivy();
 
   const {
@@ -78,11 +71,9 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     walletAddress,
     logoutAll,
     onchainBalance,
-    openWalletUpgradeFlow,
   } = useApp();
 
-  const navigate = useNavigate();
-  const [convertOpen, setConvertOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const safeUser = user && typeof user === "object" ? user : null;
   const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
@@ -90,6 +81,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
   const isWalletUser = !!walletAddress;
   const isEmailUser = !!safeAuthUser?.email;
   const isAuthenticatedUser = isWalletUser || isEmailUser;
+
   const isAdmin = !!(safeUser?.is_admin || safeAuthUser?.is_admin);
 
   const displayName = useMemo(() => {
@@ -98,7 +90,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     if (safeAuthUser?.username) return safeAuthUser.username;
     if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
     if (walletAddress) return generateUsername(walletAddress);
-    return "Guest";
+    return "Zwapper";
   }, [safeUser, safeAuthUser, walletAddress]);
 
   const displaySubtext = useMemo(() => {
@@ -125,99 +117,19 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     );
   }, [displayName]);
 
-  const tier =
-    safeUser?.tier || safeAuthUser?.tier || (isEmailUser ? "starter" : null);
-  const isPlus = tier === "plus";
-
-  const appZwapBalance = Number(
-    safeUser?.zwap_balance ??
-      safeAuthUser?.zwap_pending ??
-      safeAuthUser?.zwap_balance ??
-      0
-  );
+  const isPlus = safeUser?.tier === "plus";
 
   const zptsBalance = Number(
     safeUser?.zpts_balance ??
-      safeAuthUser?.zpts_pending ??
       safeAuthUser?.zpts_balance ??
       0
   );
-
-  const totalEarned = Number(
-    safeUser?.total_earned ?? safeAuthUser?.total_earned ?? 0
-  );
-
-  const settingsItems = [
-    {
-      icon: User,
-      label: "Profile",
-      action: () => {
-        onOpenChange(false);
-        navigate("/profile");
-      },
-    },
-    {
-      icon: BookOpen,
-      label: "Learn",
-      action: () => {
-        onOpenChange(false);
-        navigate("/learn");
-      },
-    },
-    {
-      icon: Mail,
-      label: "Contact",
-      action: () => {
-        onOpenChange(false);
-        navigate("/contact");
-      },
-    },
-    {
-      icon: Lock,
-      label: "Privacy Policy",
-      action: () => {
-        onOpenChange(false);
-        navigate("/privacy");
-      },
-    },
-    {
-      icon: FileText,
-      label: "Terms of Use",
-      action: () => {
-        onOpenChange(false);
-        navigate("/terms");
-      },
-    },
-    {
-      icon: HelpCircle,
-      label: "FAQs & Help",
-      action: () => {
-        onOpenChange(false);
-        navigate("/about");
-      },
-    },
-  ];
-
-  const handleConnectWallet = () => {
-    onOpenChange(false);
-    setTimeout(() => {
-      openWalletUpgradeFlow();
-      navigate("/start");
-    }, 120);
-  };
-
-  const handleConvert = () => {
-    onOpenChange(false);
-    setTimeout(() => {
-      setConvertOpen(true);
-    }, 150);
-  };
 
   const handleSignOut = async () => {
     try {
       await privyLogout();
     } catch (error) {
-      console.error("Privy logout failed:", error);
+      console.error(error);
     }
 
     logoutAll();
@@ -227,285 +139,205 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
 
   const handleShieldPress = () => {
     onOpenChange(false);
-
     if (isAdmin) {
       navigate("/admin");
-      return;
+    } else {
+      navigate("/about");
     }
-
-    navigate("/about");
   };
 
   return (
-    <>
-      <ConvertZPtsModal
-        open={convertOpen}
-        onClose={() => setConvertOpen(false)}
-        walletAddress={walletAddress}
-        zptsBalance={zptsBalance}
-        onConverted={() => {}}
-      />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetTrigger asChild>{trigger}</SheetTrigger>
 
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetTrigger asChild>{trigger}</SheetTrigger>
+      <SheetContent
+        side="right"
+        className="w-80 overflow-hidden border-l border-cyan-500/20 bg-[#0a0b1e]"
+      >
+        <SheetHeader className="border-b border-white/5 pb-4">
+          <SheetTitle className="text-xl font-black text-white">
+            Account
+          </SheetTitle>
+        </SheetHeader>
 
-        <SheetContent
-          side="right"
-          className="w-80 overflow-y-auto border-l border-cyan-500/20 bg-[#0a0b1e] sm:w-80"
-          aria-describedby="account-drawer-description"
-        >
-          <SheetHeader className="border-b border-white/5 pb-4">
-            <SheetTitle className="text-xl font-black tracking-tight text-white">
-              Account
-            </SheetTitle>
-            <p id="account-drawer-description" className="sr-only">
-              Manage your ZWAP! account, wallet, balances, settings, and secure
-              access.
-            </p>
-          </SheetHeader>
-
+        <div className="relative h-full">
+          {/* MAIN DRAWER CONTENT */}
           <div className="mt-5 space-y-5 pb-6">
+
+            {/* IDENTITY */}
             <div className="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-cyan-500/10 via-violet-500/6 to-transparent p-4">
               <div className="flex items-center gap-3">
                 <motion.div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full border text-lg font-bold uppercase ${
+                  className={`flex h-14 w-14 items-center justify-center rounded-full border text-lg font-bold ${
                     isPlus
-                      ? "border-yellow-400/40 bg-gradient-to-br from-yellow-400/30 via-amber-500/20 to-orange-500/30 text-yellow-200"
+                      ? "border-yellow-400/40 bg-gradient-to-br from-yellow-400/30 to-orange-500/30 text-yellow-200"
                       : "border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 to-purple-500/30 text-white"
                   }`}
-                  animate={{
-                    boxShadow: isPlus
-                      ? [
-                          "0 0 10px rgba(250,204,21,0.25)",
-                          "0 0 20px rgba(251,191,36,0.4)",
-                          "0 0 10px rgba(250,204,21,0.25)",
-                        ]
-                      : [
-                          "0 0 10px rgba(0,245,255,0.3)",
-                          "0 0 20px rgba(0,245,255,0.5)",
-                          "0 0 10px rgba(0,245,255,0.3)",
-                        ],
-                  }}
-                  transition={{ duration: 2.2, repeat: Infinity }}
                 >
                   {initials}
                 </motion.div>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-semibold text-white">
+                <div className="flex-1 min-w-0">
+                  <p className="truncate font-semibold text-white">
                     {displayName}
                   </p>
-                  <p className="mt-0.5 truncate text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate">
                     {displaySubtext}
                   </p>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <div className="mt-2 flex items-center gap-2">
                     {isPlus ? (
                       <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[11px] font-semibold text-black">
-                        <Crown className="h-3 w-3" /> Plus
+                        <Crown className="h-3 w-3" /> Zitizen
                       </span>
-                    ) : isAuthenticatedUser ? (
+                    ) : (
                       <>
-                        <span className="text-xs text-gray-400">Starter</span>
+                        <span className="text-xs text-gray-400">
+                          Zwapper
+                        </span>
                         <button
                           onClick={() => {
                             onOpenChange(false);
                             navigate("/plus");
                           }}
-                          className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-semibold text-black transition hover:opacity-90"
+                          className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[10px] font-semibold text-black"
                         >
                           Upgrade
                         </button>
                       </>
-                    ) : (
-                      <span className="text-xs text-gray-500">
-                        Start now, connect later
-                      </span>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {(isWalletUser || isEmailUser) && (
-              <div className="rounded-[1.5rem] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-xs uppercase tracking-wider text-gray-500">
-                    Reward Balances
-                  </p>
-
-                  {walletAddress ? (
-                    <a
-                      href={getPolygonScanUrl(walletAddress)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-cyan-400 transition-colors hover:text-cyan-300"
-                    >
-                      PolygonScan <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ) : null}
+            {/* BALANCE STRIP */}
+            <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-cyan-400 font-semibold">
+                    {walletAddress && onchainBalance !== null
+                      ? onchainBalance.toFixed(2)
+                      : "0.00"}
+                  </span>
+                  <span className="text-xs text-gray-500">ZWAP</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
-                    <p className="text-lg font-bold text-cyan-400">
-                      {walletAddress
-                        ? onchainBalance !== null
-                          ? onchainBalance.toFixed(2)
-                          : "0.00"
-                        : "—"}
-                    </p>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                      <Link2 className="h-3 w-3" /> Linked Wallet
-                    </p>
-                  </div>
+                <div className="h-4 w-px bg-white/10" />
 
-                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
-                    <p className="text-lg font-bold text-cyan-300">
-                      {appZwapBalance.toFixed(2)}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">In-App Rewards</p>
-                  </div>
-
-                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
-                    <p className="text-lg font-bold text-purple-400">
-                      {zptsBalance}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">zPts</p>
-                  </div>
-
-                  <div className="rounded-xl border border-white/10 bg-black/15 p-3">
-                    <p className="text-lg font-bold text-emerald-400">
-                      {totalEarned.toFixed(0)}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">Total Earned</p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-400 font-semibold">
+                    {zptsBalance}
+                  </span>
+                  <span className="text-xs text-gray-500">zPts</span>
                 </div>
-
-                <p className="mt-3 border-t border-gray-800 pt-2 text-center text-[10px] text-gray-600">
-                  Balances update in real-time
-                </p>
-
-                {walletAddress && zptsBalance > 0 ? (
-                  <Button
-                    type="button"
-                    onClick={handleConvert}
-                    className="mt-3 w-full rounded-xl border border-purple-500/30 bg-purple-600/20 text-purple-200 hover:bg-purple-600/30"
-                    variant="outline"
-                  >
-                    Convert zPts → ZWAP!
-                  </Button>
-                ) : null}
-
-                {walletAddress ? (
-                  <div className="mt-3 border-t border-cyan-500/20 pt-3">
-                    <a
-                      href={getPolygonScanUrl(ZWAP_CONTRACT.address, "token")}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-gray-500 transition-colors hover:text-cyan-400"
-                    >
-                      ZWAP! Token Contract <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                ) : null}
               </div>
-            )}
+            </div>
 
-            {!isWalletUser && (
-              <motion.button
-                onClick={handleConnectWallet}
-                className="w-full rounded-[1.5rem] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 p-4 text-left shadow-[0_0_20px_rgba(34,211,238,0.08)]"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.985 }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="flex items-center gap-2 font-semibold text-cyan-400">
-                      <Wallet className="h-4 w-4" />
-                      Set Up Wallet
-                    </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      Save progress & earn rewards
-                    </p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-cyan-400" />
+            {/* ACTION BUTTON */}
+            <motion.button
+              onClick={() => setProfileOpen(true)}
+              className="w-full rounded-[1.25rem] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 p-4 text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="flex items-center gap-2 font-semibold text-cyan-400">
+                    <Wallet className="h-4 w-4" />
+                    {walletAddress ? "Open Wallet" : "Set Up Wallet"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {walletAddress
+                      ? "View balances, badges, and activity"
+                      : "Save progress & unlock rewards"}
+                  </p>
                 </div>
-              </motion.button>
-            )}
 
+                <ChevronRight className="h-5 w-5 text-cyan-400" />
+              </div>
+            </motion.button>
+
+            {/* NAVIGATION */}
             <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-2">
-              {settingsItems.map((item, index) => {
+              {[
+                { label: "Profile", icon: User, action: () => setProfileOpen(true) },
+                { label: "Learn", icon: BookOpen, action: () => navigate("/learn") },
+                { label: "Contact", icon: Mail, action: () => navigate("/contact") },
+              ].map((item, i) => {
                 const Icon = item.icon;
-
                 return (
-                  <motion.button
-                    key={index}
-                    onClick={item.action}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-white/[0.05]"
-                    whileHover={{ x: 4 }}
+                  <button
+                    key={i}
+                    onClick={() => {
+                      onOpenChange(false);
+                      item.action();
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/[0.05]"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/20">
                       <Icon className="h-4 w-4 text-gray-300" />
                     </div>
-                    <span className="font-medium text-gray-200">{item.label}</span>
-                  </motion.button>
+                    <span className="text-gray-200 font-medium">
+                      {item.label}
+                    </span>
+                  </button>
                 );
               })}
             </div>
-            
+
+            {/* SYSTEM */}
             {isAuthenticatedUser && (
-              <motion.button
+              <button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-[1.25rem] border border-red-500/15 bg-red-500/[0.04] px-4 py-3 text-red-400 transition-colors hover:bg-red-500/10"
-                whileHover={{ x: 4 }}
+                className="flex w-full items-center gap-3 rounded-[1.25rem] border border-red-500/20 px-4 py-3 text-red-400 hover:bg-red-500/10"
               >
-                <LogOut className="h-5 w-5 shrink-0" />
-                <span className="font-medium">Sign Out</span>
-              </motion.button>
+                <LogOut className="h-5 w-5" />
+                Sign Out
+              </button>
             )}
 
-            <div className="flex justify-center pt-1">
-              <div className="text-center">
-                <motion.button
-                  onClick={handleShieldPress}
-                  className={`flex h-12 w-12 items-center justify-center rounded-full border ${
-                    isAdmin
-                      ? "border-cyan-400/25 bg-gradient-to-br from-cyan-500/12 to-purple-500/12"
-                      : "border-white/10 bg-white/[0.03]"
-                  }`}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  animate={{
-                    boxShadow: isAdmin
-                      ? [
-                          "0 0 8px rgba(34,211,238,0.15)",
-                          "0 0 18px rgba(34,211,238,0.35)",
-                          "0 0 8px rgba(34,211,238,0.15)",
-                        ]
-                      : [
-                          "0 0 0 rgba(255,255,255,0)",
-                          "0 0 8px rgba(255,255,255,0.05)",
-                          "0 0 0 rgba(255,255,255,0)",
-                        ],
-                  }}
-                  transition={{ duration: 2.5, repeat: Infinity }}
-                  title={isAdmin ? "Admin Panel" : "ZWAP! Secure"}
-                >
-                  <Shield
-                    className={`h-5 w-5 ${
-                      isAdmin ? "text-cyan-300" : "text-gray-400"
-                    }`}
-                  />
-                </motion.button>
-                <p className="mt-2 text-[10px] text-gray-500">
-                  {isAdmin ? "Admin" : "Secure"}
-                </p>
-              </div>
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={handleShieldPress}
+                className="h-12 w-12 rounded-full border border-white/10 flex items-center justify-center"
+              >
+                <Shield className="h-5 w-5 text-gray-400" />
+              </button>
             </div>
+
+            {/* FOOTER */}
+            <div className="text-center text-xs text-gray-500 pt-2">
+              <span
+                onClick={() => navigate("/privacy")}
+                className="cursor-pointer hover:text-gray-300"
+              >
+                Privacy
+              </span>
+              {" • "}
+              <span
+                onClick={() => navigate("/terms")}
+                className="cursor-pointer hover:text-gray-300"
+              >
+                Terms
+              </span>
+              {" • "}
+              <span
+                onClick={() => navigate("/about")}
+                className="cursor-pointer hover:text-gray-300"
+              >
+                Help
+              </span>
+            </div>
+
           </div>
-        </SheetContent>
-      </Sheet>
-    </>
+
+          {/* PROFILE OVERLAY */}
+          {profileOpen && (
+            <div className="absolute inset-0 z-50 bg-[#050510]">
+              <ProfilePage onClose={() => setProfileOpen(false)} />
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
