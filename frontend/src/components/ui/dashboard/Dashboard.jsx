@@ -139,10 +139,7 @@ export default function Dashboard() {
     rewardStatus?.last_daily_claim ?? profile?.last_daily_claim ?? null;
 
   const projectedStreak =
-    Number(
-      rewardStatus?.projected_streak ??
-      (streak + (canClaimDaily ? 1 : 0))
-    ) || 1;
+    Number(rewardStatus?.projected_streak ?? (streak + (canClaimDaily ? 1 : 0))) || 1;
 
   const dailyReward =
     Number(rewardStatus?.next_reward_zpts) ||
@@ -187,6 +184,7 @@ export default function Dashboard() {
       dailyReward,
       gamesPlayed,
       profile,
+      walletAddress,
     });
 
     return generatedTasks.map((task) => ({
@@ -200,6 +198,7 @@ export default function Dashboard() {
     dailyReward,
     gamesPlayed,
     profile,
+    walletAddress,
   ]);
 
   const completedTaskCount = tasks.filter((task) => task.completed).length;
