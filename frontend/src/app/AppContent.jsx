@@ -137,6 +137,11 @@ export default function AppContent() {
     return (
       <>
         <FirstTimeUserPage />
+        
+        <EmailAuthModal
+          open={isEmailAuthModalOpen}
+          onOpenChange={setIsEmailAuthModalOpen}
+        />
 
         <ReturningUserPrompt
           open={isReturningUserPromptOpen}
