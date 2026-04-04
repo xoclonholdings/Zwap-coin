@@ -128,7 +128,7 @@ export default function AppContent() {
       return <Navigate to="/start" replace />;
     }
 
-    return <Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />;
+    return <Navigate to={isAuthenticated ? "/dashboard" : "/start"} replace />;
   }
 
   if (isProtectedRoute) {
