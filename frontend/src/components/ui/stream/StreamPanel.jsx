@@ -58,37 +58,58 @@ export default function StreamPanel({ open, onOpenChange }) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="h-full w-[380px] border-r border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] text-white"
+        className="h-full w-[380px] border-r border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] p-0 text-white"
       >
-        <div className="flex h-full flex-col">
-          <div className="px-4 pt-4">
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="border-b border-white/10 px-4 pb-4 pt-4">
+            <div className="mb-4">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300/80">
+                Stream
+              </p>
+              <p className="mt-1 text-sm text-gray-400">
+                Watch, listen, go live, and feel the pulse of ZWAP.
+              </p>
+            </div>
+
             <StreamTabs
               activeTab={activeTab}
               setActiveTab={setActiveTab}
             />
           </div>
 
-          <div className="px-4 pt-4">
-            <StreamPlayerSurface
-              item={selectedItem}
-              activeTab={activeTab}
-            />
-          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="space-y-5 px-4 py-4">
+              <div className="space-y-3">
+                <div className="px-1">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500">
+                    Featured Lane
+                  </p>
+                </div>
 
-          <div className="flex-1 overflow-y-auto px-4 pt-4 space-y-3">
-            {activeItems.map((item) => (
-              <StreamCard
-                key={item.id}
-                item={item}
-                tabId={activeTab}
-                active={selectedItem?.id === item.id}
-                onClick={() => setSelectedForActiveTab(item.id)}
-              />
-            ))}
-          </div>
+                <StreamPlayerSurface
+                  item={selectedItem}
+                  activeTab={activeTab}
+                />
 
-          <div className="border-t border-white/10 p-4">
-            <ActivityStreamSection />
+                <div className="space-y-3">
+                  {activeItems.map((item) => (
+                    <StreamCard
+                      key={item.id}
+                      item={item}
+                      tabId={activeTab}
+                      active={selectedItem?.id === item.id}
+                      onClick={() => setSelectedForActiveTab(item.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
+
+              <div className="pb-2">
+                <ActivityStreamSection />
+              </div>
+            </div>
           </div>
         </div>
       </SheetContent>
