@@ -98,10 +98,12 @@ export default function AppContent() {
             navigate("/start", { replace: true });
           }}
           onReturningUser={() => {
+            sessionStorage.removeItem("zwap_force_new_user");
             closeAllAuthModals();
             setIsReturningUserPromptOpen(true);
           }}
           onWhatIsZwap={() => {
+            sessionStorage.removeItem("zwap_force_new_user");
             closeAllAuthModals();
             setShowSplash(false);
             navigate("/about", { replace: true });
