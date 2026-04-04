@@ -7,7 +7,7 @@ import api from "@/lib/api";
 
 import DashboardHero from "@/components/ui/dashboard/DashboardHero";
 import DashboardDailyLoopCard from "@/components/ui/dashboard/DashboardDailyLoopCard";
-import DashboardTasksCard from "@/components/ui/dashboard/DashboardTasksCard";
+import DashboardDailyTasksCard from "@/components/ui/dashboard/DashboardDailyTasksCard";
 import DashboardStatusCard from "@/components/ui/dashboard/DashboardStatusCard";
 
 function generateUsername(wallet) {
@@ -160,16 +160,16 @@ export default function Dashboard() {
   const username = useMemo(() => {
     const safeUser = user && typeof user === "object" ? user : null;
     const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
-  
+
     if (safeUser?.custom_username) return safeUser.custom_username;
     if (safeUser?.username) return safeUser.username;
     if (walletAddress) return generateUsername(walletAddress);
     if (safeAuthUser?.username) return safeAuthUser.username;
     if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
-  
+
     return "";
   }, [user, authUser, walletAddress]);
-  
+
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
 
@@ -279,14 +279,17 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4 lg:px-6">
       <div className="mx-auto w-full max-w-5xl space-y-4">
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-          <DashboardHero
-            username={username}
-            currentTier={currentTier}
-          />
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <DashboardHero username={username} currentTier={currentTier} />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <DashboardDailyLoopCard
             streak={streak}
             canClaim={canClaimDaily}
@@ -297,15 +300,25 @@ export default function Dashboard() {
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-          <DashboardTasksCard
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <DashboardDailyTasksCard
             tasks={tasks}
             completedTaskCount={completedTaskCount}
             totalTasks={4}
+            badgeLabel={nextBadge.label}
+            badgeHint={nextBadge.hint}
+            badgeProgress={nextBadge.progress}
+            badgeGoal={nextBadge.goal}
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <DashboardStatusCard
             zpts={zpts}
             pendingZwap={pendingZwap}
