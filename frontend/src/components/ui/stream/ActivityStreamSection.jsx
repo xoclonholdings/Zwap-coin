@@ -1,46 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Activity, Globe, MapPin } from "lucide-react";
+import api from "@/lib/api";
 
-const demoData = {
-  local: [
-    {
-      id: "local_1",
-      message: "A Zwapper nearby just completed their rings",
-      event_type: "RING_COMPLETION",
-    },
-    {
-      id: "local_2",
-      message: "3 people are active in this area",
-      event_type: "MOVEMENT_ACTIVITY",
-    },
-  ],
-  region: [
-    {
-      id: "region_1",
-      message: "An assist was just sent to Echo",
-      event_type: "ASSIST_SENT",
-    },
-    {
-      id: "region_2",
-      message: "Kai just became a Finisher",
-      event_type: "BADGE_MILESTONE",
-    },
-  ],
-  global: [
-    {
-      id: "global_1",
-      message: "Movement is picking up across ZWAP",
-      event_type: "MOVEMENT_ACTIVITY",
-    },
-    {
-      id: "global_2",
-      message: "Another Finisher just emerged",
-      event_type: "BADGE_MILESTONE",
-    },
-  ],
-};
-
-function SectionBlock({ icon: Icon, title, items }) {
+function SectionBlock({ icon: Icon, title, items, loading }) {
   return (
     <div className="rounded-[20px] border border-white/8 bg-white/[0.03] p-3">
       <div className="mb-3 flex items-center gap-2">
@@ -53,34 +15,95 @@ function SectionBlock({ icon: Icon, title, items }) {
       </div>
 
       <div className="space-y-2">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-2xl border border-white/6 bg-black/20 px-3 py-2.5"
-          >
-            <p className="text-sm leading-relaxed text-gray-200">
-              {item.message}
-            </p>
-
-            <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-gray-500">
-              <button className="rounded-full border border-white/8 px-2 py-1 text-gray-400 hover:text-white">
-                ❤️
-              </button>
-              <button className="rounded-full border border-white/8 px-2 py-1 text-gray-400 hover:text-white">
-                🔥
-              </button>
-              <button className="rounded-full border border-white/8 px-2 py-1 text-gray-400 hover:text-white">
-                👏
-              </button>
-            </div>
+        {loading ? (
+          <div className="rounded-2xl border border-white/6 bg-black/20 px-3 py-3">
+            <p className="text-sm text-gray-400">Loading activity...</p>
           </div>
-        ))}
+        ) : items.length === 0 ? (
+          <div className="rounded-2xl border border-white/6 bg-black/20 px-3 py-3">
+            <p className="text-sm text-gray-500">No activity yet.</p>
+          </div>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-2xl border border-white/6 bg-black/20 px-3 py-2.5"
+            >
+              <p className="text-sm leading-relaxed text-gray-200">
+                {item.message}
+              </p>
+
+              <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+                <button className="rounded-full border border-white/8 px-2 py-1 text-gray-400 hover:text-white">
+                  ❤️
+                </button>
+                <button className="rounded-full border border-white/8 px-2 py-1 text-gray-400 hover:text-white">
+                  🔥
+                </button>
+                <button className="rounded-full border border-white/8 px-2 py-1 text-gray-400 hover:text-white">
+                  👏
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 }
 
 export default function ActivityStreamSection() {
+  const [loading, setLoading] = useState(true);
+  const [stream, setStream] = useState({
+    local: [],
+    region: [],
+    global: [],
+  });
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadStream = async () => {
+      try {
+        setLoading(true);
+
+        const walletAddress =
+          localStorage.getItem("walletAddress") || "test_wallet";
+
+        const response = await api.get(`/activity/stream/${walletAddress}`);
+        const data = response.data || {};
+
+        if (!mounted) return;
+
+        setStream({
+          local: Array.isArray(data.local) ? data.local : [],
+          region: Array.isArray(data.region) ? data.region : [],
+          global: Array.isArray(data.global) ? data.global : [],
+        });
+      } catch (error) {
+        console.error("Failed to load activity stream:", error);
+
+        if (!mounted) return;
+
+        setStream({
+          local: [],
+          region: [],
+          global: [],
+        });
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadStream();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <div className="space-y-3">
       <div className="px-1">
@@ -98,19 +121,22 @@ export default function ActivityStreamSection() {
       <SectionBlock
         icon={MapPin}
         title="Local"
-        items={demoData.local}
+        items={stream.local}
+        loading={loading}
       />
 
       <SectionBlock
         icon={Activity}
         title="Region"
-        items={demoData.region}
+        items={stream.region}
+        loading={loading}
       />
 
       <SectionBlock
         icon={Globe}
         title="Global"
-        items={demoData.global}
+        items={stream.global}
+        loading={loading}
       />
     </div>
   );
