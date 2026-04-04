@@ -1,8 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Wallet, KeyRound, Shield } from "lucide-react";
-import { toast } from "sonner";
-import { usePrivy } from "@privy-io/react-auth";
 import { useApp } from "@/app/AppProvider";
 
 import FirstTimeHero from "@/components/user/firsttimeuser/FirstTimeHero";
@@ -11,56 +9,19 @@ import LearnMoreCard from "@/components/user/firsttimeuser/LearnMoreCard";
 import TermTrigger from "@/components/ui/TermTrigger";
 
 export default function FirstTimeUserPage() {
-  const { authenticated: privyAuthenticated } = usePrivy();
-
   const {
-    authUser,
-    walletAddress,
     setIsWalletModalOpen,
-    setIsReturningUserPromptOpen,
     setIsEmailAuthModalOpen,
   } = useApp();
 
-  const hasEmailReturningSignals =
-    !!authUser?.email ||
-    !!localStorage.getItem("zwap_email") ||
-    !!localStorage.getItem("zwap_auth_user");
-
-  const hasWalletReturningSignals =
-    !!walletAddress ||
-    !!localStorage.getItem("zwap_wallet") ||
-    !!privyAuthenticated;
-
-  const openReturningUserFlow = () => {
-    setIsWalletModalOpen(false);
-    setIsEmailAuthModalOpen(false);
-    setIsReturningUserPromptOpen(true);
-    toast("Looks like you may already have an account. Sign in to continue.");
-  };
-
-  const openWalletFlow = () => {
-    setIsReturningUserPromptOpen(false);
+  const handleGetWallet = () => {
     setIsEmailAuthModalOpen(false);
     setIsWalletModalOpen(true);
   };
 
-  const openEmailSignupFlow = () => {
-    setIsWalletModalOpen(false);
-    setIsReturningUserPromptOpen(false);
-    setIsEmailAuthModalOpen(true);
-  };
-
-  const handleGetWallet = () => {
-    openWalletFlow();
-  };
-
   const handleContinueEmail = () => {
-    if (hasEmailReturningSignals || hasWalletReturningSignals) {
-      openReturningUserFlow();
-      return;
-    }
-
-    openEmailSignupFlow();
+    setIsWalletModalOpen(false);
+    setIsEmailAuthModalOpen(true);
   };
 
   return (
