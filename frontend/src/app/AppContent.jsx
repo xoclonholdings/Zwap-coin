@@ -8,6 +8,7 @@ import SplashScreen from "@/components/SplashScreen";
 import AboutPage from "@/components/AboutPage";
 import FirstTimeUserPage from "@/components/user/firsttimeuser/FirstTimeUserPage";
 import ReturningUserPrompt from "@/components/user/ReturningUserPrompt";
+import EmailAuthModal from "@/components/user/EmailAuthModal";
 import WalletModal from "@/components/wallet/WalletModal";
 import AppHeader from "@/components/ui/AppHeader";
 import NewsTicker from "@/components/ui/NewsTicker";
