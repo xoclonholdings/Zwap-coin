@@ -46,7 +46,7 @@ export default function AppHeader() {
   const { user, authUser, walletAddress, onchainBalance } = useApp();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [streamHubOpen, setStreamHubOpen] = useState(false);
+  const [streamOpen, setStreamOpen] = useState(false);
 
   const displayName = useMemo(() => {
     const safeUser = user && typeof user === "object" ? user : null;
@@ -77,30 +77,30 @@ export default function AppHeader() {
     user?.zwap_balance ??
       authUser?.zwap_pending ??
       authUser?.zwap_balance ??
-      0
+      0,
   );
 
   const zptsBalance = Number(
     user?.zpts_balance ??
       authUser?.zpts_pending ??
       authUser?.zpts_balance ??
-      0
+      0,
   );
 
   const walletBalanceLabel =
     walletAddress && onchainBalance !== null
       ? onchainBalance.toFixed(2)
       : walletAddress
-      ? "0.00"
-      : "--";
+        ? "0.00"
+        : "--";
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-cyan-500/20 bg-[#0a0b1e]/95 backdrop-blur-lg">
+      <header className="fixed left-0 right-0 top-0 z-40 border-b border-cyan-500/20 bg-[#0a0b1e]/95 backdrop-blur-lg">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-3">
           <motion.button
             type="button"
-            onClick={() => setStreamHubOpen(true)}
+            onClick={() => setStreamOpen(true)}
             className="relative min-w-[120px] max-w-[144px] overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_rgba(20,26,48,0.92)_45%,_rgba(15,18,34,0.98)_100%)] px-3 py-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -234,7 +234,7 @@ export default function AppHeader() {
         </div>
       </header>
 
-      <StreamHub open={streamHubOpen} onOpenChange={setStreamHubOpen} />
+      <StreamPanel open={streamOpen} onOpenChange={setStreamOpen} />
     </>
   );
 }
