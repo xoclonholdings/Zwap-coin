@@ -4,7 +4,6 @@ import { usePrivy } from "@privy-io/react-auth";
 import { ChevronRight, Shield } from "lucide-react";
 import { Sheet, SheetContent } from "../sheet";
 import { useApp } from "../../../app/AppProvider";
-import ProfilePage from "../../user/profile/ProfilePage";
 import ConvertZPtsModal from "../../swap/ConvertZPtsModal";
 
 const ADJECTIVES = [
@@ -73,7 +72,6 @@ export default function AccountDrawer({
     logoutAll,
   } = useApp();
 
-  const [profileOpen, setProfileOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
 
   const shieldClickCountRef = useRef(0);
@@ -131,15 +129,12 @@ export default function AccountDrawer({
 
   const zptsBalance = rawZptsBalance.toLocaleString();
 
+  // placeholder until claim logic is mapped
   const canClaim = false;
 
   const handleNavigate = (path) => {
     onOpenChange?.(false);
     navigate(path);
-  };
-
-  const handleProfileOpen = () => {
-    setProfileOpen(true);
   };
 
   const handleSignOut = async () => {
@@ -182,7 +177,11 @@ export default function AccountDrawer({
       />
 
       <Sheet open={open} onOpenChange={onOpenChange}>
-        {trigger ? <div onClick={() => onOpenChange?.(true)}>{trigger}</div> : null}
+        {trigger ? (
+          <div onClick={() => onOpenChange?.(true)} className="cursor-pointer">
+            {trigger}
+          </div>
+        ) : null}
 
         <SheetContent
           side="right"
@@ -291,7 +290,7 @@ export default function AccountDrawer({
 
                 <button
                   type="button"
-                  onClick={handleProfileOpen}
+                  onClick={() => handleNavigate("/profile")}
                   className="block w-full text-left"
                 >
                   <div className="rounded-[1.5rem] border border-cyan-400/20 bg-cyan-500/10 p-4 shadow-[0_0_18px_rgba(34,211,238,0.06)] transition hover:bg-cyan-500/12">
@@ -318,7 +317,7 @@ export default function AccountDrawer({
                 <div className="space-y-3">
                   <button
                     type="button"
-                    onClick={handleProfileOpen}
+                    onClick={() => handleNavigate("/profile")}
                     className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
                   >
                     <span className="text-[28px] font-semibold leading-none text-white">
@@ -409,12 +408,6 @@ export default function AccountDrawer({
                 </div>
               </div>
             </div>
-
-            {profileOpen ? (
-              <div className="absolute inset-0 z-50 bg-[#050510]">
-                <ProfilePage onClose={() => setProfileOpen(false)} />
-              </div>
-            ) : null}
           </div>
         </SheetContent>
       </Sheet>
