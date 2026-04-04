@@ -117,7 +117,7 @@ export default function AppContent() {
   }
 
   if (location.pathname === "/wallet") {
-    return <Navigate to="/start" replace />;
+    return <Navigate to={isAuthenticated ? "/dashboard" : "/start"} replace />;
   }
 
   if (location.pathname === "/") {
