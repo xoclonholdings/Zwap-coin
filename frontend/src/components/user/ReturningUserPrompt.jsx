@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useApp } from "@/App";
+import { useApp } from "@/app/AppProvider";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,21 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
 
   const isValidPassword = password.trim().length >= 8;
 
+  const handleClose = (nextOpen) => {
+    if (saving) return;
+    if (!nextOpen) {
+      setPassword("");
+    }
+    onOpenChange(nextOpen);
+  };
+
+  const handleForgotPassword = () => {
+    if (saving) return;
+    onOpenChange(false);
+    toast("Password reset support is not wired yet. Use Contact for now.");
+    navigate("/contact");
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -58,7 +73,7 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data?.detail || "Unable to log in");
+        throw new Error(data?.detail || "Unable to sign in");
       }
 
       localStorage.setItem("zwap_email", normalizedEmail);
@@ -67,39 +82,45 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
         completeEmailAuth(data.user);
       }
 
+      setPassword("");
       onOpenChange(false);
       toast.success("Welcome back");
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Login error:", error);
-      toast.error(error?.message || "Unable to log in");
+      toast.error(error?.message || "Unable to sign in");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-md rounded-[1.75rem] bg-[#0f1029] border-cyan-500/30 shadow-[0_0_60px_rgba(0,0,0,0.4)]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md rounded-[1.75rem] border border-cyan-500/30 bg-[#0f1029] shadow-[0_0_60px_rgba(0,0,0,0.4)]">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-white text-center font-black tracking-tight">
+          <DialogTitle className="text-center text-2xl font-black tracking-tight text-white">
             Welcome Back
           </DialogTitle>
 
-          <DialogDescription className="text-gray-400 text-center leading-relaxed">
-            Sign in with your email and password to continue.
+          <DialogDescription className="text-center leading-relaxed text-gray-400">
+            Sign in to continue with your{" "}
+            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+              ZWAP!
+            </span>{" "}
+            account.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleLogin} className="space-y-4 mt-4">
-          <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-4 space-y-4">
+        <form onSubmit={handleLogin} className="mt-4 space-y-4">
+          <div className="space-y-4 rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
             <div>
               <label
                 htmlFor="returning-email"
-                className="block text-sm text-gray-300 mb-2"
+                className="mb-2 block text-sm text-gray-300"
               >
                 Email address
               </label>
+
               <div className="relative">
                 <input
                   id="returning-email"
@@ -108,20 +129,32 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full h-12 rounded-xl bg-[#0a0b1e] border border-cyan-500/20 px-4 pr-10 text-white placeholder:text-gray-500 outline-none focus:border-cyan-400"
+                  className="h-12 w-full rounded-xl border border-cyan-500/20 bg-[#0a0b1e] px-4 pr-10 text-white outline-none focus:border-cyan-400 placeholder:text-gray-500"
                   disabled={saving}
                 />
-                <Mail className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                <Mail className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="returning-password"
-                className="block text-sm text-gray-300 mb-2"
-              >
-                Password
-              </label>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label
+                  htmlFor="returning-password"
+                  className="block text-sm text-gray-300"
+                >
+                  Password
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={saving}
+                  className="text-xs font-medium text-cyan-400 transition hover:text-cyan-300 disabled:opacity-50"
+                >
+                  Forgot password?
+                </button>
+              </div>
+
               <div className="relative">
                 <input
                   id="returning-password"
@@ -130,10 +163,10 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Your password"
-                  className="w-full h-12 rounded-xl bg-[#0a0b1e] border border-cyan-500/20 px-4 pr-10 text-white placeholder:text-gray-500 outline-none focus:border-cyan-400"
+                  className="h-12 w-full rounded-xl border border-cyan-500/20 bg-[#0a0b1e] px-4 pr-10 text-white outline-none focus:border-cyan-400 placeholder:text-gray-500"
                   disabled={saving}
                 />
-                <Lock className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               </div>
             </div>
           </div>
@@ -141,7 +174,7 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
           <Button
             type="submit"
             disabled={!isValidEmail || !isValidPassword || saving}
-            className="w-full h-12 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-base font-semibold rounded-xl"
+            className="h-12 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-base font-semibold hover:from-cyan-400 hover:to-purple-400"
           >
             {saving ? "Signing in..." : "Sign In"}
           </Button>
