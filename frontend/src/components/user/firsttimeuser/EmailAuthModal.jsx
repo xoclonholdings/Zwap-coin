@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, X } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { useApp } from "@/App";
+import { useApp } from "@/app/AppProvider";
 import { Button } from "@/components/ui/button";
 
 const API_BASE =
