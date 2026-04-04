@@ -75,32 +75,33 @@ export default function AppContent() {
 
   if (showSplash && location.pathname === "/") {
     return (
-      <SplashScreen
-        onNewUser={() => {
-          sessionStorage.setItem("zwap_force_new_user", "1");
-          localStorage.removeItem("zwap_wallet");
-          localStorage.removeItem("zwap_auth_user");
-          localStorage.removeItem("zwap_email");
-          setShowSplash(false);
-          closeAllAuthModals();
-          navigate("/start", { replace: true });
-        }}
-        onReturningUser={() => {
-          setShowSplash(false);
-
-          if (isAuthenticated) {
-            navigate("/dashboard");
-          } else {
+      <>
+        <SplashScreen
+          onNewUser={() => {
+            sessionStorage.setItem("zwap_force_new_user", "1");
+            localStorage.removeItem("zwap_wallet");
+            localStorage.removeItem("zwap_auth_user");
+            localStorage.removeItem("zwap_email");
+            closeAllAuthModals();
+            setShowSplash(false);
+            navigate("/start", { replace: true });
+          }}
+          onReturningUser={() => {
             closeAllAuthModals();
             setIsReturningUserPromptOpen(true);
-            navigate("/start");
-          }
-        }}
-        onWhatIsZwap={() => {
-          setShowSplash(false);
-          navigate("/about");
-        }}
-      />
+          }}
+          onWhatIsZwap={() => {
+            setShowSplash(false);
+            closeAllAuthModals();
+            navigate("/about");
+          }}
+        />
+
+        <ReturningUserPrompt
+          open={isReturningUserPromptOpen}
+          onOpenChange={setIsReturningUserPromptOpen}
+        />
+      </>
     );
   }
 
@@ -142,13 +143,8 @@ export default function AppContent() {
           onOpenChange={setIsEmailAuthModalOpen}
         />
 
-        <ReturningUserPrompt
-          open={isReturningUserPromptOpen}
-          onOpenChange={setIsReturningUserPromptOpen}
-        />
-
         <WalletModal
-          open={isWalletModalOpen && !isReturningUserPromptOpen}
+          open={isWalletModalOpen}
           onOpenChange={setIsWalletModalOpen}
         />
       </>
@@ -184,11 +180,11 @@ export default function AppContent() {
       return <Navigate to="/start" replace />;
     }
 
-    return <Navigate to={isAuthenticated ? "/dashboard" : "/start"} replace />;
+    return <Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />;
   }
 
   if (isProtectedRoute) {
-    return <Navigate to="/start" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const showLayout = [
