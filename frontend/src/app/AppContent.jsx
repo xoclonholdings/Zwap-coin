@@ -16,7 +16,7 @@ import MoveTab from "@/components/move/MoveTab";
 import PlayTab from "@/components/play/PlayTab";
 import SwapTab from "@/components/swap/SwapTab";
 import ShopTab from "@/components/shop/ShopTab";
-import TabNavigation from "@/components/TabNavigation";
+import TabNavigation from "@/components/ui/TabNavigation";
 import SubscriptionSuccess from "@/components/SubscriptionSuccess";
 import ProfilePage from "@/components/user/ProfilePage";
 import ContactPage from "@/components/ContactPage";
