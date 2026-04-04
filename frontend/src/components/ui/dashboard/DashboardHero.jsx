@@ -3,7 +3,7 @@ import { UserCircle2 } from "lucide-react";
 import DashboardTierPill from "@/components/ui/dashboard/DashboardTierPill";
 
 export default function DashboardHero({
-  username = "Guest",
+  username = "",
   currentTier = "starter",
 }) {
   return (
@@ -17,9 +17,11 @@ export default function DashboardHero({
             <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-300/80">
               Home
             </p>
+
             <h1 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
-              Welcome back, {username}
+              {username ? `Welcome back, ${username}` : "Welcome back"}
             </h1>
+
             <p className="mt-1 text-sm leading-relaxed text-gray-300">
               Your ZWAP! daily pulse in one glance.
             </p>
