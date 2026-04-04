@@ -6,31 +6,38 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
+
 import useNetworkStatus from "../hooks/useNetworkStatus";
-import OfflineNotice from "../components/ui/OfflineNotice";
 
 import SplashScreen from "../components/SplashScreen";
 import AboutPage from "../components/AboutPage";
+import ContactPage from "../components/ContactPage";
+import PlusPage from "../components/PlusPage";
+import SubscriptionSuccess from "../components/SubscriptionSuccess";
+
+import PrivacyPage from "../components/docs/PrivacyPage";
+import TermsPage from "../components/docs/TermsPage";
+
 import FirstTimeUserPage from "../components/user/firsttimeuser/FirstTimeUserPage";
-import ReturningUserPrompt from "../components/user/ReturningUserPrompt";
 import EmailAuthModal from "../components/user/firsttimeuser/EmailAuthModal";
+import ReturningUserPrompt from "../components/user/ReturningUserPrompt";
+import ProfilePage from "../components/user/profile/ProfilePage";
+
 import WalletModal from "../components/wallet/WalletModal";
-import AppHeader from "../components/ui/AppHeader";
-import NewsTicker from "../components/ui/NewsTicker";
-import Dashboard from "../components/ui/Dashboard";
+
+import LearnPage from "../components/learn/LearnPage";
+import AdminPanel from "../components/admin/AdminPanel";
+
 import MoveTab from "../components/move/MoveTab";
 import PlayTab from "../components/play/PlayTab";
 import SwapTab from "../components/swap/SwapTab";
 import ShopTab from "../components/shop/ShopTab";
-import TabNavigation from "../components/ui/TabNavigation";
-import SubscriptionSuccess from "../components/SubscriptionSuccess";
-import ProfilePage from "../components/user/ProfilePage";
-import ContactPage from "../components/ContactPage";
-import PrivacyPage from "../components/PrivacyPage";
-import TermsPage from "../components/TermsPage";
-import AdminPanel from "../components/admin/AdminPanel";
-import LearnPage from "../components/learn/LearnPage";
-import PlusPage from "../components/PlusPage";
+
+import AppHeader from "../components/ui/dashboard/AppHeader";
+import NewsTicker from "../components/ui/dashboard/NewsTicker";
+import Dashboard from "../components/ui/dashboard/Dashboard";
+import TabNavigation from "../components/ui/dashboard/TabNavigation";
+import OfflineNotice from "../components/ui/dashboard/OfflineNotice";
 
 import { useApp } from "./AppProvider";
 
@@ -211,6 +218,30 @@ export default function AppContent() {
     "/success",
   ].includes(location.pathname);
 
+  const appRoutes = (
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/move" element={<MoveTab />} />
+      <Route path="/play" element={<PlayTab />} />
+      <Route path="/swap" element={<SwapTab />} />
+      <Route path="/shop" element={<ShopTab />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/plus" element={<PlusPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route
+        path="/subscription/success"
+        element={<SubscriptionSuccess />}
+      />
+      <Route path="/subscription/cancel" element={<PlusPage />} />
+      <Route path="/success" element={<ShopTab />} />
+      <Route path="/cancel" element={<ShopTab />} />
+    </Routes>
+  );
+
   return (
     <div className="min-h-screen bg-[#0a0b1e]">
       {showLayout ? (
@@ -221,29 +252,7 @@ export default function AppContent() {
             <OfflineNotice isOnline={isOnline} />
           </div>
 
-          <main className="flex-1 overflow-y-auto">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/move" element={<MoveTab />} />
-              <Route path="/play" element={<PlayTab />} />
-              <Route path="/swap" element={<SwapTab />} />
-              <Route path="/shop" element={<ShopTab />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/plus" element={<PlusPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route
-                path="/subscription/success"
-                element={<SubscriptionSuccess />}
-              />
-              <Route path="/subscription/cancel" element={<PlusPage />} />
-              <Route path="/success" element={<ShopTab />} />
-              <Route path="/cancel" element={<ShopTab />} />
-            </Routes>
-          </main>
+          <main className="flex-1 overflow-y-auto">{appRoutes}</main>
 
           <div className="shrink-0 border-t border-cyan-500/10 bg-[#0a0b1e]">
             <NewsTicker />
@@ -251,29 +260,7 @@ export default function AppContent() {
           </div>
         </div>
       ) : (
-        <main>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/move" element={<MoveTab />} />
-            <Route path="/play" element={<PlayTab />} />
-            <Route path="/swap" element={<SwapTab />} />
-            <Route path="/shop" element={<ShopTab />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/plus" element={<PlusPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route
-              path="/subscription/success"
-              element={<SubscriptionSuccess />}
-            />
-            <Route path="/subscription/cancel" element={<PlusPage />} />
-            <Route path="/success" element={<ShopTab />} />
-            <Route path="/cancel" element={<ShopTab />} />
-          </Routes>
-        </main>
+        <main>{appRoutes}</main>
       )}
     </div>
   );
