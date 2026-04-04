@@ -160,7 +160,7 @@ export default function Dashboard() {
   const username = useMemo(() => {
     const safeUser = user && typeof user === "object" ? user : null;
     const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
-
+  
     if (safeUser?.custom_username) return safeUser.custom_username;
     if (safeUser?.username) return safeUser.username;
     if (safeAuthUser?.username) return safeAuthUser.username;
@@ -168,7 +168,7 @@ export default function Dashboard() {
     if (walletAddress) return generateUsername(walletAddress);
     return "";
   }, [user, authUser, walletAddress]);
-
+  
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
 
