@@ -134,7 +134,11 @@ export default function EmailAuthModal() {
                   Save Your Progress
                 </h2>
                 <p className="text-sm text-gray-400">
-                  Create your ZWAP account
+                  Create your{" "}
+                  <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+                    ZWAP!
+                  </span>{" "}
+                  account
                 </p>
               </div>
             </div>
