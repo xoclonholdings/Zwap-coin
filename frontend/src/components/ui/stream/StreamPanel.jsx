@@ -61,7 +61,7 @@ export default function StreamPanel({ open, onOpenChange }) {
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="left"
-          className="h-full w-[380px] border-r border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] p-0 text-white"
+          className="h-full w-[calc(100vw-20px)] max-w-[420px] border-r border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] p-0 text-white sm:w-[400px] lg:w-[420px]"
         >
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-white/10 px-4 pb-4 pt-4">
