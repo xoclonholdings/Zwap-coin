@@ -10,6 +10,7 @@ import DashboardDailyLoopCard from "@/components/ui/dashboard/DashboardDailyLoop
 import DashboardDailyTasksCard from "@/components/ui/dashboard/DashboardDailyTasksCard";
 import DashboardStatusCard from "@/components/ui/dashboard/DashboardStatusCard";
 import { generateDailyTasks } from "@/lib/tasks/generateDailyTasks";
+import { getNextBadge } from "@/lib/badges/getNextBadge";
 
 function generateUsername(seedSource) {
   if (!seedSource) return "Zwapper";
@@ -251,18 +252,19 @@ export default function Dashboard() {
       ? "Reward already claimed today"
       : "Claim now and keep the streak burning";
 
-  const nextBadge = {
-    label: "Mover",
-    category: "Movement",
-    progress: Math.min(streak, 7),
-    goal: 7,
-    hint:
-      streak >= 7
-        ? "You’re ready for the next movement milestone."
-        : `Keep building momentum. ${Math.max(7 - streak, 0)} more day${
-            Math.max(7 - streak, 0) === 1 ? "" : "s"
-          } to reach Mover.`,
-  };
+  const nextBadge = useMemo(() => {
+    return getNextBadge({
+      ...profile,
+      daily_login_count: profile?.daily_login_count ?? streak,
+      daily_loop_completions: profile?.daily_loop_completions ?? 0,
+      move_active_days: profile?.move_active_days ?? 0,
+      move_streak_days: profile?.move_streak_days ?? streak,
+      daily_assists_sent_total: profile?.daily_assists_sent_total ?? 0,
+      zpts_lifetime: profile?.zpts_lifetime ?? profile?.zpts_balance ?? 0,
+      referral_count: profile?.referral_count ?? 0,
+      learn_modules_completed_total: profile?.learn_modules_completed_total ?? 0,
+    });
+  }, [profile, streak]);
 
   return (
     <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4 lg:px-6">
