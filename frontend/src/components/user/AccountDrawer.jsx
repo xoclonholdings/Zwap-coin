@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -69,12 +70,12 @@ function generateUsername(wallet) {
 }
 
 export default function AccountDrawer({ open, onOpenChange, trigger }) {
+  const { logout: privyLogout } = usePrivy();
+
   const {
     user,
     authUser,
     walletAddress,
-    disconnectWallet,
-    logoutEmailUser,
     logoutAll,
     onchainBalance,
     openWalletUpgradeFlow,
@@ -88,7 +89,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
 
   const isWalletUser = !!walletAddress;
   const isEmailUser = !!safeAuthUser?.email;
-  const isGuest = !isWalletUser && !isEmailUser;
+  const isAuthenticatedUser = isWalletUser || isEmailUser;
   const isAdmin = !!(safeUser?.is_admin || safeAuthUser?.is_admin);
 
   const displayName = useMemo(() => {
@@ -201,7 +202,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     onOpenChange(false);
     setTimeout(() => {
       openWalletUpgradeFlow();
-      navigate("/wallet");
+      navigate("/start");
     }, 120);
   };
 
@@ -212,17 +213,16 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
     }, 150);
   };
 
-  const handleSignOut = () => {
-    if (walletAddress && safeAuthUser) {
-      logoutAll();
-    } else if (walletAddress) {
-      disconnectWallet();
-    } else if (safeAuthUser) {
-      logoutEmailUser();
+  const handleSignOut = async () => {
+    try {
+      await privyLogout();
+    } catch (error) {
+      console.error("Privy logout failed:", error);
     }
 
+    logoutAll();
     onOpenChange(false);
-    navigate("/wallet");
+    navigate("/start", { replace: true });
   };
 
   const handleShieldPress = () => {
@@ -304,11 +304,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                       <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2 py-0.5 text-[11px] font-semibold text-black">
                         <Crown className="h-3 w-3" /> Plus
                       </span>
-                    ) : isGuest ? (
-                      <span className="text-xs text-gray-500">
-                        Try first, connect later
-                      </span>
-                    ) : (
+                    ) : isAuthenticatedUser ? (
                       <>
                         <span className="text-xs text-gray-400">Starter</span>
                         <button
@@ -321,6 +317,10 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                           Upgrade
                         </button>
                       </>
+                    ) : (
+                      <span className="text-xs text-gray-500">
+                        Start now, connect later
+                      </span>
                     )}
                   </div>
                 </div>
@@ -423,7 +423,7 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                   <div>
                     <p className="flex items-center gap-2 font-semibold text-cyan-400">
                       <Wallet className="h-4 w-4" />
-                      Connect Wallet
+                      Set Up Wallet
                     </p>
                     <p className="mt-1 text-xs text-gray-400">
                       Save progress & earn rewards
@@ -453,6 +453,17 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                 );
               })}
             </div>
+            
+            {isAuthenticatedUser && (
+              <motion.button
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-3 rounded-[1.25rem] border border-red-500/15 bg-red-500/[0.04] px-4 py-3 text-red-400 transition-colors hover:bg-red-500/10"
+                whileHover={{ x: 4 }}
+              >
+                <LogOut className="h-5 w-5 shrink-0" />
+                <span className="font-medium">Sign Out</span>
+              </motion.button>
+            )}
 
             <div className="flex justify-center pt-1">
               <div className="text-center">
@@ -492,23 +503,6 @@ export default function AccountDrawer({ open, onOpenChange, trigger }) {
                 </p>
               </div>
             </div>
-
-            {!isGuest && (
-              <motion.button
-                onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-[1.25rem] border border-red-500/15 bg-red-500/[0.04] px-4 py-3 text-red-400 transition-colors hover:bg-red-500/10"
-                whileHover={{ x: 4 }}
-              >
-                <LogOut className="h-5 w-5 shrink-0" />
-                <span className="font-medium">
-                  {walletAddress && safeAuthUser
-                    ? "Sign Out"
-                    : walletAddress
-                      ? "Disconnect Wallet"
-                      : "Sign Out"}
-                </span>
-              </motion.button>
-            )}
           </div>
         </SheetContent>
       </Sheet>
