@@ -9,15 +9,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { Mail, Lock, ArrowLeft, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 const API_BASE =
   (process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000").replace(/\/$/, "") +
   "/api";
-
-const FORGOT_PASSWORD_URL =
-  process.env.REACT_APP_AUTH_FORGOT_PASSWORD_URL || "";
 
 export default function ReturningUserPrompt({ open, onOpenChange }) {
   const navigate = useNavigate();
@@ -25,8 +22,11 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
 
   const [email, setEmail] = useState(localStorage.getItem("zwap_email") || "");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState("login"); // login | forgot | forgot-sent
+  const [mode, setMode] = useState("login"); // login | forgot | reset | reset-success
 
   const isValidEmail = useMemo(
     () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
@@ -34,9 +34,17 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
   );
 
   const isValidPassword = password.trim().length >= 8;
+  const isValidNewPassword = newPassword.trim().length >= 8;
+  const passwordsMatch =
+    newPassword.trim().length >= 8 &&
+    confirmPassword.trim().length >= 8 &&
+    newPassword === confirmPassword;
 
   const resetModalState = () => {
     setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setResetToken("");
     setSaving(false);
     setMode("login");
   };
@@ -52,11 +60,18 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
   const handleOpenForgotPassword = () => {
     if (saving) return;
     setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setResetToken("");
     setMode("forgot");
   };
 
   const handleBackToLogin = () => {
     if (saving) return;
+    setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setResetToken("");
     setMode("login");
   };
 
@@ -68,17 +83,12 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
       return;
     }
 
-    if (!FORGOT_PASSWORD_URL) {
-      toast.error("Password reset is not configured yet");
-      return;
-    }
-
     setSaving(true);
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      const res = await fetch(FORGOT_PASSWORD_URL, {
+      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,15 +101,73 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data?.detail || "Unable to send reset email");
+        throw new Error(data?.detail || "Unable to start password reset");
       }
 
       localStorage.setItem("zwap_email", normalizedEmail);
-      setMode("forgot-sent");
-      toast.success("Password reset email sent");
+
+      if (!data?.reset_token) {
+        throw new Error("Reset token was not returned");
+      }
+
+      setResetToken(data.reset_token);
+      setMode("reset");
+      toast.success("Password reset started");
     } catch (error) {
       console.error("Forgot password error:", error);
-      toast.error(error?.message || "Unable to send reset email");
+      toast.error(error?.message || "Unable to start password reset");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+
+    if (!isValidNewPassword) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+
+    if (!passwordsMatch) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (!resetToken) {
+      toast.error("Reset session is missing. Start over.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: resetToken,
+          new_password: newPassword,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data?.detail || "Unable to reset password");
+      }
+
+      setPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setResetToken("");
+      setMode("reset-success");
+      toast.success("Password updated");
+    } catch (error) {
+      console.error("Reset password error:", error);
+      toast.error(error?.message || "Unable to reset password");
     } finally {
       setSaving(false);
     }
@@ -162,7 +230,9 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
               ? "Welcome Back"
               : mode === "forgot"
               ? "Reset Password"
-              : "Check Your Email"}
+              : mode === "reset"
+              ? "Create New Password"
+              : "Password Updated"}
           </DialogTitle>
 
           <DialogDescription className="text-center leading-relaxed text-gray-400">
@@ -176,17 +246,19 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
               </>
             ) : mode === "forgot" ? (
               <>
-                Enter your email and we’ll send a password reset link for your{" "}
+                Enter your email to start a password reset for your{" "}
                 <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
                   ZWAP!
                 </span>{" "}
                 account.
               </>
-            ) : (
+            ) : mode === "reset" ? (
               <>
-                If that email is recognized, a reset link has been sent. Return here
-                after updating your password.
+                Set a new password for{" "}
+                <span className="font-medium text-white">{email.trim().toLowerCase()}</span>.
               </>
+            ) : (
+              <>Your password has been changed. Sign in with your new password.</>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -306,18 +378,94 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
                 disabled={!isValidEmail || saving}
                 className="h-12 flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-base font-semibold hover:from-cyan-400 hover:to-purple-400"
               >
-                {saving ? "Sending..." : "Send Reset Link"}
+                {saving ? "Starting..." : "Continue"}
               </Button>
             </div>
           </form>
         )}
 
-        {mode === "forgot-sent" && (
+        {mode === "reset" && (
+          <form onSubmit={handleResetPassword} className="mt-4 space-y-4">
+            <div className="space-y-4 rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+              <div>
+                <label
+                  htmlFor="new-password"
+                  className="mb-2 block text-sm text-gray-300"
+                >
+                  New password
+                </label>
+
+                <div className="relative">
+                  <input
+                    id="new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    className="h-12 w-full rounded-xl border border-cyan-500/20 bg-[#0a0b1e] px-4 pr-10 text-white outline-none placeholder:text-gray-500 focus:border-cyan-400"
+                    disabled={saving}
+                  />
+                  <KeyRound className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="confirm-password"
+                  className="mb-2 block text-sm text-gray-300"
+                >
+                  Confirm password
+                </label>
+
+                <div className="relative">
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    className="h-12 w-full rounded-xl border border-cyan-500/20 bg-[#0a0b1e] px-4 pr-10 text-white outline-none placeholder:text-gray-500 focus:border-cyan-400"
+                    disabled={saving}
+                  />
+                  <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleBackToLogin}
+                disabled={saving}
+                className="h-12 flex-1 rounded-xl text-gray-300 hover:text-white"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                disabled={!isValidNewPassword || !passwordsMatch || saving}
+                className="h-12 flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-base font-semibold hover:from-cyan-400 hover:to-purple-400"
+              >
+                {saving ? "Updating..." : "Reset Password"}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {mode === "reset-success" && (
           <div className="mt-4 space-y-4">
             <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
               <p className="text-sm leading-relaxed text-gray-300">
-                We sent reset instructions to{" "}
-                <span className="font-medium text-white">{email.trim().toLowerCase()}</span>.
+                Your password has been updated for{" "}
+                <span className="font-medium text-white">
+                  {email.trim().toLowerCase()}
+                </span>
+                .
               </p>
             </div>
 
@@ -329,15 +477,15 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
                 className="h-12 flex-1 rounded-xl text-gray-300 hover:text-white"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Sign In
+                Back
               </Button>
 
               <Button
                 type="button"
-                onClick={() => handleClose(false)}
+                onClick={handleBackToLogin}
                 className="h-12 flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-base font-semibold hover:from-cyan-400 hover:to-purple-400"
               >
-                Done
+                Sign In
               </Button>
             </div>
           </div>
