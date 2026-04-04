@@ -63,9 +63,11 @@ export default function ActivityStreamSection() {
   useEffect(() => {
     let mounted = true;
 
-    const loadStream = async () => {
+    const loadStream = async (showLoading = false) => {
       try {
-        setLoading(true);
+        if (showLoading) {
+          setLoading(true);
+        }
 
         const walletAddress =
           localStorage.getItem("walletAddress") || "test_wallet";
@@ -97,10 +99,15 @@ export default function ActivityStreamSection() {
       }
     };
 
-    loadStream();
+    loadStream(true);
+
+    const intervalId = setInterval(() => {
+      loadStream(false);
+    }, 15000);
 
     return () => {
       mounted = false;
+      clearInterval(intervalId);
     };
   }, []);
 
