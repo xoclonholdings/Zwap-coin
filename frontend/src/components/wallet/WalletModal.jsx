@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { X, Wallet, Shield, Sparkles } from "lucide-react";
+import { X, Wallet, Shield, Sparkles, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useApp } from "@/app/AppProvider";
@@ -146,8 +146,20 @@ export default function WalletModal({ open, onOpenChange }) {
                       Create a Wallet
                     </h2>
                     <p className="mt-1 text-sm text-gray-400">
-                      ZWAP will open secure wallet setup through Privy and bring
-                      you straight into your account.
+                      <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+                        ZWAP!
+                      </span>{" "}
+                      will open secure wallet setup through{" "}
+                      <a
+                        href="https://www.privy.io"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 hover:opacity-80 transition"
+                      >
+                        Privy
+                        <ExternalLink className="h-3.5 w-3.5 text-purple-300" />
+                      </a>{" "}
+                      and bring you straight into your account.
                     </p>
                   </div>
                 </div>
@@ -168,8 +180,17 @@ export default function WalletModal({ open, onOpenChange }) {
                   <div className="flex items-start gap-3">
                     <Sparkles className="mt-0.5 h-4 w-4 text-cyan-300 shrink-0" />
                     <p className="text-sm leading-relaxed text-gray-300">
-                      If you do not already have a wallet, Privy can create one
-                      for you during setup.
+                      If you do not already have a wallet,{" "}
+                      <a
+                        href="https://www.privy.io"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 hover:opacity-80 transition"
+                      >
+                        Privy
+                        <ExternalLink className="h-3.5 w-3.5 text-purple-300" />
+                      </a>{" "}
+                      can create one for you during setup.
                     </p>
                   </div>
                 </div>
@@ -178,16 +199,22 @@ export default function WalletModal({ open, onOpenChange }) {
                   <div className="flex items-start gap-3">
                     <Shield className="mt-0.5 h-4 w-4 text-green-300 shrink-0" />
                     <p className="text-sm leading-relaxed text-gray-300">
-                      Your private keys are not stored by ZWAP. Wallet setup is
-                      handled securely through Privy.
+                      Your private keys are not stored by{" "}
+                      <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+                        ZWAP!
+                      </span>{" "}
+                      Wallet setup is handled securely through{" "}
+                      <a
+                        href="https://www.privy.io"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 hover:opacity-80 transition"
+                      >
+                        Privy
+                        <ExternalLink className="h-3.5 w-3.5 text-purple-300" />
+                      </a>.
                     </p>
                   </div>
-                </div>
-
-                <div className="rounded-xl border border-purple-500/15 bg-purple-500/[0.06] px-4 py-3">
-                  <p className="text-xs text-purple-100/90">
-                    Using Polygon network
-                  </p>
                 </div>
 
                 <Button
@@ -212,6 +239,10 @@ export default function WalletModal({ open, onOpenChange }) {
                 >
                   Not now
                 </Button>
+
+                <p className="text-[11px] text-gray-500 text-center pt-1 tracking-wide">
+                  Powered by Polygon
+                </p>
               </div>
             </div>
           </motion.div>
