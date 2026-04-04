@@ -1,32 +1,39 @@
 import React, { useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
-import OfflineNotice from "@/components/ui/OfflineNotice";
+import OfflineNotice from "../components/ui/OfflineNotice";
 
-import SplashScreen from "@/components/SplashScreen";
-import AboutPage from "@/components/AboutPage";
-import FirstTimeUserPage from "@/components/user/firsttimeuser/FirstTimeUserPage";
-import ReturningUserPrompt from "@/components/user/ReturningUserPrompt";
-import EmailAuthModal from "@/components/user/firsttimeuser/EmailAuthModal";
-import WalletModal from "@/components/wallet/WalletModal";
-import AppHeader from "@/components/ui/AppHeader";
-import NewsTicker from "@/components/ui/NewsTicker";
-import Dashboard from "@/components/ui/Dashboard";
-import MoveTab from "@/components/move/MoveTab";
-import PlayTab from "@/components/play/PlayTab";
-import SwapTab from "@/components/swap/SwapTab";
-import ShopTab from "@/components/shop/ShopTab";
-import TabNavigation from "@/components/TabNavigation";
-import SubscriptionSuccess from "@/components/SubscriptionSuccess";
-import ProfilePage from "@/components/user/ProfilePage";
-import ContactPage from "@/components/ContactPage";
-import PrivacyPage from "@/components/PrivacyPage";
-import TermsPage from "@/components/TermsPage";
-import AdminPanel from "@/components/admin/AdminPanel";
-import LearnPage from "@/components/learn/LearnPage";
-import PlusPage from "@/components/PlusPage";
+// ✅ FIXED PATHS
+import AppHeader from "../components/ui/dashboard/AppHeader";
+import Dashboard from "../components/ui/dashboard/Dashboard";
 
-import { useApp } from "@/app/AppProvider";
+import NewsTicker from "../components/ui/NewsTicker";
+import TabNavigation from "../components/TabNavigation";
+
+import SplashScreen from "../components/SplashScreen";
+import AboutPage from "../components/AboutPage";
+import FirstTimeUserPage from "../components/user/firsttimeuser/FirstTimeUserPage";
+import ReturningUserPrompt from "../components/user/ReturningUserPrompt";
+import EmailAuthModal from "../components/user/firsttimeuser/EmailAuthModal";
+import WalletModal from "../components/wallet/WalletModal";
+
+import MoveTab from "../components/move/MoveTab";
+import PlayTab from "../components/play/PlayTab";
+import SwapTab from "../components/swap/SwapTab";
+import ShopTab from "../components/shop/ShopTab";
+
+import SubscriptionSuccess from "../components/SubscriptionSuccess";
+
+// ⚠️ verify if these need deeper paths if errors persist
+import ProfilePage from "../components/user/ProfilePage";
+import ContactPage from "../components/ContactPage";
+import PrivacyPage from "../components/PrivacyPage";
+import TermsPage from "../components/TermsPage";
+import AdminPanel from "../components/admin/AdminPanel";
+import LearnPage from "../components/learn/LearnPage";
+import PlusPage from "../components/PlusPage";
+
+import { useApp } from "./AppProvider";
 
 export default function AppContent() {
   const {
@@ -73,6 +80,7 @@ export default function AppContent() {
     }
   }, [isAuthenticated, pendingAction, navigate, setPendingAction]);
 
+  // ✅ SPLASH FLOW
   if (showSplash && location.pathname === "/") {
     return (
       <>
@@ -114,19 +122,7 @@ export default function AppContent() {
   }
 
   if (location.pathname === "/about") {
-    return (
-      <div
-        className="about-page-wrapper"
-        style={{
-          position: "fixed",
-          inset: 0,
-          overflow: "auto",
-          WebkitOverflowScrolling: "touch",
-        }}
-      >
-        <AboutPage />
-      </div>
-    );
+    return <AboutPage />;
   }
 
   if (location.pathname === "/admin") {
@@ -208,18 +204,12 @@ export default function AppContent() {
 
           <main className="flex-1 overflow-y-auto">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/about" element={<AboutPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/move" element={<MoveTab />} />
               <Route path="/play" element={<PlayTab />} />
               <Route path="/swap" element={<SwapTab />} />
               <Route path="/shop" element={<ShopTab />} />
-              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/plus" element={<PlusPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
               <Route path="/subscription/success" element={<SubscriptionSuccess />} />
               <Route path="/subscription/cancel" element={<PlusPage />} />
               <Route path="/success" element={<ShopTab />} />
@@ -232,28 +222,7 @@ export default function AppContent() {
             <TabNavigation />
           </div>
         </div>
-      ) : (
-        <main>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/move" element={<MoveTab />} />
-            <Route path="/play" element={<PlayTab />} />
-            <Route path="/swap" element={<SwapTab />} />
-            <Route path="/shop" element={<ShopTab />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/plus" element={<PlusPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-            <Route path="/subscription/cancel" element={<PlusPage />} />
-            <Route path="/success" element={<ShopTab />} />
-            <Route path="/cancel" element={<ShopTab />} />
-          </Routes>
-        </main>
-      )}
+      ) : null}
     </div>
   );
 }
