@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Play, Sparkles } from "lucide-react";
 import { useApp } from "@/App";
-import StreamHub from "@/components/StreamHub";
+import StreamHub from "@/components/ui/stream/StreamHub";
 import AccountDrawer from "@/components/user/AccountDrawer";
 
 function generateUsername(wallet) {
