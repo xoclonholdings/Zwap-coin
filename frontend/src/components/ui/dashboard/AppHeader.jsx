@@ -5,8 +5,10 @@ import { useApp } from "@/App";
 import StreamPanel from "@/components/ui/stream/StreamPanel";
 import AccountDrawer from "./AccountDrawer";
 
-function generateUsername(wallet) {
-  if (!wallet) return "Zwapper";
+function generateUsername(seedSource) {
+  if (!seedSource) return "Zwapper";
+
+  const seedString = String(seedSource).toLowerCase().trim();
 
   const adjectives = [
     "Nova",
@@ -34,38 +36,35 @@ function generateUsername(wallet) {
     "Voyager",
   ];
 
-  const seed = parseInt(wallet.slice(2, 10), 16);
-  const adjIndex = Math.abs(seed) % adjectives.length;
-  const nounIndex = Math.abs(Math.floor(seed / 8)) % nouns.length;
-  const num = Math.abs(seed) % 999;
+  let hash = 0;
+  for (let i = 0; i < seedString.length; i++) {
+    hash = (hash << 5) - hash + seedString.charCodeAt(i);
+    hash |= 0;
+  }
+
+  const safeHash = Math.abs(hash);
+  const adjIndex = safeHash % adjectives.length;
+  const nounIndex = Math.floor(safeHash / 7) % nouns.length;
+  const num = safeHash % 999;
 
   return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
 }
 
-function ConnectionBanner({ isOnline = true }) {
+function ConnectionPill({ isOnline = true }) {
   return (
     <div
-      className={`w-full rounded-xl border px-4 py-3 ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
         isOnline
-          ? "border-green-500/20 bg-green-500/10"
-          : "border-yellow-500/20 bg-yellow-500/10"
+          ? "border-green-500/20 bg-green-500/10 text-green-300"
+          : "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
       }`}
     >
-      <div className="flex items-center gap-2">
-        {isOnline ? (
-          <Wifi className="h-4 w-4 text-green-400" />
-        ) : (
-          <WifiOff className="h-4 w-4 text-yellow-400" />
-        )}
-
-        <p
-          className={`text-sm font-medium ${
-            isOnline ? "text-green-300" : "text-yellow-300"
-          }`}
-        >
-          {isOnline ? "Connected" : "Offline Mode"}
-        </p>
-      </div>
+      {isOnline ? (
+        <Wifi className="h-3 w-3" />
+      ) : (
+        <WifiOff className="h-3 w-3" />
+      )}
+      {isOnline ? "Connected" : "Offline"}
     </div>
   );
 }
@@ -84,11 +83,15 @@ export default function AppHeader() {
     const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
 
     if (safeUser?.custom_username) return safeUser.custom_username;
-    if (safeUser?.username) return safeUser.username;
-    if (safeAuthUser?.username) return safeAuthUser.username;
-    if (safeAuthUser?.email) return safeAuthUser.email.split("@")[0];
-    if (walletAddress) return generateUsername(walletAddress);
-    return "Zwapper";
+
+    const seedSource =
+      walletAddress ||
+      safeUser?.email ||
+      safeAuthUser?.email ||
+      safeUser?.username ||
+      safeAuthUser?.username;
+
+    return generateUsername(seedSource);
   }, [user, authUser, walletAddress]);
 
   const initials = useMemo(() => {
@@ -231,42 +234,42 @@ export default function AppHeader() {
               </div>
             </motion.div>
 
-            <AccountDrawer
-              open={settingsOpen}
-              onOpenChange={setSettingsOpen}
-              trigger={
-                <motion.button
-                  type="button"
-                  className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
-                  data-testid="profile-badge"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  animate={{
-                    boxShadow: [
-                      "0 0 15px rgba(0,245,255,0.3)",
-                      "0 0 30px rgba(0,245,255,0.5)",
-                      "0 0 15px rgba(0,245,255,0.3)",
-                    ],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  aria-label="Open account drawer"
-                >
-                  {initials}
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <AccountDrawer
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
+                trigger={
+                  <motion.button
+                    type="button"
+                    className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
+                    data-testid="profile-badge"
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={{
+                      boxShadow: [
+                        "0 0 15px rgba(0,245,255,0.3)",
+                        "0 0 30px rgba(0,245,255,0.5)",
+                        "0 0 15px rgba(0,245,255,0.3)",
+                      ],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    aria-label="Open account drawer"
+                  >
+                    {initials}
 
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0a0b1e]">
-                    <motion.span
-                      className="h-3 w-3 rounded-full bg-cyan-400"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  </span>
-                </motion.button>
-              }
-            />
-          </div>
+                    <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0a0b1e]">
+                      <motion.span
+                        className="h-3 w-3 rounded-full bg-cyan-400"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    </span>
+                  </motion.button>
+                }
+              />
 
-          <div className="mt-3">
-            <ConnectionBanner isOnline={isOnline} />
+              <ConnectionPill isOnline={isOnline} />
+            </div>
           </div>
         </div>
       </header>
