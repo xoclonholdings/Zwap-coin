@@ -56,11 +56,6 @@ export default function StreamPanel({ open, onOpenChange }) {
     }));
   };
 
-  const openMediaModal = (itemId) => {
-    setSelectedForActiveTab(itemId);
-    setMediaModalOpen(true);
-  };
-
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -122,7 +117,7 @@ export default function StreamPanel({ open, onOpenChange }) {
                         item={item}
                         tabId={activeTab}
                         active={selectedItem?.id === item.id}
-                        onClick={() => openMediaModal(item.id)}
+                        onClick={() => setSelectedForActiveTab(item.id)}
                       />
                     ))}
                   </div>
