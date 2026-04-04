@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Play, Sparkles } from "lucide-react";
 import { useApp } from "@/App";
 import StreamPanel from "@/components/ui/stream/StreamPanel";
-import AccountDrawer from "@/components/user/AccountDrawer";
+import AccountDrawer from "./AccountDrawer";
 
 function generateUsername(wallet) {
   if (!wallet) return "Zwapper";
