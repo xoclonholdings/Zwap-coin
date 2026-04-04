@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { useApp } from "@/App";
+import { useApp } from "@/app/AppProvider";
 
 import FirstTimeHero from "@/components/user/firsttimeuser/FirstTimeHero";
 import StartOptionsCard from "@/components/user/firsttimeuser/StartOptionsCard";
