@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Play, Sparkles, Wifi, WifiOff } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
 import { useApp } from "@/App";
 import StreamPanel from "@/components/ui/stream/StreamPanel";
 import AccountDrawer from "./AccountDrawer";
@@ -48,25 +48,6 @@ function generateUsername(seedSource) {
   const num = safeHash % 999;
 
   return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
-}
-
-function ConnectionPill({ isOnline = true }) {
-  return (
-    <div
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
-        isOnline
-          ? "border-green-500/20 bg-green-500/10 text-green-300"
-          : "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
-      }`}
-    >
-      {isOnline ? (
-        <Wifi className="h-3 w-3" />
-      ) : (
-        <WifiOff className="h-3 w-3" />
-      )}
-      {isOnline ? "Connected" : "Offline"}
-    </div>
-  );
 }
 
 export default function AppHeader() {
@@ -234,42 +215,40 @@ export default function AppHeader() {
               </div>
             </motion.div>
 
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <AccountDrawer
-                open={settingsOpen}
-                onOpenChange={setSettingsOpen}
-                trigger={
-                  <motion.button
-                    type="button"
-                    className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
-                    data-testid="profile-badge"
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
-                    animate={{
-                      boxShadow: [
-                        "0 0 15px rgba(0,245,255,0.3)",
-                        "0 0 30px rgba(0,245,255,0.5)",
-                        "0 0 15px rgba(0,245,255,0.3)",
-                      ],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    aria-label="Open account drawer"
-                  >
-                    {initials}
+            <AccountDrawer
+              open={settingsOpen}
+              onOpenChange={setSettingsOpen}
+              trigger={
+                <motion.button
+                  type="button"
+                  className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
+                  data-testid="profile-badge"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={{
+                    boxShadow: [
+                      "0 0 15px rgba(0,245,255,0.3)",
+                      "0 0 30px rgba(0,245,255,0.5)",
+                      "0 0 15px rgba(0,245,255,0.3)",
+                    ],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  aria-label="Open account drawer"
+                >
+                  {initials}
 
-                    <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0a0b1e]">
-                      <motion.span
-                        className="h-3 w-3 rounded-full bg-cyan-400"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    </span>
-                  </motion.button>
-                }
-              />
-
-              <ConnectionPill isOnline={isOnline} />
-            </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0a0b1e]">
+                    <motion.span
+                      className={`h-3 w-3 rounded-full ${
+                        isOnline ? "bg-green-400" : "bg-yellow-400"
+                      }`}
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                  </span>
+                </motion.button>
+              }
+            />
           </div>
         </div>
       </header>
