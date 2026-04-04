@@ -1,7 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ZWAP_BANG, useApp } from "@/App";
+import { ZWAP_BANG } from "@/App";
+import { useApp } from "@/app/AppProvider";
 import {
   ArrowLeft,
   Footprints,
@@ -21,9 +22,8 @@ export default function AboutPage() {
   const navigate = useNavigate();
   const {
     walletAddress,
-    setIsFirstTimeUserPromptOpen,
-    setIsOnboardingModalOpen,
     setIsWalletModalOpen,
+    setIsEmailAuthModalOpen,
   } = useApp();
 
   const features = [
@@ -90,15 +90,13 @@ export default function AboutPage() {
       return;
     }
 
-    setIsOnboardingModalOpen(false);
+    setIsEmailAuthModalOpen(false);
     setIsWalletModalOpen(false);
-    setIsFirstTimeUserPromptOpen(true);
-    navigate("/wallet");
+    navigate("/start");
   };
 
   return (
     <div className="min-h-screen bg-[#04040d] text-white pb-16">
-      {/* Back button */}
       <motion.button
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -109,7 +107,6 @@ export default function AboutPage() {
         <span>Back</span>
       </motion.button>
 
-      {/* Background atmosphere */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
           className="absolute -top-24 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] rounded-full bg-cyan-500/10 blur-[140px]"
@@ -128,7 +125,6 @@ export default function AboutPage() {
         />
       </div>
 
-      {/* Hero */}
       <section className="relative min-h-[52vh] flex flex-col items-center justify-center px-6 pt-20 pb-10">
         <div className="relative z-10 text-center max-w-5xl mx-auto">
           <motion.div
@@ -175,7 +171,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Feature Grid */}
       <section className="relative px-6 py-4">
         <div className="max-w-6xl mx-auto">
           <motion.h2
@@ -227,7 +222,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Dual currency */}
       <section className="relative py-16 px-6">
         <div className="max-w-5xl mx-auto">
           <motion.h2
@@ -334,7 +328,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* How it works */}
       <section className="relative py-16 px-6">
         <div className="max-w-5xl mx-auto">
           <motion.h2
@@ -386,7 +379,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="relative py-16 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div
@@ -421,7 +413,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Trust / footer section */}
       <section className="relative py-14 px-6 bg-[#090913] border-t border-white/5">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
