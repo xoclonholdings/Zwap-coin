@@ -51,27 +51,12 @@ export default function FirstTimeUserPage() {
   };
 
   const handleGetWallet = () => {
-    if (hasWalletReturningSignals) {
-      openWalletFlow();
-      return;
-    }
-
-    if (hasEmailReturningSignals) {
-      openWalletFlow();
-      return;
-    }
-
     openWalletFlow();
   };
 
   const handleContinueEmail = () => {
-    if (hasEmailReturningSignals) {
+    if (hasEmailReturningSignals || hasWalletReturningSignals) {
       openReturningUserFlow();
-      return;
-    }
-
-    if (hasWalletReturningSignals) {
-      openWalletFlow();
       return;
     }
 
