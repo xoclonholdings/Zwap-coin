@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePrivy } from "@privy-io/react-auth";
 import { ChevronRight, Shield } from "lucide-react";
+import { Sheet, SheetContent } from "../sheet";
 import { useApp } from "../../../app/AppProvider";
 import ProfilePage from "../../user/profile/ProfilePage";
 import ConvertZPtsModal from "../../swap/ConvertZPtsModal";
@@ -130,14 +131,10 @@ export default function AccountDrawer({
 
   const zptsBalance = rawZptsBalance.toLocaleString();
 
-  // Placeholder until ZWAP claim logic is mapped
   const canClaim = false;
 
-  const openDrawer = () => onOpenChange?.(true);
-  const closeDrawer = () => onOpenChange?.(false);
-
   const handleNavigate = (path) => {
-    closeDrawer();
+    onOpenChange?.(false);
     navigate(path);
   };
 
@@ -153,7 +150,7 @@ export default function AccountDrawer({
     }
 
     logoutAll?.();
-    closeDrawer();
+    onOpenChange?.(false);
     navigate("/start", { replace: true });
   };
 
@@ -178,68 +175,79 @@ export default function AccountDrawer({
 
   return (
     <>
-      {trigger ? (
-        <div onClick={openDrawer} className="cursor-pointer">
-          {trigger}
-        </div>
-      ) : null}
-
       <ConvertZPtsModal
         open={convertOpen}
         onClose={() => setConvertOpen(false)}
         walletAddress={walletAddress}
       />
 
-      {open ? (
-        <div className="fixed inset-0 z-[90]">
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={closeDrawer}
-          />
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        {trigger ? <div onClick={() => onOpenChange?.(true)}>{trigger}</div> : null}
 
-          <div className="absolute right-0 top-0 h-full w-80 border-l border-cyan-400/10 bg-[#070814] px-5 py-6 shadow-[0_0_40px_rgba(0,0,0,0.6)]">
-            <div className="flex h-full flex-col justify-between">
-              <div className="space-y-5">
-                <div className="rounded-[1.6rem] border border-white/10 bg-gradient-to-br from-cyan-500/10 via-blue-500/8 to-purple-500/8 p-4 shadow-[0_0_25px_rgba(34,211,238,0.06)]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-purple-500/30 text-lg font-bold text-white shadow-[0_0_24px_rgba(34,211,238,0.18)]">
-                      {initials}
-                    </div>
+        <SheetContent
+          side="right"
+          className="h-full w-[calc(100vw-20px)] max-w-[420px] border-l border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] p-0 text-white sm:w-[400px] lg:w-[420px]"
+        >
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b border-white/10 px-4 pb-4 pt-4">
+              <div className="mb-4">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300/80">
+                  Account
+                </p>
+                <p className="mt-1 text-sm text-gray-400">
+                  Identity, balances, wallet access, and system controls.
+                </p>
+              </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-[20px] font-semibold leading-none text-white">
-                          {displayName}
-                        </p>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-purple-500/30 text-lg font-bold text-white shadow-[0_0_24px_rgba(34,211,238,0.18)]">
+                    {initials}
+                  </div>
 
-                        {isPlus ? (
-                          <span className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black">
-                            Zitizen
-                          </span>
-                        ) : (
-                          <>
-                            <span className="text-xs font-medium text-gray-400">
-                              Zwapper
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleNavigate("/plus")}
-                              className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black transition hover:opacity-90"
-                            >
-                              Upgrade
-                            </button>
-                          </>
-                        )}
-                      </div>
-
-                      <p className="mt-2 truncate text-sm text-gray-400">
-                        {displaySubtext}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-[20px] font-semibold leading-none text-white">
+                        {displayName}
                       </p>
+
+                      {isPlus ? (
+                        <span className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black">
+                          Zitizen
+                        </span>
+                      ) : (
+                        <>
+                          <span className="text-xs font-medium text-gray-400">
+                            Zwapper
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleNavigate("/plus")}
+                            className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black transition hover:opacity-90"
+                          >
+                            Upgrade
+                          </button>
+                        </>
+                      )}
                     </div>
+
+                    <p className="mt-2 truncate text-sm text-gray-400">
+                      {displaySubtext}
+                    </p>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.03] px-4 py-3 shadow-[0_0_15px_rgba(255,255,255,0.02)]">
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="space-y-5 px-4 py-4">
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500">
+                      Reward Line
+                    </p>
+                  </div>
+
                   <div className="flex items-center justify-between gap-3 text-sm text-gray-300">
                     <div className="flex items-center gap-2">
                       <span>
@@ -284,97 +292,120 @@ export default function AccountDrawer({
                 <button
                   type="button"
                   onClick={handleProfileOpen}
-                  className="w-full rounded-[1.35rem] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 px-4 py-3 text-left backdrop-blur-md transition hover:from-cyan-500/35 hover:to-blue-500/35"
+                  className="block w-full text-left"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-cyan-300">
-                        {walletAddress ? "Open Wallet" : "Set Up Wallet"}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-300">
-                        {walletAddress
-                          ? "View balances, badges, and account info"
-                          : "Save progress and connect your account"}
-                      </p>
-                    </div>
+                  <div className="rounded-[1.5rem] border border-cyan-400/20 bg-cyan-500/10 p-4 shadow-[0_0_18px_rgba(34,211,238,0.06)] transition hover:bg-cyan-500/12">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">
+                          Wallet
+                        </p>
+                        <p className="mt-1 text-base font-semibold text-cyan-100">
+                          {walletAddress ? "Open Wallet" : "Set Up Wallet"}
+                        </p>
+                        <p className="mt-1 text-sm text-gray-300">
+                          {walletAddress
+                            ? "View balances, badges, and account info."
+                            : "Save progress and connect your account."}
+                        </p>
+                      </div>
 
-                    <ChevronRight className="h-5 w-5 shrink-0 text-cyan-300" />
+                      <ChevronRight className="h-5 w-5 shrink-0 text-cyan-300" />
+                    </div>
                   </div>
                 </button>
 
-                <div className="space-y-3 pt-1">
+                <div className="space-y-3">
                   <button
                     type="button"
                     onClick={handleProfileOpen}
-                    className="block w-full text-left text-[28px] font-semibold leading-none text-white transition hover:text-cyan-400"
+                    className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
                   >
-                    Profile
+                    <span className="text-[28px] font-semibold leading-none text-white">
+                      Profile
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleNavigate("/learn")}
-                    className="block w-full text-left text-[28px] font-semibold leading-none text-white transition hover:text-cyan-400"
+                    className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
                   >
-                    Learn
+                    <span className="text-[28px] font-semibold leading-none text-white">
+                      Learn
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleNavigate("/contact")}
-                    className="block w-full text-left text-[28px] font-semibold leading-none text-white transition hover:text-cyan-400"
+                    className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
                   >
-                    Contact
+                    <span className="text-[28px] font-semibold leading-none text-white">
+                      Contact
+                    </span>
                   </button>
 
                   {isAuthenticated ? (
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      className="block w-full text-left text-[28px] font-semibold leading-none text-white transition hover:text-red-400"
+                      className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
                     >
-                      Sign Out
+                      <span className="text-[28px] font-semibold leading-none text-white transition hover:text-red-400">
+                        Sign Out
+                      </span>
                     </button>
                   ) : null}
                 </div>
-              </div>
 
-              <div className="space-y-4 pt-5">
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={handleShieldClick}
-                    title="Secure"
-                    className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] shadow-[0_0_18px_rgba(255,255,255,0.03)] transition hover:bg-white/[0.06]"
-                  >
-                    <Shield className="h-5 w-5 text-gray-300" />
-                  </button>
-                </div>
+                <div className="h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
 
-                <div className="text-center text-xs text-gray-500">
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate("/privacy")}
-                    className="transition hover:text-gray-300"
-                  >
-                    Privacy
-                  </button>
-                  {" • "}
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate("/about")}
-                    className="transition hover:text-gray-300"
-                  >
-                    Help
-                  </button>
-                  {" • "}
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate("/terms")}
-                    className="transition hover:text-gray-300"
-                  >
-                    Terms
-                  </button>
+                <div className="pb-2">
+                  <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500">
+                        Secure Layer
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={handleShieldClick}
+                        title="Secure"
+                        className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] shadow-[0_0_18px_rgba(255,255,255,0.03)] transition hover:bg-white/[0.06]"
+                      >
+                        <Shield className="h-5 w-5 text-gray-300" />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 text-center text-xs text-gray-500">
+                      <button
+                        type="button"
+                        onClick={() => handleNavigate("/privacy")}
+                        className="transition hover:text-gray-300"
+                      >
+                        Privacy
+                      </button>
+                      {" • "}
+                      <button
+                        type="button"
+                        onClick={() => handleNavigate("/about")}
+                        className="transition hover:text-gray-300"
+                      >
+                        Help
+                      </button>
+                      {" • "}
+                      <button
+                        type="button"
+                        onClick={() => handleNavigate("/terms")}
+                        className="transition hover:text-gray-300"
+                      >
+                        Terms
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -385,8 +416,8 @@ export default function AccountDrawer({
               </div>
             ) : null}
           </div>
-        </div>
-      ) : null}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
