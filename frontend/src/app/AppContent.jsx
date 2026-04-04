@@ -1,32 +1,38 @@
 import React, { useEffect } from "react";
-import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
-import useNetworkStatus from "@/hooks/useNetworkStatus";
-import OfflineNotice from "@/components/ui/OfflineNotice";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
+import useNetworkStatus from "../hooks/useNetworkStatus";
+import OfflineNotice from "../components/ui/OfflineNotice";
 
-import SplashScreen from "@/components/SplashScreen";
-import AboutPage from "@/components/AboutPage";
-import FirstTimeUserPage from "@/components/user/firsttimeuser/FirstTimeUserPage";
-import ReturningUserPrompt from "@/components/user/ReturningUserPrompt";
-import EmailAuthModal from "@/components/user/firsttimeuser/EmailAuthModal";
-import WalletModal from "@/components/wallet/WalletModal";
-import AppHeader from "@/components/ui/AppHeader";
-import NewsTicker from "@/components/ui/NewsTicker";
-import Dashboard from "@/components/ui/Dashboard";
-import MoveTab from "@/components/move/MoveTab";
-import PlayTab from "@/components/play/PlayTab";
-import SwapTab from "@/components/swap/SwapTab";
-import ShopTab from "@/components/shop/ShopTab";
-import TabNavigation from "@/components/ui/TabNavigation";
-import SubscriptionSuccess from "@/components/SubscriptionSuccess";
-import ProfilePage from "@/components/user/ProfilePage";
-import ContactPage from "@/components/ContactPage";
-import PrivacyPage from "@/components/PrivacyPage";
-import TermsPage from "@/components/TermsPage";
-import AdminPanel from "@/components/admin/AdminPanel";
-import LearnPage from "@/components/learn/LearnPage";
-import PlusPage from "@/components/PlusPage";
+import SplashScreen from "../components/SplashScreen";
+import AboutPage from "../components/AboutPage";
+import FirstTimeUserPage from "../components/user/firsttimeuser/FirstTimeUserPage";
+import ReturningUserPrompt from "../components/user/ReturningUserPrompt";
+import EmailAuthModal from "../components/user/firsttimeuser/EmailAuthModal";
+import WalletModal from "../components/wallet/WalletModal";
+import AppHeader from "../components/ui/AppHeader";
+import NewsTicker from "../components/ui/NewsTicker";
+import Dashboard from "../components/ui/Dashboard";
+import MoveTab from "../components/move/MoveTab";
+import PlayTab from "../components/play/PlayTab";
+import SwapTab from "../components/swap/SwapTab";
+import ShopTab from "../components/shop/ShopTab";
+import TabNavigation from "../components/ui/TabNavigation";
+import SubscriptionSuccess from "../components/SubscriptionSuccess";
+import ProfilePage from "../components/user/ProfilePage";
+import ContactPage from "../components/ContactPage";
+import PrivacyPage from "../components/PrivacyPage";
+import TermsPage from "../components/TermsPage";
+import AdminPanel from "../components/admin/AdminPanel";
+import LearnPage from "../components/learn/LearnPage";
+import PlusPage from "../components/PlusPage";
 
-import { useApp } from "@/app/AppProvider";
+import { useApp } from "./AppProvider";
 
 export default function AppContent() {
   const {
@@ -49,7 +55,15 @@ export default function AppContent() {
   const navigate = useNavigate();
   const { isOnline } = useNetworkStatus();
 
-  const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
+  const protectedRoutes = [
+    "/dashboard",
+    "/move",
+    "/play",
+    "/shop",
+    "/swap",
+    "/success",
+  ];
+
   const isProtectedRoute =
     protectedRoutes.includes(location.pathname) && !isAuthenticated;
 
@@ -107,8 +121,8 @@ export default function AppContent() {
 
   if (!initialized) {
     return (
-      <div className="h-screen bg-[#0a0b1e] flex items-center justify-center">
-        <div className="text-cyan-400 animate-pulse">Loading...</div>
+      <div className="flex h-screen items-center justify-center bg-[#0a0b1e]">
+        <div className="animate-pulse text-cyan-400">Loading...</div>
       </div>
     );
   }
@@ -160,6 +174,7 @@ export default function AppContent() {
   }
 
   const settingsPages = ["/profile", "/contact", "/privacy", "/terms", "/admin"];
+
   if (settingsPages.includes(location.pathname)) {
     return (
       <Routes>
@@ -199,10 +214,10 @@ export default function AppContent() {
   return (
     <div className="min-h-screen bg-[#0a0b1e]">
       {showLayout ? (
-        <div className="h-screen flex flex-col overflow-hidden">
+        <div className="flex h-screen flex-col overflow-hidden">
           <AppHeader />
 
-          <div className="px-4 pt-20 pb-2 max-w-lg mx-auto w-full">
+          <div className="mx-auto w-full max-w-lg px-4 pb-2 pt-20">
             <OfflineNotice isOnline={isOnline} />
           </div>
 
@@ -220,14 +235,17 @@ export default function AppContent() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
-              <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+              <Route
+                path="/subscription/success"
+                element={<SubscriptionSuccess />}
+              />
               <Route path="/subscription/cancel" element={<PlusPage />} />
               <Route path="/success" element={<ShopTab />} />
               <Route path="/cancel" element={<ShopTab />} />
             </Routes>
           </main>
 
-          <div className="shrink-0 bg-[#0a0b1e] border-t border-cyan-500/10">
+          <div className="shrink-0 border-t border-cyan-500/10 bg-[#0a0b1e]">
             <NewsTicker />
             <TabNavigation />
           </div>
@@ -247,7 +265,10 @@ export default function AppContent() {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
-            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+            <Route
+              path="/subscription/success"
+              element={<SubscriptionSuccess />}
+            />
             <Route path="/subscription/cancel" element={<PlusPage />} />
             <Route path="/success" element={<ShopTab />} />
             <Route path="/cancel" element={<ShopTab />} />
