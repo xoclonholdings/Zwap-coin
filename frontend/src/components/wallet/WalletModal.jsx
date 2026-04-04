@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { X, Wallet, Shield, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
@@ -7,9 +8,14 @@ import { useApp } from "@/app/AppProvider";
 import { Button } from "@/components/ui/button";
 
 export default function WalletModal({ open, onOpenChange }) {
+  const navigate = useNavigate();
   const { authenticated, ready, login } = usePrivy();
   const { wallets } = useWallets();
-  const { connectWallet, setIsReturningUserPromptOpen, setIsEmailAuthModalOpen } = useApp();
+  const {
+    connectWallet,
+    setIsReturningUserPromptOpen,
+    setIsEmailAuthModalOpen,
+  } = useApp();
 
   const [isLaunching, setIsLaunching] = useState(false);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
@@ -61,6 +67,7 @@ export default function WalletModal({ open, onOpenChange }) {
 
         onOpenChange(false);
         toast.success("Wallet setup complete");
+        navigate("/dashboard", { replace: true });
       } catch (error) {
         console.error("Wallet connection finalization failed:", error);
         if (!isMounted) return;
@@ -77,7 +84,15 @@ export default function WalletModal({ open, onOpenChange }) {
     return () => {
       isMounted = false;
     };
-  }, [open, ready, authenticated, primaryWalletAddress, connectWallet, onOpenChange]);
+  }, [
+    open,
+    ready,
+    authenticated,
+    primaryWalletAddress,
+    connectWallet,
+    onOpenChange,
+    navigate,
+  ]);
 
   return (
     <AnimatePresence>
@@ -111,10 +126,11 @@ export default function WalletModal({ open, onOpenChange }) {
 
                   <div>
                     <h2 className="text-xl font-black leading-tight">
-                      Set Up Wallet
+                      Create a Wallet
                     </h2>
                     <p className="mt-1 text-sm text-gray-400">
-                      Create or connect your wallet to claim and own your ZWAP.
+                      ZWAP will open secure wallet setup through Privy and bring you
+                      straight into your account.
                     </p>
                   </div>
                 </div>
@@ -135,8 +151,8 @@ export default function WalletModal({ open, onOpenChange }) {
                   <div className="flex items-start gap-3">
                     <Sparkles className="mt-0.5 h-4 w-4 text-cyan-300 shrink-0" />
                     <p className="text-sm leading-relaxed text-gray-300">
-                      You can create a new wallet or connect an existing one. Your
-                      private keys stay with you.
+                      If you do not already have a wallet, Privy can create one for
+                      you during setup.
                     </p>
                   </div>
                 </div>
@@ -145,10 +161,16 @@ export default function WalletModal({ open, onOpenChange }) {
                   <div className="flex items-start gap-3">
                     <Shield className="mt-0.5 h-4 w-4 text-green-300 shrink-0" />
                     <p className="text-sm leading-relaxed text-gray-300">
-                      ZWAP does not ask for or store your private key. Wallet setup
-                      is handled securely through Privy.
+                      Your private keys are not stored by ZWAP. Wallet setup is
+                      handled securely through Privy.
                     </p>
                   </div>
+                </div>
+
+                <div className="rounded-xl border border-purple-500/15 bg-purple-500/[0.06] px-4 py-3">
+                  <p className="text-xs text-purple-100/90">
+                    Using Polygon network
+                  </p>
                 </div>
 
                 <Button
@@ -160,8 +182,8 @@ export default function WalletModal({ open, onOpenChange }) {
                   {isConnectingWallet
                     ? "Connecting Wallet..."
                     : isLaunching
-                    ? "Opening Wallet Setup..."
-                    : "Continue with Wallet"}
+                    ? "Opening Secure Setup..."
+                    : "Create Wallet in App"}
                 </Button>
 
                 <Button
