@@ -15,6 +15,25 @@ function getSeed(wallet, date) {
   return Math.abs(hash);
 }
 
+function formatGameTitle(gameKey, target) {
+  const gameNameMap = {
+    zbrickles: "zBrickles",
+    ztrivia: "zTrivia",
+    ztetris: "zTetris",
+    zslots: "zSlots",
+  };
+
+  const gameName = gameNameMap[gameKey] || gameKey;
+  const unit = target === 1 ? "round" : "rounds";
+
+  return `Play ${target} ${unit} of ${gameName}`;
+}
+
+function formatRemaining(count, unit) {
+  const safeCount = Math.max(Number(count) || 0, 0);
+  return `${safeCount} ${unit}${safeCount === 1 ? "" : "s"} left`;
+}
+
 export function generateDailyTasks({
   hasWallet,
   canClaimDaily,
@@ -30,10 +49,8 @@ export function generateDailyTasks({
   let randIndex = 0;
   const rand = () => seededRandom(seed + randIndex++);
 
-  // LOGIN
   const loginComplete = hasWallet ? !canClaimDaily && !!lastDailyClaim : false;
 
-  // REAL DAILY PROGRESS FIELDS
   const triviaComplete = !!profile?.daily_trivia_complete;
   const reviewedModulesToday = Number(profile?.daily_modules_reviewed ?? 0);
   const continuedModulesToday = Number(profile?.daily_modules_continued ?? 0);
@@ -43,7 +60,6 @@ export function generateDailyTasks({
   const assistsAcceptedToday = Number(profile?.daily_assists_accepted ?? 0);
   const streamReactionsToday = Number(profile?.daily_stream_reactions ?? 0);
 
-  // LEARN
   const learnTypes = [
     {
       type: "trivia",
@@ -83,7 +99,6 @@ export function generateDailyTasks({
     learnTypes[Math.floor(rand() * learnTypes.length)];
   const learnComplete = selectedLearn.progress >= selectedLearn.target;
 
-  // PLAY
   const gameOptions = ["zbrickles", "ztrivia", "ztetris"];
   const selectedGame =
     gameOptions[Math.floor(rand() * gameOptions.length)];
@@ -91,7 +106,6 @@ export function generateDailyTasks({
   const gameTarget = Math.floor(rand() * 3) + 1;
   const playComplete = gamesPlayed >= gameTarget;
 
-  // SOCIAL / STREAM
   const socialTypes = [
     {
       type: "send_assist",
@@ -145,12 +159,15 @@ export function generateDailyTasks({
     },
     {
       key: "play",
-      title: `Play ${gameTarget} ${selectedGame}`,
+      title: formatGameTitle(selectedGame, gameTarget),
       reward: 10 + gameTarget * 5,
       completed: playComplete,
       hint: playComplete
         ? "Complete"
-        : `${Math.max(gameTarget - gamesPlayed, 0)} left`,
+        : formatRemaining(
+            Math.max(gameTarget - gamesPlayed, 0),
+            gameTarget === 1 ? "round" : "round"
+          ),
     },
     {
       key: "social",
@@ -159,7 +176,10 @@ export function generateDailyTasks({
       completed: socialComplete,
       hint: socialComplete
         ? "Complete"
-        : `${Math.max(socialTarget - selectedSocial.progress, 0)} ${selectedSocial.unit}${Math.max(socialTarget - selectedSocial.progress, 0) === 1 ? "" : "s"} left`,
+        : formatRemaining(
+            Math.max(socialTarget - selectedSocial.progress, 0),
+            selectedSocial.unit
+          ),
     },
   ];
 }
