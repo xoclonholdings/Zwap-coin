@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import "@/App.css";
 import { Toaster } from "@/components/ui/sonner";
 
+import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
 import { AppProvider } from "@/app/AppProvider";
 import AppContent from "@/app/AppContent";
 
@@ -66,10 +67,12 @@ export const TIERS = {
 function App() {
   return (
     <BrowserRouter>
-      <AppProvider>
-        <AppContent />
-        <Toaster position="top-center" richColors />
-      </AppProvider>
+      <PrivyProviderWrapper>
+        <AppProvider>
+          <AppContent />
+          <Toaster position="top-center" richColors />
+        </AppProvider>
+      </PrivyProviderWrapper>
     </BrowserRouter>
   );
 }
