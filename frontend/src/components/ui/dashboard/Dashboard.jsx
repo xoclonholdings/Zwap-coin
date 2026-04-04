@@ -123,12 +123,6 @@ export default function Dashboard() {
 
   const stepGoal = Math.max(Number(profile?.step_goal) || 5000, 0);
 
-  const pendingZwap =
-    Number(profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0) || 0;
-
-  const zpts =
-    Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 0) || 0;
-
   const gamesPlayed = Math.max(Number(profile?.games_played_today) || 0, 0);
   const gameGoal = Math.max(Number(profile?.daily_game_goal) || 1, 0);
   const currentTier = String(profile?.tier || "starter").toLowerCase();
@@ -139,7 +133,9 @@ export default function Dashboard() {
     rewardStatus?.last_daily_claim ?? profile?.last_daily_claim ?? null;
 
   const projectedStreak =
-    Number(rewardStatus?.projected_streak ?? (streak + (canClaimDaily ? 1 : 0))) || 1;
+    Number(
+      rewardStatus?.projected_streak ?? (streak + (canClaimDaily ? 1 : 0))
+    ) || 1;
 
   const dailyReward =
     Number(rewardStatus?.next_reward_zpts) ||
@@ -302,12 +298,8 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
         >
           <DashboardStatusCard
-            zpts={zpts}
-            pendingZwap={pendingZwap}
             movePercent={stepsPercent}
             playPercent={playPercent}
-            tasksCompleted={completedTaskCount}
-            tasksTotal={4}
             nextBadge={nextBadge}
           />
         </motion.div>
