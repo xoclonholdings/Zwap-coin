@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Gift, Gamepad2, Footprints, Brain } from "lucide-react";
+import { Gift, Gamepad2, Sparkles, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/App";
 import api from "@/lib/api";
@@ -9,6 +9,7 @@ import DashboardHero from "@/components/ui/dashboard/DashboardHero";
 import DashboardDailyLoopCard from "@/components/ui/dashboard/DashboardDailyLoopCard";
 import DashboardDailyTasksCard from "@/components/ui/dashboard/DashboardDailyTasksCard";
 import DashboardStatusCard from "@/components/ui/dashboard/DashboardStatusCard";
+import { generateDailyTasks } from "@/lib/tasks/generateDailyTasks";
 
 function generateUsername(wallet) {
   if (!wallet) return "";
@@ -46,6 +47,13 @@ function generateUsername(wallet) {
 
   return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
 }
+
+const taskIconMap = {
+  login: Gift,
+  learn: Brain,
+  play: Gamepad2,
+  social: Sparkles,
+};
 
 export default function Dashboard() {
   const {
@@ -116,12 +124,7 @@ export default function Dashboard() {
   const stepGoal = Math.max(Number(profile?.step_goal) || 5000, 0);
 
   const pendingZwap =
-    Number(
-      profile?.zwap_pending ??
-        profile?.zwap_balance ??
-        onchainBalance ??
-        0
-    ) || 0;
+    Number(profile?.zwap_pending ?? profile?.zwap_balance ?? onchainBalance ?? 0) || 0;
 
   const zpts =
     Number(profile?.zpts_pending ?? profile?.zpts_balance ?? 0) || 0;
@@ -138,7 +141,7 @@ export default function Dashboard() {
   const projectedStreak =
     Number(
       rewardStatus?.projected_streak ??
-        (streak + (canClaimDaily ? 1 : 0))
+      (streak + (canClaimDaily ? 1 : 0))
     ) || 1;
 
   const dailyReward =
@@ -173,53 +176,33 @@ export default function Dashboard() {
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
 
-  const stepsLeft = Math.max(stepGoal - todaySteps, 0);
-  const gamesLeft = Math.max(gameGoal - gamesPlayed, 0);
   const stepsPercent = Math.min((todaySteps / safeStepGoal) * 100, 100);
   const playPercent = Math.min((gamesPlayed / safeGameGoal) * 100, 100);
 
-  const loginComplete = hasWallet ? !canClaimDaily && !!lastDailyClaim : false;
-  const playComplete = gamesPlayed >= 1;
-  const stepsComplete = stepGoal > 0 ? todaySteps >= stepGoal : false;
-  const triviaComplete = !!profile?.daily_trivia_complete;
+  const tasks = useMemo(() => {
+    const generatedTasks = generateDailyTasks({
+      hasWallet,
+      canClaimDaily,
+      lastDailyClaim,
+      dailyReward,
+      gamesPlayed,
+      profile,
+    });
 
-  const completedTaskCount = [
-    loginComplete,
-    playComplete,
-    stepsComplete,
-    triviaComplete,
-  ].filter(Boolean).length;
+    return generatedTasks.map((task) => ({
+      ...task,
+      icon: taskIconMap[task.key] || Sparkles,
+    }));
+  }, [
+    hasWallet,
+    canClaimDaily,
+    lastDailyClaim,
+    dailyReward,
+    gamesPlayed,
+    profile,
+  ]);
 
-  const tasks = [
-    {
-      icon: Gift,
-      title: "Daily Login",
-      reward: dailyReward,
-      completed: loginComplete,
-      hint: hasWallet ? "Claim today’s login reward" : "Connect wallet to claim",
-    },
-    {
-      icon: Gamepad2,
-      title: "Play 1 Game",
-      reward: 10,
-      completed: playComplete,
-      hint: playComplete ? "Complete" : `${gamesLeft} left today`,
-    },
-    {
-      icon: Footprints,
-      title: "Reach Step Goal",
-      reward: 15,
-      completed: stepsComplete,
-      hint: stepsComplete ? "Complete" : `${stepsLeft.toLocaleString()} steps left`,
-    },
-    {
-      icon: Brain,
-      title: "Complete Trivia",
-      reward: 10,
-      completed: triviaComplete,
-      hint: triviaComplete ? "Complete" : "Finish today’s trivia task",
-    },
-  ];
+  const completedTaskCount = tasks.filter((task) => task.completed).length;
 
   const handleClaimDaily = async () => {
     if (!hasWallet) {
