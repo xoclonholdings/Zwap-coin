@@ -68,7 +68,6 @@ export default function Dashboard() {
     user,
     authUser,
     walletAddress,
-    onchainBalance,
     openWalletUpgradeFlow,
     refreshUser,
   } = useApp();
