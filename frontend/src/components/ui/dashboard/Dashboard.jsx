@@ -4,7 +4,6 @@ import { Gift, Gamepad2, Sparkles, Brain } from "lucide-react";
 import { useApp } from "@/App";
 import api from "@/lib/api";
 
-import DesktopAppShell from "@/components/layout/DesktopAppShell";
 import DashboardHero from "@/components/ui/dashboard/DashboardHero";
 import DashboardDailyLoopCard from "@/components/ui/dashboard/DashboardDailyLoopCard";
 import DashboardDailyTasksCard from "@/components/ui/dashboard/DashboardDailyTasksCard";
@@ -355,23 +354,21 @@ export default function Dashboard() {
 
   return (
     <>
-      <DesktopAppShell>
-        <DashboardCenterContent
-          username={username}
-          currentTier={currentTier}
-          streak={streak}
-          canClaimDaily={canClaimDaily}
-          dailyReward={dailyReward}
-          lastClaimText={lastClaimText}
-          handleClaimDaily={handleClaimDaily}
-          claimLoading={claimLoading}
-          tasks={tasks}
-          completedTaskCount={completedTaskCount}
-          nextBadge={nextBadge}
-          stepsPercent={stepsPercent}
-          playPercent={playPercent}
-        />
-      </DesktopAppShell>
+      <DashboardCenterContent
+        username={username}
+        currentTier={currentTier}
+        streak={streak}
+        canClaimDaily={canClaimDaily}
+        dailyReward={dailyReward}
+        lastClaimText={lastClaimText}
+        handleClaimDaily={handleClaimDaily}
+        claimLoading={claimLoading}
+        tasks={tasks}
+        completedTaskCount={completedTaskCount}
+        nextBadge={nextBadge}
+        stepsPercent={stepsPercent}
+        playPercent={playPercent}
+      />
 
       <StatusPopup
         open={popup.open}
