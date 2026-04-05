@@ -115,6 +115,10 @@ export default function GameLeaderboard() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [popup, setPopup] = useState({
+    open: false,
+    message: "",
+  });
 
   const activeGame = GAME_ROTATION[gameIndex];
   const theme = THEMES[activeGame.color];
@@ -166,102 +170,122 @@ export default function GameLeaderboard() {
   }, [fetchLeaderboard]);
 
   return (
-    <div
-      className={`rounded-[24px] border p-4 backdrop-blur-sm shadow-[0_14px_40px_rgba(0,0,0,0.24)] ${theme.shell}`}
-    >
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${theme.iconBg}`}
-          >
-            <Trophy className={`h-4.5 w-4.5 ${theme.accent}`} />
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-white">Leaderboard</h3>
-            <p className="text-xs text-white/45">{currentLabel}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={fetchLeaderboard}
-            variant="outline"
-            className="h-9 rounded-xl border-white/10 bg-white/5 px-3 text-white hover:bg-white/10"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-
-          <Button
-            onClick={cycleGame}
-            variant="outline"
-            className="h-9 rounded-xl border-white/10 bg-white/5 px-3 text-white hover:bg-white/10"
-          >
-            {activeGame.label}
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        {SCOPE_OPTIONS.map((option) => {
-          const Icon = option.icon;
-          const isActive = scope === option.id;
-
-          return (
-            <button
-              key={option.id}
-              onClick={() => {
-                if (!option.enabled) {
-                  toast.info(
-                    `${option.label} game boards need location-based backend support`
-                  );
-                  return;
-                }
-                setScope(option.id);
-              }}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition ${
-                isActive
-                  ? theme.chipActive
-                  : option.enabled
-                  ? theme.chipIdle
-                  : "border-white/8 bg-white/[0.03] text-white/25"
-              }`}
+    <>
+      <div
+        className={`rounded-[24px] border p-4 backdrop-blur-sm shadow-[0_14px_40px_rgba(0,0,0,0.24)] ${theme.shell}`}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${theme.iconBg}`}
             >
-              <Icon className="h-3.5 w-3.5" />
-              {option.label}
-            </button>
-          );
-        })}
+              <Trophy className={`h-4.5 w-4.5 ${theme.accent}`} />
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-white">Leaderboard</h3>
+              <p className="text-xs text-white/45">{currentLabel}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={fetchLeaderboard}
+              variant="outline"
+              className="h-9 rounded-xl border-white/10 bg-white/5 px-3 text-white hover:bg-white/10"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+
+            <Button
+              onClick={cycleGame}
+              variant="outline"
+              className="h-9 rounded-xl border-white/10 bg-white/5 px-3 text-white hover:bg-white/10"
+            >
+              {activeGame.label}
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-4 flex flex-wrap gap-2">
+          {SCOPE_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            const isActive = scope === option.id;
+
+            return (
+              <button
+                key={option.id}
+                onClick={() => {
+                  if (!option.enabled) {
+                    setPopup({
+                      open: true,
+                      message: `${option.label} game boards need location-based backend support.`,
+                    });
+                    return;
+                  }
+                  setScope(option.id);
+                }}
+                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+                  isActive
+                    ? theme.chipActive
+                    : option.enabled
+                      ? theme.chipIdle
+                      : "border-white/8 bg-white/[0.03] text-white/25"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="rounded-[22px] border border-white/8 bg-black/20 p-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-12 text-white/55">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading leaderboard...
+            </div>
+          ) : error ? (
+            <div className="py-6 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                <BarChart3 className="h-4 w-4 text-white/40" />
+              </div>
+              <p className="text-sm font-medium text-white/70">{error}</p>
+            </div>
+          ) : rows.length > 0 ? (
+            <LeaderboardBars rows={rows} gradientClass={theme.graph} />
+          ) : (
+            <div className="py-6 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                <BarChart3 className="h-4 w-4 text-white/40" />
+              </div>
+              <p className="text-sm font-medium text-white/70">
+                No leaderboard entries yet.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="rounded-[22px] border border-white/8 bg-black/20 p-4">
-        {loading ? (
-          <div className="flex items-center justify-center py-12 text-white/55">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading leaderboard...
-          </div>
-        ) : error ? (
-          <div className="py-6 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <BarChart3 className="h-4 w-4 text-white/40" />
-            </div>
-            <p className="text-sm font-medium text-white/70">{error}</p>
-          </div>
-        ) : rows.length > 0 ? (
-          <LeaderboardBars rows={rows} gradientClass={theme.graph} />
-        ) : (
-          <div className="py-6 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <BarChart3 className="h-4 w-4 text-white/40" />
-            </div>
-            <p className="text-sm font-medium text-white/70">
-              No leaderboard entries yet.
+      {popup.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[1.75rem] border border-cyan-400/30 bg-[#0f1029] p-5 text-center shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+            <p className="mb-4 text-sm leading-relaxed text-white/80">
+              {popup.message}
             </p>
+
+            <Button
+              onClick={() => setPopup({ open: false, message: "" })}
+              className="h-11 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-base font-semibold hover:from-cyan-400 hover:to-purple-400"
+            >
+              Got it
+            </Button>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
