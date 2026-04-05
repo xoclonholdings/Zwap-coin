@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, HTTPException, Request
+from services.badge_service import evaluate_badges, persist_badge_updates
 
 router = APIRouter(prefix="/rewards", tags=["rewards"])
 
