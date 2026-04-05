@@ -7,9 +7,53 @@ import MoveHome from "@/components/move/MoveHome";
 import MoveRewardsFeedback from "@/components/move/MoveRewardsFeedback";
 
 const DEFAULT_STEP_GOAL = 10000;
+const MILES_PER_STEP = 0.00045;
 
 function getTierDailyZptsCap(tierConfig) {
   return tierConfig?.daily_zpts_cap ?? tierConfig?.dailyZptsCap ?? 75;
+}
+
+function formatPace(secondsPerMile) {
+  if (!Number.isFinite(secondsPerMile) || secondsPerMile <= 0) return "--";
+
+  const totalSeconds = Math.round(secondsPerMile);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+
+  return `${mins}:${String(secs).padStart(2, "0")} / mi`;
+}
+
+function clamp(value, min = 0, max = 1) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function buildSessionMilestones(steps) {
+  return [
+    {
+      id: "milestone-1",
+      label: "1K",
+      threshold: 1000,
+      progress: clamp(steps / 1000),
+    },
+    {
+      id: "milestone-2",
+      label: "5K",
+      threshold: 5000,
+      progress: clamp((steps - 1000) / 4000),
+    },
+    {
+      id: "milestone-3",
+      label: "10K",
+      threshold: 10000,
+      progress: clamp((steps - 5000) / 5000),
+    },
+    {
+      id: "milestone-4",
+      label: "15K",
+      threshold: 15000,
+      progress: clamp((steps - 10000) / 5000),
+    },
+  ];
 }
 
 export default function MoveTab() {
@@ -37,10 +81,11 @@ export default function MoveTab() {
   const calculateRewards = useCallback(
     (stepCount) => {
       let base;
-      if (stepCount < 1000) base = stepCount * 0.01;
-      else if (stepCount < 5000) base = 10 + (stepCount - 1000) * 0.02;
-      else if (stepCount < 10000) base = 90 + (stepCount - 5000) * 0.03;
-      else base = 240 + (stepCount - 10000) * 0.05;
+      if (stepCount < 1000) base = stepCount * 0.02;
+      else if (stepCount < 5000) base = 20 + (stepCount - 1000) * 0.03;
+      else if (stepCount < 10000) base = 140 + (stepCount - 5000) * 0.04;
+      else base = 340 + (stepCount - 10000) * 0.05;
+
       return base * multiplier;
     },
     [multiplier]
@@ -89,10 +134,10 @@ export default function MoveTab() {
     return () => window.removeEventListener("devicemotion", handleMotion);
   }, [isTracking]);
 
-  const handleStartStop = async () => {
+  const handleToggleTracking = async () => {
     if (isTracking) {
       setIsTracking(false);
-      toast.success("Tracking paused");
+      toast.success("Session stopped");
       return;
     }
 
@@ -114,10 +159,12 @@ export default function MoveTab() {
     }
 
     setIsTracking(true);
-    toast.success("Tracking started!");
+    toast.success("Session started");
   };
 
   const handleReset = () => {
+    if (isTracking) return;
+
     setSteps(0);
     setSessionSeconds(0);
     setPotentialReward(0);
@@ -127,14 +174,15 @@ export default function MoveTab() {
     if (!hasWallet || steps === 0) return;
 
     setIsClaiming(true);
+
     try {
       const result = await api.claimStepRewards(walletAddress, steps);
 
       setRewardFeedback({
         reward: {
           amount: Number(result?.rewards_earned || potentialReward || 0),
-          currency: "ZWAP",
-          message: result?.message || "ZWAP added to your balance.",
+          currency: "zPts",
+          message: result?.message || "Rewards added to your balance.",
         },
         milestone:
           steps >= stepGoal
@@ -164,21 +212,15 @@ export default function MoveTab() {
   const progressPercent = Math.min((steps / stepGoal) * 100, 100);
   const remainingSteps = Math.max(stepGoal - steps, 0);
 
-  const paceZone =
-    steps < 1000
-      ? "Warmup"
-      : steps < 5000
-      ? "Active"
-      : steps < 10000
-      ? "Momentum"
-      : "Beast";
+  const distanceMiles = steps * MILES_PER_STEP;
+  const calories = Math.round(distanceMiles * 80);
 
-  const tiers = [
-    { range: "0-1K", rate: "0.01", active: steps < 1000 },
-    { range: "1K-5K", rate: "0.02", active: steps >= 1000 && steps < 5000 },
-    { range: "5K-10K", rate: "0.03", active: steps >= 5000 && steps < 10000 },
-    { range: "10K+", rate: "0.05", active: steps >= 10000 },
-  ];
+  const pace =
+    steps < 20 || sessionSeconds < 30 || distanceMiles <= 0
+      ? "--"
+      : formatPace(sessionSeconds / distanceMiles);
+
+  const sessionMilestones = buildSessionMilestones(steps);
 
   return (
     <>
@@ -203,10 +245,12 @@ export default function MoveTab() {
         isTracking={isTracking}
         isClaiming={isClaiming}
         potentialReward={potentialReward}
-        paceZone={paceZone}
-        tiers={tiers}
         hasWallet={hasWallet}
-        onStartStop={handleStartStop}
+        pace={pace}
+        distanceMiles={distanceMiles}
+        calories={calories}
+        sessionMilestones={sessionMilestones}
+        onToggleTracking={handleToggleTracking}
         onReset={handleReset}
         onClaim={handleClaim}
         onConnectWallet={handleConnectWallet}
