@@ -17,7 +17,11 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function NewsTicker() {
   const { walletAddress } = useApp();
-  const { preferences, enabledCategories, toggleCategory } = useTickerPreferences();
+  const {
+    preferences,
+    enabledCategories,
+    toggleCategory,
+  } = useTickerPreferences();
   const { items } = useTickerFeed(enabledCategories);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -27,21 +31,32 @@ export default function NewsTicker() {
   const [history, setHistory] = useState([]);
 
   const timeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+  const historyRef = useRef([]);
+
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
 
   useEffect(() => {
     setCurrentIndex(0);
     setHistory([]);
+    setIsVisible(true);
   }, [items.length]);
 
   useEffect(() => {
     if (!items.length) return undefined;
 
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setIsVisible(false);
 
       timeoutRef.current = setTimeout(() => {
-        setCurrentIndex((prev) => {
-          const nextIndex = pickNextTickerIndex(items, prev, history);
+        setCurrentIndex((prevIndex) => {
+          const nextIndex = pickNextTickerIndex(
+            items,
+            prevIndex,
+            historyRef.current
+          );
           const nextItem = items[nextIndex];
 
           if (nextItem) {
@@ -59,17 +74,14 @@ export default function NewsTicker() {
     }, ROTATION_MS);
 
     return () => {
-      clearInterval(interval);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [history, items]);
+  }, [items]);
 
   const current = useMemo(() => items[currentIndex] || null, [items, currentIndex]);
 
   const meta = TICKER_META[current?.category] || TICKER_META.SYSTEM;
-  const Icon = meta.icon;
   const isClickable = Boolean(current?.clickable && current?.url);
   const hasAssist = current?.cta?.type === "assist";
 
@@ -78,41 +90,63 @@ export default function NewsTicker() {
     setSourceItem(current);
   };
 
+  const handleAdvanceTicker = () => {
+    if (!current) return;
+
+    setHistory((prevHistory) => [
+      ...prevHistory.slice(-9),
+      { id: current.id, category: current.category },
+    ]);
+
+    setIsVisible(false);
+
+    timeoutRef.current = setTimeout(() => {
+      const nextIndex = pickNextTickerIndex(
+        items,
+        currentIndex,
+        historyRef.current
+      );
+      setCurrentIndex(nextIndex);
+      setIsVisible(true);
+    }, FADE_MS);
+  };
+
   const handleAssist = async () => {
-    if (!walletAddress || !current?.cta?.payload || assistLoading) return;
+    const payload = current?.cta?.payload;
+    if (!walletAddress || !payload || assistLoading) return;
+
+    const recipientWallet = payload.recipient_wallet;
+    const amount = Number(payload.amount_zpts || 10);
+    const message =
+      payload.message || "Someone just gave you a boost. Keep going.";
+
+    if (!recipientWallet) {
+      console.error("Assist payload missing recipient_wallet");
+      return;
+    }
 
     setAssistLoading(true);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/assist/send`, {
+      const response = await fetch(`${BACKEND_URL}/api/users/assist/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          wallet_address: walletAddress,
-          recipient_user_id: current.cta.payload.recipient_user_id,
-          amount_zpts: current.cta.payload.amount_zpts || 10,
-          message: current.cta.payload.message,
+          sender_wallet: walletAddress,
+          recipient_wallet: recipientWallet,
+          amount,
+          message,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Assist request failed");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || "Assist request failed");
       }
 
-      setHistory((prev) => [
-        ...prev.slice(-9),
-        { id: current.id, category: current.category },
-      ]);
-
-      setIsVisible(false);
-
-      setTimeout(() => {
-        const nextIndex = pickNextTickerIndex(items, currentIndex, history);
-        setCurrentIndex(nextIndex);
-        setIsVisible(true);
-      }, FADE_MS);
+      handleAdvanceTicker();
     } catch (error) {
       console.error("Failed to send assist:", error);
     } finally {
@@ -128,21 +162,7 @@ export default function NewsTicker() {
         <div className="mx-auto w-full max-w-[1680px] px-3 py-2 xl:px-6 2xl:px-8">
           <div className="mx-auto max-w-lg xl:max-w-[900px] 2xl:max-w-[980px]">
             <div className="relative overflow-hidden rounded-2xl border border-cyan-500/15 bg-[#0b1222]/95 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-              <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3">
-                <motion.div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5"
-                  animate={{
-                    boxShadow: [
-                      "0 0 0 rgba(0,0,0,0)",
-                      "0 0 14px rgba(34,211,238,0.18)",
-                      "0 0 0 rgba(0,0,0,0)",
-                    ],
-                  }}
-                  transition={{ duration: 2.2, repeat: Infinity }}
-                >
-                  <Icon className={`h-4 w-4 ${meta.color}`} />
-                </motion.div>
-
+              <div className="flex items-center gap-3 px-3 py-2.5">
                 <span
                   className={`hidden shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold tracking-[0.18em] sm:inline-flex ${meta.chipClass}`}
                 >
@@ -160,29 +180,15 @@ export default function NewsTicker() {
                         transition={{ duration: 0.25 }}
                         className="overflow-hidden"
                       >
-                        {(isClickable || hasAssist) ? (
-                          <div className="flex items-center gap-2">
-                            <motion.span
-                              className="whitespace-nowrap text-[13px] text-gray-100"
-                              title={current.text || ""}
-                              initial={{ x: "100%" }}
-                              animate={{ x: "-100%" }}
-                              transition={{ duration: 12, ease: "linear" }}
-                            >
-                              {current.text || ""}
-                            </motion.span>
-                          </div>
-                        ) : (
-                          <motion.p
-                            className="whitespace-nowrap text-[13px] text-gray-100"
-                            title={current.text || ""}
-                            initial={{ x: "100%" }}
-                            animate={{ x: "-100%" }}
-                            transition={{ duration: 12, ease: "linear" }}
-                          >
-                            {current.text || ""}
-                          </motion.p>
-                        )}
+                        <motion.p
+                          className="whitespace-nowrap text-[13px] text-gray-100"
+                          title={current.text || ""}
+                          initial={{ x: "100%" }}
+                          animate={{ x: "-100%" }}
+                          transition={{ duration: 12, ease: "linear" }}
+                        >
+                          {current.text || ""}
+                        </motion.p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -212,7 +218,9 @@ export default function NewsTicker() {
                         : "border-white/5 bg-white/[0.03] text-gray-500"
                     }`}
                   >
-                    {isClickable ? CTA_META.source.label : current.sourceLabel || "ZWAP"}
+                    {isClickable
+                      ? CTA_META.source.label
+                      : current.sourceLabel || "ZWAP"}
                   </button>
                 )}
 
