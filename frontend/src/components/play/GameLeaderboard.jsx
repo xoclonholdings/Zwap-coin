@@ -11,7 +11,6 @@ import {
   Loader2,
   BarChart3,
 } from "lucide-react";
-import { toast } from "sonner";
 
 const GAME_ROTATION = [
   { id: "zbrickles", label: "zBrickles", color: "cyan" },
