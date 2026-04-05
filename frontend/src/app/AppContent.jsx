@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
 
-import MobileAppFrame from "@/components/layout/MobileAppFrame";
+import MobileAppFrame from "@/components/ui/layout/MobileAppFrame";
 import AppHeader from "../components/ui/dashboard/AppHeader";
 import NewsTicker from "../components/ui/dashboard/NewsTicker";
 import Dashboard from "../components/ui/dashboard/Dashboard";
