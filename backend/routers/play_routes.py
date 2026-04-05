@@ -3,6 +3,13 @@ Play (Games) Router
 ====================
 Routes for trivia, game results, and future game types.
 Reward calculations are delegated to reward_service.
+
+Spec-aligned behavior:
+- PLAY earns zPts only
+- Leaderboard score is competitive and not hard-capped here
+- Rewards are normalized, diminished, and capped economically
+- Movement dependency reduces PLAY farming
+- Achievement bonuses support standout performance
 """
 
 import logging
@@ -10,8 +17,12 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-# Reward calculations are handled by the shared reward service.
-from services.reward_service import calculate_play_reward
+from services.reward_service import (
+    calculate_play_reward,
+    get_tier_multipliers,
+    enforce_daily_caps,
+)
+from services.badge_service import evaluate_badges, persist_badge_updates
 
 router = APIRouter(prefix="/games", tags=["Play"])
 
@@ -27,31 +38,17 @@ class GameResultRequest(BaseModel):
     score: int
     level: int = 1
     blocks_destroyed: int = 0
+    session_duration_seconds: int = 0
+    completed: bool = True
 
-
-MAX_GAME_SCORES = {
-    "zbrickles": 5000,
-    "ztrivia": 50,
-    "ztetris": 10000,
-    "zslots": 8000,
-}
-
-DAILY_ZWAP_CAPS = {
-    "starter": 500.0,
-    "plus": 1500.0,
-}
 
 TIERS = {
     "starter": {
         "name": "Starter",
-        "zwap_multiplier": 1.0,
-        "daily_zpts_cap": 75,
         "games": ["zbrickles", "ztrivia"],
     },
     "plus": {
         "name": "Plus",
-        "zwap_multiplier": 1.5,
-        "daily_zpts_cap": 150,
         "games": ["zbrickles", "ztrivia", "ztetris", "zslots"],
     },
 }
@@ -62,7 +59,7 @@ def get_user_tier_config(tier: str) -> dict:
 
 
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
-    """Check if daily Z Points should be reset."""
+    """Check if daily zPts should be reset."""
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zpts_reset")
 
@@ -71,40 +68,69 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
         if last_reset_dt.date() < now.date():
             await db.users.update_one(
                 {"wallet_address": user["wallet_address"]},
-                {"$set": {"daily_zpts_earned": 0, "last_zpts_reset": now.isoformat()}},
+                {
+                    "$set": {
+                        "daily_zpts_earned": 0,
+                        "last_zpts_reset": now.isoformat(),
+                        "games_played_today": 0,
+                    }
+                },
             )
             user["daily_zpts_earned"] = 0
+            user["games_played_today"] = 0
+            user["last_zpts_reset"] = now.isoformat()
     else:
         await db.users.update_one(
             {"wallet_address": user["wallet_address"]},
-            {"$set": {"daily_zpts_earned": 0, "last_zpts_reset": now.isoformat()}},
+            {
+                "$set": {
+                    "daily_zpts_earned": 0,
+                    "last_zpts_reset": now.isoformat(),
+                    "games_played_today": 0,
+                }
+            },
         )
         user["daily_zpts_earned"] = 0
+        user["games_played_today"] = 0
+        user["last_zpts_reset"] = now.isoformat()
 
     return user
 
 
-async def check_and_reset_daily_zwap(db, user: dict) -> dict:
-    """Reset daily ZWAP earned at midnight UTC."""
-    now = datetime.now(timezone.utc)
-    last_reset = user.get("last_zwap_reset")
+def get_session_diminishing_multiplier(games_played_today: int) -> float:
+    next_session_number = int(games_played_today or 0) + 1
 
-    if last_reset:
-        last_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
-        if last_dt.date() < now.date():
-            await db.users.update_one(
-                {"wallet_address": user["wallet_address"]},
-                {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}},
-            )
-            user["daily_zwap_earned"] = 0.0
-    else:
-        await db.users.update_one(
-            {"wallet_address": user["wallet_address"]},
-            {"$set": {"daily_zwap_earned": 0.0, "last_zwap_reset": now.isoformat()}},
-        )
-        user["daily_zwap_earned"] = 0.0
+    if next_session_number <= 3:
+        return 1.0
+    if next_session_number <= 6:
+        return 0.5
+    return 0.1
 
-    return user
+
+def get_move_dependency_multiplier(today_steps: int) -> float:
+    safe_steps = int(today_steps or 0)
+
+    if safe_steps < 1000:
+        return 0.2
+    if safe_steps < 2000:
+        return 0.5
+    return 1.0
+
+
+def get_personal_best_field(game_type: str) -> str:
+    return f"personal_best_{game_type}"
+
+
+def get_daily_best_field(game_type: str) -> str:
+    return f"daily_best_{game_type}"
+
+
+def get_daily_best_count_field(game_type: str) -> str:
+    return f"daily_best_count_{game_type}"
+
+
+def get_personal_best_rewarded_day_field(game_type: str) -> str:
+    return f"personal_best_rewarded_day_{game_type}"
 
 
 @router.get("/trivia/questions")
@@ -131,82 +157,157 @@ async def submit_game_result(
     game_data: GameResultRequest,
     request: Request,
 ):
-    """Submit game result and claim rewards (ZWAP + Z Points)."""
+    """Submit game result and claim zPts rewards."""
     db = request.app.state.db
     wallet = wallet_address.lower()
 
-    max_score = MAX_GAME_SCORES.get(game_data.game_type, 5000)
-    if game_data.score > max_score:
-        logging.warning(
-            f"Anti-cheat flag: {wallet} submitted {game_data.game_type} score {game_data.score} (max {max_score})"
-        )
-        raise HTTPException(status_code=400, detail="Invalid score")
-
     if game_data.score < 0 or game_data.level < 1:
         raise HTTPException(status_code=400, detail="Invalid game data")
+
+    if game_data.session_duration_seconds < 0:
+        raise HTTPException(status_code=400, detail="Invalid session duration")
 
     user = await db.users.find_one({"wallet_address": wallet})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     tier = user.get("tier", "starter")
-    tier_config = get_user_tier_config(tier)
-    
-    if game_data.game_type not in tier_config["games"]:
+    tier_ui_config = get_user_tier_config(tier)
+
+    if game_data.game_type not in tier_ui_config["games"]:
         raise HTTPException(
             status_code=403,
-            detail=f"Game not available in {tier_config['name']} tier",
+            detail=f"Game not available in {tier_ui_config['name']} tier",
         )
-    
+
     user = await check_and_reset_daily_zpts(db, user)
-    daily_zpts = user.get("daily_zpts_earned", 0)
-    zpts_cap = tier_config["daily_zpts_cap"]
-    
-    user = await check_and_reset_daily_zwap(db, user)
-    daily_zwap = user.get("daily_zwap_earned", 0.0)
-    zwap_cap = DAILY_ZWAP_CAPS.get(tier, 500.0)
-    
-    rewards = await calculate_play_reward(
-        game_type=game_data.game_type,
-        score=game_data.score,
-        level=game_data.level,
+    daily_zpts = int(user.get("daily_zpts_earned", 0) or 0)
+    games_played_today = int(user.get("games_played_today", 0) or 0)
+    today_steps = int(user.get("daily_steps", 0) or 0)
+
+    tier_reward_config = await get_tier_multipliers(tier)
+    zpts_cap = int(tier_reward_config["daily_zpts_cap"])
+
+    cap_check = await enforce_daily_caps(
+        wallet_address=wallet,
         tier=tier,
-        blocks_destroyed=game_data.blocks_destroyed,
+        earned_today=daily_zpts,
+        cap_type="zpts",
     )
 
-    zpts_to_add = max(0, min(rewards["zpts"], zpts_cap - daily_zpts))
-    zwap_to_add = max(0.0, min(rewards["zwap"], zwap_cap - daily_zwap))
+    if cap_check["capped"]:
+        raise HTTPException(
+            status_code=429,
+            detail="Daily zPts earning limit reached. Come back tomorrow!",
+        )
+
+    try:
+        rewards = await calculate_play_reward(
+            game_type=game_data.game_type,
+            score=game_data.score,
+            level=game_data.level,
+            tier=tier,
+            blocks_destroyed=game_data.blocks_destroyed,
+        )
+    except ValueError as e:
+        logging.warning(
+            f"Game reward validation failed for {wallet} / {game_data.game_type}: {str(e)}"
+        )
+        raise HTTPException(status_code=400, detail=str(e))
+
+    base_zpts = int(rewards["zpts"])
+
+    session_multiplier = get_session_diminishing_multiplier(games_played_today)
+    move_multiplier = get_move_dependency_multiplier(today_steps)
+
+    adjusted_base_zpts = int(round(base_zpts * session_multiplier * move_multiplier))
+    adjusted_base_zpts = max(adjusted_base_zpts, 0)
+
+    today_key = datetime.now(timezone.utc).date().isoformat()
+
+    personal_best_field = get_personal_best_field(game_data.game_type)
+    daily_best_field = get_daily_best_field(game_data.game_type)
+    daily_best_count_field = get_daily_best_count_field(game_data.game_type)
+    personal_best_rewarded_day_field = get_personal_best_rewarded_day_field(game_data.game_type)
+
+    previous_personal_best = int(user.get(personal_best_field, 0) or 0)
+    previous_daily_best = int(user.get(daily_best_field, 0) or 0)
+    previous_daily_best_count = int(user.get(daily_best_count_field, 0) or 0)
+    previous_personal_best_rewarded_day = user.get(personal_best_rewarded_day_field)
+
+    personal_best_achieved = game_data.score > previous_personal_best
+    personal_best_bonus = 0
+    if personal_best_achieved and previous_personal_best_rewarded_day != today_key:
+        personal_best_bonus = 10
+
+    daily_best_achieved = game_data.score > previous_daily_best
+    daily_best_bonus = 0
+    if daily_best_achieved and previous_daily_best_count < 3:
+        daily_best_bonus = 5
+
+    total_requested_zpts = adjusted_base_zpts + personal_best_bonus + daily_best_bonus
+    zpts_to_add = max(0, min(total_requested_zpts, int(cap_check["remaining"])))
+
+    achievement_bonus_requested = personal_best_bonus + daily_best_bonus
+    achievement_bonus_awarded = max(0, zpts_to_add - adjusted_base_zpts)
+    if achievement_bonus_awarded > achievement_bonus_requested:
+        achievement_bonus_awarded = achievement_bonus_requested
+
+    set_updates = {
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if personal_best_achieved:
+        set_updates[personal_best_field] = game_data.score
+        if personal_best_bonus > 0:
+            set_updates[personal_best_rewarded_day_field] = today_key
+
+    if daily_best_achieved:
+        set_updates[daily_best_field] = game_data.score
+        if daily_best_bonus > 0:
+            set_updates[daily_best_count_field] = previous_daily_best_count + 1
 
     await db.users.update_one(
         {"wallet_address": wallet},
         {
             "$inc": {
-                "zwap_balance": zwap_to_add,
                 "zpts_balance": zpts_to_add,
                 "games_played": 1,
-                "total_earned": zwap_to_add,
+                "games_played_today": 1,
                 "daily_zpts_earned": zpts_to_add,
-                "daily_zwap_earned": zwap_to_add,
-            }
+                "badge_zpts_earned": zpts_to_add,
+            },
+            "$set": set_updates,
         },
     )
 
-    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+    updated_user = await db.users.find_one({"wallet_address": wallet})
+
+    badge_result = evaluate_badges(updated_user)
+    await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
+    updated_user.update(badge_result["updates"])
 
     return {
         "game": game_data.game_type,
         "score": game_data.score,
         "level": game_data.level,
-        "zwap_earned": round(zwap_to_add, 2),
         "zpts_earned": zpts_to_add,
-        "zpts_capped": zpts_to_add < rewards["zpts"],
-        "zwap_capped": zwap_to_add < rewards["zwap"],
-        "daily_zpts_remaining": zpts_cap - updated_user.get("daily_zpts_earned", 0),
-        "daily_zwap_remaining": round(
-            zwap_cap - updated_user.get("daily_zwap_earned", 0),
-            2,
+        "base_zpts": adjusted_base_zpts,
+        "achievement_bonus_zpts": achievement_bonus_awarded,
+        "personal_best_achieved": personal_best_achieved,
+        "daily_best_achieved": daily_best_achieved,
+        "session_diminishing_multiplier": session_multiplier,
+        "move_dependency_multiplier": move_multiplier,
+        "zpts_capped": zpts_to_add < total_requested_zpts,
+        "daily_zpts_remaining": max(
+            0,
+            zpts_cap - int(updated_user.get("daily_zpts_earned", 0)),
         ),
-        "new_zwap_balance": round(updated_user.get("zwap_balance", 0), 2),
-        "new_zpts_balance": updated_user.get("zpts_balance", 0),
-        "message": f"Earned {zwap_to_add:.2f} ZWAP + {zpts_to_add} zPts!",
+        "new_zpts_balance": int(updated_user.get("zpts_balance", 0)),
+        "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
+        "badge_earner_level": updated_user.get("badge_earner_level", 0),
+        "badge_earner_mastered": updated_user.get("badge_earner_mastered", False),
+        "badge_trophies": updated_user.get("badge_trophies", 0),
+        "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
+        "message": f"Earned {zpts_to_add} zPts!",
     }
