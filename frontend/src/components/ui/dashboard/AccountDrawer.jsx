@@ -7,10 +7,18 @@ export default function AccountDrawer({
   onOpenChange,
   trigger,
 }) {
+  const handleOpen = () => {
+    onOpenChange?.(true);
+  };
+
+  const handleClose = () => {
+    onOpenChange?.(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       {trigger ? (
-        <div onClick={() => onOpenChange?.(true)} className="cursor-pointer">
+        <div onClick={handleOpen} className="cursor-pointer">
           {trigger}
         </div>
       ) : null}
@@ -21,7 +29,7 @@ export default function AccountDrawer({
       >
         <AccountPanelContent
           showHeader={true}
-          onClose={() => onOpenChange?.(false)}
+          onClose={handleClose}
         />
       </SheetContent>
     </Sheet>
