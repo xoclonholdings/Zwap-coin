@@ -23,39 +23,6 @@ function formatPace(secondsPerMile) {
   return `${mins}:${String(secs).padStart(2, "0")} / mi`;
 }
 
-function clamp(value, min = 0, max = 1) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function buildSessionMilestones(steps) {
-  return [
-    {
-      id: "milestone-1",
-      label: "1K",
-      threshold: 1000,
-      progress: clamp(steps / 1000),
-    },
-    {
-      id: "milestone-2",
-      label: "5K",
-      threshold: 5000,
-      progress: clamp((steps - 1000) / 4000),
-    },
-    {
-      id: "milestone-3",
-      label: "10K",
-      threshold: 10000,
-      progress: clamp((steps - 5000) / 5000),
-    },
-    {
-      id: "milestone-4",
-      label: "15K",
-      threshold: 15000,
-      progress: clamp((steps - 10000) / 5000),
-    },
-  ];
-}
-
 export default function MoveTab() {
   const { user, walletAddress, refreshUser } = useApp();
 
@@ -147,6 +114,7 @@ export default function MoveTab() {
     ) {
       try {
         const permission = await DeviceMotionEvent.requestPermission();
+
         if (permission !== "granted") {
           toast.error("Motion permission required");
           return;
@@ -162,16 +130,8 @@ export default function MoveTab() {
     toast.success("Session started");
   };
 
-  const handleReset = () => {
-    if (isTracking) return;
-
-    setSteps(0);
-    setSessionSeconds(0);
-    setPotentialReward(0);
-  };
-
   const handleClaim = async () => {
-    if (!hasWallet || steps === 0) return;
+    if (!hasWallet || steps === 0 || isTracking) return;
 
     setIsClaiming(true);
 
@@ -197,16 +157,14 @@ export default function MoveTab() {
 
       toast.success(result?.message || "Rewards recorded to your account!");
       await refreshUser();
-      handleReset();
+      setSteps(0);
+      setSessionSeconds(0);
+      setPotentialReward(0);
     } catch (error) {
       toast.error(error?.message || "Failed to record rewards");
     } finally {
       setIsClaiming(false);
     }
-  };
-
-  const handleConnectWallet = () => {
-    toast.info("Connect your wallet to claim rewards");
   };
 
   const progressPercent = Math.min((steps / stepGoal) * 100, 100);
@@ -220,8 +178,6 @@ export default function MoveTab() {
       ? "--"
       : formatPace(sessionSeconds / distanceMiles);
 
-  const sessionMilestones = buildSessionMilestones(steps);
-
   return (
     <>
       <MoveRewardsFeedback
@@ -232,9 +188,7 @@ export default function MoveTab() {
       />
 
       <MoveHome
-        user={user}
         isPlus={isPlus}
-        multiplier={multiplier}
         dailyZptsCap={dailyZptsCap}
         dailyZptsEarned={dailyZptsEarned}
         steps={steps}
@@ -249,11 +203,8 @@ export default function MoveTab() {
         pace={pace}
         distanceMiles={distanceMiles}
         calories={calories}
-        sessionMilestones={sessionMilestones}
         onToggleTracking={handleToggleTracking}
-        onReset={handleReset}
         onClaim={handleClaim}
-        onConnectWallet={handleConnectWallet}
       />
     </>
   );
