@@ -12,49 +12,55 @@ import StatusPopup from "@/components/ui/StatusPopup";
 import { generateDailyTasks } from "@/lib/tasks/generateDailyTasks";
 import { getNextBadge } from "@/lib/badges/getNextBadge";
 
-function generateUsername(seedSource) {
-  if (!seedSource) return "Zwapper";
+const ADJECTIVES = [
+  "Nova",
+  "Pixel",
+  "Quantum",
+  "Echo",
+  "Neon",
+  "Solar",
+  "Cyber",
+  "Hyper",
+  "Shadow",
+  "Turbo",
+];
 
-  const seedString = String(seedSource).toLowerCase().trim();
+const NOUNS = [
+  "Runner",
+  "Walker",
+  "Strider",
+  "Pilot",
+  "Glider",
+  "Breaker",
+  "Phantom",
+  "Rider",
+  "Explorer",
+  "Voyager",
+];
 
-  const adjectives = [
-    "Nova",
-    "Pixel",
-    "Quantum",
-    "Echo",
-    "Neon",
-    "Solar",
-    "Cyber",
-    "Hyper",
-    "Shadow",
-    "Turbo",
-  ];
-
-  const nouns = [
-    "Runner",
-    "Walker",
-    "Strider",
-    "Pilot",
-    "Glider",
-    "Breaker",
-    "Phantom",
-    "Rider",
-    "Explorer",
-    "Voyager",
-  ];
-
+function hashString(value = "") {
   let hash = 0;
-  for (let i = 0; i < seedString.length; i++) {
-    hash = (hash << 5) - hash + seedString.charCodeAt(i);
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
     hash |= 0;
   }
+  return Math.abs(hash);
+}
 
-  const safeHash = Math.abs(hash);
-  const adjIndex = safeHash % adjectives.length;
-  const nounIndex = Math.floor(safeHash / 7) % nouns.length;
-  const num = safeHash % 999;
+function generateUsername({ walletAddress, email }) {
+  const seedSource = walletAddress || email || "";
+  if (!seedSource) return "Zwapper";
 
-  return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
+  const seed =
+    walletAddress && walletAddress.startsWith("0x")
+      ? parseInt(walletAddress.slice(2, 10), 16)
+      : hashString(String(seedSource).toLowerCase());
+
+  const adjIndex = Math.abs(seed) % ADJECTIVES.length;
+  const nounIndex = Math.abs(Math.floor(seed / 8)) % NOUNS.length;
+  const num = Math.abs(seed) % 999;
+
+  return `${ADJECTIVES[adjIndex]}${NOUNS[nounIndex]}${num}`;
 }
 
 const taskIconMap = {
@@ -240,15 +246,12 @@ export default function Dashboard() {
     const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
 
     if (safeUser?.custom_username) return safeUser.custom_username;
+    if (safeUser?.username) return safeUser.username;
 
-    const seedSource =
-      walletAddress ||
-      safeUser?.email ||
-      safeAuthUser?.email ||
-      safeUser?.username ||
-      safeAuthUser?.username;
-
-    return generateUsername(seedSource);
+    return generateUsername({
+      walletAddress,
+      email: safeAuthUser?.email || safeUser?.email,
+    });
   }, [user, authUser, walletAddress]);
 
   const safeStepGoal = Math.max(stepGoal, 1);
