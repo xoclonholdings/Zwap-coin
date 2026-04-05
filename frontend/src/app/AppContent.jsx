@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
 
-import OfflineNotice from "../components/ui/dashboard/OfflineNotice";
 import AppHeader from "../components/ui/dashboard/AppHeader";
 import NewsTicker from "../components/ui/dashboard/NewsTicker";
 import Dashboard from "../components/ui/dashboard/Dashboard";
@@ -198,11 +197,7 @@ export default function AppContent() {
   return (
     <div className="min-h-screen bg-[#0a0b1e]">
       <div className="h-screen flex flex-col overflow-hidden">
-        <AppHeader />
-
-        <div className="px-4 pt-20 pb-2 max-w-lg mx-auto w-full">
-          <OfflineNotice isOnline={isOnline} />
-        </div>
+        <AppHeader isOnline={isOnline} />
 
         <main className="flex-1 overflow-y-auto">
           <Routes>
