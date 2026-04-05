@@ -32,8 +32,8 @@ function attemptDesktopResize() {
 
     window.resizeTo(width, height);
     window.moveTo(left, top);
-  } catch (e) {
-    console.log("Resize blocked:", e);
+  } catch (error) {
+    console.log("Resize blocked:", error);
   }
 }
 
@@ -43,9 +43,8 @@ export default function MobileAppFrame({ children }) {
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-[#050510] text-white">
-      {/* CENTERED MOBILE FRAME */}
-      <div className="mx-auto w-full max-w-[430px] min-h-screen flex flex-col">
+    <div className="min-h-[100dvh] w-full bg-[#050510] text-white">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden border-x border-white/5 bg-[#0a0b1e] shadow-[0_0_40px_rgba(0,0,0,0.35)]">
         {children}
       </div>
     </div>
