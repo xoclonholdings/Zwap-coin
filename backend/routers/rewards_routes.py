@@ -117,7 +117,9 @@ async def claim_daily_reward(wallet_address: str, request: Request):
                 detail={
                     "message": "Daily reward already claimed",
                     "last_daily_claim": last_claim.isoformat(),
-                    "next_claim_at": (last_claim + timedelta(hours=CLAIM_WINDOW_HOURS)).isoformat(),
+                    "next_claim_at": (
+                        last_claim + timedelta(hours=CLAIM_WINDOW_HOURS)
+                    ).isoformat(),
                     "current_streak": current_streak,
                 },
             )
@@ -139,8 +141,10 @@ async def claim_daily_reward(wallet_address: str, request: Request):
             "updated_at": now.isoformat(),
         },
         "$inc": {
-            "zpts_balance": reward_amount
-        }
+            "zpts_balance": reward_amount,
+            "badge_login_days": 1,
+            "badge_zpts_earned": reward_amount,
+        },
     }
 
     result = await db.users.update_one(
@@ -150,6 +154,14 @@ async def claim_daily_reward(wallet_address: str, request: Request):
 
     if result.modified_count != 1:
         raise HTTPException(status_code=500, detail="Failed to update daily reward")
+
+    updated_user = await db.users.find_one({"wallet_address": wallet})
+
+    badge_updates = evaluate_badges(updated_user)
+
+    await persist_badge_updates(db, updated_user["id"], badge_updates)
+
+    updated_user.update(badge_updates)
 
     await db.reward_claims.insert_one({
         "wallet_address": wallet,
@@ -166,7 +178,10 @@ async def claim_daily_reward(wallet_address: str, request: Request):
         "reward_type": "daily",
         "streak": new_streak,
         "reward_zpts": reward_amount,
-        "zpts_balance": new_zpts_balance,
+        "zpts_balance": updated_user.get("zpts_balance", new_zpts_balance),
+        "badge_login_days": updated_user.get("badge_login_days", 0),
+        "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
+        "badge_starter_completed": updated_user.get("badge_starter_completed", False),
         "last_daily_claim": now.isoformat(),
         "message": f"Claimed Day {min(new_streak, 7)} daily reward",
     }
