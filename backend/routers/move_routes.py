@@ -3,6 +3,11 @@ Move-to-Earn Router
 ====================
 Routes for step submission, session tracking, and anti-cheat.
 Reward calculations are delegated to reward_service.
+
+Updated economy:
+- MOVE earns zPts
+- daily zPts caps enforced
+- badge progress updates for movement + lifetime earning
 """
 
 from collections import defaultdict
@@ -19,6 +24,7 @@ from services.reward_service import (
 )
 
 from services.activity_service import emit_activity_event
+from services.badge_service import evaluate_badges, persist_badge_updates
 
 router = APIRouter(prefix="/move", tags=["Move"])
 
@@ -45,10 +51,10 @@ def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
     return False
 
 
-async def check_and_reset_daily_zwap(db, user: dict) -> dict:
-    """Reset daily ZWAP earned at midnight UTC."""
+async def check_and_reset_daily_zpts(db, user: dict) -> dict:
+    """Reset daily zPts earned at midnight UTC."""
     now = datetime.now(timezone.utc)
-    last_reset = user.get("last_zwap_reset")
+    last_reset = user.get("last_zpts_reset")
 
     if last_reset:
         last_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
@@ -57,23 +63,25 @@ async def check_and_reset_daily_zwap(db, user: dict) -> dict:
                 {"wallet_address": user["wallet_address"]},
                 {
                     "$set": {
-                        "daily_zwap_earned": 0.0,
-                        "last_zwap_reset": now.isoformat(),
+                        "daily_zpts_earned": 0,
+                        "last_zpts_reset": now.isoformat(),
                     }
                 },
             )
-            user["daily_zwap_earned"] = 0.0
+            user["daily_zpts_earned"] = 0
+            user["last_zpts_reset"] = now.isoformat()
     else:
         await db.users.update_one(
             {"wallet_address": user["wallet_address"]},
             {
                 "$set": {
-                    "daily_zwap_earned": 0.0,
-                    "last_zwap_reset": now.isoformat(),
+                    "daily_zpts_earned": 0,
+                    "last_zpts_reset": now.isoformat(),
                 }
             },
         )
-        user["daily_zwap_earned"] = 0.0
+        user["daily_zpts_earned"] = 0
+        user["last_zpts_reset"] = now.isoformat()
 
     return user
 
@@ -84,7 +92,7 @@ async def claim_step_rewards(
     steps_data: StepsUpdate,
     request: Request,
 ):
-    """Claim ZWAP rewards for steps (no Z Points from walking)."""
+    """Claim zPts rewards for steps."""
     db = request.app.state.db
     wallet = wallet_address.lower()
 
@@ -112,21 +120,21 @@ async def claim_step_rewards(
 
     tier = user.get("tier", "starter")
 
-    user = await check_and_reset_daily_zwap(db, user)
-    daily_zwap = float(user.get("daily_zwap_earned", 0.0) or 0.0)
+    user = await check_and_reset_daily_zpts(db, user)
+    daily_zpts = int(user.get("daily_zpts_earned", 0) or 0)
 
     tier_config = await get_tier_multipliers(tier)
     cap_check = await enforce_daily_caps(
         wallet_address=wallet,
         tier=tier,
-        earned_today=daily_zwap,
-        cap_type="zwap",
+        earned_today=daily_zpts,
+        cap_type="zpts",
     )
 
     if cap_check["capped"]:
         raise HTTPException(
             status_code=429,
-            detail="Daily ZWAP earning limit reached. Come back tomorrow!",
+            detail="Daily zPts earning limit reached. Come back tomorrow!",
         )
 
     try:
@@ -138,23 +146,34 @@ async def claim_step_rewards(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    rewards = min(reward_result["zwap"], cap_check["remaining"])
-    zwap_cap = tier_config["daily_zwap_cap"]
+    rewards = min(int(reward_result["zpts"]), int(cap_check["remaining"]))
+    zpts_cap = int(tier_config["daily_zpts_cap"])
+
+    update_doc = {
+        "$inc": {
+            "zpts_balance": rewards,
+            "total_steps": steps_data.steps,
+            "daily_zpts_earned": rewards,
+            "badge_zpts_earned": rewards,
+            "badge_step_days": 1,
+            "badge_sustained_move_days": 1,
+        },
+        "$set": {
+            "daily_steps": steps_data.steps,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    }
 
     await db.users.update_one(
         {"wallet_address": wallet},
-        {
-            "$inc": {
-                "zwap_balance": rewards,
-                "total_steps": steps_data.steps,
-                "total_earned": rewards,
-                "daily_zwap_earned": rewards,
-            },
-            "$set": {"daily_steps": steps_data.steps},
-        },
+        update_doc,
     )
 
     updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+
+    badge_updates = evaluate_badges(updated_user)
+    await persist_badge_updates(db, updated_user["id"], badge_updates)
+    updated_user.update(badge_updates)
 
     await emit_activity_event(
         db=db,
@@ -167,22 +186,27 @@ async def claim_step_rewards(
         metadata={
             "source": "move_steps_claim",
             "steps": steps_data.steps,
-            "reward_zwap": round(rewards, 2),
+            "reward_zpts": rewards,
             "tier": tier,
         },
     )
 
     return {
         "steps_counted": steps_data.steps,
-        "rewards_earned": round(rewards, 2),
-        "new_balance": round(updated_user.get("zwap_balance", 0), 2),
-        "daily_zwap_remaining": round(
-            zwap_cap - updated_user.get("daily_zwap_earned", 0),
-            2,
+        "rewards_earned": rewards,
+        "new_balance": int(updated_user.get("zpts_balance", 0)),
+        "daily_zpts_remaining": max(
+            0,
+            zpts_cap - int(updated_user.get("daily_zpts_earned", 0)),
         ),
         "tier": tier,
         "multiplier": tier_config["move"],
-        "message": f"Earned {rewards:.2f} ZWAP for {steps_data.steps} steps!",
+        "badge_step_days": updated_user.get("badge_step_days", 0),
+        "badge_sustained_move_days": updated_user.get("badge_sustained_move_days", 0),
+        "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
+        "badge_shaker_completed": updated_user.get("badge_shaker_completed", False),
+        "badge_mover_completed": updated_user.get("badge_mover_completed", False),
+        "message": f"Earned {rewards} zPts for {steps_data.steps} steps!",
     }
 
 
