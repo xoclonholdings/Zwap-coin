@@ -22,6 +22,8 @@ from routers import user_routes
 from routers import rewards_routes
 from routers import activity_routes
 
+from services.scheduler_service import start_scheduler, stop_scheduler
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -34,6 +36,7 @@ load_dotenv(ROOT_DIR / ".env")
 mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
+
 print("CONNECTED DB:", db.name)
 print("MONGO URL:", mongo_url)
 
@@ -160,6 +163,7 @@ api_router.include_router(swap_routes.router)
 api_router.include_router(leaderboard_routes.router)
 api_router.include_router(learn_routes.router)
 api_router.include_router(user_routes.router)
+api_router.include_router(rewards_routes.router)
 api_router.include_router(stripe_routes.router)
 api_router.include_router(activity_routes.router)
 
@@ -178,6 +182,15 @@ app.add_middleware(
 # ============ LIFECYCLE ============
 
 
+@app.on_event("startup")
+async def startup_app():
+    logging.info("ZWAP API startup initialized")
+    start_scheduler(app)
+
+
 @app.on_event("shutdown")
-async def shutdown_db_client():
+async def shutdown_app():
+    logging.info("ZWAP API shutdown initialized")
+    await stop_scheduler()
     client.close()
+    logging.info("MongoDB client closed")
