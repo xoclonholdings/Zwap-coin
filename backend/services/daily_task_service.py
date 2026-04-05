@@ -1,0 +1,270 @@
+"""
+Daily Task Service
+==================
+Resolves daily task state, detects full daily loop completion,
+and awards the full-loop bonus safely once per day.
+
+Spec-aligned daily task categories:
+- Login
+- Move
+- Play
+- Learn
+
+Core rules:
+- Each task can complete once per day
+- Full daily loop completion grants +25 zPts
+- Full daily loop completion increments badge_full_loop_days
+- Full daily loop completion is only awarded once per day
+"""
+
+from datetime import datetime, timezone
+from typing import Dict, Any
+
+from services.reward_service import enforce_daily_caps, get_tier_multipliers
+from services.badge_service import evaluate_badges, persist_badge_updates
+
+
+LOGIN_TASK_REWARD = 10
+MOVE_TASK_REWARD = 25
+PLAY_TASK_REWARD = 20
+LEARN_TASK_REWARD = 20
+FULL_LOOP_BONUS = 25
+
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+def today_key() -> str:
+    return utc_now().date().isoformat()
+
+
+def _safe_int(value: Any) -> int:
+    try:
+        return max(int(value or 0), 0)
+    except Exception:
+        return 0
+
+
+def get_daily_task_state(user: dict) -> Dict[str, Any]:
+    """
+    Returns the user's current task completion state for today.
+    This is read-only and does not write anything.
+    """
+    login_complete = bool(user.get("last_daily_claim"))
+    move_complete = _safe_int(user.get("daily_steps")) > 0
+    play_complete = _safe_int(user.get("games_played_today")) > 0
+    learn_complete = bool(user.get("daily_learn_completed"))
+
+    completed_count = sum([
+        1 if login_complete else 0,
+        1 if move_complete else 0,
+        1 if play_complete else 0,
+        1 if learn_complete else 0,
+    ])
+
+    full_loop_complete = (
+        login_complete and move_complete and play_complete and learn_complete
+    )
+
+    return {
+        "login": {
+            "key": "login",
+            "completed": login_complete,
+            "reward": LOGIN_TASK_REWARD,
+        },
+        "move": {
+            "key": "move",
+            "completed": move_complete,
+            "reward": MOVE_TASK_REWARD,
+        },
+        "play": {
+            "key": "play",
+            "completed": play_complete,
+            "reward": PLAY_TASK_REWARD,
+        },
+        "learn": {
+            "key": "learn",
+            "completed": learn_complete,
+            "reward": LEARN_TASK_REWARD,
+        },
+        "completed_count": completed_count,
+        "total_tasks": 4,
+        "full_loop_complete": full_loop_complete,
+    }
+
+
+async def maybe_mark_learn_task_complete(db, wallet_address: str) -> None:
+    """
+    Marks today's Learn task complete.
+    This is intended to be called by learn_routes when a qualifying
+    learn action succeeds.
+    """
+    wallet = wallet_address.lower()
+    await db.users.update_one(
+        {"wallet_address": wallet},
+        {
+            "$set": {
+                "daily_learn_completed": True,
+                "updated_at": utc_now().isoformat(),
+            }
+        },
+    )
+
+
+async def check_and_reset_daily_task_state(db, user: dict) -> dict:
+    """
+    Resets per-day daily task helper fields at UTC day boundary.
+    Does not erase lifetime counters.
+    """
+    now = utc_now()
+    last_reset = user.get("last_daily_task_reset")
+
+    should_reset = False
+
+    if last_reset:
+        last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+        if last_reset_dt.date() < now.date():
+            should_reset = True
+    else:
+        should_reset = True
+
+    if should_reset:
+        await db.users.update_one(
+            {"wallet_address": user["wallet_address"]},
+            {
+                "$set": {
+                    "daily_learn_completed": False,
+                    "daily_full_loop_completed": False,
+                    "last_daily_task_reset": now.isoformat(),
+                    "updated_at": now.isoformat(),
+                }
+            },
+        )
+        user["daily_learn_completed"] = False
+        user["daily_full_loop_completed"] = False
+        user["last_daily_task_reset"] = now.isoformat()
+
+    return user
+
+
+async def maybe_process_full_daily_loop(db, wallet_address: str) -> Dict[str, Any]:
+    """
+    Checks whether the user completed all four daily tasks.
+    If full loop is complete and not yet rewarded today:
+    - awards +25 zPts
+    - increments badge_full_loop_days
+    - marks daily_full_loop_completed
+    - evaluates badges
+
+    Returns a structured result indicating whether a reward was granted.
+    """
+    wallet = wallet_address.lower()
+
+    user = await db.users.find_one({"wallet_address": wallet})
+    if not user:
+        return {
+            "success": False,
+            "awarded": False,
+            "reason": "user_not_found",
+        }
+
+    user = await check_and_reset_daily_task_state(db, user)
+
+    task_state = get_daily_task_state(user)
+
+    if not task_state["full_loop_complete"]:
+        return {
+            "success": True,
+            "awarded": False,
+            "reason": "full_loop_not_complete",
+            "task_state": task_state,
+        }
+
+    if bool(user.get("daily_full_loop_completed", False)):
+        return {
+            "success": True,
+            "awarded": False,
+            "reason": "already_awarded_today",
+            "task_state": task_state,
+        }
+
+    tier = user.get("tier", "starter")
+    daily_zpts = _safe_int(user.get("daily_zpts_earned", 0))
+
+    tier_config = await get_tier_multipliers(tier)
+    cap_check = await enforce_daily_caps(
+        wallet_address=wallet,
+        tier=tier,
+        earned_today=daily_zpts,
+        cap_type="zpts",
+    )
+
+    if cap_check["capped"]:
+        # Even if capped, mark completion so the loop state is truthful.
+        await db.users.update_one(
+            {"wallet_address": wallet},
+            {
+                "$inc": {
+                    "badge_full_loop_days": 1,
+                },
+                "$set": {
+                    "daily_full_loop_completed": True,
+                    "updated_at": utc_now().isoformat(),
+                },
+            },
+        )
+
+        updated_user = await db.users.find_one({"wallet_address": wallet})
+        badge_result = evaluate_badges(updated_user)
+        await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
+
+        return {
+            "success": True,
+            "awarded": False,
+            "reason": "daily_cap_reached_loop_counted",
+            "task_state": task_state,
+            "full_loop_bonus": 0,
+        }
+
+    reward = min(FULL_LOOP_BONUS, int(cap_check["remaining"]))
+
+    await db.users.update_one(
+        {"wallet_address": wallet},
+        {
+            "$inc": {
+                "zpts_balance": reward,
+                "daily_zpts_earned": reward,
+                "badge_zpts_earned": reward,
+                "badge_full_loop_days": 1,
+            },
+            "$set": {
+                "daily_full_loop_completed": True,
+                "updated_at": utc_now().isoformat(),
+            },
+        },
+    )
+
+    updated_user = await db.users.find_one({"wallet_address": wallet})
+
+    badge_result = evaluate_badges(updated_user)
+    await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
+    updated_user.update(badge_result["updates"])
+
+    return {
+        "success": True,
+        "awarded": True,
+        "reason": "full_loop_rewarded",
+        "task_state": task_state,
+        "full_loop_bonus": reward,
+        "new_zpts_balance": _safe_int(updated_user.get("zpts_balance", 0)),
+        "daily_zpts_remaining": max(
+            0,
+            _safe_int(tier_config["daily_zpts_cap"]) - _safe_int(updated_user.get("daily_zpts_earned", 0)),
+        ),
+        "badge_full_loop_days": _safe_int(updated_user.get("badge_full_loop_days", 0)),
+        "badge_finisher_level": _safe_int(updated_user.get("badge_finisher_level", 0)),
+        "badge_finisher_mastered": bool(updated_user.get("badge_finisher_mastered", False)),
+        "badge_trophies": _safe_int(updated_user.get("badge_trophies", 0)),
+        "badge_trophy_bonus_percent": _safe_int(updated_user.get("badge_trophy_bonus_percent", 0)),
+    }
