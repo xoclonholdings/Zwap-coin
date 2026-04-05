@@ -6,7 +6,7 @@ import AppHeader from "../components/ui/dashboard/AppHeader";
 import NewsTicker from "../components/ui/dashboard/NewsTicker";
 import Dashboard from "../components/ui/dashboard/Dashboard";
 import TabNavigation from "../components/ui/dashboard/TabNavigation";
-import DesktopAppShell from "@/components/layout/DesktopAppShell";
+import DesktopAppShell from "@/components/ui/layout/DesktopAppShell";
 
 import SplashScreen from "../components/SplashScreen";
 import AboutPage from "../components/AboutPage";
