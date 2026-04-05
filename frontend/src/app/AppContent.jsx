@@ -200,7 +200,7 @@ export default function AppContent() {
       <div className="flex h-[100dvh] flex-col overflow-hidden">
         <AppHeader isOnline={isOnline} />
 
-        <main className="flex-1 overflow-y-auto pt-[84px]">
+        <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain pt-[84px]">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/move" element={<MoveTab />} />
