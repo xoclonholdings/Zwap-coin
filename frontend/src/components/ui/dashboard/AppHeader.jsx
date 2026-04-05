@@ -106,28 +106,14 @@ export default function AppHeader({ isOnline = true }) {
         ? "0.00"
         : "--";
 
-  const handleOpenStream = () => {
-    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
-      return;
-    }
-    setStreamOpen(true);
-  };
-
-  const handleOpenAccount = () => {
-    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
-      return;
-    }
-    setSettingsOpen(true);
-  };
-
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-40 border-b border-cyan-500/20 bg-[#0a0b1e]/95 backdrop-blur-lg">
-        <div className="mx-auto w-full max-w-lg px-4 py-3 xl:max-w-[1680px] xl:px-6 2xl:px-8">
+      <header className="fixed left-1/2 top-0 z-40 w-full max-w-[430px] -translate-x-1/2 border-b border-cyan-500/20 bg-[#0a0b1e]/95 backdrop-blur-lg">
+        <div className="w-full px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <motion.button
               type="button"
-              onClick={handleOpenStream}
+              onClick={() => setStreamOpen(true)}
               className="relative min-w-[120px] max-w-[144px] overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_rgba(20,26,48,0.92)_45%,_rgba(15,18,34,0.98)_100%)] px-3 py-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -154,8 +140,7 @@ export default function AppHeader({ isOnline = true }) {
                   </p>
                   <div className="flex items-center gap-1 text-[11px] text-gray-300">
                     <Play className="h-3 w-3" />
-                    <span className="xl:hidden">Open</span>
-                    <span className="hidden xl:inline">Live</span>
+                    <span>Open</span>
                   </div>
                 </div>
               </div>
@@ -230,7 +215,7 @@ export default function AppHeader({ isOnline = true }) {
 
             <motion.button
               type="button"
-              onClick={handleOpenAccount}
+              onClick={() => setSettingsOpen(true)}
               className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
               data-testid="profile-badge"
               whileHover={{ scale: 1.08 }}
@@ -261,16 +246,12 @@ export default function AppHeader({ isOnline = true }) {
         </div>
       </header>
 
-      <div className="xl:hidden">
-        <AccountDrawer
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-        />
-      </div>
+      <AccountDrawer
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
 
-      <div className="xl:hidden">
-        <StreamPanel open={streamOpen} onOpenChange={setStreamOpen} />
-      </div>
+      <StreamPanel open={streamOpen} onOpenChange={setStreamOpen} />
     </>
   );
 }
