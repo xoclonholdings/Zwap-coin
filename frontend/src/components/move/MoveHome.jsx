@@ -1,8 +1,8 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Footprints, TimerReset, TrendingUp } from "lucide-react";
+import { Footprints } from "lucide-react";
 
 import MoveCoreMovementCard from "@/components/move/MoveCoreMovementCard";
+import MoveSessionProgressCard from "@/components/move/MoveSessionProgressCard";
 
 export default function MoveHome({
   user,
@@ -18,10 +18,12 @@ export default function MoveHome({
   isTracking,
   isClaiming,
   potentialReward,
-  paceZone,
-  tiers,
   hasWallet,
-  onStartStop,
+  pace,
+  distanceMiles,
+  calories,
+  sessionMilestones,
+  onToggleTracking,
   onReset,
   onClaim,
   onConnectWallet,
@@ -41,7 +43,7 @@ export default function MoveHome({
                 </p>
 
                 <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
-                  {isPlus ? "Plus" : "Starter"}
+                  {isPlus ? "Zitizen" : "Zwapper"}
                 </div>
               </div>
 
@@ -49,7 +51,7 @@ export default function MoveHome({
                 Move & Earn
               </h1>
               <p className="mt-1 text-sm text-white/55">
-                Steps, streaks, and reward flow.
+                Walk, build momentum, and stack progress.
               </p>
             </div>
 
@@ -91,108 +93,26 @@ export default function MoveHome({
         <MoveCoreMovementCard
           isTracking={isTracking}
           sessionSeconds={sessionSeconds}
-          multiplier={multiplier}
-          isPlus={isPlus}
           steps={steps}
           stepGoal={stepGoal}
           progressPercent={progressPercent}
           remainingSteps={remainingSteps}
           potentialReward={potentialReward}
-          paceZone={paceZone}
           isClaiming={isClaiming}
           hasWallet={hasWallet}
-          onStartStop={onStartStop}
+          pace={pace}
+          onToggleTracking={onToggleTracking}
           onReset={onReset}
           onClaim={onClaim}
           onConnectWallet={onConnectWallet}
         />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-cyan-300" />
-              <h3 className="text-sm font-semibold text-white">
-                Earning Tiers
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {tiers.map((tier) => (
-                <motion.div
-                  key={tier.range}
-                  whileTap={{ scale: 0.98 }}
-                  className={`rounded-2xl border p-3 transition ${
-                    tier.active
-                      ? "border-cyan-400/40 bg-cyan-400/10 shadow-[0_0_20px_rgba(34,211,238,0.08)]"
-                      : "border-white/8 bg-white/5"
-                  }`}
-                >
-                  <p
-                    className={`text-[11px] uppercase tracking-wide ${
-                      tier.active ? "text-cyan-300" : "text-white/45"
-                    }`}
-                  >
-                    {tier.range}
-                  </p>
-                  <p
-                    className={`mt-1 text-lg font-semibold ${
-                      tier.active ? "text-white" : "text-white/70"
-                    }`}
-                  >
-                    {tier.rate}
-                  </p>
-                  <p className="text-[11px] text-white/40">ZWAP / step</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <TimerReset className="h-4 w-4 text-violet-300" />
-              <h3 className="text-sm font-semibold text-white">
-                Session Snapshot
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-2xl border border-white/8 bg-black/20 p-3">
-                <p className="text-[11px] uppercase tracking-wide text-white/45">
-                  Reward type
-                </p>
-                <p className="mt-1 text-sm font-medium text-white/85">
-                  Direct ZWAP
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/8 bg-black/20 p-3">
-                <p className="text-[11px] uppercase tracking-wide text-white/45">
-                  Claim status
-                </p>
-                <p className="mt-1 text-sm font-medium text-white/85">
-                  {isTracking
-                    ? "Pause tracking before claim"
-                    : steps > 0
-                    ? "Ready to claim"
-                    : "No steps yet"}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/8 bg-black/20 p-3">
-                <p className="text-[11px] uppercase tracking-wide text-white/45">
-                  Tier bonus
-                </p>
-                <p className="mt-1 text-sm font-medium text-amber-300">
-                  {multiplier.toFixed(1)}x multiplier
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <p className="px-1 text-center text-[11px] text-white/35">
-          MOVE rewards are claimed as ZWAP, not zPts.
-        </p>
+        <MoveSessionProgressCard
+          milestones={sessionMilestones}
+          steps={steps}
+          distanceMiles={distanceMiles}
+          calories={calories}
+        />
       </div>
     </div>
   );
