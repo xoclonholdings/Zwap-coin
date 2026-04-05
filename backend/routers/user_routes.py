@@ -46,6 +46,13 @@ class AssistAcceptRequest(BaseModel):
     recipient_wallet: str
 
 
+class AssistOpportunityResponse(BaseModel):
+    recipient_user_id: str
+    recipient_wallet: str
+    goal_label: str
+    amount_zpts: int = 10
+
+
 def get_assist_limits_for_tier(tier: str) -> dict:
     safe_tier = str(tier or "starter").lower()
 
@@ -257,6 +264,55 @@ async def get_user(wallet_address: str, request: Request):
     return UserResponse(**user)
 
 
+@user_router.get("/assist/opportunity", response_model=Optional[AssistOpportunityResponse])
+async def get_assist_opportunity(wallet_address: str, request: Request):
+    db = request.app.state.db
+    sender_wallet = wallet_address.lower()
+
+    sender = await db.users.find_one({"wallet_address": sender_wallet})
+    if not sender:
+        raise HTTPException(status_code=404, detail="Sender not found")
+
+    sender = await check_and_reset_daily_assist_counts(db, sender)
+    sender_limits = get_assist_limits_for_tier(sender.get("tier", "starter"))
+
+    if int(sender.get("daily_assists_sent", 0) or 0) >= sender_limits["send_cap"]:
+        return None
+
+    recipient = await db.users.find_one(
+        {
+            "wallet_address": {"$ne": sender_wallet},
+            "daily_steps": {"$gt": 0},
+        }
+    )
+
+    if not recipient:
+        return None
+
+    recipient = await check_and_reset_daily_assist_counts(db, recipient)
+    recipient_limits = get_assist_limits_for_tier(recipient.get("tier", "starter"))
+
+    if int(recipient.get("daily_assists_received", 0) or 0) >= recipient_limits["receive_cap"]:
+        return None
+
+    existing_pending = await db.assists.find_one(
+        {
+            "sender_wallet": sender_wallet,
+            "recipient_wallet": recipient["wallet_address"],
+            "status": "pending",
+        }
+    )
+    if existing_pending:
+        return None
+
+    return AssistOpportunityResponse(
+        recipient_user_id=recipient["id"],
+        recipient_wallet=recipient["wallet_address"],
+        goal_label="daily movement goal",
+        amount_zpts=10,
+    )
+
+
 @user_router.post("/assist/send")
 async def send_assist(payload: AssistSendRequest, request: Request):
     db = request.app.state.db
@@ -294,11 +350,13 @@ async def send_assist(payload: AssistSendRequest, request: Request):
     if int(sender.get("zpts_balance", 0) or 0) < amount:
         raise HTTPException(status_code=400, detail="Sender does not have enough zPts")
 
-    existing_pending = await db.assists.find_one({
-        "sender_wallet": sender_wallet,
-        "recipient_wallet": recipient_wallet,
-        "status": "pending",
-    })
+    existing_pending = await db.assists.find_one(
+        {
+            "sender_wallet": sender_wallet,
+            "recipient_wallet": recipient_wallet,
+            "status": "pending",
+        }
+    )
     if existing_pending:
         raise HTTPException(status_code=400, detail="A pending Assist already exists for this recipient")
 
