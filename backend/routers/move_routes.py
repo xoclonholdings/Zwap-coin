@@ -25,6 +25,7 @@ from services.reward_service import (
 )
 from services.activity_service import emit_activity_event
 from services.badge_service import evaluate_badges, persist_badge_updates
+from services.daily_task_service import maybe_process_full_daily_loop
 
 router = APIRouter(prefix="/move", tags=["Move"])
 
@@ -181,6 +182,13 @@ async def claim_step_rewards(
     await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
     updated_user.update(badge_result["updates"])
 
+    full_loop_result = await maybe_process_full_daily_loop(db, wallet)
+
+    if full_loop_result.get("awarded") or full_loop_result.get("reason") == "daily_cap_reached_loop_counted":
+        refreshed_user = await db.users.find_one({"wallet_address": wallet})
+        if refreshed_user:
+            updated_user = refreshed_user
+
     await emit_activity_event(
         db=db,
         event_type="MOVEMENT_ACTIVITY",
@@ -200,6 +208,8 @@ async def claim_step_rewards(
     return {
         "steps_counted": steps_data.steps,
         "rewards_earned": rewards,
+        "full_loop_awarded": full_loop_result.get("awarded", False),
+        "full_loop_bonus": full_loop_result.get("full_loop_bonus", 0),
         "new_balance": int(updated_user.get("zpts_balance", 0)),
         "daily_zpts_remaining": max(
             0,
@@ -215,6 +225,8 @@ async def claim_step_rewards(
         "badge_shaker_mastered": updated_user.get("badge_shaker_mastered", False),
         "badge_mover_level": updated_user.get("badge_mover_level", 0),
         "badge_mover_mastered": updated_user.get("badge_mover_mastered", False),
+        "badge_finisher_level": updated_user.get("badge_finisher_level", 0),
+        "badge_finisher_mastered": updated_user.get("badge_finisher_mastered", False),
         "badge_trophies": updated_user.get("badge_trophies", 0),
         "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
         "message": f"Earned {rewards} zPts for {steps_data.steps} steps!",
