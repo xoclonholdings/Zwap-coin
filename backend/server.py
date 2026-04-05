@@ -167,6 +167,7 @@ api_router.include_router(user_routes.router)
 api_router.include_router(rewards_routes.router)
 api_router.include_router(stripe_routes.router)
 api_router.include_router(activity_routes.router)
+api_router.include_router(news_routes.router)
 
 app.include_router(api_router)
 
