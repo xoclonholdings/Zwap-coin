@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, ArrowLeft, KeyRound } from "lucide-react";
-import { toast } from "sonner";
 
 const API_BASE =
   (process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000").replace(/\/$/, "") +
@@ -26,7 +25,11 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState("login"); // login | forgot | reset | reset-success
+  const [mode, setMode] = useState("login");
+  const [status, setStatus] = useState({
+    type: "info",
+    message: "",
+  });
 
   const isValidEmail = useMemo(
     () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
@@ -40,6 +43,27 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
     confirmPassword.trim().length >= 8 &&
     newPassword === confirmPassword;
 
+  const clearStatus = () => {
+    setStatus({
+      type: "info",
+      message: "",
+    });
+  };
+
+  const setErrorStatus = (message) => {
+    setStatus({
+      type: "error",
+      message,
+    });
+  };
+
+  const setSuccessStatus = (message) => {
+    setStatus({
+      type: "success",
+      message,
+    });
+  };
+
   const resetModalState = () => {
     setPassword("");
     setNewPassword("");
@@ -47,6 +71,7 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
     setResetToken("");
     setSaving(false);
     setMode("login");
+    clearStatus();
   };
 
   const handleClose = (nextOpen) => {
@@ -64,6 +89,7 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
     setConfirmPassword("");
     setResetToken("");
     setMode("forgot");
+    clearStatus();
   };
 
   const handleBackToLogin = () => {
@@ -73,13 +99,15 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
     setConfirmPassword("");
     setResetToken("");
     setMode("login");
+    clearStatus();
   };
 
   const handleRequestPasswordReset = async (e) => {
     e.preventDefault();
+    clearStatus();
 
     if (!isValidEmail) {
-      toast.error("Enter a valid email address");
+      setErrorStatus("Enter a valid email address.");
       return;
     }
 
@@ -112,10 +140,10 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
 
       setResetToken(data.reset_token);
       setMode("reset");
-      toast.success("Password reset started");
+      setSuccessStatus("Password reset started. Create your new password below.");
     } catch (error) {
       console.error("Forgot password error:", error);
-      toast.error(error?.message || "Unable to start password reset");
+      setErrorStatus(error?.message || "Unable to start password reset");
     } finally {
       setSaving(false);
     }
@@ -123,19 +151,20 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    clearStatus();
 
     if (!isValidNewPassword) {
-      toast.error("New password must be at least 8 characters");
+      setErrorStatus("New password must be at least 8 characters.");
       return;
     }
 
     if (!passwordsMatch) {
-      toast.error("Passwords do not match");
+      setErrorStatus("Passwords do not match.");
       return;
     }
 
     if (!resetToken) {
-      toast.error("Reset session is missing. Start over.");
+      setErrorStatus("Reset session is missing. Start over.");
       return;
     }
 
@@ -164,10 +193,10 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
       setConfirmPassword("");
       setResetToken("");
       setMode("reset-success");
-      toast.success("Password updated");
+      setSuccessStatus("Password updated successfully.");
     } catch (error) {
       console.error("Reset password error:", error);
-      toast.error(error?.message || "Unable to reset password");
+      setErrorStatus(error?.message || "Unable to reset password");
     } finally {
       setSaving(false);
     }
@@ -175,9 +204,10 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    clearStatus();
 
     if (!isValidEmail || !isValidPassword) {
-      toast.error("Enter your email and password");
+      setErrorStatus("Enter your email and password.");
       return;
     }
 
@@ -211,11 +241,10 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
 
       resetModalState();
       onOpenChange(false);
-      toast.success("Welcome back");
       navigate("/dashboard", { replace: true });
     } catch (error) {
       console.error("Login error:", error);
-      toast.error(error?.message || "Unable to sign in");
+      setErrorStatus(error?.message || "Unable to sign in");
     } finally {
       setSaving(false);
     }
@@ -229,17 +258,17 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
             {mode === "login"
               ? "Welcome Back"
               : mode === "forgot"
-              ? "Reset Password"
-              : mode === "reset"
-              ? "Create New Password"
-              : "Password Updated"}
+                ? "Reset Password"
+                : mode === "reset"
+                  ? "Create New Password"
+                  : "Password Updated"}
           </DialogTitle>
 
           <DialogDescription className="text-center leading-relaxed text-gray-400">
             {mode === "login" ? (
               <>
                 Sign in to continue with your{" "}
-                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+                <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text font-semibold text-transparent">
                   ZWAP!
                 </span>{" "}
                 account.
@@ -247,7 +276,7 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
             ) : mode === "forgot" ? (
               <>
                 Enter your email to start a password reset for your{" "}
-                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+                <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text font-semibold text-transparent">
                   ZWAP!
                 </span>{" "}
                 account.
@@ -262,6 +291,18 @@ export default function ReturningUserPrompt({ open, onOpenChange }) {
             )}
           </DialogDescription>
         </DialogHeader>
+
+        {status.message ? (
+          <div
+            className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
+              status.type === "error"
+                ? "border-red-500/30 bg-red-500/10 text-red-200"
+                : "border-cyan-500/30 bg-cyan-500/10 text-cyan-100"
+            }`}
+          >
+            {status.message}
+          </div>
+        ) : null}
 
         {mode === "login" && (
           <form onSubmit={handleLogin} className="mt-4 space-y-4">
