@@ -6,6 +6,7 @@ import AppHeader from "../components/ui/dashboard/AppHeader";
 import NewsTicker from "../components/ui/dashboard/NewsTicker";
 import Dashboard from "../components/ui/dashboard/Dashboard";
 import TabNavigation from "../components/ui/dashboard/TabNavigation";
+import DesktopAppShell from "@/components/layout/DesktopAppShell";
 
 import SplashScreen from "../components/SplashScreen";
 import AboutPage from "../components/AboutPage";
@@ -29,6 +30,10 @@ import LearnPage from "../components/learn/LearnPage";
 import PlusPage from "../components/PlusPage";
 
 import { useApp } from "./AppProvider";
+
+function DesktopShellRoute({ children }) {
+  return <DesktopAppShell>{children}</DesktopAppShell>;
+}
 
 export default function AppContent() {
   const {
@@ -77,8 +82,8 @@ export default function AppContent() {
 
   if (!initialized) {
     return (
-      <div className="h-screen bg-[#0a0b1e] flex items-center justify-center">
-        <div className="text-cyan-400 animate-pulse">Loading...</div>
+      <div className="flex h-screen items-center justify-center bg-[#0a0b1e]">
+        <div className="animate-pulse text-cyan-400">Loading...</div>
       </div>
     );
   }
@@ -196,16 +201,52 @@ export default function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0b1e]">
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="flex h-screen flex-col overflow-hidden">
         <AppHeader isOnline={isOnline} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-hidden pt-[84px]">
           <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/move" element={<MoveTab />} />
-            <Route path="/play" element={<PlayTab />} />
-            <Route path="/swap" element={<SwapTab />} />
-            <Route path="/shop" element={<ShopTab />} />
+            <Route
+              path="/dashboard"
+              element={
+                <DesktopShellRoute>
+                  <Dashboard />
+                </DesktopShellRoute>
+              }
+            />
+            <Route
+              path="/move"
+              element={
+                <DesktopShellRoute>
+                  <MoveTab />
+                </DesktopShellRoute>
+              }
+            />
+            <Route
+              path="/play"
+              element={
+                <DesktopShellRoute>
+                  <PlayTab />
+                </DesktopShellRoute>
+              }
+            />
+            <Route
+              path="/swap"
+              element={
+                <DesktopShellRoute>
+                  <SwapTab />
+                </DesktopShellRoute>
+              }
+            />
+            <Route
+              path="/shop"
+              element={
+                <DesktopShellRoute>
+                  <ShopTab />
+                </DesktopShellRoute>
+              }
+            />
+
             <Route path="/plus" element={<PlusPage />} />
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
             <Route path="/subscription/cancel" element={<PlusPage />} />
@@ -214,7 +255,7 @@ export default function AppContent() {
           </Routes>
         </main>
 
-        <div className="shrink-0 bg-[#0a0b1e] border-t border-cyan-500/10">
+        <div className="shrink-0 border-t border-cyan-500/10 bg-[#0a0b1e]">
           <NewsTicker />
           <TabNavigation />
         </div>
