@@ -2,7 +2,6 @@ import React from "react";
 import { BrowserRouter } from "react-router-dom";
 
 import "@/App.css";
-import { Toaster } from "@/components/ui/sonner";
 
 import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
 import { AppProvider } from "@/app/AppProvider";
@@ -70,7 +69,6 @@ function App() {
       <PrivyProviderWrapper>
         <AppProvider>
           <AppContent />
-          <Toaster position="top-center" richColors />
         </AppProvider>
       </PrivyProviderWrapper>
     </BrowserRouter>
