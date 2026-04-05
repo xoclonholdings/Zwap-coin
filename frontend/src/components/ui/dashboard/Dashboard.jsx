@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Gift, Gamepad2, Sparkles, Brain } from "lucide-react";
-import { toast } from "sonner";
 import { useApp } from "@/App";
 import api from "@/lib/api";
 
@@ -9,6 +8,7 @@ import DashboardHero from "@/components/ui/dashboard/DashboardHero";
 import DashboardDailyLoopCard from "@/components/ui/dashboard/DashboardDailyLoopCard";
 import DashboardDailyTasksCard from "@/components/ui/dashboard/DashboardDailyTasksCard";
 import DashboardStatusCard from "@/components/ui/dashboard/DashboardStatusCard";
+import StatusPopup from "@/components/ui/StatusPopup";
 import StreamRail from "@/components/ui/stream/StreamRail";
 import AccountRail from "@/components/user/AccountRail";
 import { generateDailyTasks } from "@/lib/tasks/generateDailyTasks";
@@ -83,9 +83,7 @@ function DesktopSideRail({ title, align = "left", children }) {
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 py-3">
-            {children}
-          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3">{children}</div>
         </div>
       </div>
     </aside>
@@ -173,6 +171,11 @@ export default function Dashboard() {
   const [rewardStatus, setRewardStatus] = useState(null);
   const [rewardStatusLoading, setRewardStatusLoading] = useState(false);
   const [claimLoading, setClaimLoading] = useState(false);
+  const [popup, setPopup] = useState({
+    open: false,
+    message: "",
+    type: "info",
+  });
 
   const profile =
     user && typeof user === "object"
@@ -314,7 +317,11 @@ export default function Dashboard() {
     }
 
     if (!api?.claimDailyReward) {
-      toast.error("Daily reward API not connected yet.");
+      setPopup({
+        open: true,
+        message: "Daily reward API not connected yet.",
+        type: "error",
+      });
       return;
     }
 
@@ -323,7 +330,11 @@ export default function Dashboard() {
 
       const result = await api.claimDailyReward(walletAddress);
 
-      toast.success(result?.message || "Daily reward claimed!");
+      setPopup({
+        open: true,
+        message: result?.message || "Daily reward claimed!",
+        type: "success",
+      });
 
       const [freshStatus] = await Promise.all([
         api.getDailyRewardStatus
@@ -337,7 +348,11 @@ export default function Dashboard() {
       }
     } catch (error) {
       const message = error?.message || "Failed to claim daily reward";
-      toast.error(message);
+      setPopup({
+        open: true,
+        message,
+        type: "error",
+      });
     } finally {
       setClaimLoading(false);
     }
@@ -364,34 +379,43 @@ export default function Dashboard() {
   }, [profile, streak]);
 
   return (
-    <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4 lg:px-6">
-      <div className="mx-auto w-full max-w-[1680px]">
-        <div className="flex items-start gap-6">
-          <DesktopSideRail title="Stream" align="left">
-            <StreamRail />
-          </DesktopSideRail>
+    <>
+      <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4 lg:px-6">
+        <div className="mx-auto w-full max-w-[1680px]">
+          <div className="flex items-start gap-6">
+            <DesktopSideRail title="Stream" align="left">
+              <StreamRail />
+            </DesktopSideRail>
 
-          <DashboardCenterContent
-            username={username}
-            currentTier={currentTier}
-            streak={streak}
-            canClaim={canClaimDaily}
-            dailyReward={dailyReward}
-            lastClaimText={lastClaimText}
-            handleClaimDaily={handleClaimDaily}
-            claimLoading={claimLoading}
-            tasks={tasks}
-            completedTaskCount={completedTaskCount}
-            nextBadge={nextBadge}
-            stepsPercent={stepsPercent}
-            playPercent={playPercent}
-          />
+            <DashboardCenterContent
+              username={username}
+              currentTier={currentTier}
+              streak={streak}
+              canClaimDaily={canClaimDaily}
+              dailyReward={dailyReward}
+              lastClaimText={lastClaimText}
+              handleClaimDaily={handleClaimDaily}
+              claimLoading={claimLoading}
+              tasks={tasks}
+              completedTaskCount={completedTaskCount}
+              nextBadge={nextBadge}
+              stepsPercent={stepsPercent}
+              playPercent={playPercent}
+            />
 
-          <DesktopSideRail title="Account" align="right">
-            <AccountRail />
-          </DesktopSideRail>
+            <DesktopSideRail title="Account" align="right">
+              <AccountRail />
+            </DesktopSideRail>
+          </div>
         </div>
       </div>
-    </div>
+
+      <StatusPopup
+        open={popup.open}
+        message={popup.message}
+        type={popup.type}
+        onClose={() => setPopup((prev) => ({ ...prev, open: false }))}
+      />
+    </>
   );
 }
