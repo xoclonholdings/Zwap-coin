@@ -78,7 +78,7 @@ export default function AppContent() {
 
   if (!initialized) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0b1e]">
+      <div className="flex h-[100dvh] items-center justify-center bg-[#0a0b1e]">
         <div className="animate-pulse text-cyan-400">Loading...</div>
       </div>
     );
@@ -197,7 +197,7 @@ export default function AppContent() {
 
   return (
     <MobileAppFrame>
-      <div className="flex h-screen flex-col overflow-hidden">
+      <div className="flex h-[100dvh] flex-col overflow-hidden">
         <AppHeader isOnline={isOnline} />
 
         <main className="flex-1 overflow-y-auto pt-[84px]">
