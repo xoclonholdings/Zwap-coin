@@ -50,19 +50,16 @@ function generateUsername(seedSource) {
   return `${adjectives[adjIndex]}${nouns[nounIndex]}${num}`;
 }
 
-export default function AppHeader() {
+export default function AppHeader({ isOnline = true }) {
   const { user, authUser, walletAddress, onchainBalance } = useApp();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [streamOpen, setStreamOpen] = useState(false);
 
-  const isOnline =
-    typeof navigator !== "undefined" ? navigator.onLine : true;
+  const safeUser = user && typeof user === "object" ? user : null;
+  const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
 
   const displayName = useMemo(() => {
-    const safeUser = user && typeof user === "object" ? user : null;
-    const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
-
     if (safeUser?.custom_username) return safeUser.custom_username;
 
     const seedSource =
@@ -73,7 +70,7 @@ export default function AppHeader() {
       safeAuthUser?.username;
 
     return generateUsername(seedSource);
-  }, [user, authUser, walletAddress]);
+  }, [safeUser, safeAuthUser, walletAddress]);
 
   const initials = useMemo(() => {
     return (
@@ -109,14 +106,28 @@ export default function AppHeader() {
         ? "0.00"
         : "--";
 
+  const handleOpenStream = () => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+      return;
+    }
+    setStreamOpen(true);
+  };
+
+  const handleOpenAccount = () => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+      return;
+    }
+    setSettingsOpen(true);
+  };
+
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-cyan-500/20 bg-[#0a0b1e]/95 backdrop-blur-lg">
-        <div className="mx-auto w-full max-w-lg px-4 py-3">
+        <div className="mx-auto w-full max-w-lg px-4 py-3 xl:max-w-[1680px] xl:px-6 2xl:px-8">
           <div className="flex items-center justify-between gap-3">
             <motion.button
               type="button"
-              onClick={() => setStreamOpen(true)}
+              onClick={handleOpenStream}
               className="relative min-w-[120px] max-w-[144px] overflow-hidden rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.14),_rgba(20,26,48,0.92)_45%,_rgba(15,18,34,0.98)_100%)] px-3 py-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -128,6 +139,7 @@ export default function AppHeader() {
                 ],
               }}
               transition={{ duration: 2.8, repeat: Infinity }}
+              aria-label="Open stream"
             >
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
 
@@ -142,7 +154,8 @@ export default function AppHeader() {
                   </p>
                   <div className="flex items-center gap-1 text-[11px] text-gray-300">
                     <Play className="h-3 w-3" />
-                    <span>Open</span>
+                    <span className="xl:hidden">Open</span>
+                    <span className="hidden xl:inline">Live</span>
                   </div>
                 </div>
               </div>
@@ -215,45 +228,49 @@ export default function AppHeader() {
               </div>
             </motion.div>
 
-            <AccountDrawer
-              open={settingsOpen}
-              onOpenChange={setSettingsOpen}
-              trigger={
-                <motion.button
-                  type="button"
-                  className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
-                  data-testid="profile-badge"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  animate={{
-                    boxShadow: [
-                      "0 0 15px rgba(0,245,255,0.3)",
-                      "0 0 30px rgba(0,245,255,0.5)",
-                      "0 0 15px rgba(0,245,255,0.3)",
-                    ],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  aria-label="Open account drawer"
-                >
-                  {initials}
+            <motion.button
+              type="button"
+              onClick={handleOpenAccount}
+              className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-xl font-bold uppercase shadow-lg shadow-cyan-500/30"
+              data-testid="profile-badge"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              animate={{
+                boxShadow: [
+                  "0 0 15px rgba(0,245,255,0.3)",
+                  "0 0 30px rgba(0,245,255,0.5)",
+                  "0 0 15px rgba(0,245,255,0.3)",
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              aria-label="Open account drawer"
+            >
+              {initials}
 
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0a0b1e]">
-                    <motion.span
-                      className={`h-3 w-3 rounded-full ${
-                        isOnline ? "bg-green-400" : "bg-yellow-400"
-                      }`}
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  </span>
-                </motion.button>
-              }
-            />
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0a0b1e]">
+                <motion.span
+                  className={`h-3 w-3 rounded-full ${
+                    isOnline ? "bg-green-400" : "bg-red-500"
+                  }`}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </span>
+            </motion.button>
           </div>
         </div>
       </header>
 
-      <StreamPanel open={streamOpen} onOpenChange={setStreamOpen} />
+      <div className="xl:hidden">
+        <AccountDrawer
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+        />
+      </div>
+
+      <div className="xl:hidden">
+        <StreamPanel open={streamOpen} onOpenChange={setStreamOpen} />
+      </div>
     </>
   );
 }
