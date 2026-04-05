@@ -2,8 +2,8 @@ import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePrivy } from "@privy-io/react-auth";
 import { ChevronRight, Shield } from "lucide-react";
-import { useApp } from "../../../app/AppProvider";
-import ConvertZPtsModal from "../../swap/ConvertZPtsModal";
+import { useApp } from "@/app/AppProvider";
+import ConvertZPtsModal from "@/components/swap/ConvertZPtsModal";
 
 const ADJECTIVES = [
   "Nova",
