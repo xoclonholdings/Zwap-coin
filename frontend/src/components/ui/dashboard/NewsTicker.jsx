@@ -547,103 +547,105 @@ export default function NewsTicker() {
   return (
     <>
       <div className="relative z-30">
-        <div className="mx-auto max-w-lg px-3 py-2">
-          <div className="relative overflow-hidden rounded-2xl border border-cyan-500/15 bg-[#0b1222]/95 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-            <div className="flex items-center gap-3 px-3 py-2.5">
-              <motion.div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5"
-                animate={{
-                  boxShadow: [
-                    "0 0 0 rgba(0,0,0,0)",
-                    "0 0 14px rgba(34,211,238,0.18)",
-                    "0 0 0 rgba(0,0,0,0)",
-                  ],
-                }}
-                transition={{ duration: 2.2, repeat: Infinity }}
-              >
-                <Icon className={`h-4 w-4 ${config.color}`} />
-              </motion.div>
+        <div className="mx-auto w-full max-w-[1680px] px-3 py-2 xl:px-6 2xl:px-8">
+          <div className="mx-auto max-w-lg xl:max-w-[760px] 2xl:max-w-[820px]">
+            <div className="relative overflow-hidden rounded-2xl border border-cyan-500/15 bg-[#0b1222]/95 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                <motion.div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5"
+                  animate={{
+                    boxShadow: [
+                      "0 0 0 rgba(0,0,0,0)",
+                      "0 0 14px rgba(34,211,238,0.18)",
+                      "0 0 0 rgba(0,0,0,0)",
+                    ],
+                  }}
+                  transition={{ duration: 2.2, repeat: Infinity }}
+                >
+                  <Icon className={`h-4 w-4 ${config.color}`} />
+                </motion.div>
 
-              <span
-                className={`hidden shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold tracking-[0.18em] sm:inline-flex ${config.chipClass}`}
-              >
-                {config.chip}
-              </span>
+                <span
+                  className={`hidden shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold tracking-[0.18em] sm:inline-flex ${config.chipClass}`}
+                >
+                  {config.chip}
+                </span>
 
-              <div className="min-w-0 flex-1 overflow-hidden">
-                <AnimatePresence mode="wait">
-                  {isVisible && (
-                    <motion.div
-                      key={currentIndex}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="overflow-hidden"
-                    >
-                      {isClickable ? (
-                        <button
-                          type="button"
-                          onClick={handleOpenSource}
-                          className="flex w-full items-center gap-2 overflow-hidden text-left"
-                          title={`${current?.text || ""} • Source: ${
-                            current?.sourceLabel || "External"
-                          }`}
-                        >
-                          <motion.span
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    {isVisible && (
+                      <motion.div
+                        key={currentIndex}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                      >
+                        {isClickable ? (
+                          <button
+                            type="button"
+                            onClick={handleOpenSource}
+                            className="flex w-full items-center gap-2 overflow-hidden text-left"
+                            title={`${current?.text || ""} • Source: ${
+                              current?.sourceLabel || "External"
+                            }`}
+                          >
+                            <motion.span
+                              className="whitespace-nowrap text-[13px] text-gray-100"
+                              initial={{ x: "100%" }}
+                              animate={{ x: "-100%" }}
+                              transition={{ duration: 12, ease: "linear" }}
+                            >
+                              {current?.text || ""}
+                            </motion.span>
+                          </button>
+                        ) : (
+                          <motion.p
                             className="whitespace-nowrap text-[13px] text-gray-100"
+                            title={current?.text || ""}
                             initial={{ x: "100%" }}
                             animate={{ x: "-100%" }}
                             transition={{ duration: 12, ease: "linear" }}
                           >
                             {current?.text || ""}
-                          </motion.span>
-                        </button>
-                      ) : (
-                        <motion.p
-                          className="whitespace-nowrap text-[13px] text-gray-100"
-                          title={current?.text || ""}
-                          initial={{ x: "100%" }}
-                          animate={{ x: "-100%" }}
-                          transition={{ duration: 12, ease: "linear" }}
-                        >
-                          {current?.text || ""}
-                        </motion.p>
-                      )}
-                    </motion.div>
+                          </motion.p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenSource}
+                  disabled={!isClickable}
+                  className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold transition ${
+                    isClickable
+                      ? "border-white/10 bg-white/[0.05] text-gray-200 hover:bg-white/[0.10] hover:text-white"
+                      : "border-white/5 bg-white/[0.03] text-gray-500"
+                  }`}
+                >
+                  {isClickable ? (
+                    <span className="inline-flex items-center gap-1">
+                      See More
+                      <ChevronRight className="h-3 w-3" />
+                    </span>
+                  ) : (
+                    current?.sourceLabel || "ZWAP"
                   )}
-                </AnimatePresence>
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={handleOpenSource}
-                disabled={!isClickable}
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold transition ${
-                  isClickable
-                    ? "border-white/10 bg-white/[0.05] text-gray-200 hover:bg-white/[0.10] hover:text-white"
-                    : "border-white/5 bg-white/[0.03] text-gray-500"
-                }`}
-              >
-                {isClickable ? (
-                  <span className="inline-flex items-center gap-1">
-                    See More
-                    <ChevronRight className="h-3 w-3" />
-                  </span>
-                ) : (
-                  current?.sourceLabel || "ZWAP"
-                )}
-              </button>
-            </div>
-
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5">
-              <motion.div
-                key={currentIndex}
-                className="h-full bg-gradient-to-r from-cyan-400 via-sky-400 to-purple-500"
-                initial={{ width: "0%" }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 12, ease: "linear" }}
-              />
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5">
+                <motion.div
+                  key={currentIndex}
+                  className="h-full bg-gradient-to-r from-cyan-400 via-sky-400 to-purple-500"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 12, ease: "linear" }}
+                />
+              </div>
             </div>
           </div>
         </div>
