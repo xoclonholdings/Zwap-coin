@@ -175,11 +175,11 @@ async def complete_module(wallet_address: str, module_id: str, request: Request)
 
     full_loop_result = await maybe_process_full_daily_loop(db, wallet)
 
-    if full_loop_result.get("awarded"):
+    if full_loop_result.get("awarded") or full_loop_result.get("reason") == "daily_cap_reached_loop_counted":
         refreshed_user = await db.users.find_one({"wallet_address": wallet})
         if refreshed_user:
             updated_user = refreshed_user
-
+            
     return {
         "message": "Module completed",
         "module_id": module_id,
