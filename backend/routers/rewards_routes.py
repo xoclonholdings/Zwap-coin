@@ -157,11 +157,11 @@ async def claim_daily_reward(wallet_address: str, request: Request):
 
     updated_user = await db.users.find_one({"wallet_address": wallet})
 
-    badge_updates = evaluate_badges(updated_user)
+    badge_result = evaluate_badges(updated_user)
 
-    await persist_badge_updates(db, updated_user["id"], badge_updates)
+    await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
 
-    updated_user.update(badge_updates)
+    updated_user.update(badge_result["updates"])
 
     await db.reward_claims.insert_one({
         "wallet_address": wallet,
@@ -181,7 +181,10 @@ async def claim_daily_reward(wallet_address: str, request: Request):
         "zpts_balance": updated_user.get("zpts_balance", new_zpts_balance),
         "badge_login_days": updated_user.get("badge_login_days", 0),
         "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
-        "badge_starter_completed": updated_user.get("badge_starter_completed", False),
+        "badge_starter_level": updated_user.get("badge_starter_level", 0),
+        "badge_starter_mastered": updated_user.get("badge_starter_mastered", False),
+        "badge_trophies": updated_user.get("badge_trophies", 0),
+        "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
         "last_daily_claim": now.isoformat(),
         "message": f"Claimed Day {min(new_streak, 7)} daily reward",
     }
