@@ -47,7 +47,7 @@ function hashString(value = "") {
   return Math.abs(hash);
 }
 
-function generateUsername({ walletAddress, email }) {
+import { generateUsername } from "@/lib/utils/generateUsername";
   const seedSource = walletAddress || email || "";
   if (!seedSource) return "Zwapper";
 
@@ -251,6 +251,7 @@ export default function Dashboard() {
     return generateUsername({
       walletAddress,
       email: safeAuthUser?.email || safeUser?.email,
+      username: safeUser?.custom_username || safeUser?.username,
     });
   }, [user, authUser, walletAddress]);
 
