@@ -9,6 +9,8 @@ import DashboardHero from "@/components/ui/dashboard/DashboardHero";
 import DashboardDailyLoopCard from "@/components/ui/dashboard/DashboardDailyLoopCard";
 import DashboardDailyTasksCard from "@/components/ui/dashboard/DashboardDailyTasksCard";
 import DashboardStatusCard from "@/components/ui/dashboard/DashboardStatusCard";
+import StreamRail from "@/components/ui/stream/StreamRail";
+import AccountRail from "@/components/user/AccountRail";
 import { generateDailyTasks } from "@/lib/tasks/generateDailyTasks";
 import { getNextBadge } from "@/lib/badges/getNextBadge";
 
@@ -87,18 +89,6 @@ function DesktopSideRail({ title, align = "left", children }) {
         </div>
       </div>
     </aside>
-  );
-}
-
-function DesktopRailPlaceholder({ label, description }) {
-  return (
-    <div className="flex h-full min-h-[480px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/10 bg-black/10 px-6 text-center">
-      <div className="h-14 w-14 rounded-2xl border border-white/10 bg-white/[0.04]" />
-      <p className="mt-4 text-sm font-semibold text-white">{label}</p>
-      <p className="mt-2 max-w-[220px] text-xs leading-relaxed text-gray-400">
-        {description}
-      </p>
-    </div>
   );
 }
 
@@ -378,17 +368,14 @@ export default function Dashboard() {
       <div className="mx-auto w-full max-w-[1680px]">
         <div className="flex items-start gap-6">
           <DesktopSideRail title="Stream" align="left">
-            <DesktopRailPlaceholder
-              label="Stream Rail"
-              description="Desktop stream panel docks here. Keep the center dashboard unchanged while we lock the wide-screen shell first."
-            />
+            <StreamRail />
           </DesktopSideRail>
 
           <DashboardCenterContent
             username={username}
             currentTier={currentTier}
             streak={streak}
-            canClaimDaily={canClaimDaily}
+            canClaim={canClaimDaily}
             dailyReward={dailyReward}
             lastClaimText={lastClaimText}
             handleClaimDaily={handleClaimDaily}
@@ -401,10 +388,7 @@ export default function Dashboard() {
           />
 
           <DesktopSideRail title="Account" align="right">
-            <DesktopRailPlaceholder
-              label="Account Rail"
-              description="Desktop account panel docks here. We wire the real account content after the dashboard shell is stable."
-            />
+            <AccountRail />
           </DesktopSideRail>
         </div>
       </div>
