@@ -7,7 +7,8 @@ Reward calculations are delegated to reward_service.
 Updated economy:
 - MOVE earns zPts
 - daily zPts caps enforced
-- badge progress updates for movement + lifetime earning
+- Shaker = successful movement claims
+- Mover = unique active movement days
 """
 
 from collections import defaultdict
@@ -22,7 +23,6 @@ from services.reward_service import (
     get_tier_multipliers,
     enforce_daily_caps,
 )
-
 from services.activity_service import emit_activity_event
 from services.badge_service import evaluate_badges, persist_badge_updates
 
@@ -33,7 +33,6 @@ class StepsUpdate(BaseModel):
     steps: int
 
 
-# In-memory rate limiter {wallet: {action: last_timestamp}}
 _rate_limits = defaultdict(dict)
 
 STEP_CLAIM_COOLDOWN = 300
@@ -149,14 +148,17 @@ async def claim_step_rewards(
     rewards = min(int(reward_result["zpts"]), int(cap_check["remaining"]))
     zpts_cap = int(tier_config["daily_zpts_cap"])
 
+    today_key = datetime.now(timezone.utc).date().isoformat()
+    last_move_day = user.get("badge_last_move_day")
+    increment_mover = last_move_day != today_key
+
     update_doc = {
         "$inc": {
             "zpts_balance": rewards,
             "total_steps": steps_data.steps,
             "daily_zpts_earned": rewards,
             "badge_zpts_earned": rewards,
-            "badge_step_days": 1,
-            "badge_sustained_move_days": 1,
+            "badge_step_claims": 1,
         },
         "$set": {
             "daily_steps": steps_data.steps,
@@ -164,16 +166,20 @@ async def claim_step_rewards(
         },
     }
 
+    if increment_mover:
+        update_doc["$inc"]["badge_sustained_move_days"] = 1
+        update_doc["$set"]["badge_last_move_day"] = today_key
+
     await db.users.update_one(
         {"wallet_address": wallet},
         update_doc,
     )
 
-    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+    updated_user = await db.users.find_one({"wallet_address": wallet})
 
-    badge_updates = evaluate_badges(updated_user)
-    await persist_badge_updates(db, updated_user["id"], badge_updates)
-    updated_user.update(badge_updates)
+    badge_result = evaluate_badges(updated_user)
+    await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
+    updated_user.update(badge_result["updates"])
 
     await emit_activity_event(
         db=db,
@@ -201,11 +207,16 @@ async def claim_step_rewards(
         ),
         "tier": tier,
         "multiplier": tier_config["move"],
-        "badge_step_days": updated_user.get("badge_step_days", 0),
+        "badge_step_claims": updated_user.get("badge_step_claims", 0),
         "badge_sustained_move_days": updated_user.get("badge_sustained_move_days", 0),
+        "badge_last_move_day": updated_user.get("badge_last_move_day"),
         "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
-        "badge_shaker_completed": updated_user.get("badge_shaker_completed", False),
-        "badge_mover_completed": updated_user.get("badge_mover_completed", False),
+        "badge_shaker_level": updated_user.get("badge_shaker_level", 0),
+        "badge_shaker_mastered": updated_user.get("badge_shaker_mastered", False),
+        "badge_mover_level": updated_user.get("badge_mover_level", 0),
+        "badge_mover_mastered": updated_user.get("badge_mover_mastered", False),
+        "badge_trophies": updated_user.get("badge_trophies", 0),
+        "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
         "message": f"Earned {rewards} zPts for {steps_data.steps} steps!",
     }
 
