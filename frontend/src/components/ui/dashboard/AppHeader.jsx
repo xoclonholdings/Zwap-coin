@@ -4,57 +4,7 @@ import { Play, Sparkles } from "lucide-react";
 import { useApp } from "@/App";
 import StreamPanel from "@/components/ui/stream/StreamPanel";
 import AccountDrawer from "./AccountDrawer";
-
-const ADJECTIVES = [
-  "Nova",
-  "Pixel",
-  "Quantum",
-  "Echo",
-  "Neon",
-  "Solar",
-  "Cyber",
-  "Hyper",
-  "Shadow",
-  "Turbo",
-];
-
-const NOUNS = [
-  "Runner",
-  "Walker",
-  "Strider",
-  "Pilot",
-  "Glider",
-  "Breaker",
-  "Phantom",
-  "Rider",
-  "Explorer",
-  "Voyager",
-];
-
-function hashString(value = "") {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function generateUsername({ walletAddress, email }) {
-  const seedSource = walletAddress || email || "";
-  if (!seedSource) return "Zwapper";
-
-  const seed =
-    walletAddress && walletAddress.startsWith("0x")
-      ? parseInt(walletAddress.slice(2, 10), 16)
-      : hashString(String(seedSource).toLowerCase());
-
-  const adjIndex = Math.abs(seed) % ADJECTIVES.length;
-  const nounIndex = Math.abs(Math.floor(seed / 8)) % NOUNS.length;
-  const num = Math.abs(seed) % 999;
-
-  return `${ADJECTIVES[adjIndex]}${NOUNS[nounIndex]}${num}`;
-}
+import { generateUsername } from "@/lib/utils/generateUsername";
 
 export default function AppHeader({ isOnline = true }) {
   const { user, authUser, walletAddress, onchainBalance } = useApp();
@@ -66,12 +16,10 @@ export default function AppHeader({ isOnline = true }) {
   const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
 
   const displayName = useMemo(() => {
-    if (safeUser?.custom_username) return safeUser.custom_username;
-    if (safeUser?.username) return safeUser.username;
-
     return generateUsername({
       walletAddress,
       email: safeAuthUser?.email || safeUser?.email,
+      username: safeUser?.custom_username || safeUser?.username,
     });
   }, [safeUser, safeAuthUser, walletAddress]);
 
