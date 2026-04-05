@@ -4,8 +4,8 @@ import { ZWAP_BANG } from "@/App";
 import {
   Footprints,
   Gamepad2,
-  ShoppingBag,
   ArrowRightLeft,
+  ShoppingBag,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -17,8 +17,8 @@ export default function TabNavigation() {
     { id: "move", path: "/move", icon: Footprints, label: "MOVE" },
     { id: "play", path: "/play", icon: Gamepad2, label: "PLAY" },
     { id: "bang", path: "/dashboard", home: true },
-    { id: "shop", path: "/shop", icon: ShoppingBag, label: "SHOP" },
     { id: "swap", path: "/swap", icon: ArrowRightLeft, label: "SWAP" },
+    { id: "shop", path: "/shop", icon: ShoppingBag, label: "SHOP" },
   ];
 
   return (
@@ -26,14 +26,15 @@ export default function TabNavigation() {
       className="relative z-40 border-t border-cyan-400/10 bg-[#08101d]"
       data-testid="tab-navigation"
     >
-      <div className="mx-auto max-w-lg px-2 pt-1 pb-1">
-        <div className="grid grid-cols-5 items-center gap-1 rounded-t-2xl bg-[#0d1328] px-2 py-1 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]">
-          {tabs.map((tab) => {
-            const isActive = location.pathname === tab.path;
+      <div className="mx-auto w-full max-w-[1680px] px-2 pt-1 pb-1 xl:px-6 2xl:px-8">
+        <div className="mx-auto max-w-lg xl:max-w-[760px] 2xl:max-w-[820px]">
+          <div className="grid grid-cols-5 items-center gap-1 rounded-t-2xl bg-[#0d1328] px-2 py-1 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]">
+            {tabs.map((tab) => {
+              const isActive = location.pathname === tab.path;
 
-            if (tab.home) {
-              return (
-                <motion.button
+              if (tab.home) {
+                return (
+                  <motion.button
                     key={tab.id}
                     data-testid={`tab-${tab.id}`}
                     onClick={() => navigate("/dashboard")}
@@ -45,7 +46,7 @@ export default function TabNavigation() {
                     whileTap={{ scale: 0.96 }}
                   >
                     <div className="pointer-events-none absolute inset-x-3 top-1 h-3 rounded-full bg-white/5 blur-sm" />
-                  
+
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full border ${
                         isActive
@@ -77,46 +78,47 @@ export default function TabNavigation() {
                               }
                         }
                         transition={{ duration: 2.2, repeat: Infinity }}
-                            />
-                          </div>
-                        </motion.button>
-                        );
-            }
-                        
-            const Icon = tab.icon;
+                      />
+                    </div>
+                  </motion.button>
+                );
+              }
 
-            return (
-              <motion.button
-                key={tab.id}
-                data-testid={`tab-${tab.id}`}
-                onClick={() => navigate(tab.path)}
-                className={`flex h-[54px] flex-col items-center justify-center rounded-xl px-2 text-[10px] font-medium tracking-[0.14em] transition-all ${
-                  isActive
-                    ? "text-cyan-400"
-                    : "text-white/45 hover:text-white/75"
-                }`}
-                whileTap={{ scale: 0.96 }}
-              >
-                <motion.div
-                  animate={
+              const Icon = tab.icon;
+
+              return (
+                <motion.button
+                  key={tab.id}
+                  data-testid={`tab-${tab.id}`}
+                  onClick={() => navigate(tab.path)}
+                  className={`flex h-[54px] flex-col items-center justify-center rounded-xl px-2 text-[10px] font-medium tracking-[0.14em] transition-all ${
                     isActive
-                      ? {
-                          filter: [
-                            "drop-shadow(0 0 4px rgba(34,211,238,0.30))",
-                            "drop-shadow(0 0 8px rgba(34,211,238,0.55))",
-                            "drop-shadow(0 0 4px rgba(34,211,238,0.30))",
-                          ],
-                        }
-                      : {}
-                  }
-                  transition={{ duration: 2, repeat: Infinity }}
+                      ? "text-cyan-400"
+                      : "text-white/45 hover:text-white/75"
+                  }`}
+                  whileTap={{ scale: 0.96 }}
                 >
-                  <Icon className="mb-1 h-5 w-5" />
-                </motion.div>
-                <span>{tab.label}</span>
-              </motion.button>
-            );
-          })}
+                  <motion.div
+                    animate={
+                      isActive
+                        ? {
+                            filter: [
+                              "drop-shadow(0 0 4px rgba(34,211,238,0.30))",
+                              "drop-shadow(0 0 8px rgba(34,211,238,0.55))",
+                              "drop-shadow(0 0 4px rgba(34,211,238,0.30))",
+                            ],
+                          }
+                        : {}
+                    }
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Icon className="mb-1 h-5 w-5" />
+                  </motion.div>
+                  <span>{tab.label}</span>
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </nav>
