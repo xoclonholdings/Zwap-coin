@@ -23,6 +23,7 @@ from services.reward_service import (
     enforce_daily_caps,
 )
 from services.badge_service import evaluate_badges, persist_badge_updates
+from services.daily_task_service import maybe_process_full_daily_loop
 
 router = APIRouter(prefix="/games", tags=["Play"])
 
@@ -287,6 +288,13 @@ async def submit_game_result(
     await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
     updated_user.update(badge_result["updates"])
 
+    full_loop_result = await maybe_process_full_daily_loop(db, wallet)
+
+    if full_loop_result.get("awarded") or full_loop_result.get("reason") == "daily_cap_reached_loop_counted":
+        refreshed_user = await db.users.find_one({"wallet_address": wallet})
+        if refreshed_user:
+            updated_user = refreshed_user
+
     return {
         "game": game_data.game_type,
         "score": game_data.score,
@@ -299,6 +307,8 @@ async def submit_game_result(
         "session_diminishing_multiplier": session_multiplier,
         "move_dependency_multiplier": move_multiplier,
         "zpts_capped": zpts_to_add < total_requested_zpts,
+        "full_loop_awarded": full_loop_result.get("awarded", False),
+        "full_loop_bonus": full_loop_result.get("full_loop_bonus", 0),
         "daily_zpts_remaining": max(
             0,
             zpts_cap - int(updated_user.get("daily_zpts_earned", 0)),
@@ -307,6 +317,8 @@ async def submit_game_result(
         "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
         "badge_earner_level": updated_user.get("badge_earner_level", 0),
         "badge_earner_mastered": updated_user.get("badge_earner_mastered", False),
+        "badge_finisher_level": updated_user.get("badge_finisher_level", 0),
+        "badge_finisher_mastered": updated_user.get("badge_finisher_mastered", False),
         "badge_trophies": updated_user.get("badge_trophies", 0),
         "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
         "message": f"Earned {zpts_to_add} zPts!",
