@@ -11,57 +11,7 @@ import DashboardStatusCard from "@/components/ui/dashboard/DashboardStatusCard";
 import StatusPopup from "@/components/ui/StatusPopup";
 import { generateDailyTasks } from "@/lib/tasks/generateDailyTasks";
 import { getNextBadge } from "@/lib/badges/getNextBadge";
-
-const ADJECTIVES = [
-  "Nova",
-  "Pixel",
-  "Quantum",
-  "Echo",
-  "Neon",
-  "Solar",
-  "Cyber",
-  "Hyper",
-  "Shadow",
-  "Turbo",
-];
-
-const NOUNS = [
-  "Runner",
-  "Walker",
-  "Strider",
-  "Pilot",
-  "Glider",
-  "Breaker",
-  "Phantom",
-  "Rider",
-  "Explorer",
-  "Voyager",
-];
-
-function hashString(value = "") {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
 import { generateUsername } from "@/lib/utils/generateUsername";
-  const seedSource = walletAddress || email || "";
-  if (!seedSource) return "Zwapper";
-
-  const seed =
-    walletAddress && walletAddress.startsWith("0x")
-      ? parseInt(walletAddress.slice(2, 10), 16)
-      : hashString(String(seedSource).toLowerCase());
-
-  const adjIndex = Math.abs(seed) % ADJECTIVES.length;
-  const nounIndex = Math.abs(Math.floor(seed / 8)) % NOUNS.length;
-  const num = Math.abs(seed) % 999;
-
-  return `${ADJECTIVES[adjIndex]}${NOUNS[nounIndex]}${num}`;
-}
 
 const taskIconMap = {
   login: Gift,
@@ -244,9 +194,6 @@ export default function Dashboard() {
   const username = useMemo(() => {
     const safeUser = user && typeof user === "object" ? user : null;
     const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
-
-    if (safeUser?.custom_username) return safeUser.custom_username;
-    if (safeUser?.username) return safeUser.username;
 
     return generateUsername({
       walletAddress,
