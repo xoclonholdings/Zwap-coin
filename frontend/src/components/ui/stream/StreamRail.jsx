@@ -1,26 +1,73 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+import StreamMediaModal from "./StreamMediaModal";
+import StreamPanelContent from "./StreamPanelContent";
+import {
+  watchItems,
+  listenItems,
+  liveItems,
+  libraryItems,
+} from "./streamData";
 
 export default function StreamRail() {
-  return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-white/8 px-4 py-3">
-        <p className="text-[10px] uppercase tracking-[0.24em] text-cyan-300/70">
-          Stream
-        </p>
-      </div>
+  const [activeTab, setActiveTab] = useState("watch");
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
 
-      <div className="flex-1 overflow-y-auto px-3 py-3">
-        {/* TEMP CONTENT — replace next */}
-        <div className="flex h-full min-h-[480px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-white/10 bg-black/10 px-6 text-center">
-          <div className="h-14 w-14 rounded-2xl border border-white/10 bg-white/[0.04]" />
-          <p className="mt-4 text-sm font-semibold text-white">
-            Stream Panel
-          </p>
-          <p className="mt-2 text-xs text-gray-400">
-            Activity stream will live here.
-          </p>
-        </div>
-      </div>
-    </div>
+  const [selectedItems, setSelectedItems] = useState({
+    watch: watchItems[0].id,
+    listen: listenItems[0].id,
+    live: liveItems[0].id,
+    library: libraryItems[0].id,
+  });
+
+  const activeItems = useMemo(() => {
+    switch (activeTab) {
+      case "watch":
+        return watchItems;
+      case "listen":
+        return listenItems;
+      case "live":
+        return liveItems;
+      case "library":
+        return libraryItems;
+      default:
+        return [];
+    }
+  }, [activeTab]);
+
+  const selectedItem = useMemo(() => {
+    const currentId = selectedItems[activeTab];
+    return (
+      activeItems.find((item) => item.id === currentId) ||
+      activeItems[0] ||
+      null
+    );
+  }, [activeItems, activeTab, selectedItems]);
+
+  const setSelectedForActiveTab = (itemId) => {
+    setSelectedItems((prev) => ({
+      ...prev,
+      [activeTab]: itemId,
+    }));
+  };
+
+  return (
+    <>
+      <StreamPanelContent
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        activeItems={activeItems}
+        selectedItem={selectedItem}
+        setSelectedForActiveTab={setSelectedForActiveTab}
+        setMediaModalOpen={setMediaModalOpen}
+        showHeader={false}
+      />
+
+      <StreamMediaModal
+        open={mediaModalOpen}
+        item={selectedItem}
+        activeTab={activeTab}
+        onClose={() => setMediaModalOpen(false)}
+      />
+    </>
   );
 }
