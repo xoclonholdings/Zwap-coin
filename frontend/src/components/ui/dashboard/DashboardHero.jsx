@@ -14,21 +14,21 @@ export default function DashboardHero({
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-300/80">
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-cyan-300/80">
               Home
             </p>
 
             <div className="mt-2">
-              <p className="text-xs font-medium tracking-[0.01em] text-white/55">
+              <p className="text-[11px] font-medium tracking-[0.08em] text-white/55">
                 Welcome back,
               </p>
 
-              <h1 className="mt-1 text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
+              <h1 className="mt-1 text-[2rem] font-medium leading-[1.05] tracking-[0.01em] text-white">
                 {username || "Zwapper"}
               </h1>
             </div>
 
-            <p className="mt-3 max-w-[85%] text-sm leading-relaxed text-gray-300">
+            <p className="mt-3 max-w-[85%] text-[13px] font-medium leading-relaxed tracking-[0.01em] text-gray-300">
               Your ZWAP! daily pulse in one glance.
             </p>
           </div>
