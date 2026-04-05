@@ -4,7 +4,7 @@ import AccountRail from "@/components/user/AccountRail";
 
 function DesktopSideRail({ title, align = "left", children }) {
   return (
-    <aside className="hidden xl:block xl:w-[280px] 2xl:w-[320px]">
+    <aside className="hidden xl:block xl:w-[280px] 2xl:w-[320px] xl:h-full">
       <div
         className={`h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.035] backdrop-blur-xl ${
           align === "right"
@@ -19,7 +19,7 @@ function DesktopSideRail({ title, align = "left", children }) {
             </p>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {children}
           </div>
         </div>
@@ -30,7 +30,7 @@ function DesktopSideRail({ title, align = "left", children }) {
 
 export default function DesktopAppShell({ children }) {
   return (
-    <div className="min-h-screen bg-[#050510] px-3 pb-28 pt-3 text-white sm:px-4 lg:px-6 xl:h-[calc(100dvh-10.5rem)] xl:min-h-0 xl:overflow-hidden xl:pb-6">
+    <div className="bg-[#050510] text-white xl:h-[calc(100dvh-152px)] xl:overflow-hidden xl:px-6 xl:pb-4 xl:pt-2 2xl:px-8">
       <div className="mx-auto h-full w-full max-w-[1680px]">
         <div className="flex h-full min-h-0 items-stretch gap-6">
           <DesktopSideRail title="Stream" align="left">
@@ -39,9 +39,9 @@ export default function DesktopAppShell({ children }) {
 
           <main className="min-w-0 flex-1 xl:h-full xl:min-h-0">
             <div className="mx-auto w-full max-w-5xl xl:flex xl:h-full xl:max-w-[760px] xl:min-h-0 xl:flex-col 2xl:max-w-[820px]">
-              <div className="w-full xl:min-h-0 xl:flex-1 xl:overflow-hidden">
-                <div className="w-full xl:h-full xl:overflow-y-auto xl:pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="space-y-4 xl:pb-4">
+              <div className="w-full rounded-[1.9rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] shadow-[0_20px_60px_rgba(0,0,0,0.28)] xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden">
+                <div className="w-full xl:h-full xl:overflow-y-auto xl:px-1 xl:py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="space-y-4 px-1 pb-4">
                     {children}
                   </div>
                 </div>
