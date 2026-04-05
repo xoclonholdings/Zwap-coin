@@ -9,13 +9,14 @@ Core behavior:
 - Completing Level III masters that badge for the round
 - When all 9 badges are mastered, user earns a Trophy
 - Trophy increases permanent reward bonus
-- Badge levels and round mastery reset for the next round
+- Badge levels, round mastery, and round progress reset for the next round
 
 Locked from spec:
 - 9 badges
 - 3 levels each
 - Trophy bonus caps at +10%
 - Trophies do not reset
+- Lifetime source counters remain intact
 """
 
 from typing import Dict, Any, List
@@ -37,59 +38,69 @@ TROPHY_BONUS_BY_COUNT = {
     5: 10,
 }
 
+
 BADGE_DEFS = {
     "starter": {
         "label": "Starter",
         "category": "Consistency",
-        "progress_field": "badge_login_days",
+        "source_field": "badge_login_days",
+        "progress_field": "badge_starter_progress",
         "levels": {1: 3, 2: 7, 3: 14},
     },
     "finisher": {
         "label": "Finisher",
         "category": "Consistency",
-        "progress_field": "badge_full_loop_days",
+        "source_field": "badge_full_loop_days",
+        "progress_field": "badge_finisher_progress",
         "levels": {1: 3, 2: 7, 3: 14},
     },
     "shaker": {
         "label": "Shaker",
         "category": "Movement",
-        "progress_field": "badge_step_claims",
+        "source_field": "badge_step_claims",
+        "progress_field": "badge_shaker_progress",
         "levels": {1: 10, 2: 25, 3: 50},
     },
     "mover": {
         "label": "Mover",
         "category": "Movement",
-        "progress_field": "badge_sustained_move_days",
+        "source_field": "badge_sustained_move_days",
+        "progress_field": "badge_mover_progress",
         "levels": {1: 7, 2: 21, 3: 45},
     },
     "contributor": {
         "label": "Contributor",
         "category": "Behavior",
-        "progress_field": "badge_assists_sent",
+        "source_field": "badge_assists_sent",
+        "progress_field": "badge_contributor_progress",
         "levels": {1: 10, 2: 25, 3: 50},
     },
     "builder": {
         "label": "Builder",
         "category": "Behavior",
-        "progress_field": "badge_deep_engagement",
+        "source_field": "badge_deep_engagement",
+        "progress_field": "badge_builder_progress",
         "levels": {1: 5, 2: 12, 3: 25},
     },
     "earner": {
         "label": "Earner",
         "category": "Activity",
-        "progress_field": "badge_zpts_earned",
+        "source_field": "badge_zpts_earned",
+        "progress_field": "badge_earner_progress",
         "levels": {1: 1000, 2: 5000, 3: 15000},
     },
     "supporter": {
         "label": "Supporter",
         "category": "Activity",
-        "progress_field": "badge_referrals",
+        "source_field": "badge_referrals",
+        "progress_field": "badge_supporter_progress",
         "levels": {1: 3, 2: 7, 3: 15},
     },
     "learner": {
         "label": "Learner",
         "category": "Activity",
-        "progress_field": "badge_learn_completions",
+        "source_field": "badge_learn_completions",
+        "progress_field": "badge_learner_progress",
         "levels": {1: 3, 2: 8, 3: 20},
     },
 }
@@ -130,12 +141,21 @@ def _completed_field(badge_key: str) -> str:
     return f"badge_{badge_key}_completed"
 
 
+def _last_source_field(badge_key: str) -> str:
+    return f"badge_{badge_key}_last_source"
+
+
 def ensure_badge_fields(user: dict) -> dict:
     for badge_key, badge_def in BADGE_DEFS.items():
+        source_field = badge_def["source_field"]
         progress_field = badge_def["progress_field"]
         level_field = _level_field(badge_key)
         mastered_field = _mastered_field(badge_key)
         completed_field = _completed_field(badge_key)
+        last_source_field = _last_source_field(badge_key)
+
+        if source_field not in user:
+            user[source_field] = 0
 
         if progress_field not in user:
             user[progress_field] = 0
@@ -148,6 +168,9 @@ def ensure_badge_fields(user: dict) -> dict:
 
         if completed_field not in user:
             user[completed_field] = False
+
+        if last_source_field not in user:
+            user[last_source_field] = 0
 
     if "badge_trophies" not in user:
         user["badge_trophies"] = 0
@@ -163,8 +186,9 @@ def ensure_badge_fields(user: dict) -> dict:
 
 def evaluate_badges(user: dict) -> Dict[str, Any]:
     """
-    Evaluate all badge levels from current cumulative progress.
-    Returns a dict containing:
+    Evaluate all badge levels from current round progress.
+    Lifetime counters remain intact.
+    Returns:
     - updates to persist
     - events for level-ups / mastery / trophy
     - bonus zPts awarded from level completions
@@ -175,6 +199,26 @@ def evaluate_badges(user: dict) -> Dict[str, Any]:
     events: List[Dict[str, Any]] = []
     total_bonus_zpts = 0
 
+    # First, sync lifetime source deltas into round progress
+    for badge_key in BADGE_ORDER:
+        badge_def = BADGE_DEFS[badge_key]
+        source_field = badge_def["source_field"]
+        progress_field = badge_def["progress_field"]
+        last_source_field = _last_source_field(badge_key)
+
+        source_value = _safe_int(user.get(source_field))
+        last_source_value = _safe_int(user.get(last_source_field))
+        current_progress = _safe_int(user.get(progress_field))
+
+        delta = max(source_value - last_source_value, 0)
+        if delta > 0:
+            new_progress = current_progress + delta
+            updates[progress_field] = new_progress
+            updates[last_source_field] = source_value
+            user[progress_field] = new_progress
+            user[last_source_field] = source_value
+
+    # Then evaluate levels and mastery from round progress
     for badge_key in BADGE_ORDER:
         badge_def = BADGE_DEFS[badge_key]
         progress_field = badge_def["progress_field"]
@@ -192,14 +236,15 @@ def evaluate_badges(user: dict) -> Dict[str, Any]:
 
         if new_level > current_level:
             for level in range(current_level + 1, new_level + 1):
-                total_bonus_zpts += LEVEL_REWARDS.get(level, 0)
+                level_reward = LEVEL_REWARDS.get(level, 0)
+                total_bonus_zpts += level_reward
                 events.append({
                     "type": "badge_level_up",
                     "badge_key": badge_key,
                     "badge_label": badge_def["label"],
                     "badge_category": badge_def["category"],
                     "new_level": level,
-                    "reward_zpts": LEVEL_REWARDS.get(level, 0),
+                    "reward_zpts": level_reward,
                 })
 
             updates[level_field] = new_level
@@ -218,16 +263,17 @@ def evaluate_badges(user: dict) -> Dict[str, Any]:
                 "reward_zpts": MASTERY_BONUS,
             })
 
-        completed = is_mastered
-        updates[completed_field] = completed
-        user[completed_field] = completed
+        updates[completed_field] = is_mastered
+        user[completed_field] = is_mastered
 
+    # Apply all badge-earned zPts bonuses
     if total_bonus_zpts > 0:
         updates["zpts_balance"] = _safe_int(user.get("zpts_balance")) + total_bonus_zpts
         updates["badge_zpts_earned"] = _safe_int(user.get("badge_zpts_earned")) + total_bonus_zpts
         user["zpts_balance"] = updates["zpts_balance"]
         user["badge_zpts_earned"] = updates["badge_zpts_earned"]
 
+    # Check for trophy completion after mastery state is updated
     all_mastered = all(bool(user.get(_mastered_field(badge_key), False)) for badge_key in BADGE_ORDER)
 
     if all_mastered:
@@ -250,19 +296,27 @@ def evaluate_badges(user: dict) -> Dict[str, Any]:
             "reward_bonus_percent": new_bonus_percent,
         })
 
-        # reset round-only badge state, keep cumulative progress + trophies
+        # Reset round-only badge state
         for badge_key in BADGE_ORDER:
+            badge_def = BADGE_DEFS[badge_key]
+            progress_field = badge_def["progress_field"]
             level_field = _level_field(badge_key)
             mastered_field = _mastered_field(badge_key)
             completed_field = _completed_field(badge_key)
+            last_source_field = _last_source_field(badge_key)
+            source_field = badge_def["source_field"]
 
+            updates[progress_field] = 0
             updates[level_field] = 0
             updates[mastered_field] = False
             updates[completed_field] = False
+            updates[last_source_field] = _safe_int(user.get(source_field))
 
+            user[progress_field] = 0
             user[level_field] = 0
             user[mastered_field] = False
             user[completed_field] = False
+            user[last_source_field] = _safe_int(user.get(source_field))
 
     return {
         "updates": updates,
@@ -274,6 +328,7 @@ def evaluate_badges(user: dict) -> Dict[str, Any]:
 def get_next_badge(user: dict) -> Dict[str, Any]:
     """
     Returns the next badge that should be shown in the dashboard.
+    Uses round progress, not lifetime source counters.
     """
     ensure_badge_fields(user)
 
