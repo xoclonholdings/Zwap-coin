@@ -9,8 +9,8 @@ function ProgressRing({
   const safeCompleted = Math.max(Number(completedTaskCount) || 0, 0);
   const percent = Math.max(0, Math.min((safeCompleted / safeTotal) * 100, 100));
 
-  const size = 138;
-  const stroke = 12;
+  const size = 124;
+  const stroke = 11;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference - (percent / 100) * circumference;
@@ -42,15 +42,69 @@ function ProgressRing({
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-3xl font-bold leading-none text-white">
+        <p className="text-[28px] font-bold leading-none text-white">
           {safeCompleted}/{safeTotal}
         </p>
-        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-white/45">
+        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-white/45">
           done
         </p>
       </div>
     </div>
   );
+}
+
+function getTaskTone(title = "", completed = false) {
+  const value = title.toLowerCase();
+
+  if (value.includes("login")) {
+    return {
+      shell: completed
+        ? "border-cyan-400/28 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.18),_transparent_48%),linear-gradient(180deg,rgba(8,30,40,0.92),rgba(10,16,28,0.96))] shadow-[0_0_22px_rgba(34,211,238,0.08)]"
+        : "border-cyan-400/18 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.12),_transparent_48%),rgba(255,255,255,0.04)]",
+      iconWrap: "border-cyan-400/25 bg-cyan-400/12",
+      icon: "text-cyan-300",
+      chip: completed
+        ? "border-cyan-400/25 bg-cyan-400/14 text-cyan-200"
+        : "border-cyan-400/18 bg-cyan-400/10 text-cyan-300",
+    };
+  }
+
+  if (value.includes("learn")) {
+    return {
+      shell: completed
+        ? "border-violet-400/28 bg-[radial-gradient(circle_at_top_left,_rgba(168,85,247,0.18),_transparent_48%),linear-gradient(180deg,rgba(22,14,42,0.92),rgba(12,12,28,0.96))] shadow-[0_0_22px_rgba(168,85,247,0.08)]"
+        : "border-violet-400/18 bg-[radial-gradient(circle_at_top_left,_rgba(168,85,247,0.12),_transparent_48%),rgba(255,255,255,0.04)]",
+      iconWrap: "border-violet-400/25 bg-violet-400/12",
+      icon: "text-violet-300",
+      chip: completed
+        ? "border-violet-400/25 bg-violet-400/14 text-violet-200"
+        : "border-violet-400/18 bg-violet-400/10 text-violet-300",
+    };
+  }
+
+  if (value.includes("play") || value.includes("round")) {
+    return {
+      shell: completed
+        ? "border-pink-400/28 bg-[radial-gradient(circle_at_top_left,_rgba(244,114,182,0.18),_transparent_48%),linear-gradient(180deg,rgba(36,14,34,0.92),rgba(16,12,26,0.96))] shadow-[0_0_22px_rgba(244,114,182,0.08)]"
+        : "border-pink-400/18 bg-[radial-gradient(circle_at_top_left,_rgba(244,114,182,0.12),_transparent_48%),rgba(255,255,255,0.04)]",
+      iconWrap: "border-pink-400/25 bg-pink-400/12",
+      icon: "text-pink-300",
+      chip: completed
+        ? "border-pink-400/25 bg-pink-400/14 text-pink-200"
+        : "border-pink-400/18 bg-pink-400/10 text-pink-300",
+    };
+  }
+
+  return {
+    shell: completed
+      ? "border-emerald-400/28 bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.18),_transparent_48%),linear-gradient(180deg,rgba(10,34,34,0.92),rgba(10,16,24,0.96))] shadow-[0_0_22px_rgba(45,212,191,0.08)]"
+      : "border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.12),_transparent_48%),rgba(255,255,255,0.04)]",
+    iconWrap: "border-emerald-400/25 bg-emerald-400/12",
+    icon: "text-emerald-300",
+    chip: completed
+      ? "border-emerald-400/25 bg-emerald-400/14 text-emerald-200"
+      : "border-emerald-400/18 bg-emerald-400/10 text-emerald-300",
+  };
 }
 
 function TaskTile({
@@ -60,35 +114,23 @@ function TaskTile({
   completed,
   hint,
 }) {
+  const tone = getTaskTone(title, completed);
+
   return (
     <div
-      className={`rounded-[1.35rem] border p-3.5 transition ${
-        completed
-          ? "border-cyan-400/20 bg-cyan-500/10"
-          : "border-white/10 bg-white/[0.04]"
-      }`}
+      className={`rounded-[1.35rem] border p-3.5 transition ${tone.shell}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${
-            completed
-              ? "border-cyan-400/25 bg-cyan-400/12"
-              : "border-white/10 bg-white/[0.04]"
-          }`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${tone.iconWrap}`}
         >
-          {Icon ? (
-            <Icon className={`h-4.5 w-4.5 ${completed ? "text-cyan-300" : "text-white/75"}`} />
-          ) : null}
+          {Icon ? <Icon className={`h-4.5 w-4.5 ${tone.icon}`} /> : null}
         </div>
 
         <div
-          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-            completed
-              ? "border border-cyan-400/25 bg-cyan-400/12 text-cyan-200"
-              : "border border-white/10 bg-white/[0.04] text-cyan-300"
-          }`}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.chip}`}
         >
-          {reward}
+          +{reward}
         </div>
       </div>
 
@@ -140,7 +182,7 @@ export default function DashboardDailyTasksCard({
             </div>
           </div>
 
-          <div className="mt-5 flex justify-center">
+          <div className="mt-4 flex justify-center pb-1">
             <ProgressRing
               completedTaskCount={completedTaskCount}
               totalTasks={totalTasks}
