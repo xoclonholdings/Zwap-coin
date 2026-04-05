@@ -12,6 +12,10 @@ from services.zlearn_service import (
 )
 from services.reward_service import get_tier_multipliers, enforce_daily_caps
 from services.badge_service import evaluate_badges, persist_badge_updates
+from services.daily_task_service import (
+    maybe_mark_learn_task_complete,
+    maybe_process_full_daily_loop,
+)
 
 learn_router = APIRouter(prefix="/learn", tags=["Learn"])
 
@@ -161,16 +165,27 @@ async def complete_module(wallet_address: str, module_id: str, request: Request)
         },
     )
 
+    await maybe_mark_learn_task_complete(db, wallet)
+
     updated_user = await db.users.find_one({"wallet_address": wallet})
 
     badge_result = evaluate_badges(updated_user)
     await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
     updated_user.update(badge_result["updates"])
 
+    full_loop_result = await maybe_process_full_daily_loop(db, wallet)
+
+    if full_loop_result.get("awarded"):
+        refreshed_user = await db.users.find_one({"wallet_address": wallet})
+        if refreshed_user:
+            updated_user = refreshed_user
+
     return {
         "message": "Module completed",
         "module_id": module_id,
         "reward": reward,
+        "full_loop_awarded": full_loop_result.get("awarded", False),
+        "full_loop_bonus": full_loop_result.get("full_loop_bonus", 0),
         "new_zpts_balance": int(updated_user.get("zpts_balance", 0)),
         "daily_zpts_remaining": max(
             0,
@@ -182,6 +197,8 @@ async def complete_module(wallet_address: str, module_id: str, request: Request)
         "badge_learner_mastered": updated_user.get("badge_learner_mastered", False),
         "badge_builder_level": updated_user.get("badge_builder_level", 0),
         "badge_builder_mastered": updated_user.get("badge_builder_mastered", False),
+        "badge_finisher_level": updated_user.get("badge_finisher_level", 0),
+        "badge_finisher_mastered": updated_user.get("badge_finisher_mastered", False),
         "badge_trophies": updated_user.get("badge_trophies", 0),
         "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
     }
