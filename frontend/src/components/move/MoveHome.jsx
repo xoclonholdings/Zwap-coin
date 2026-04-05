@@ -2,12 +2,11 @@ import React from "react";
 import { Footprints } from "lucide-react";
 
 import MoveCoreMovementCard from "@/components/move/MoveCoreMovementCard";
-import MoveSessionProgressCard from "@/components/move/MoveSessionProgressCard";
+import MoveStatsCard from "@/components/move/MoveStatsCard";
 
 export default function MoveHome({
   user,
   isPlus,
-  multiplier,
   dailyZptsCap,
   dailyZptsEarned,
   steps,
@@ -22,7 +21,6 @@ export default function MoveHome({
   pace,
   distanceMiles,
   calories,
-  sessionMilestones,
   onToggleTracking,
   onReset,
   onClaim,
@@ -107,8 +105,7 @@ export default function MoveHome({
           onConnectWallet={onConnectWallet}
         />
 
-        <MoveSessionProgressCard
-          milestones={sessionMilestones}
+        <MoveStatsCard
           steps={steps}
           distanceMiles={distanceMiles}
           calories={calories}
