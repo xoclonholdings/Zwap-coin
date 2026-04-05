@@ -44,15 +44,65 @@ function generateUsername({ walletAddress, email }) {
   const seedSource = walletAddress || email || "";
   if (!seedSource) return "Zwapper";
 
-  const seed = walletAddress
-    ? parseInt(walletAddress.slice(2, 10), 16)
-    : hashString(seedSource.toLowerCase());
+  const seed =
+    walletAddress && walletAddress.startsWith("0x")
+      ? parseInt(walletAddress.slice(2, 10), 16)
+      : hashString(String(seedSource).toLowerCase());
 
   const adjIndex = Math.abs(seed) % ADJECTIVES.length;
   const nounIndex = Math.abs(Math.floor(seed / 8)) % NOUNS.length;
   const num = Math.abs(seed) % 999;
 
   return `${ADJECTIVES[adjIndex]}${NOUNS[nounIndex]}${num}`;
+}
+
+function AccountIdentityCard({
+  displayName,
+  displaySubtext,
+  isPlus,
+  onUpgrade,
+  initials,
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
+      <div className="flex items-center gap-3">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-purple-500/30 text-lg font-bold text-white shadow-[0_0_24px_rgba(34,211,238,0.18)]">
+          {initials}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-[20px] font-semibold leading-none text-white">
+              {displayName}
+            </p>
+
+            {isPlus ? (
+              <span className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black">
+                Zitizen
+              </span>
+            ) : (
+              <>
+                <span className="text-xs font-medium text-gray-400">
+                  Zwapper
+                </span>
+                <button
+                  type="button"
+                  onClick={onUpgrade}
+                  className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black transition hover:opacity-90"
+                >
+                  Upgrade
+                </button>
+              </>
+            )}
+          </div>
+
+          <p className="mt-2 truncate text-sm text-gray-400">
+            {displaySubtext}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AccountPanelContent({
@@ -89,7 +139,7 @@ export default function AccountPanelContent({
 
     return generateUsername({
       walletAddress,
-      email: safeAuthUser?.email,
+      email: safeAuthUser?.email || safeUser?.email,
     });
   }, [safeUser, safeAuthUser, walletAddress]);
 
@@ -127,13 +177,16 @@ export default function AccountPanelContent({
   );
 
   const zptsBalance = rawZptsBalance.toLocaleString();
-
   const canClaim = false;
 
   const handleNavigate = (path) => {
     onNavigate?.(path);
     onClose?.();
     navigate(path);
+  };
+
+  const handleUpgrade = () => {
+    handleNavigate("/plus");
   };
 
   const handleSignOut = async () => {
@@ -187,88 +240,26 @@ export default function AccountPanelContent({
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
-              <div className="flex items-center gap-3">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-purple-500/30 text-lg font-bold text-white shadow-[0_0_24px_rgba(34,211,238,0.18)]">
-                  {initials}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-[20px] font-semibold leading-none text-white">
-                      {displayName}
-                    </p>
-
-                    {isPlus ? (
-                      <span className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black">
-                        Zitizen
-                      </span>
-                    ) : (
-                      <>
-                        <span className="text-xs font-medium text-gray-400">
-                          Zwapper
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleNavigate("/plus")}
-                          className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black transition hover:opacity-90"
-                        >
-                          Upgrade
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  <p className="mt-2 truncate text-sm text-gray-400">
-                    {displaySubtext}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <AccountIdentityCard
+              displayName={displayName}
+              displaySubtext={displaySubtext}
+              isPlus={isPlus}
+              onUpgrade={handleUpgrade}
+              initials={initials}
+            />
           </div>
         ) : null}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="space-y-5 px-4 py-4">
             {!showHeader ? (
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 via-blue-500/20 to-purple-500/30 text-lg font-bold text-white shadow-[0_0_24px_rgba(34,211,238,0.18)]">
-                    {initials}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[20px] font-semibold leading-none text-white">
-                        {displayName}
-                      </p>
-
-                      {isPlus ? (
-                        <span className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black">
-                          Zitizen
-                        </span>
-                      ) : (
-                        <>
-                          <span className="text-xs font-medium text-gray-400">
-                            Zwapper
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleNavigate("/plus")}
-                            className="rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-1 text-[11px] font-semibold leading-none text-black transition hover:opacity-90"
-                          >
-                            Upgrade
-                          </button>
-                        </>
-                      )}
-                    </div>
-
-                    <p className="mt-2 truncate text-sm text-gray-400">
-                      {displaySubtext}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <AccountIdentityCard
+                displayName={displayName}
+                displaySubtext={displaySubtext}
+                isPlus={isPlus}
+                onUpgrade={handleUpgrade}
+                initials={initials}
+              />
             ) : null}
 
             <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
