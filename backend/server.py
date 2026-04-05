@@ -21,6 +21,7 @@ from routers import learn_routes
 from routers import user_routes
 from routers import rewards_routes
 from routers import activity_routes
+from routers import news_routes
 
 from services.scheduler_service import start_scheduler, stop_scheduler
 
