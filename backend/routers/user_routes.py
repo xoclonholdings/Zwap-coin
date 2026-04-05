@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import uuid
 
-from services.reward_service import get_daily_reward
+from services.badge_service import evaluate_badges, persist_badge_updates
 
 user_router = APIRouter(prefix="/users", tags=["User"])
 
@@ -34,6 +34,79 @@ class UserResponse(BaseModel):
     created_at: str
 
 
+class AssistSendRequest(BaseModel):
+    sender_wallet: str
+    recipient_wallet: str
+    amount: int
+    message: Optional[str] = None
+
+
+class AssistAcceptRequest(BaseModel):
+    assist_id: str
+    recipient_wallet: str
+
+
+def get_assist_limits_for_tier(tier: str) -> dict:
+    safe_tier = str(tier or "starter").lower()
+
+    if safe_tier in ["plus", "zitizen"]:
+        return {
+            "send_cap": 10,
+            "receive_cap": 10,
+        }
+
+    return {
+        "send_cap": 5,
+        "receive_cap": 5,
+    }
+
+
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+async def check_and_reset_daily_assist_counts(db, user: dict) -> dict:
+    now = datetime.now(timezone.utc)
+    last_reset = user.get("last_assist_reset")
+
+    if last_reset:
+        last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+        if last_reset_dt.date() < now.date():
+            await db.users.update_one(
+                {"wallet_address": user["wallet_address"]},
+                {
+                    "$set": {
+                        "daily_assists_sent": 0,
+                        "daily_assists_received": 0,
+                        "daily_first_assist_bonus_claimed": False,
+                        "last_assist_reset": now.isoformat(),
+                    }
+                },
+            )
+            user["daily_assists_sent"] = 0
+            user["daily_assists_received"] = 0
+            user["daily_first_assist_bonus_claimed"] = False
+            user["last_assist_reset"] = now.isoformat()
+    else:
+        await db.users.update_one(
+            {"wallet_address": user["wallet_address"]},
+            {
+                "$set": {
+                    "daily_assists_sent": 0,
+                    "daily_assists_received": 0,
+                    "daily_first_assist_bonus_claimed": False,
+                    "last_assist_reset": now.isoformat(),
+                }
+            },
+        )
+        user["daily_assists_sent"] = 0
+        user["daily_assists_received"] = 0
+        user["daily_first_assist_bonus_claimed"] = False
+        user["last_assist_reset"] = now.isoformat()
+
+    return user
+
+
 @user_router.post("/connect", response_model=UserResponse)
 async def connect_wallet(user_data: UserCreate, request: Request):
     """Connect wallet and create/get user."""
@@ -45,7 +118,8 @@ async def connect_wallet(user_data: UserCreate, request: Request):
         if existing:
             return UserResponse(**existing)
 
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = utc_now_iso()
+
         new_user = {
             "id": str(uuid.uuid4()),
             "wallet_address": wallet,
@@ -61,15 +135,96 @@ async def connect_wallet(user_data: UserCreate, request: Request):
             "last_daily_claim": None,
             "last_zpts_reset": now_iso,
             "games_played": 0,
+            "games_played_today": 0,
             "total_earned": 100.0,
             "created_at": now_iso,
+
+            # assist state
+            "daily_assists_sent": 0,
+            "daily_assists_received": 0,
+            "daily_first_assist_bonus_claimed": False,
+            "last_assist_reset": now_iso,
+
+            # badge source counters
+            "badge_login_days": 0,
+            "badge_full_loop_days": 0,
+            "badge_step_claims": 0,
+            "badge_sustained_move_days": 0,
+            "badge_assists_sent": 0,
+            "badge_deep_engagement": 0,
+            "badge_zpts_earned": 0,
+            "badge_referrals": 0,
+            "badge_learn_completions": 0,
+
+            # badge round state
+            "badge_starter_progress": 0,
+            "badge_finisher_progress": 0,
+            "badge_shaker_progress": 0,
+            "badge_mover_progress": 0,
+            "badge_contributor_progress": 0,
+            "badge_builder_progress": 0,
+            "badge_earner_progress": 0,
+            "badge_supporter_progress": 0,
+            "badge_learner_progress": 0,
+
+            # badge levels
+            "badge_starter_level": 0,
+            "badge_finisher_level": 0,
+            "badge_shaker_level": 0,
+            "badge_mover_level": 0,
+            "badge_contributor_level": 0,
+            "badge_builder_level": 0,
+            "badge_earner_level": 0,
+            "badge_supporter_level": 0,
+            "badge_learner_level": 0,
+
+            # badge mastery
+            "badge_starter_mastered": False,
+            "badge_finisher_mastered": False,
+            "badge_shaker_mastered": False,
+            "badge_mover_mastered": False,
+            "badge_contributor_mastered": False,
+            "badge_builder_mastered": False,
+            "badge_earner_mastered": False,
+            "badge_supporter_mastered": False,
+            "badge_learner_mastered": False,
+
+            # badge completion flags
+            "badge_starter_completed": False,
+            "badge_finisher_completed": False,
+            "badge_shaker_completed": False,
+            "badge_mover_completed": False,
+            "badge_contributor_completed": False,
+            "badge_builder_completed": False,
+            "badge_earner_completed": False,
+            "badge_supporter_completed": False,
+            "badge_learner_completed": False,
+
+            # badge source snapshots
+            "badge_starter_last_source": 0,
+            "badge_finisher_last_source": 0,
+            "badge_shaker_last_source": 0,
+            "badge_mover_last_source": 0,
+            "badge_contributor_last_source": 0,
+            "badge_builder_last_source": 0,
+            "badge_earner_last_source": 0,
+            "badge_supporter_last_source": 0,
+            "badge_learner_last_source": 0,
+
+            # trophy state
+            "badge_trophies": 0,
+            "badge_trophy_bonus_percent": 0,
+            "badge_current_round": 1,
+
+            # movement daily marker
+            "badge_last_move_day": None,
         }
 
         await db.users.insert_one(new_user)
         return UserResponse(**new_user)
 
     except Exception:
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = utc_now_iso()
         fallback_user = {
             "id": str(uuid.uuid4()),
             "wallet_address": wallet,
@@ -102,95 +257,172 @@ async def get_user(wallet_address: str, request: Request):
     return UserResponse(**user)
 
 
-@user_router.get("/rewards/status/{wallet_address}")
-async def get_daily_reward_status(wallet_address: str, request: Request):
+@user_router.post("/assist/send")
+async def send_assist(payload: AssistSendRequest, request: Request):
     db = request.app.state.db
-    wallet = wallet_address.lower()
 
-    user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    sender_wallet = payload.sender_wallet.lower()
+    recipient_wallet = payload.recipient_wallet.lower()
+    amount = int(payload.amount)
 
-    streak = user.get("daily_streak", 0)
-    last_claim = user.get("last_daily_claim")
-    now = datetime.now(timezone.utc)
-    can_claim = True
+    if sender_wallet == recipient_wallet:
+        raise HTTPException(status_code=400, detail="Cannot send Assist to yourself")
 
-    if not last_claim:
-        projected_streak = 1
-    else:
-        last_claim_dt = datetime.fromisoformat(last_claim.replace("Z", "+00:00"))
-        elapsed = now - last_claim_dt
+    if amount < 10 or amount > 100:
+        raise HTTPException(status_code=400, detail="Assist amount must be between 10 and 100 zPts")
 
-        if elapsed < timedelta(hours=24):
-            can_claim = False
-            projected_streak = streak
-        elif elapsed < timedelta(hours=48):
-            projected_streak = streak + 1
-        else:
-            projected_streak = 1
+    sender = await db.users.find_one({"wallet_address": sender_wallet})
+    if not sender:
+        raise HTTPException(status_code=404, detail="Sender not found")
 
-    next_reward = get_daily_reward(projected_streak)
+    recipient = await db.users.find_one({"wallet_address": recipient_wallet})
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    sender = await check_and_reset_daily_assist_counts(db, sender)
+    recipient = await check_and_reset_daily_assist_counts(db, recipient)
+
+    sender_limits = get_assist_limits_for_tier(sender.get("tier", "starter"))
+    recipient_limits = get_assist_limits_for_tier(recipient.get("tier", "starter"))
+
+    if int(sender.get("daily_assists_sent", 0) or 0) >= sender_limits["send_cap"]:
+        raise HTTPException(status_code=429, detail="Daily Assist send cap reached")
+
+    if int(recipient.get("daily_assists_received", 0) or 0) >= recipient_limits["receive_cap"]:
+        raise HTTPException(status_code=429, detail="Recipient daily Assist receive cap reached")
+
+    if int(sender.get("zpts_balance", 0) or 0) < amount:
+        raise HTTPException(status_code=400, detail="Sender does not have enough zPts")
+
+    existing_pending = await db.assists.find_one({
+        "sender_wallet": sender_wallet,
+        "recipient_wallet": recipient_wallet,
+        "status": "pending",
+    })
+    if existing_pending:
+        raise HTTPException(status_code=400, detail="A pending Assist already exists for this recipient")
+
+    assist_doc = {
+        "id": str(uuid.uuid4()),
+        "sender_wallet": sender_wallet,
+        "recipient_wallet": recipient_wallet,
+        "amount": amount,
+        "message": (payload.message or "").strip()[:180],
+        "status": "pending",
+        "created_at": utc_now_iso(),
+        "accepted_at": None,
+    }
+
+    await db.assists.insert_one(assist_doc)
 
     return {
-        "daily_streak": streak,
-        "can_claim": can_claim,
-        "next_reward_zpts": next_reward,
-        "last_daily_claim": last_claim,
+        "success": True,
+        "assist_id": assist_doc["id"],
+        "status": "pending",
+        "message": "Assist request sent",
+        "amount": amount,
     }
 
 
-@user_router.post("/rewards/daily/{wallet_address}")
-async def claim_daily_reward(wallet_address: str, request: Request):
+@user_router.post("/assist/accept")
+async def accept_assist(payload: AssistAcceptRequest, request: Request):
     db = request.app.state.db
-    wallet = wallet_address.lower()
+    recipient_wallet = payload.recipient_wallet.lower()
 
-    user = await db.users.find_one({"wallet_address": wallet})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    assist = await db.assists.find_one({"id": payload.assist_id})
+    if not assist:
+        raise HTTPException(status_code=404, detail="Assist not found")
 
-    now = datetime.now(timezone.utc)
-    streak = user.get("daily_streak", 0)
-    last_claim = user.get("last_daily_claim")
+    if assist.get("status") != "pending":
+        raise HTTPException(status_code=400, detail="Assist is no longer pending")
 
-    if last_claim:
-        last_claim_dt = datetime.fromisoformat(last_claim.replace("Z", "+00:00"))
-        elapsed = now - last_claim_dt
+    if assist.get("recipient_wallet") != recipient_wallet:
+        raise HTTPException(status_code=403, detail="This Assist does not belong to this recipient")
 
-        if elapsed < timedelta(hours=24):
-            raise HTTPException(status_code=400, detail="Daily reward already claimed")
+    sender_wallet = assist["sender_wallet"]
+    amount = int(assist["amount"])
 
-        if elapsed < timedelta(hours=48):
-            new_streak = streak + 1
-        else:
-            new_streak = 1
-    else:
-        new_streak = 1
+    sender = await db.users.find_one({"wallet_address": sender_wallet})
+    if not sender:
+        raise HTTPException(status_code=404, detail="Sender not found")
 
-    reward_amount = get_daily_reward(new_streak)
+    recipient = await db.users.find_one({"wallet_address": recipient_wallet})
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    sender = await check_and_reset_daily_assist_counts(db, sender)
+    recipient = await check_and_reset_daily_assist_counts(db, recipient)
+
+    sender_limits = get_assist_limits_for_tier(sender.get("tier", "starter"))
+    recipient_limits = get_assist_limits_for_tier(recipient.get("tier", "starter"))
+
+    if int(sender.get("daily_assists_sent", 0) or 0) >= sender_limits["send_cap"]:
+        raise HTTPException(status_code=429, detail="Sender daily Assist send cap reached")
+
+    if int(recipient.get("daily_assists_received", 0) or 0) >= recipient_limits["receive_cap"]:
+        raise HTTPException(status_code=429, detail="Recipient daily Assist receive cap reached")
+
+    if int(sender.get("zpts_balance", 0) or 0) < amount:
+        raise HTTPException(status_code=400, detail="Sender no longer has enough zPts")
+
+    sender_first_bonus = 0
+    if not bool(sender.get("daily_first_assist_bonus_claimed", False)):
+        sender_first_bonus = 25
+
+    accepted_at = utc_now_iso()
 
     await db.users.update_one(
-        {"wallet_address": wallet},
+        {"wallet_address": sender_wallet},
         {
-            "$set": {
-                "daily_streak": new_streak,
-                "last_daily_claim": now.isoformat(),
-            },
             "$inc": {
-                "zpts_balance": reward_amount,
+                "zpts_balance": -amount + sender_first_bonus,
+                "daily_assists_sent": 1,
+                "badge_assists_sent": 1,
+                "badge_zpts_earned": sender_first_bonus,
+            },
+            "$set": {
+                "daily_first_assist_bonus_claimed": True,
+                "updated_at": accepted_at,
             },
         },
     )
 
-    updated_user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+    await db.users.update_one(
+        {"wallet_address": recipient_wallet},
+        {
+            "$inc": {
+                "zpts_balance": amount,
+                "daily_assists_received": 1,
+            },
+            "$set": {
+                "updated_at": accepted_at,
+            },
+        },
+    )
+
+    await db.assists.update_one(
+        {"id": payload.assist_id},
+        {
+            "$set": {
+                "status": "accepted",
+                "accepted_at": accepted_at,
+            }
+        },
+    )
+
+    updated_sender = await db.users.find_one({"wallet_address": sender_wallet})
+    sender_badge_result = evaluate_badges(updated_sender)
+    await persist_badge_updates(db, updated_sender["id"], sender_badge_result["updates"])
+
+    updated_recipient = await db.users.find_one({"wallet_address": recipient_wallet})
 
     return {
         "success": True,
-        "daily_streak": updated_user.get("daily_streak", new_streak),
-        "reward_zpts": reward_amount,
-        "new_zpts_balance": updated_user.get("zpts_balance", 0),
-        "last_daily_claim": updated_user.get("last_daily_claim"),
-        "message": f"Claimed {reward_amount} zPts daily reward",
+        "assist_id": payload.assist_id,
+        "amount_received": amount,
+        "sender_first_assist_bonus": sender_first_bonus,
+        "recipient_new_balance": int(updated_recipient.get("zpts_balance", 0)),
+        "message": "Assist accepted",
     }
 
 
