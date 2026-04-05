@@ -1,5 +1,4 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
-import { toast } from "sonner";
 import api from "@/lib/api";
 
 export const AppContext = createContext();
@@ -121,12 +120,9 @@ export function AppProvider({ children }) {
       }
 
       closeAllAuthModals();
-
-      toast.success("Wallet connected!");
       return userData;
     } catch (error) {
       console.error("api.connectWallet failed:", error);
-      toast.error("Failed to connect wallet");
       throw error;
     } finally {
       setIsLoading(false);
@@ -137,10 +133,9 @@ export function AppProvider({ children }) {
     setAuthUser(emailUser);
     localStorage.setItem("zwap_auth_user", JSON.stringify(emailUser));
     closeAllAuthModals();
-    toast.success("Signed in");
   };
 
-  const disconnectWallet = (showToast = true) => {
+  const disconnectWallet = () => {
     setUser(null);
     setWalletAddress(null);
     setOnchainBalance(null);
@@ -157,27 +152,18 @@ export function AppProvider({ children }) {
       setAuthUser(updatedAuthUser);
       localStorage.setItem("zwap_auth_user", JSON.stringify(updatedAuthUser));
     }
-
-    if (showToast) {
-      toast.success("Wallet disconnected");
-    }
   };
 
-  const logoutEmailUser = (showToast = true) => {
+  const logoutEmailUser = () => {
     setAuthUser(null);
     localStorage.removeItem("zwap_auth_user");
     localStorage.removeItem("zwap_email");
-
-    if (showToast) {
-      toast.success("Signed out");
-    }
   };
 
   const logoutAll = () => {
-    disconnectWallet(false);
-    logoutEmailUser(false);
+    disconnectWallet();
+    logoutEmailUser();
     closeAllAuthModals();
-    toast.success("Signed out");
   };
 
   const refreshUser = async () => {
