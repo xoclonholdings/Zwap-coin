@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, HTTPException, Request
 from services.badge_service import evaluate_badges, persist_badge_updates
+from services.daily_task_service import maybe_process_full_daily_loop
 
 router = APIRouter(prefix="/rewards", tags=["rewards"])
 
@@ -163,6 +164,13 @@ async def claim_daily_reward(wallet_address: str, request: Request):
 
     updated_user.update(badge_result["updates"])
 
+    full_loop_result = await maybe_process_full_daily_loop(db, wallet)
+
+    if full_loop_result.get("awarded") or full_loop_result.get("reason") == "daily_cap_reached_loop_counted":
+        refreshed_user = await db.users.find_one({"wallet_address": wallet})
+        if refreshed_user:
+            updated_user = refreshed_user
+
     await db.reward_claims.insert_one({
         "wallet_address": wallet,
         "reward_type": "daily",
@@ -178,11 +186,15 @@ async def claim_daily_reward(wallet_address: str, request: Request):
         "reward_type": "daily",
         "streak": new_streak,
         "reward_zpts": reward_amount,
+        "full_loop_awarded": full_loop_result.get("awarded", False),
+        "full_loop_bonus": full_loop_result.get("full_loop_bonus", 0),
         "zpts_balance": updated_user.get("zpts_balance", new_zpts_balance),
         "badge_login_days": updated_user.get("badge_login_days", 0),
         "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
         "badge_starter_level": updated_user.get("badge_starter_level", 0),
         "badge_starter_mastered": updated_user.get("badge_starter_mastered", False),
+        "badge_finisher_level": updated_user.get("badge_finisher_level", 0),
+        "badge_finisher_mastered": updated_user.get("badge_finisher_mastered", False),
         "badge_trophies": updated_user.get("badge_trophies", 0),
         "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
         "last_daily_claim": now.isoformat(),
