@@ -1,33 +1,46 @@
-/* Additional App styles */
+/* Root app shell */
 .App {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: #050510;
+  color: white;
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Toast customization */
-[data-sonner-toaster] {
-  --normal-bg: #141530 !important;
-  --normal-border: rgba(0, 245, 255, 0.2) !important;
-  --success-bg: rgba(34, 197, 94, 0.2) !important;
-  --error-bg: rgba(239, 68, 68, 0.2) !important;
+/* Remove visible scrollbars while preserving scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-/* Button glow on hover */
-button:hover {
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth interactive transitions */
+button {
   transition: all 0.2s ease;
 }
 
 /* Input focus states */
-input:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: #00f5ff !important;
   box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
@@ -39,7 +52,16 @@ input:focus {
 }
 
 /* Dialog overlay */
+[data-radix-dialog-overlay],
 [data-state="open"] > [data-radix-dialog-overlay] {
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
+}
+
+/* Legacy Sonner/toast styling left inert in case any internal mount remains */
+[data-sonner-toaster] {
+  --normal-bg: #141530 !important;
+  --normal-border: rgba(0, 245, 255, 0.2) !important;
+  --success-bg: rgba(34, 197, 94, 0.2) !important;
+  --error-bg: rgba(239, 68, 68, 0.2) !important;
 }
