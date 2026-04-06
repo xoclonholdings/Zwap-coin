@@ -21,8 +21,8 @@ import SwapTab from "../components/swap/SwapTab";
 import ShopTab from "../components/shop/ShopTab";
 
 import SubscriptionSuccess from "../components/SubscriptionSuccess";
-import ProfilePage from "../components/ui/dashboard/ProfilePage";
-import ReferralPage from "../components/ui/dashboard/ReferralPage";
+import ProfilePage from "../components/ui/dashboard/drawer/ProfilePage";
+import ReferralPage from "../components/ui/dashboard/drawer/ReferralPage";
 import ContactPage from "../components/ContactPage";
 import PrivacyPage from "../components/docs/PrivacyPage";
 import TermsPage from "../components/docs/TermsPage";
