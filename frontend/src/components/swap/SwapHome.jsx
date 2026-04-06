@@ -112,6 +112,8 @@ export default function SwapHome({
           primaryActionLabel={primaryActionLabel}
           progressZone={progressZone}
           isConversionReady={isConversionReady}
+          hasWalletZwap={hasWalletZwap}
+          hasInternalZwapToClaim={hasInternalZwapToClaim}
           onSetFromAmount={onSetFromAmount}
           onSwapTokens={onSwapTokens}
           onSetMax={onSetMax}
