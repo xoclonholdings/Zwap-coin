@@ -1,4 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
+import { BREAKERZ_CANVAS } from "./breakerzConfig";
+import { attachBreakerzInput } from "./breakerzInput";
+import { createBreakerzEngine } from "./breakerzEngine";
+import { renderBreakerzFrame } from "./breakerzRenderer";
+import BreakerzPauseOverlay from "./breakerzPauseOverlay";
+import BreakerzExitOverlay from "./breakerzExitOverlay";
 
 export default function BreakerzGame({
   onGameEnd,
@@ -8,222 +14,248 @@ export default function BreakerzGame({
 }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  const engineRef = useRef(null);
 
-  const [gameState, setGameState] = useState("idle"); 
-  // idle → playing → paused → gameover → exit
+  const [overlayState, setOverlayState] = useState({
+    pauseOpen: false,
+    exitOpen: false,
+  });
 
-  const [lives, setLives] = useState(5);
-  const [score, setScore] = useState(0);
-  const [currentRound, setCurrentRound] = useState(round);
-
-  // =========================
-  // CORE GAME LOOP (TEMP BASE)
-  // =========================
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    setGameState("playing");
-  }, [isPlaying]);
+  const [uiState, setUiState] = useState({
+    round: Math.max(1, Number(round) || 1),
+    score: 0,
+    lives: 5,
+    finished: false,
+  });
 
   useEffect(() => {
-    if (gameState !== "playing") return;
+    if (!isPlaying) return undefined;
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
 
     const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    const engine = createBreakerzEngine({
+      width: BREAKERZ_CANVAS.width,
+      height: BREAKERZ_CANVAS.height,
+      startingRound: Math.max(1, Number(round) || 1),
+    });
 
-    let ball = {
-      x: width / 2,
-      y: height - 60,
-      dx: 3 + currentRound * 0.2,
-      dy: -3 - currentRound * 0.2,
-      r: 7,
-    };
+    engineRef.current = engine;
 
-    let paddle = {
-      w: 90 - currentRound * 2,
-      h: 10,
-      x: width / 2 - 45,
-      y: height - 30,
-    };
+    const detachInput = attachBreakerzInput({
+      canvas,
+      getState: () => engine.getPublicState(),
+      setPaddleX: (x) => engine.setPaddleX(x),
+      togglePause: () => {
+        if (overlayState.exitOpen) return;
 
-    const handleMove = (clientX) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
+        engine.togglePause();
 
-      paddle.x = Math.max(
-        0,
-        Math.min(width - paddle.w, x - paddle.w / 2)
-      );
-    };
+        const publicState = engine.getPublicState();
+        setOverlayState((prev) => ({
+          ...prev,
+          pauseOpen: Boolean(publicState.paused),
+        }));
+      },
+    });
 
-    const handleTouch = (e) => {
-      e.preventDefault();
-      if (!e.touches?.[0]) return;
-      handleMove(e.touches[0].clientX);
-    };
+    const loop = (time) => {
+      const activeEngine = engineRef.current;
+      if (!activeEngine) return;
 
-    const handleMouse = (e) => {
-      handleMove(e.clientX);
-    };
+      const frame = activeEngine.tick(time);
+      renderBreakerzFrame(ctx, frame);
 
-    canvas.addEventListener("touchmove", handleTouch, { passive: false });
-    canvas.addEventListener("mousemove", handleMouse);
+      const publicState = activeEngine.getPublicState();
 
-    const loop = () => {
-      if (gameState !== "playing") return;
+      setUiState({
+        round: publicState.round,
+        score: publicState.score,
+        lives: publicState.lives,
+        finished: activeEngine.isFinished(),
+      });
 
-      // movement
-      ball.x += ball.dx;
-      ball.y += ball.dy;
-
-      // walls
-      if (ball.x <= ball.r || ball.x >= width - ball.r) ball.dx *= -1;
-      if (ball.y <= ball.r) ball.dy *= -1;
-
-      // paddle
-      if (
-        ball.y + ball.r >= paddle.y &&
-        ball.x >= paddle.x &&
-        ball.x <= paddle.x + paddle.w
-      ) {
-        ball.dy = -Math.abs(ball.dy);
-      }
-
-      // miss
-      if (ball.y > height) {
-        setLives((prev) => {
-          const next = prev - 1;
-
-          if (next <= 0) {
-            setGameState("gameover");
-            onGameEnd?.({ score, round: currentRound });
-          }
-
-          return next;
+      if (activeEngine.isFinished()) {
+        const result = activeEngine.getResult();
+        onGameEnd?.({
+          score: result.score,
+          round: result.round,
+          cleared: result.cleared,
+          level: Math.max(1, Number(level) || 1),
+          lives: result.lives,
+          gameId: "breakerz",
         });
-
-        ball.x = width / 2;
-        ball.y = height - 60;
+        return;
       }
-
-      // draw
-      ctx.fillStyle = "#060b14";
-      ctx.fillRect(0, 0, width, height);
-
-      // paddle
-      ctx.fillStyle = "#22d3ee";
-      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-
-      // ball
-      ctx.beginPath();
-      ctx.fillStyle = "#c084fc";
-      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-      ctx.fill();
 
       animationRef.current = requestAnimationFrame(loop);
     };
 
-    loop();
+    animationRef.current = requestAnimationFrame(loop);
 
     return () => {
-      canvas.removeEventListener("touchmove", handleTouch);
-      canvas.removeEventListener("mousemove", handleMouse);
+      detachInput?.();
 
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-    };
-  }, [gameState, currentRound, score, isPlaying, onGameEnd]);
 
-  // =========================
-  // CONTROLS
-  // =========================
-  const handlePause = () => {
-    if (gameState === "playing") setGameState("paused");
+      engineRef.current = null;
+    };
+  }, [isPlaying, level, round, onGameEnd, overlayState.exitOpen]);
+
+  const handlePauseClick = () => {
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    engine.togglePause();
+
+    const publicState = engine.getPublicState();
+
+    setOverlayState({
+      pauseOpen: Boolean(publicState.paused),
+      exitOpen: false,
+    });
   };
 
   const handleResume = () => {
-    setGameState("playing");
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    engine.resumeFromPause();
+
+    setOverlayState({
+      pauseOpen: false,
+      exitOpen: false,
+    });
   };
 
-  const handleExit = () => {
-    setGameState("exit");
-    onGameEnd?.({ score, round: currentRound });
+  const handleRequestExit = () => {
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    engine.openExitOverlay();
+
+    setOverlayState({
+      pauseOpen: false,
+      exitOpen: true,
+    });
   };
 
-  // =========================
-  // UI
-  // =========================
+  const handleCancelExit = () => {
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    engine.closeExitOverlay();
+
+    setOverlayState({
+      pauseOpen: true,
+      exitOpen: false,
+    });
+  };
+
+  const handleConfirmExit = () => {
+    const engine = engineRef.current;
+    if (!engine) {
+      onGameEnd?.({
+        score: uiState.score,
+        round: uiState.round,
+        level: Math.max(1, Number(level) || 1),
+        cleared: false,
+        lives: uiState.lives,
+        gameId: "breakerz",
+      });
+      return;
+    }
+
+    const result = engine.getResult();
+    engine.confirmExit();
+
+    onGameEnd?.({
+      score: result.score,
+      round: result.round,
+      level: Math.max(1, Number(level) || 1),
+      cleared: false,
+      lives: result.lives,
+      gameId: "breakerz",
+    });
+  };
+
   return (
-    <div className="relative flex w-full flex-col items-center justify-center">
-      {/* HUD */}
-      <div className="mb-3 flex w-full max-w-[360px] items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-3 py-2 backdrop-blur-xl">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">
-            Breakerz
-          </p>
-          <p className="text-sm font-semibold text-white">
-            Round {currentRound}
-          </p>
-        </div>
-
-        <div className="text-right">
-          <p className="text-xs text-white/50">Score</p>
-          <p className="text-sm font-semibold text-cyan-300">{score}</p>
-        </div>
-
-        <button
-          onClick={handlePause}
-          className="rounded-lg border border-white/10 px-2 py-1 text-xs text-white/70"
-        >
-          Pause
-        </button>
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-10%] top-[-8%] h-[220px] w-[220px] rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute right-[-10%] top-[10%] h-[220px] w-[220px] rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="absolute bottom-[-12%] left-[20%] h-[220px] w-[220px] rounded-full bg-pink-500/10 blur-3xl" />
       </div>
 
-      {/* GAME */}
-      <canvas
-        ref={canvasRef}
-        width={340}
-        height={420}
-        className="w-full max-w-[360px] rounded-2xl border border-cyan-400/20 bg-black"
-      />
-
-      {/* PAUSE */}
-      {gameState === "paused" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-6 text-center">
-            <p className="mb-4 text-white">Paused</p>
-            <button onClick={handleResume} className="mb-2 text-cyan-300">
-              Resume
-            </button>
-            <br />
-            <button onClick={handleExit} className="text-red-400">
-              Exit
-            </button>
-          </div>
+      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur-xl">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-cyan-300/70">
+            Breakerz
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">
+            Round {uiState.round}
+          </p>
         </div>
-      )}
 
-      {/* GAME OVER */}
-      {gameState === "gameover" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-6 text-center">
-            <p className="text-white text-lg">Game Over</p>
-            <p className="text-sm text-white/60 mt-2">Score: {score}</p>
-            <button
-              onClick={handleExit}
-              className="mt-4 text-cyan-300"
-            >
-              Exit
-            </button>
-          </div>
+        <div className="text-center">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+            Score
+          </p>
+          <p className="mt-1 text-sm font-semibold text-cyan-300">
+            {Number(uiState.score || 0).toLocaleString()}
+          </p>
         </div>
-      )}
+
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+              Lives
+            </p>
+            <p className="mt-1 text-sm font-semibold text-pink-300">
+              {uiState.lives}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handlePauseClick}
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
+          >
+            Pause
+          </button>
+        </div>
+      </div>
+
+      <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-3 py-3">
+        <canvas
+          ref={canvasRef}
+          width={BREAKERZ_CANVAS.width}
+          height={BREAKERZ_CANVAS.height}
+          className="h-full w-full max-h-full max-w-full rounded-[24px] border border-cyan-400/20 bg-[#050912] shadow-[0_20px_60px_rgba(0,0,0,0.35)] touch-none"
+        />
+
+        <BreakerzPauseOverlay
+          open={overlayState.pauseOpen}
+          round={uiState.round}
+          score={uiState.score}
+          lives={uiState.lives}
+          onResume={handleResume}
+          onExit={handleRequestExit}
+        />
+
+        <BreakerzExitOverlay
+          open={overlayState.exitOpen}
+          score={uiState.score}
+          round={uiState.round}
+          onCancel={handleCancelExit}
+          onConfirmExit={handleConfirmExit}
+        />
+      </div>
     </div>
   );
 }
