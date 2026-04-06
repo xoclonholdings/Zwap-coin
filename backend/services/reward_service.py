@@ -4,11 +4,12 @@ ZWAP! Reward Service
 Central reward logic for MOVE, PLAY, conversions, tier multipliers,
 daily cap helpers, daily reset helpers, and anti-cheat/rate-limit helpers.
 
-Updated economy:
+Spec-aligned economy:
 - MOVE earns zPts
 - PLAY earns zPts
 - zPts convert to ZWAP at 1000:1
 - direct gameplay/movement ZWAP emissions removed
+- reward_service is final authority for cap enforcement
 """
 
 from collections import defaultdict
@@ -19,27 +20,27 @@ from typing import Dict
 
 TIERS = {
     "starter": {
-        "name": "Starter",
+        "name": "Zwapper",
         "price": 0,
         "move": 1.0,
         "play": 1.0,
         "zwap_multiplier": 1.0,
         "daily_zpts_cap": 300,
-        "daily_zwap_cap": 3.0,
-        "monthly_zwap_cap": 90.0,
-        "games": ["zbrickles", "ztrivia"],
+        "daily_zwap_cap": 5.0,
+        "monthly_zwap_cap": 150.0,
+        "games": ["brainz", "breakerz", "pulze", "stackz"],
         "features": ["zWALK", "ads"],
     },
     "plus": {
-        "name": "Plus",
+        "name": "Zitizen",
         "price": 9.99,
         "move": 1.5,
         "play": 1.5,
         "zwap_multiplier": 1.5,
         "daily_zpts_cap": 600,
-        "daily_zwap_cap": 6.0,
-        "monthly_zwap_cap": 180.0,
-        "games": ["zbrickles", "ztrivia", "ztetris", "zslots"],
+        "daily_zwap_cap": 10.0,
+        "monthly_zwap_cap": 300.0,
+        "games": ["brainz", "breakerz", "pulze", "stackz", "triplez", "werdz"],
         "features": ["zWALK", "no_ads", "zDance", "zWorkout"],
     },
 }
@@ -62,17 +63,38 @@ MIN_STEPS_PER_CLAIM = 10
 MAX_STEPS_PER_CLAIM = 50000
 
 MAX_GAME_SCORES = {
-    "zbrickles": 5000,
-    "ztrivia": 50,
-    "ztetris": 10000,
-    "zslots": 8000,
+    "breakerz": 5000,
+    "brainz": 50,
+    "stackz": 10000,
+    "pulze": 8000,
+    "triplez": 10000,
+    "werdz": 200,
+}
+
+GAME_ID_ALIASES = {
+    "zbrickles": "breakerz",
+    "ztrivia": "brainz",
+    "ztetris": "stackz",
+    "zslots": "pulze",
 }
 
 _rate_limits = defaultdict(dict)
 
 
+def _normalize_tier_key(tier: str) -> str:
+    safe = str(tier or "").lower()
+    if safe in ("zitizen", "plus"):
+        return "plus"
+    return "starter"
+
+
 def _get_tier_config(tier: str) -> Dict:
-    return TIERS.get(str(tier or "").lower(), TIERS["starter"])
+    return TIERS[_normalize_tier_key(tier)]
+
+
+def _normalize_game_id(game_type: str) -> str:
+    safe = str(game_type or "").lower()
+    return GAME_ID_ALIASES.get(safe, safe)
 
 
 def get_user_tier_config(tier: str) -> Dict:
@@ -184,7 +206,8 @@ async def calculate_play_reward(
     if score < 0 or level < 1:
         raise ValueError("Invalid game data")
 
-    max_score = MAX_GAME_SCORES.get(game_type, 5000)
+    normalized_game = _normalize_game_id(game_type)
+    max_score = MAX_GAME_SCORES.get(normalized_game, 5000)
     if score > max_score:
         raise ValueError("Invalid score")
 
@@ -192,20 +215,25 @@ async def calculate_play_reward(
     multiplier = float(tier_config["play"])
     difficulty_multiplier = 1 + (level - 1) * 0.1
 
-    if game_type == "zbrickles":
+    if normalized_game == "breakerz":
         base_zpts = min(blocks_destroyed + (score // 40), 40)
-    elif game_type == "ztrivia":
+    elif normalized_game == "brainz":
         base_zpts = min((score * 2) + level, 30)
-    elif game_type == "ztetris":
+    elif normalized_game == "stackz":
         base_zpts = min((score // 80) + (level * 2), 50)
-    elif game_type == "zslots":
+    elif normalized_game == "pulze":
         base_zpts = min((score // 12) + level, 35)
+    elif normalized_game == "triplez":
+        base_zpts = min((score // 60) + (level * 2), 45)
+    elif normalized_game == "werdz":
+        base_zpts = min((score * 2) + (level * 2), 35)
     else:
         base_zpts = 0
 
     total_zpts = int(round(base_zpts * difficulty_multiplier * multiplier))
 
     return {
+        "game_type": normalized_game,
         "zpts": max(total_zpts, 0),
     }
 
@@ -268,12 +296,15 @@ async def get_tier_multipliers(tier: str) -> Dict:
     """
     tier_config = _get_tier_config(tier)
     return {
+        "name": tier_config["name"],
         "move": tier_config["move"],
         "play": tier_config["play"],
         "zwap_multiplier": tier_config["zwap_multiplier"],
         "daily_zpts_cap": tier_config["daily_zpts_cap"],
         "daily_zwap_cap": tier_config["daily_zwap_cap"],
         "monthly_zwap_cap": tier_config["monthly_zwap_cap"],
+        "games": tier_config["games"],
+        "features": tier_config["features"],
     }
 
 
