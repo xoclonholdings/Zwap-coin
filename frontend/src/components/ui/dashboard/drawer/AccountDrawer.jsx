@@ -1,5 +1,5 @@
 import React from "react";
-import { Sheet, SheetContent } from "../sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import AccountPanelContent from "@/components/user/AccountPanelContent";
 
 export default function AccountDrawer({
