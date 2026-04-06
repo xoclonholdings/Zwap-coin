@@ -4,6 +4,10 @@ import api from "@/lib/api";
 export const AppContext = createContext();
 export const useApp = () => useContext(AppContext);
 
+function normalizeWallet(address) {
+  return String(address || "").trim().toLowerCase();
+}
+
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authUser, setAuthUser] = useState(null);
@@ -39,8 +43,14 @@ export function AppProvider({ children }) {
   };
 
   const fetchOnchainBalance = async (address) => {
+    const normalizedAddress = normalizeWallet(address);
+    if (!normalizedAddress) {
+      setOnchainBalance(null);
+      return;
+    }
+
     try {
-      const data = await api.getOnchainBalance(address);
+      const data = await api.getOnchainBalance(normalizedAddress);
       if (
         data?.onchain_balance !== null &&
         data?.onchain_balance !== undefined
@@ -53,18 +63,32 @@ export function AppProvider({ children }) {
   };
 
   const loadWalletUser = async (address) => {
+    const normalizedAddress = normalizeWallet(address);
+    if (!normalizedAddress) {
+      setUser(null);
+      setWalletAddress(null);
+      localStorage.removeItem("zwap_wallet");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const userData = await api.getUser(address);
+      setWalletAddress(normalizedAddress);
+
+      const userData = await api.getUser(normalizedAddress);
       setUser(userData);
+      localStorage.setItem("zwap_wallet", normalizedAddress);
     } catch (error) {
       try {
-        const newUser = await api.connectWallet(address);
+        const newUser = await api.connectWallet(normalizedAddress);
         setUser(newUser);
+        localStorage.setItem("zwap_wallet", normalizedAddress);
       } catch (err) {
         console.log("Failed to load/create user");
         localStorage.removeItem("zwap_wallet");
         setWalletAddress(null);
+        setUser(null);
       }
     } finally {
       setIsLoading(false);
@@ -72,12 +96,19 @@ export function AppProvider({ children }) {
   };
 
   useEffect(() => {
-    const savedWallet = localStorage.getItem("zwap_wallet");
+    const savedWallet = normalizeWallet(localStorage.getItem("zwap_wallet"));
     const savedAuthUser = localStorage.getItem("zwap_auth_user");
 
     if (savedAuthUser) {
       try {
-        setAuthUser(JSON.parse(savedAuthUser));
+        const parsedAuthUser = JSON.parse(savedAuthUser);
+
+        if (parsedAuthUser?.walletAddress) {
+          parsedAuthUser.walletAddress = normalizeWallet(parsedAuthUser.walletAddress);
+        }
+
+        setAuthUser(parsedAuthUser);
+        localStorage.setItem("zwap_auth_user", JSON.stringify(parsedAuthUser));
       } catch (error) {
         console.log("Failed to parse saved auth user");
         localStorage.removeItem("zwap_auth_user");
@@ -102,18 +133,24 @@ export function AppProvider({ children }) {
   }, [walletAddress]);
 
   const connectWallet = async (address) => {
+    const normalizedAddress = normalizeWallet(address);
+    if (!normalizedAddress) {
+      throw new Error("Invalid wallet address");
+    }
+
     try {
       setIsLoading(true);
-      const userData = await api.connectWallet(address);
+
+      const userData = await api.connectWallet(normalizedAddress);
 
       setUser(userData);
-      setWalletAddress(address);
-      localStorage.setItem("zwap_wallet", address);
+      setWalletAddress(normalizedAddress);
+      localStorage.setItem("zwap_wallet", normalizedAddress);
 
       if (authUser && !authUser.walletAddress) {
         const updatedAuthUser = {
           ...authUser,
-          walletAddress: address,
+          walletAddress: normalizedAddress,
         };
         setAuthUser(updatedAuthUser);
         localStorage.setItem("zwap_auth_user", JSON.stringify(updatedAuthUser));
@@ -130,8 +167,15 @@ export function AppProvider({ children }) {
   };
 
   const completeEmailAuth = (emailUser) => {
-    setAuthUser(emailUser);
-    localStorage.setItem("zwap_auth_user", JSON.stringify(emailUser));
+    const normalizedEmailUser = emailUser?.walletAddress
+      ? {
+          ...emailUser,
+          walletAddress: normalizeWallet(emailUser.walletAddress),
+        }
+      : emailUser;
+
+    setAuthUser(normalizedEmailUser);
+    localStorage.setItem("zwap_auth_user", JSON.stringify(normalizedEmailUser));
     closeAllAuthModals();
   };
 
@@ -167,9 +211,10 @@ export function AppProvider({ children }) {
   };
 
   const refreshUser = async () => {
-    if (walletAddress) {
-      await loadWalletUser(walletAddress);
-      await fetchOnchainBalance(walletAddress);
+    const normalizedAddress = normalizeWallet(walletAddress);
+    if (normalizedAddress) {
+      await loadWalletUser(normalizedAddress);
+      await fetchOnchainBalance(normalizedAddress);
     }
   };
 
