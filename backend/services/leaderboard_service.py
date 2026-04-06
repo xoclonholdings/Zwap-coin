@@ -1,4 +1,3 @@
-import hashlib
 import math
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -8,11 +7,61 @@ from services.leaderboard_game_service import (
     get_user_game_rank as _get_user_game_rank,
 )
 
+ADJECTIVES = [
+    "Nova",
+    "Pixel",
+    "Quantum",
+    "Echo",
+    "Neon",
+    "Solar",
+    "Cyber",
+    "Hyper",
+    "Shadow",
+    "Turbo",
+]
 
-def generate_username(wallet_address: str, salt: str = "ZWAP") -> str:
-    raw = f"{salt}:{wallet_address.lower()}".encode("utf-8")
-    h = hashlib.sha256(raw).hexdigest()
-    return f"zwapper_{h[:8]}"
+NOUNS = [
+    "Runner",
+    "Walker",
+    "Strider",
+    "Pilot",
+    "Glider",
+    "Breaker",
+    "Phantom",
+    "Rider",
+    "Explorer",
+    "Voyager",
+]
+
+
+def _hash_string(value: str = "") -> int:
+    hash_value = 0
+    for char in value:
+        hash_value = (hash_value << 5) - hash_value + ord(char)
+        hash_value |= 0
+    return abs(hash_value)
+
+
+def generate_username(wallet_address: str) -> str:
+    wallet = str(wallet_address or "").lower().strip()
+
+    if not wallet:
+        return ""
+
+    if wallet.startswith("0x") and len(wallet) >= 10:
+        try:
+            seed = int(wallet[2:10], 16)
+        except Exception:
+            seed = _hash_string(wallet)
+    else:
+        seed = _hash_string(wallet)
+
+    safe_seed = abs(seed)
+    adj_index = safe_seed % len(ADJECTIVES)
+    noun_index = (safe_seed // 7) % len(NOUNS)
+    num = safe_seed % 999
+
+    return f"{ADJECTIVES[adj_index]}{NOUNS[noun_index]}{num}"
 
 
 def _utc_now() -> datetime:
@@ -86,6 +135,7 @@ async def get_global_stats_and_top(
                 sort_field: 1,
                 "tier": 1,
                 "region": 1,
+                "username": 1,
             },
         )
         .sort(sort_field, -1)
@@ -110,7 +160,7 @@ async def get_global_stats_and_top(
             entry["wallet"] = _mask_wallet(wallet)
 
         if include_anonymized_name and wallet:
-            entry["username"] = generate_username(wallet)
+            entry["username"] = user.get("username") or generate_username(wallet)
 
         if "region" in user:
             entry["region"] = user.get("region")
@@ -143,7 +193,14 @@ async def get_user_rank(
 
     user = await db.users.find_one(
         {"wallet_address": wallet},
-        {"_id": 0, "wallet_address": 1, sort_field: 1, "region": 1, "tier": 1},
+        {
+            "_id": 0,
+            "wallet_address": 1,
+            sort_field: 1,
+            "region": 1,
+            "tier": 1,
+            "username": 1,
+        },
     )
 
     if not user:
@@ -205,7 +262,7 @@ async def get_user_rank(
     }
 
     if include_anonymized_name:
-        result["username"] = generate_username(wallet)
+        result["username"] = user.get("username") or generate_username(wallet)
 
     if include_neighbors and include_neighbors > 0:
         result["neighbors"] = await _get_rank_neighbors(
@@ -277,17 +334,17 @@ async def get_leaderboard_overview(db) -> Dict[str, Any]:
 
     top_earner = await db.users.find_one(
         {},
-        {"_id": 0, "wallet_address": 1, "total_earned": 1, "tier": 1},
+        {"_id": 0, "wallet_address": 1, "total_earned": 1, "tier": 1, "username": 1},
         sort=[("total_earned", -1)],
     )
     top_gamer = await db.users.find_one(
         {},
-        {"_id": 0, "wallet_address": 1, "games_played": 1, "tier": 1},
+        {"_id": 0, "wallet_address": 1, "games_played": 1, "tier": 1, "username": 1},
         sort=[("games_played", -1)],
     )
     top_stepper = await db.users.find_one(
         {},
-        {"_id": 0, "wallet_address": 1, "total_steps": 1, "tier": 1},
+        {"_id": 0, "wallet_address": 1, "total_steps": 1, "tier": 1, "username": 1},
         sort=[("total_steps", -1)],
     )
 
@@ -311,9 +368,10 @@ async def get_leaderboard_overview(db) -> Dict[str, Any]:
                 "value": 0,
                 "tier": "starter",
             }
+
         wallet = user.get("wallet_address")
         return {
-            "username": generate_username(wallet) if wallet else "N/A",
+            "username": user.get("username") or (generate_username(wallet) if wallet else "N/A"),
             "wallet": _mask_wallet(wallet),
             "value": user.get(field, 0),
             "tier": user.get("tier", "starter"),
@@ -344,7 +402,7 @@ async def _get_rank_neighbors(
     above_cursor = (
         db.users.find(
             {sort_field: {"$gt": user_value}},
-            {"_id": 0, "wallet_address": 1, sort_field: 1, "tier": 1},
+            {"_id": 0, "wallet_address": 1, sort_field: 1, "tier": 1, "username": 1},
         )
         .sort(sort_field, 1)
         .limit(span)
@@ -353,7 +411,7 @@ async def _get_rank_neighbors(
     below_cursor = (
         db.users.find(
             {sort_field: {"$lt": user_value}},
-            {"_id": 0, "wallet_address": 1, sort_field: 1, "tier": 1},
+            {"_id": 0, "wallet_address": 1, sort_field: 1, "tier": 1, "username": 1},
         )
         .sort(sort_field, -1)
         .limit(span)
@@ -369,7 +427,7 @@ async def _get_rank_neighbors(
             "tier": user.get("tier", "starter"),
         }
         if include_anonymized_name and wallet:
-            entry["username"] = generate_username(wallet)
+            entry["username"] = user.get("username") or generate_username(wallet)
         above.append(entry)
 
     below: List[Dict[str, Any]] = []
@@ -382,7 +440,7 @@ async def _get_rank_neighbors(
             "tier": user.get("tier", "starter"),
         }
         if include_anonymized_name and wallet:
-            entry["username"] = generate_username(wallet)
+            entry["username"] = user.get("username") or generate_username(wallet)
         below.append(entry)
 
     me = {
