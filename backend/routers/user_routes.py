@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import uuid
 
 from services.badge_service import evaluate_badges, persist_badge_updates
+from services.leaderboard_service import generate_username
 
 user_router = APIRouter(prefix="/users", tags=["User"])
 
@@ -18,6 +19,7 @@ class UserResponse(BaseModel):
 
     id: str
     wallet_address: str
+    username: str
     zwap_balance: float = 0.0
     zpts_balance: int = 0
     daily_streak: int = 0
@@ -123,13 +125,23 @@ async def connect_wallet(user_data: UserCreate, request: Request):
     try:
         existing = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
         if existing:
+            if not existing.get("username"):
+                generated = generate_username(wallet)
+                await db.users.update_one(
+                    {"wallet_address": wallet},
+                    {"$set": {"username": generated}},
+                )
+                existing["username"] = generated
+
             return UserResponse(**existing)
 
         now_iso = utc_now_iso()
+        generated_username = generate_username(wallet)
 
         new_user = {
             "id": str(uuid.uuid4()),
             "wallet_address": wallet,
+            "username": generated_username,
             "zwap_balance": 100.0,
             "zpts_balance": 0,
             "tier": "starter",
@@ -232,9 +244,12 @@ async def connect_wallet(user_data: UserCreate, request: Request):
 
     except Exception:
         now_iso = utc_now_iso()
+        generated_username = generate_username(wallet)
+
         fallback_user = {
             "id": str(uuid.uuid4()),
             "wallet_address": wallet,
+            "username": generated_username,
             "zwap_balance": 100.0,
             "zpts_balance": 0,
             "tier": "starter",
@@ -261,6 +276,15 @@ async def get_user(wallet_address: str, request: Request):
     user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.get("username"):
+        generated = generate_username(wallet)
+        await db.users.update_one(
+            {"wallet_address": wallet},
+            {"$set": {"username": generated}},
+        )
+        user["username"] = generated
+
     return UserResponse(**user)
 
 
