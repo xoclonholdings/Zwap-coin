@@ -1,8 +1,9 @@
+from datetime import datetime, timezone
+from typing import Optional
+import uuid
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
-from datetime import datetime, timezone
-import uuid
 
 from services.badge_service import evaluate_badges, persist_badge_updates
 from services.leaderboard_service import generate_username
@@ -74,6 +75,23 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def ensure_username(user: dict) -> dict:
+    if not user.get("username"):
+        user["username"] = generate_username(user.get("wallet_address", ""))
+    return user
+
+
+async def persist_missing_username(db, user: dict) -> dict:
+    if not user.get("username"):
+        generated = generate_username(user.get("wallet_address", ""))
+        await db.users.update_one(
+            {"wallet_address": user["wallet_address"]},
+            {"$set": {"username": generated}},
+        )
+        user["username"] = generated
+    return user
+
+
 async def check_and_reset_daily_assist_counts(db, user: dict) -> dict:
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_assist_reset")
@@ -125,14 +143,7 @@ async def connect_wallet(user_data: UserCreate, request: Request):
     try:
         existing = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
         if existing:
-            if not existing.get("username"):
-                generated = generate_username(wallet)
-                await db.users.update_one(
-                    {"wallet_address": wallet},
-                    {"$set": {"username": generated}},
-                )
-                existing["username"] = generated
-
+            existing = await persist_missing_username(db, existing)
             return UserResponse(**existing)
 
         now_iso = utc_now_iso()
@@ -265,27 +276,8 @@ async def connect_wallet(user_data: UserCreate, request: Request):
             "total_earned": 100.0,
             "created_at": now_iso,
         }
+        fallback_user = ensure_username(fallback_user)
         return UserResponse(**fallback_user)
-
-
-@user_router.get("/{wallet_address}", response_model=UserResponse)
-async def get_user(wallet_address: str, request: Request):
-    db = request.app.state.db
-    wallet = wallet_address.lower()
-
-    user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if not user.get("username"):
-        generated = generate_username(wallet)
-        await db.users.update_one(
-            {"wallet_address": wallet},
-            {"$set": {"username": generated}},
-        )
-        user["username"] = generated
-
-    return UserResponse(**user)
 
 
 @user_router.get("/assist/opportunity", response_model=Optional[AssistOpportunityResponse])
@@ -297,6 +289,7 @@ async def get_assist_opportunity(wallet_address: str, request: Request):
     if not sender:
         raise HTTPException(status_code=404, detail="Sender not found")
 
+    sender = await persist_missing_username(db, sender)
     sender = await check_and_reset_daily_assist_counts(db, sender)
     sender_limits = get_assist_limits_for_tier(sender.get("tier", "starter"))
 
@@ -313,6 +306,7 @@ async def get_assist_opportunity(wallet_address: str, request: Request):
     if not recipient:
         return None
 
+    recipient = await persist_missing_username(db, recipient)
     recipient = await check_and_reset_daily_assist_counts(db, recipient)
     recipient_limits = get_assist_limits_for_tier(recipient.get("tier", "starter"))
 
@@ -337,6 +331,19 @@ async def get_assist_opportunity(wallet_address: str, request: Request):
     )
 
 
+@user_router.get("/{wallet_address}", response_model=UserResponse)
+async def get_user(wallet_address: str, request: Request):
+    db = request.app.state.db
+    wallet = wallet_address.lower()
+
+    user = await db.users.find_one({"wallet_address": wallet}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user = await persist_missing_username(db, user)
+    return UserResponse(**user)
+
+
 @user_router.post("/assist/send")
 async def send_assist(payload: AssistSendRequest, request: Request):
     db = request.app.state.db
@@ -358,6 +365,9 @@ async def send_assist(payload: AssistSendRequest, request: Request):
     recipient = await db.users.find_one({"wallet_address": recipient_wallet})
     if not recipient:
         raise HTTPException(status_code=404, detail="Recipient not found")
+
+    sender = await persist_missing_username(db, sender)
+    recipient = await persist_missing_username(db, recipient)
 
     sender = await check_and_reset_daily_assist_counts(db, sender)
     recipient = await check_and_reset_daily_assist_counts(db, recipient)
@@ -431,6 +441,9 @@ async def accept_assist(payload: AssistAcceptRequest, request: Request):
     recipient = await db.users.find_one({"wallet_address": recipient_wallet})
     if not recipient:
         raise HTTPException(status_code=404, detail="Recipient not found")
+
+    sender = await persist_missing_username(db, sender)
+    recipient = await persist_missing_username(db, recipient)
 
     sender = await check_and_reset_daily_assist_counts(db, sender)
     recipient = await check_and_reset_daily_assist_counts(db, recipient)
