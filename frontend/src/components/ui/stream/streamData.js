@@ -1,16 +1,5 @@
 export const watchItems = [
   {
-    id: "watch-youtube",
-    title: "YouTube",
-    subtitle: "Connect your primary video source",
-    type: "youtube",
-    duration: "CONNECT",
-    reward: null,
-    description:
-      "Bring creator clips, tutorials, trailers, Shorts-style content, and featured media into Stream.",
-    accent: "from-red-500/20 via-fuchsia-500/10 to-purple-500/20",
-  },
-  {
     id: "watch-featured",
     title: "ZWAP! Feature Drop",
     subtitle: "Platform update preview",
@@ -59,41 +48,7 @@ export const listenItems = [
   },
 ];
 
-export const liveItems = [
-  {
-    id: "live-twitch",
-    title: "Twitch",
-    subtitle: "Connect your live stream source",
-    type: "twitch",
-    duration: "CONNECT",
-    reward: null,
-    description:
-      "Bring gaming streams, live creator sessions, tournaments, and event broadcasts into the Stream experience.",
-    accent: "from-violet-500/20 via-purple-500/10 to-fuchsia-500/20",
-  },
-  {
-    id: "live-arena",
-    title: "ZWAP! Arena",
-    subtitle: "Competition stream lane",
-    type: "live",
-    duration: "LIVE",
-    reward: "+8 zPts",
-    description:
-      "Perfect for tournaments, sponsor activations, countdown events, and community competitions.",
-    accent: "from-red-500/20 via-pink-500/10 to-purple-500/20",
-  },
-  {
-    id: "live-spotlight",
-    title: "Creator Spotlight",
-    subtitle: "Live event format",
-    type: "live",
-    duration: "LIVE",
-    reward: "+10 zPts",
-    description:
-      "AMAs, launch moments, community check-ins, and featured live sessions can be surfaced here.",
-    accent: "from-rose-500/20 via-orange-500/10 to-fuchsia-500/20",
-  },
-];
+export const liveItems = [];
 
 export const libraryItems = [
   {
