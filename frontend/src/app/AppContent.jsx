@@ -204,7 +204,7 @@ export default function AppContent() {
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/move" element={<MoveTab />} />
-            <Route path="/play" element={<PlayPage />} />
+            <Route path="/play" element={<PlayTab />} />
             <Route path="/swap" element={<SwapTab />} />
             <Route path="/shop" element={<ShopTab />} />
             <Route path="/plus" element={<PlusPage />} />
