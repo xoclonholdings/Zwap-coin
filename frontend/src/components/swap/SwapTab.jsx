@@ -1,505 +1,154 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useApp } from "@/App";
-import api from "@/lib/api";
-import { toast } from "sonner";
-
-import SwapHome from "@/components/swap/SwapHome";
-
-// Official token logos
-export const TOKEN_LOGOS = {
-  ZWAP:
-    "https://customer-assets.emergentagent.com/job_zwap-coin-mobile/artifacts/zbcxii5n_D53F824E-1DBA-4963-86D4-4D4E73400DE1.png",
-  BTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
-  ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-  MATIC: "https://cryptologos.cc/logos/polygon-matic-logo.png",
-  USDC: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
-  USDT: "https://cryptologos.cc/logos/tether-usdt-logo.png",
-};
-
-export const TOKENS = {
-  ZWAP: {
-    name: "ZWAP!",
-    symbol: "ZWAP",
-    address: "0xe8898453af13b9496a6e8ada92c6efdaf4967a81",
-    decimals: 18,
-    color: "text-cyan-400",
-    category: "reward",
-  },
-  zPTS: {
-    name: "zPoints",
-    symbol: "zPTS",
-    address: null,
-    decimals: 0,
-    color: "text-violet-400",
-    category: "internal",
-  },
-  MATIC: {
-    name: "Polygon",
-    symbol: "MATIC",
-    address: "0x0000000000000000000000000000000000001010",
-    decimals: 18,
-    color: "text-violet-400",
-    category: "network",
-  },
-  BTC: {
-    name: "Bitcoin",
-    symbol: "BTC",
-    address: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
-    decimals: 8,
-    color: "text-orange-400",
-    category: "wrapped-display",
-  },
-  ETH: {
-    name: "Ethereum",
-    symbol: "ETH",
-    address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-    decimals: 18,
-    color: "text-indigo-300",
-    category: "wrapped-display",
-  },
-  USDC: {
-    name: "USD Coin",
-    symbol: "USDC",
-    address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
-    decimals: 6,
-    color: "text-blue-400",
-    category: "stable",
-  },
-};
-
-export const SWAP_MODES = [
-  {
-    id: "swap-pol",
-    name: "POL",
-    description: "Move ZWAP value toward Polygon.",
-    status: "active",
-    fromToken: "ZWAP",
-    toToken: "MATIC",
-  },
-  {
-    id: "swap-btc",
-    name: "BTC",
-    description: "Move ZWAP value toward Bitcoin.",
-    status: "active",
-    fromToken: "ZWAP",
-    toToken: "BTC",
-  },
-  {
-    id: "swap-eth",
-    name: "ETH",
-    description: "Move ZWAP value toward Ethereum.",
-    status: "active",
-    fromToken: "ZWAP",
-    toToken: "ETH",
-  },
-  {
-    id: "swap-usdc",
-    name: "USDC",
-    description: "Move ZWAP value toward stable balance.",
-    status: "active",
-    fromToken: "ZWAP",
-    toToken: "USDC",
-  },
-];
-
-export const SWAP_PROVIDER = {
-  id: "embedded-swap",
-  name: "ZWAP Swap Flow",
-  description: "Embedded conversion flow",
-  iframeSupported: true,
-};
+import React from "react";
+import { motion } from "framer-motion";
+import { ArrowRightLeft, TrendingUp } from "lucide-react";
 
 const ZPTS_CONVERSION_THRESHOLD = 1000;
 
-const mapTokenToRouteAddress = (tokenKey) => {
-  return TOKENS[tokenKey]?.address || "";
-};
-
-const buildEmbeddedSwapUrl = ({ fromToken, toToken, amount }) => {
-  const fromAddress = mapTokenToRouteAddress(fromToken);
-  const toAddress = mapTokenToRouteAddress(toToken);
-  const fromAmount = amount ? String(amount) : "";
-
-  return `https://jumper.exchange/?fromChain=137&toChain=137&fromToken=${encodeURIComponent(
-    fromAddress
-  )}&toToken=${encodeURIComponent(toAddress)}${
-    fromAmount ? `&fromAmount=${encodeURIComponent(fromAmount)}` : ""
-  }`;
-};
-
-const formatAmount = (value, digits = 6) => {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "0";
-
-  return num.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: digits,
-  });
-};
-
-function getProgressZone(zptsBalance) {
-  const balance = Math.max(0, Number(zptsBalance || 0));
-
-  if (balance >= ZPTS_CONVERSION_THRESHOLD) {
-    return "Conversion Ready";
-  }
-
-  const ratio = balance / ZPTS_CONVERSION_THRESHOLD;
-
-  if (ratio >= 0.95) return "Near Conversion";
-  if (ratio >= 0.7) return "Approaching";
-  if (ratio >= 0.3) return "Building";
-  return "Starting";
+function clamp(value, min = 0, max = 100) {
+  return Math.min(Math.max(value, min), max);
 }
 
-export default function SwapTab() {
-  const { user, walletAddress, refreshUser } = useApp();
+function getProgressData(zptsBalance) {
+  const safeBalance = Math.max(0, Math.floor(Number(zptsBalance || 0)));
+  const progressPercent = clamp(
+    (safeBalance / ZPTS_CONVERSION_THRESHOLD) * 100
+  );
+  const remainingZpts = Math.max(ZPTS_CONVERSION_THRESHOLD - safeBalance, 0);
 
-  const [prices, setPrices] = useState({});
-  const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+  let progressZone = "Starting";
+  if (progressPercent >= 100) progressZone = "Conversion Ready";
+  else if (progressPercent >= 95) progressZone = "Near Conversion";
+  else if (progressPercent >= 70) progressZone = "Approaching";
+  else if (progressPercent >= 30) progressZone = "Building";
 
-  const [onchainBalance, setOnchainBalance] = useState(null);
-  const [isLoadingOnchainBalance, setIsLoadingOnchainBalance] = useState(true);
+  let progressHint = `${safeBalance.toLocaleString()} zPts toward next ZWAP`;
 
-  const [activeMode, setActiveMode] = useState("swap-pol");
-  const [fromToken, setFromToken] = useState("ZWAP");
-  const [toToken, setToToken] = useState("MATIC");
-  const [fromAmount, setFromAmount] = useState("");
+  if (progressPercent >= 100) {
+    progressHint = "Conversion available now";
+  } else if (progressPercent >= 85) {
+    progressHint = "Next unlock nearing";
+  } else if (remainingZpts > 0) {
+    progressHint = `${remainingZpts.toLocaleString()} zPts left to unlock`;
+  }
 
-  const [activeService, setActiveService] = useState(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isRouteLoading, setIsRouteLoading] = useState(false);
-
-  const [feedback, setFeedback] = useState(null);
-  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
-
-  const isPlus = user?.subscription_tier === "plus" || user?.tier === "plus";
-
-  const internalZwapBalance = Number(user?.zwap_balance ?? 0);
-  const walletZptsBalance = Number(user?.zpts_balance ?? 0);
-  const swappableWalletZwapBalance = Number(onchainBalance ?? 0);
-
-  const progressZone = useMemo(() => {
-    return getProgressZone(walletZptsBalance);
-  }, [walletZptsBalance]);
-
-  const isConversionReady = walletZptsBalance >= ZPTS_CONVERSION_THRESHOLD;
-  const hasWalletZwap = swappableWalletZwapBalance > 0;
-  const hasInternalZwapToClaim = internalZwapBalance > 0;
-
-  const loadPrices = useCallback(async () => {
-    try {
-      const data = await api.getPrices();
-
-      const normalizedPrices = {
-        ...(data || {}),
-        BTC: data?.BTC ?? data?.WBTC ?? null,
-        ETH: data?.ETH ?? data?.WETH ?? null,
-      };
-
-      setPrices(normalizedPrices);
-    } catch (error) {
-      console.error("Failed to load prices", error);
-    } finally {
-      setIsLoadingPrices(false);
-    }
-  }, []);
-
-  const loadOnchainBalance = useCallback(async () => {
-    if (!walletAddress) {
-      setOnchainBalance(null);
-      setIsLoadingOnchainBalance(false);
-      return;
-    }
-
-    try {
-      setIsLoadingOnchainBalance(true);
-      const data = await api.getOnchainBalance(walletAddress);
-
-      const rawBalance =
-        data?.onchain_balance ??
-        data?.zwap_balance ??
-        data?.balance ??
-        data?.ZWAP ??
-        0;
-
-      setOnchainBalance(Number(rawBalance) || 0);
-    } catch (error) {
-      console.error("Failed to load on-chain balance", error);
-      setOnchainBalance(0);
-    } finally {
-      setIsLoadingOnchainBalance(false);
-    }
-  }, [walletAddress]);
-
-  useEffect(() => {
-    loadPrices();
-    const interval = setInterval(loadPrices, 30000);
-    return () => clearInterval(interval);
-  }, [loadPrices]);
-
-  useEffect(() => {
-    loadOnchainBalance();
-  }, [loadOnchainBalance]);
-
-  useEffect(() => {
-    const mode = SWAP_MODES.find((item) => item.id === activeMode);
-    if (!mode) return;
-
-    setFromToken(mode.fromToken);
-    setToToken(mode.toToken);
-    setFromAmount("");
-  }, [activeMode]);
-
-  const availableToConvert = useMemo(() => {
-    if (fromToken === "ZWAP") return swappableWalletZwapBalance;
-    return 0;
-  }, [fromToken, swappableWalletZwapBalance]);
-
-  const fromUsd = useMemo(() => {
-    const amountNum = parseFloat(fromAmount || "0");
-    if (!Number.isFinite(amountNum) || amountNum <= 0) return "0.00";
-    if (!prices[fromToken]) return "0.00";
-
-    return (amountNum * prices[fromToken]).toFixed(2);
-  }, [fromAmount, fromToken, prices]);
-
-  const estimatedOutput = useMemo(() => {
-    const amt = parseFloat(fromAmount);
-    if (!fromAmount || Number.isNaN(amt) || amt <= 0) return "—";
-    if (!prices[fromToken] || !prices[toToken]) return "—";
-
-    const fromValue = amt * prices[fromToken];
-    const toAmt = fromValue / (prices[toToken] || 1);
-
-    return formatAmount(toAmt, toToken === "USDC" ? 2 : 4);
-  }, [fromAmount, fromToken, toToken, prices]);
-
-  const rate = useMemo(() => {
-    if (!prices[fromToken] || !prices[toToken]) return "—";
-    return (prices[fromToken] / prices[toToken]).toFixed(4);
-  }, [fromToken, toToken, prices]);
-
-  const swapTokens = () => {
-    setFromToken(toToken);
-    setToToken(fromToken);
+  return {
+    progressPercent,
+    progressZone,
+    progressHint,
   };
+}
 
-  const handleSelectMode = (modeId) => {
-    const mode = SWAP_MODES.find((item) => item.id === modeId);
-    if (!mode) return;
-    setActiveMode(modeId);
-  };
+function getEstimatedUnlockValue(zptsBalance) {
+  const safeBalance = Math.max(0, Math.floor(Number(zptsBalance || 0)));
+  const estimated = safeBalance / ZPTS_CONVERSION_THRESHOLD;
 
-  const handleSetMax = () => {
-    if (fromToken === "ZWAP") {
-      setFromAmount(String(swappableWalletZwapBalance));
-      return;
-    }
+  if (!Number.isFinite(estimated) || estimated <= 0) return "0.00";
 
-    toast.message("Max is available for your wallet ZWAP balance.");
-  };
+  return estimated.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
 
-  const refreshSwapData = useCallback(async () => {
-    try {
-      await loadPrices();
+export default function SwapHistory({
+  zptsBalance = 0,
+  isConversionReady = false,
+  onOpenConvertModal,
+}) {
+  const { progressPercent, progressZone, progressHint } =
+    getProgressData(zptsBalance);
 
-      if (typeof refreshUser === "function") {
-        await refreshUser();
-      }
-
-      await loadOnchainBalance();
-
-      setFeedback({
-        type: "success",
-        title: "Balances refreshed",
-        message: "Your swap progress and balances are up to date.",
-      });
-
-      toast.success("Swap data refreshed");
-    } catch (error) {
-      setFeedback({
-        type: "error",
-        title: "Refresh failed",
-        message: "We could not refresh your balances right now.",
-      });
-
-      toast.error("Failed to refresh");
-    }
-  }, [refreshUser, loadPrices, loadOnchainBalance]);
-
-  const openEmbeddedSwapFlow = useCallback(() => {
-    if (!fromAmount || parseFloat(fromAmount) <= 0) {
-      toast.error("Enter an amount first");
-      return;
-    }
-
-    if (fromToken === toToken) {
-      toast.error("Select two different assets");
-      return;
-    }
-
-    if (fromToken === "ZWAP" && !hasWalletZwap) {
-      toast.error("Claim ZWAP to your wallet before swapping");
-      return;
-    }
-
-    const url = buildEmbeddedSwapUrl({
-      fromToken,
-      toToken,
-      amount: fromAmount,
-    });
-
-    setIsRouteLoading(true);
-    setActiveService({
-      ...SWAP_PROVIDER,
-      url,
-    });
-
-    setFeedback({
-      type: "pending",
-      title: "Preparing swap flow",
-      message: `Opening ${fromAmount} ${fromToken} → ${toToken}`,
-    });
-
-    window.setTimeout(() => {
-      setIsRouteLoading(false);
-    }, 1200);
-  }, [fromAmount, fromToken, toToken, hasWalletZwap]);
-
-  const executePrimaryAction = async () => {
-    const amountNum = parseFloat(fromAmount);
-
-    if (fromToken === "ZWAP" && !hasWalletZwap) {
-      if (hasInternalZwapToClaim) {
-        try {
-          setFeedback({
-            type: "pending",
-            title: "Claiming ZWAP",
-            message: "Sending your available ZWAP to your wallet...",
-          });
-
-          await api.claimZwap(walletAddress);
-
-          if (typeof refreshUser === "function") {
-            await refreshUser();
-          }
-
-          await loadOnchainBalance();
-
-          setFeedback({
-            type: "success",
-            title: "ZWAP claimed",
-            message: "Your ZWAP is now in your wallet and ready for swap.",
-          });
-
-          toast.success("ZWAP claimed to wallet");
-          return;
-        } catch (error) {
-          console.error("ZWAP claim failed", error);
-
-          setFeedback({
-            type: "error",
-            title: "Claim failed",
-            message: "We could not claim ZWAP to your wallet right now.",
-          });
-
-          toast.error("Claim failed");
-          return;
-        }
-      }
-
-      toast.error("Claim ZWAP to your wallet before swapping");
-      return;
-    }
-
-    if (!fromAmount || !Number.isFinite(amountNum) || amountNum <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-
-    if (fromToken === toToken) {
-      toast.error("Select two different assets");
-      return;
-    }
-
-    openEmbeddedSwapFlow();
-  };
-
-  const closeSwapService = () => {
-    setActiveService(null);
-    setIsFullscreen(false);
-    setIsRouteLoading(false);
-
-    setFeedback({
-      type: "info",
-      title: "Swap flow closed",
-      message: "You are back in the app.",
-    });
-
-    toast.success("Returned to ZWAP");
-  };
-
-  const openConvertModal = () => {
-    setIsConvertModalOpen(true);
-  };
-
-  const closeConvertModal = () => {
-    setIsConvertModalOpen(false);
-  };
-
-  const primaryActionLabel = useMemo(() => {
-    if (fromToken === "ZWAP" && !hasWalletZwap) {
-      return hasInternalZwapToClaim ? "Claim ZWAP" : "Claim to Wallet";
-    }
-
-    if (toToken === "MATIC") return "Continue to POL";
-    if (toToken === "BTC") return "Continue to BTC";
-    if (toToken === "ETH") return "Continue to ETH";
-    if (toToken === "USDC") return "Continue to USDC";
-    return "Continue";
-  }, [fromToken, toToken, hasWalletZwap, hasInternalZwapToClaim]);
+  const estimatedUnlockValue = getEstimatedUnlockValue(zptsBalance);
 
   return (
-    <SwapHome
-      user={user}
-      isPlus={isPlus}
-      isLoadingPrices={isLoadingPrices || isLoadingOnchainBalance}
-      tokens={TOKENS}
-      tokenLogos={TOKEN_LOGOS}
-      modes={SWAP_MODES}
-      activeMode={activeMode}
-      fromToken={fromToken}
-      toToken={toToken}
-      fromAmount={fromAmount}
-      fromUsd={fromUsd}
-      estimatedOutput={estimatedOutput}
-      rate={rate}
-      activeService={activeService}
-      isFullscreen={isFullscreen}
-      isRouteLoading={isRouteLoading}
-      feedback={feedback}
-      availableToConvert={availableToConvert}
-      progressZone={progressZone}
-      isConversionReady={isConversionReady}
-      isConvertModalOpen={isConvertModalOpen}
-      primaryActionLabel={primaryActionLabel}
-      hasInternalZwapToClaim={hasInternalZwapToClaim}
-      hasWalletZwap={hasWalletZwap}
-      walletZwapBalance={swappableWalletZwapBalance}
-      internalZwapBalance={internalZwapBalance}
-      zptsBalance={walletZptsBalance}
-      onSetFromAmount={setFromAmount}
-      onSwapTokens={swapTokens}
-      onSelectMode={handleSelectMode}
-      onSetMax={handleSetMax}
-      onRefresh={refreshSwapData}
-      onPrimaryAction={executePrimaryAction}
-      onOpenConvertModal={openConvertModal}
-      onCloseConvertModal={closeConvertModal}
-      onCloseFeedback={() => setFeedback(null)}
-      onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
-      onCloseSwapService={closeSwapService}
-    />
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.14),transparent_35%),linear-gradient(180deg,rgba(11,24,20,0.96),rgba(7,15,13,0.98))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.35)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.28em] text-emerald-200/70">
+            Progress
+          </p>
+
+          <h3 className="mt-2 text-xl font-semibold tracking-tight text-white">
+            {progressZone}
+          </h3>
+
+          <p className="mt-1 text-sm text-emerald-50/65">
+            Your next unlock builds as your zPts balance grows.
+          </p>
+        </div>
+
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/25 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.22),rgba(52,211,153,0.10))] shadow-[0_0_20px_rgba(52,211,153,0.12)]">
+          <TrendingUp className="h-5 w-5 text-emerald-300" />
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-[22px] border border-white/10 bg-white/5 p-3">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        <p className="mt-3 text-xs text-white/60">{progressHint}</p>
+      </div>
+
+      <div className="mt-3 rounded-[22px] border border-white/10 bg-black/20 p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">
+              Convert zPts to ZWAP
+            </p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              Estimated unlock value
+            </p>
+            <p className="mt-1 text-xs text-white/55">
+              Conversion becomes available once your build reaches the threshold.
+            </p>
+          </div>
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10">
+            <ArrowRightLeft className="h-4 w-4 text-emerald-300" />
+          </div>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-white/40">
+              zPts
+            </p>
+            <p className="mt-1 text-sm font-medium text-white/85">
+              {Math.floor(Number(zptsBalance || 0)).toLocaleString()}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-white/40">
+              Est. ZWAP
+            </p>
+            <p className="mt-1 text-sm font-medium text-white/85">
+              {estimatedUnlockValue}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenConvertModal}
+          className={`mt-3 inline-flex w-full items-center justify-center rounded-[20px] px-4 py-3 text-sm font-semibold transition ${
+            isConversionReady
+              ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_6px_0_rgba(10,84,64,0.95),0_12px_20px_rgba(52,211,153,0.20),inset_0_1px_0_rgba(255,255,255,0.35)]"
+              : "border border-white/10 bg-white/8 text-white/80 hover:bg-white/12"
+          }`}
+        >
+          <ArrowRightLeft className="mr-2 h-4 w-4" />
+          {isConversionReady ? "Convert Now" : "Keep Building"}
+        </button>
+      </div>
+    </motion.div>
   );
 }
