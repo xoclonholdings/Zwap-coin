@@ -17,6 +17,9 @@ export default function ShopTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [inventoryLoading, setInventoryLoading] = useState(false);
 
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+
   const loadItems = useCallback(async () => {
     setIsLoading(true);
 
@@ -26,7 +29,6 @@ export default function ShopTab() {
       setItems(loaded);
     } catch (error) {
       console.error("Failed to load shop items:", error);
-      toast.error("Failed to load items");
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +70,10 @@ export default function ShopTab() {
     };
   }, [user]);
 
+  const ownedItemIds = useMemo(() => {
+    return new Set(inventoryItems.map((item) => item.item_id));
+  }, [inventoryItems]);
+
   const inventoryDisplayItems = useMemo(() => {
     return inventoryItems.map((owned) => {
       const fullItem = items.find(
@@ -76,6 +82,7 @@ export default function ShopTab() {
 
       return {
         ...owned,
+        id: owned.item_id,
         name: owned.item_name || fullItem?.name || "Owned Item",
         image_url: fullItem?.image_url || null,
         description: fullItem?.description || "",
@@ -85,27 +92,121 @@ export default function ShopTab() {
     });
   }, [inventoryItems, items]);
 
+  const canAffordZwap = useCallback(
+    (price) => (user?.zwap_balance || 0) >= Number(price || 0),
+    [user]
+  );
+
+  const canAffordZpts = useCallback(
+    (price) =>
+      Number(price || 0) > 0 &&
+      (user?.zpts_balance || 0) >= Number(price || 0),
+    [user]
+  );
+
+  const handlePurchase = useCallback(
+    async (item, paymentType) => {
+      if (!item || !walletAddress) return;
+
+      setIsPurchasing(true);
+
+      try {
+        await api.purchaseItem(walletAddress, item.id || item._id, paymentType);
+        setPurchaseSuccess(true);
+
+        await refreshUser();
+        await loadInventory();
+      } catch (error) {
+        console.error("Purchase failed:", error);
+      } finally {
+        setIsPurchasing(false);
+      }
+    },
+    [walletAddress, refreshUser, loadInventory]
+  );
+
+  const handleStripeCheckout = useCallback(
+    async (item) => {
+      if (!item || !walletAddress) return;
+
+      setIsPurchasing(true);
+
+      try {
+        const itemId = item.id || item._id;
+        const isPlusSubscription =
+          itemId === "plus_subscription" ||
+          item.name?.toLowerCase() === "plus";
+
+        const endpoint = isPlusSubscription
+          ? `${process.env.REACT_APP_BACKEND_URL}/stripe/create-subscription-checkout`
+          : `${process.env.REACT_APP_BACKEND_URL}/stripe/create-checkout`;
+
+        const body = isPlusSubscription
+          ? {
+              wallet_address: walletAddress,
+              origin_url: window.location.origin,
+            }
+          : {
+              item_id: itemId,
+              wallet_address: walletAddress,
+              purchase_type: "shop_item",
+              origin_url: window.location.origin,
+            };
+
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.url) {
+          throw new Error("Stripe checkout failed");
+        }
+
+        window.location.href = data.url;
+      } catch (error) {
+        console.error("Stripe checkout failed:", error);
+      } finally {
+        setIsPurchasing(false);
+      }
+    },
+    [walletAddress]
+  );
+
   return (
-    <div
-      className="min-h-[calc(100dvh-140px)] bg-[#081017] px-4 py-4 text-white"
-      data-testid="shop-tab"
-    >
+    <div className="min-h-[calc(100dvh-140px)] bg-[#081017] px-4 py-4 text-white">
       <div className="mx-auto w-full max-w-md space-y-4">
+
+        {/* CARD 1 */}
         <ShopHome
           balances={balances}
-          items={items}
           onRefresh={loadItems}
         />
 
+        {/* CARD 2 */}
         <ShopMarketplaceCard
           items={items}
           isLoading={isLoading}
+          user={user}
+          ownedItemIds={ownedItemIds}
+          canAffordZwap={canAffordZwap}
+          canAffordZpts={canAffordZpts}
+          onPurchase={handlePurchase}
+          onStripeCheckout={handleStripeCheckout}
+          isPurchasing={isPurchasing}
+          purchaseSuccess={purchaseSuccess}
         />
 
+        {/* CARD 3 */}
         <ShopInventoryCard
           inventoryItems={inventoryDisplayItems}
           inventoryLoading={inventoryLoading}
         />
+
       </div>
     </div>
   );
