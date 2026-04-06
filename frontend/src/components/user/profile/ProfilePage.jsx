@@ -19,45 +19,9 @@ import { toast } from "sonner";
 import BadgeStrip from "@/components/user/profile/BadgeStrip";
 import WalletCard from "@/components/user/profile/WalletCard";
 import ProfileIdentityCard from "@/components/user/profile/ProfileIdentityCard";
+import { generateUsername } from "@/lib/utils/generateUsername";
 
 const API_BASE = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const ADJECTIVES = [
-  "Nova",
-  "Pixel",
-  "Quantum",
-  "Echo",
-  "Neon",
-  "Solar",
-  "Cyber",
-  "Hyper",
-  "Shadow",
-  "Turbo",
-];
-
-const NOUNS = [
-  "Runner",
-  "Walker",
-  "Strider",
-  "Pilot",
-  "Glider",
-  "Breaker",
-  "Phantom",
-  "Rider",
-  "Explorer",
-  "Voyager",
-];
-
-function generateUsername(wallet) {
-  if (!wallet) return "Zwapper";
-
-  const seed = parseInt(wallet.slice(2, 10), 16);
-  const adjIndex = Math.abs(seed) % ADJECTIVES.length;
-  const nounIndex = Math.abs(Math.floor(seed / 8)) % NOUNS.length;
-  const num = Math.abs(seed) % 999;
-
-  return `${ADJECTIVES[adjIndex]}${NOUNS[nounIndex]}${num}`;
-}
 
 export default function ProfilePage({ onClose }) {
   const navigate = useNavigate();
@@ -77,7 +41,10 @@ export default function ProfilePage({ onClose }) {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
 
-  const rawTierConfig = TIERS[user?.tier || "starter"];
+  const safeUser = user && typeof user === "object" ? user : null;
+  const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
+
+  const rawTierConfig = TIERS[safeUser?.tier || "starter"];
   const tierConfig = {
     multiplier:
       rawTierConfig?.multiplier ??
@@ -97,22 +64,31 @@ export default function ProfilePage({ onClose }) {
     }
   }, [walletAddress]);
 
-  const displayName =
-    user?.custom_username ||
-    user?.username ||
-    authUser?.username ||
-    (authUser?.email ? authUser.email.split("@")[0] : null) ||
-    generateUsername(walletAddress);
+  const displayName = useMemo(() => {
+    return (
+      generateUsername({
+        username: safeUser?.username || safeUser?.custom_username || safeAuthUser?.username,
+        walletAddress: walletAddress || safeUser?.wallet_address,
+        email: safeAuthUser?.email || safeUser?.email,
+      }) || ""
+    );
+  }, [safeUser, safeAuthUser, walletAddress]);
 
-  const avatarInitials =
-    displayName
-      .replace(/[^a-zA-Z0-9 ]/g, "")
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase() || "Z";
+  const avatarInitials = useMemo(() => {
+    const cleaned = String(displayName || "")
+      .replace(/[^a-zA-Z0-9 ]/g, " ")
+      .trim();
+
+    if (!cleaned) return "Z";
+
+    const parts = cleaned.split(/\s+/).filter(Boolean);
+
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    return cleaned.slice(0, 2).toUpperCase();
+  }, [displayName]);
 
   const handleSaveUsername = async () => {
     if (!walletAddress || !newUsername.trim()) return;
@@ -167,48 +143,48 @@ export default function ProfilePage({ onClose }) {
   const stats = [
     {
       label: "Total Earned",
-      value: user?.total_earned?.toFixed(0) || 0,
+      value: safeUser?.total_earned?.toFixed(0) || 0,
       icon: Trophy,
       iconClass: "text-cyan-400",
     },
     {
       label: "Total Steps",
-      value: user?.total_steps?.toLocaleString() || 0,
+      value: safeUser?.total_steps?.toLocaleString() || 0,
       icon: Footprints,
       iconClass: "text-green-400",
     },
     {
       label: "Games Played",
-      value: user?.games_played || 0,
+      value: safeUser?.games_played || 0,
       icon: Gamepad2,
       iconClass: "text-purple-400",
     },
     {
-      label: "Z Points",
-      value: user?.zpts_balance || 0,
+      label: "zPts",
+      value: safeUser?.zpts_balance || 0,
       icon: ShoppingBag,
       iconClass: "text-pink-400",
     },
   ];
 
-  const earnedBadgeIds = user?.earned_badges || [];
+  const earnedBadgeIds = safeUser?.earned_badges || [];
 
   const badgeProgress = {
-    daily_logins: Math.min((user?.daily_logins || 0) / 7, 1),
-    rings_completed: Math.min((user?.rings_completed || 0) / 7, 1),
-    step_sessions: Math.min((user?.step_sessions || 0) / 10, 1),
+    daily_logins: Math.min((safeUser?.daily_logins || 0) / 7, 1),
+    rings_completed: Math.min((safeUser?.rings_completed || 0) / 7, 1),
+    step_sessions: Math.min((safeUser?.step_sessions || 0) / 10, 1),
     sustained_movement_days: Math.min(
-      (user?.sustained_movement_days || 0) / 14,
+      (safeUser?.sustained_movement_days || 0) / 14,
       1
     ),
-    assists_sent: Math.min((user?.assists_sent || 0) / 5, 1),
+    assists_sent: Math.min((safeUser?.assists_sent || 0) / 5, 1),
     deep_engagement_actions: Math.min(
-      (user?.deep_engagement_actions || 0) / 10,
+      (safeUser?.deep_engagement_actions || 0) / 10,
       1
     ),
-    zpts_earned_total: Math.min((user?.zpts_earned_total || 0) / 1000, 1),
-    referrals_completed: Math.min((user?.referrals_completed || 0) / 3, 1),
-    modules_completed: Math.min((user?.modules_completed || 0) / 5, 1),
+    zpts_earned_total: Math.min((safeUser?.zpts_earned_total || 0) / 1000, 1),
+    referrals_completed: Math.min((safeUser?.referrals_completed || 0) / 3, 1),
+    modules_completed: Math.min((safeUser?.modules_completed || 0) / 5, 1),
   };
 
   return (
@@ -232,8 +208,8 @@ export default function ProfilePage({ onClose }) {
             displayName={displayName}
             avatarInitials={avatarInitials}
             walletAddress={walletAddress}
-            email={authUser?.email}
-            createdAt={user?.created_at}
+            email={safeAuthUser?.email}
+            createdAt={safeUser?.created_at}
             isEditingName={isEditingName}
             newUsername={newUsername}
             isSaving={isSaving}
@@ -250,7 +226,7 @@ export default function ProfilePage({ onClose }) {
           <WalletCard
             walletAddress={walletAddress}
             zwapBalance={onchainBalance}
-            zptsBalance={user?.zpts_balance || 0}
+            zptsBalance={safeUser?.zpts_balance || 0}
             onConnectWallet={() => setIsWalletModalOpen(true)}
           />
 
@@ -266,7 +242,7 @@ export default function ProfilePage({ onClose }) {
             />
           </motion.div>
 
-          {walletAddress && (
+          {walletAddress ? (
             <motion.div
               className="grid grid-cols-2 gap-3"
               initial={{ opacity: 0, y: 20 }}
@@ -287,7 +263,7 @@ export default function ProfilePage({ onClose }) {
                 );
               })}
             </motion.div>
-          )}
+          ) : null}
 
           <motion.div
             className="glass-card mt-6 rounded-2xl p-5"
@@ -306,22 +282,22 @@ export default function ProfilePage({ onClose }) {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-400">Daily Z Points Cap</span>
+                <span className="text-gray-400">Daily zPts Cap</span>
                 <span className="font-bold text-purple-400">
                   {tierConfig.dailyZptsCap}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-400">Game Submission Portal</span>
+                <span className="text-gray-400">Developer Portal</span>
                 <span className="font-bold text-white">
-                  {user?.tier === "plus" ? "Unlocked" : "Plus Only"}
+                  Free + Approval Based
                 </span>
               </div>
             </div>
           </motion.div>
 
-          {walletAddress && (
+          {walletAddress ? (
             <motion.div
               className="glass-card mt-6 rounded-2xl p-5"
               initial={{ opacity: 0, y: 20 }}
@@ -392,7 +368,7 @@ export default function ProfilePage({ onClose }) {
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {item.download_url && (
+                          {item.download_url ? (
                             <a
                               href={item.download_url}
                               target="_blank"
@@ -402,9 +378,9 @@ export default function ProfilePage({ onClose }) {
                               <Download className="h-3 w-3" />
                               Download
                             </a>
-                          )}
+                          ) : null}
 
-                          {item.external_url && (
+                          {item.external_url ? (
                             <a
                               href={item.external_url}
                               target="_blank"
@@ -414,7 +390,7 @@ export default function ProfilePage({ onClose }) {
                               <ExternalLink className="h-3 w-3" />
                               Open
                             </a>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -422,7 +398,7 @@ export default function ProfilePage({ onClose }) {
                 </div>
               )}
             </motion.div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
