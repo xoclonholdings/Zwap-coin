@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { GAMES, getGameById } from "./gamesIndex";
+import { GAMES, getGameById } from "@/components/games/gamesIndex";
 
 export default function PlayTab({ onStartGame }) {
   const [selectedGameId, setSelectedGameId] = useState(GAMES[0]?.id || "brainz");
