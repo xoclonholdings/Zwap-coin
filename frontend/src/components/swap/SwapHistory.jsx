@@ -10,12 +10,9 @@ function clamp(value, min = 0, max = 100) {
 
 function getProgressData(zptsBalance) {
   const safeBalance = Math.max(0, Math.floor(Number(zptsBalance || 0)));
-  const progressBase = safeBalance % ZPTS_STEP;
-  const completedCycle = safeBalance > 0 && progressBase === 0;
-  const progressValue = completedCycle ? ZPTS_STEP : progressBase;
-
-  const progressPercent = clamp((progressValue / ZPTS_STEP) * 100);
-  const remainingZpts = completedCycle ? 0 : ZPTS_STEP - progressValue;
+  const cappedBalance = Math.min(safeBalance, ZPTS_STEP);
+  const progressPercent = clamp((cappedBalance / ZPTS_STEP) * 100);
+  const remainingZpts = Math.max(ZPTS_STEP - cappedBalance, 0);
 
   let progressZone = "Starting";
   if (progressPercent >= 100) progressZone = "Conversion Ready";
@@ -23,13 +20,13 @@ function getProgressData(zptsBalance) {
   else if (progressPercent >= 70) progressZone = "Approaching";
   else if (progressPercent >= 30) progressZone = "Building";
 
-  let progressHint = `${progressValue.toLocaleString()} zPts toward next ZWAP`;
+  let progressHint = `${cappedBalance.toLocaleString()} zPts toward next ZWAP`;
 
   if (progressPercent >= 100) {
     progressHint = "Conversion available now";
   } else if (progressPercent >= 85) {
     progressHint = "Next unlock nearing";
-  } else if (remainingZpts > 0 && remainingZpts <= 300) {
+  } else if (remainingZpts > 0) {
     progressHint = `${remainingZpts.toLocaleString()} zPts left to unlock`;
   }
 
@@ -96,9 +93,7 @@ export default function SwapHistory({
           />
         </div>
 
-        <p className="mt-3 text-xs text-white/60">
-          {progressHint}
-        </p>
+        <p className="mt-3 text-xs text-white/60">{progressHint}</p>
       </div>
 
       <div className="mt-3 rounded-[22px] border border-white/10 bg-black/20 p-3">
