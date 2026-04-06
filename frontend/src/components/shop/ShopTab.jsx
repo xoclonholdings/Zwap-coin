@@ -62,14 +62,6 @@ export default function ShopTab() {
     loadInventory();
   }, [loadInventory]);
 
-  const balances = useMemo(() => {
-    return {
-      zwap: Number(user?.zwap_balance || 0),
-      zpts: Number(user?.zpts_balance || 0),
-      tier: user?.tier || "starter",
-    };
-  }, [user]);
-
   const ownedItemIds = useMemo(() => {
     return new Set(inventoryItems.map((item) => item.item_id));
   }, [inventoryItems]);
@@ -180,14 +172,8 @@ export default function ShopTab() {
   return (
     <div className="min-h-[calc(100dvh-140px)] bg-[#081017] px-4 py-4 text-white">
       <div className="mx-auto w-full max-w-md space-y-4">
+        <ShopHome />
 
-        {/* CARD 1 */}
-        <ShopHome
-          balances={balances}
-          onRefresh={loadItems}
-        />
-
-        {/* CARD 2 */}
         <ShopMarketplaceCard
           items={items}
           isLoading={isLoading}
@@ -201,12 +187,10 @@ export default function ShopTab() {
           purchaseSuccess={purchaseSuccess}
         />
 
-        {/* CARD 3 */}
         <ShopInventoryCard
           inventoryItems={inventoryDisplayItems}
           inventoryLoading={inventoryLoading}
         />
-
       </div>
     </div>
   );
