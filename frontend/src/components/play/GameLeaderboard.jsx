@@ -1,17 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import { useApp } from "@/App";
-import {
-  Trophy,
-  RefreshCw,
-  Globe,
-  Loader2,
-  BarChart3,
-} from "lucide-react";
-
-// ---------------------------------------------------------------------------
-// CONFIG
-// ---------------------------------------------------------------------------
+import { Trophy, RefreshCw, Loader2, BarChart3 } from "lucide-react";
 
 const GAME_ROTATION = [
   { id: "breakerz", label: "Breakerz", color: "cyan" },
@@ -56,39 +46,46 @@ const THEMES = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// HELPERS
-// ---------------------------------------------------------------------------
-
 function normalizeRows(rows = []) {
   return rows.map((row, index) => ({
     rank: Number(row.rank ?? index + 1),
-    username: row.username || "zwapper",
+    username: row.username || "",
     value: Number(row.value ?? 0),
-    wallet: (row.wallet || row.wallet_address || "").toLowerCase(),
+    wallet: String(row.wallet || row.wallet_address || "").toLowerCase(),
     tier: row.tier || "starter",
   }));
 }
 
-function buildDisplayRows(topRows, currentUserRow, wallet) {
+function buildDisplayRows(topRows = [], currentUserRow = null, wallet = "") {
   const top5 = topRows.slice(0, 5);
 
-  if (!wallet) return top5;
+  if (!wallet) {
+    return top5.map((row) => ({ ...row, isCurrentUser: false }));
+  }
 
-  const inTop = top5.some((r) => r.wallet === wallet);
-  if (inTop) return top5.map((r) => ({ ...r, isCurrentUser: r.wallet === wallet }));
+  const topWithFlag = top5.map((row) => ({
+    ...row,
+    isCurrentUser: row.wallet === wallet,
+  }));
 
-  if (!currentUserRow) return top5;
+  const userAlreadyInTop = topWithFlag.some((row) => row.isCurrentUser);
+  if (userAlreadyInTop) {
+    return topWithFlag;
+  }
+
+  if (!currentUserRow) {
+    return topWithFlag;
+  }
 
   return [
-    ...top5.slice(0, 4),
-    { ...currentUserRow, isCurrentUser: true, username: "You" },
+    ...topWithFlag.slice(0, 4),
+    {
+      ...currentUserRow,
+      isCurrentUser: true,
+      username: "You",
+    },
   ];
 }
-
-// ---------------------------------------------------------------------------
-// COMPONENT
-// ---------------------------------------------------------------------------
 
 export default function GameLeaderboard() {
   const { walletAddress } = useApp();
@@ -97,35 +94,45 @@ export default function GameLeaderboard() {
   const [rows, setRows] = useState([]);
   const [userRow, setUserRow] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const activeGame = GAME_ROTATION[gameIndex];
   const theme = THEMES[activeGame.color];
-  const wallet = (walletAddress || "").toLowerCase();
+  const wallet = String(walletAddress || "").toLowerCase();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError("");
 
     try {
-      const top = await api.getGameLeaderboard(activeGame.id, 5);
-      const normalized = normalizeRows(top);
+      const topResponse = await api.getGameLeaderboard(activeGame.id, 5);
+      const normalizedTop = normalizeRows(
+        Array.isArray(topResponse) ? topResponse : []
+      );
+      setRows(normalizedTop);
 
-      setRows(normalized);
-
-      if (wallet) {
-        const user = await api.getUserGameRank(wallet, activeGame.id);
-        if (user?.found) {
-          setUserRow({
-            rank: user.global_rank,
-            value: user.value,
-            wallet,
-            username: "You",
-            tier: user.tier,
-          });
-        }
+      if (!wallet) {
+        setUserRow(null);
+        return;
       }
-    } catch {
+
+      const userResponse = await api.getUserGameRank(wallet, activeGame.id);
+
+      if (userResponse?.found) {
+        setUserRow({
+          rank: Number(userResponse.global_rank || 0),
+          value: Number(userResponse.value || 0),
+          wallet,
+          username: "You",
+          tier: userResponse.tier || "starter",
+        });
+      } else {
+        setUserRow(null);
+      }
+    } catch (err) {
       setRows([]);
       setUserRow(null);
+      setError(err?.message || "Failed to load leaderboard");
     } finally {
       setLoading(false);
     }
@@ -135,74 +142,103 @@ export default function GameLeaderboard() {
     fetchData();
   }, [fetchData]);
 
-  const displayRows = useMemo(
-    () => buildDisplayRows(rows, userRow, wallet),
-    [rows, userRow, wallet]
-  );
+  const displayRows = useMemo(() => {
+    return buildDisplayRows(rows, userRow, wallet);
+  }, [rows, userRow, wallet]);
 
   return (
-    <div className={`rounded-[24px] border p-4 ${theme.shell}`}>
-      {/* HEADER */}
-      <div className="mb-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-xl border ${theme.iconBg}`}>
+    <div
+      className={`rounded-[24px] border p-4 backdrop-blur-sm shadow-[0_14px_40px_rgba(0,0,0,0.28)] ${theme.shell}`}
+    >
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${theme.iconBg}`}
+          >
             <Trophy className={`h-4 w-4 ${theme.accent}`} />
           </div>
-          <div>
+
+          <div className="min-w-0">
             <h3 className="text-sm font-semibold text-white">Leaderboard</h3>
-            <p className="text-xs text-white/50">{activeGame.label}</p>
+            <p className="truncate text-xs text-white/50">{activeGame.label}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={fetchData}
-            className="h-8 w-8 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 transition hover:bg-white/10"
+            aria-label="Refresh leaderboard"
           >
             <RefreshCw className="h-3 w-3 text-white/70" />
           </button>
 
           <button
-            onClick={() => setGameIndex((i) => (i + 1) % GAME_ROTATION.length)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10"
+            onClick={() =>
+              setGameIndex((prev) => (prev + 1) % GAME_ROTATION.length)
+            }
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/10"
           >
             {activeGame.label}
           </button>
         </div>
       </div>
 
-      {/* BODY */}
       <div className={`rounded-[20px] border p-4 ${theme.panel}`}>
         {loading ? (
-          <div className="text-center py-10 text-white/60">
-            <Loader2 className="animate-spin inline mr-2" />
+          <div className="flex items-center justify-center py-10 text-white/60">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Loading...
+          </div>
+        ) : error ? (
+          <div className="py-10 text-center text-white/50">
+            <BarChart3 className="mx-auto mb-2 h-5 w-5" />
+            {error}
           </div>
         ) : displayRows.length > 0 ? (
           <div className="space-y-3">
-            {displayRows.map((r) => {
-              const max = Math.max(...displayRows.map((x) => x.value), 1);
-              const width = (r.value / max) * 100;
+            {displayRows.map((entry) => {
+              const maxValue = Math.max(
+                ...displayRows.map((row) => Number(row.value || 0)),
+                1
+              );
+              const width = Math.max((entry.value / maxValue) * 100, 8);
 
               return (
                 <div
-                  key={r.rank}
-                  className={`p-3 rounded-xl border ${
-                    r.isCurrentUser
+                  key={`${entry.rank}-${entry.wallet || entry.username}`}
+                  className={`rounded-xl border p-3 ${
+                    entry.isCurrentUser
                       ? theme.userRow
                       : "border-white/10 bg-black/20"
                   }`}
                 >
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-white">
-                      {r.isCurrentUser ? "You" : r.username}
-                    </span>
-                    <span className="text-sm text-white">{r.value}</span>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px] font-semibold text-white/75">
+                        {entry.rank}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">
+                          {entry.isCurrentUser ? "You" : entry.username}
+                        </p>
+                        <p className="truncate text-[11px] text-white/38">
+                          {entry.wallet || entry.tier}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-semibold text-white">
+                        {entry.value}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="h-2 bg-white/10 rounded-full">
+                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
                     <div
-                      className={`h-full bg-gradient-to-r ${theme.bar}`}
+                      className={`h-full rounded-full bg-gradient-to-r ${theme.bar}`}
                       style={{ width: `${width}%` }}
                     />
                   </div>
@@ -211,8 +247,8 @@ export default function GameLeaderboard() {
             })}
           </div>
         ) : (
-          <div className="text-center py-10 text-white/50">
-            <BarChart3 className="mx-auto mb-2" />
+          <div className="py-10 text-center text-white/50">
+            <BarChart3 className="mx-auto mb-2 h-5 w-5" />
             No data yet
           </div>
         )}
