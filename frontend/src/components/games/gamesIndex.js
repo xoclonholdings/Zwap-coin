@@ -13,6 +13,7 @@ export const GAMES = [
     name: "Brainz",
     icon: "🧠",
     logo: brainzLogo,
+    mechanic: "Think fast. Answer sharp.",
     status: "live",
   },
   {
@@ -20,6 +21,7 @@ export const GAMES = [
     name: "Breakerz",
     icon: "🧱",
     logo: breakerzLogo,
+    mechanic: "Shatter walls. Clear the grid.",
     status: "live",
   },
   {
@@ -27,6 +29,7 @@ export const GAMES = [
     name: "Pulze",
     icon: "⚡",
     logo: pulzeLogo,
+    mechanic: "Time the spin. Ride the rhythm.",
     status: "live",
   },
   {
@@ -34,6 +37,7 @@ export const GAMES = [
     name: "Stackz",
     icon: "🟦",
     logo: stackzLogo,
+    mechanic: "Stack fast. Survive the drop.",
     status: "live",
   },
   {
@@ -41,6 +45,7 @@ export const GAMES = [
     name: "Triplez",
     icon: "💎",
     logo: triplezLogo,
+    mechanic: "Match. Chain. Multiply.",
     status: "coming",
   },
   {
@@ -48,11 +53,11 @@ export const GAMES = [
     name: "Werdz",
     icon: "🔤",
     logo: werdzLogo,
+    mechanic: "Find the pattern. Unlock the words.",
     status: "coming",
   },
 ];
 
-// 🔁 BACKWARD COMPATIBILITY (OLD → NEW)
 export const GAME_ALIASES = {
   ztrivia: "brainz",
   zbrickles: "breakerz",
