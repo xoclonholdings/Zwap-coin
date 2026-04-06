@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
-import { Button } from "@/components/ui/button";
+import { useApp } from "@/App";
 import {
   Trophy,
   RefreshCw,
-  ChevronRight,
   Globe,
   MapPin,
   Orbit,
@@ -13,10 +12,10 @@ import {
 } from "lucide-react";
 
 const GAME_ROTATION = [
-  { id: "zbrickles", label: "zBrickles", color: "cyan" },
-  { id: "ztrivia", label: "zTrivia", color: "purple" },
-  { id: "ztetris", label: "zTetris", color: "pink" },
-  { id: "zslots", label: "zSpin", color: "cyan" },
+  { id: "breakerz", label: "Breakerz", color: "cyan" },
+  { id: "brainz", label: "Brainz", color: "purple" },
+  { id: "stackz", label: "Stackz", color: "pink" },
+  { id: "pulze", label: "Pulze", color: "cyan" },
 ];
 
 const SCOPE_OPTIONS = [
@@ -28,71 +27,145 @@ const SCOPE_OPTIONS = [
 const THEMES = {
   cyan: {
     shell:
-      "border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_32%),linear-gradient(180deg,rgba(7,19,27,0.96),rgba(7,14,20,0.98))]",
-    chipActive: "border-cyan-400/30 bg-cyan-400/12 text-cyan-200",
-    chipIdle: "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
-    accent: "text-cyan-300",
-    graph: "from-cyan-400 via-teal-400 to-violet-400",
+      "border-cyan-400/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_34%),linear-gradient(180deg,rgba(7,20,28,0.96),rgba(7,14,20,0.98))]",
+    panel:
+      "border-cyan-400/14 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_30%),linear-gradient(180deg,rgba(8,16,23,0.92),rgba(7,12,18,0.98))]",
     iconBg: "border-cyan-400/20 bg-cyan-400/10",
+    accent: "text-cyan-300",
+    activeTab:
+      "border-cyan-400/35 bg-cyan-400/14 text-cyan-200 shadow-[0_0_24px_rgba(34,211,238,0.10)]",
+    idleTab: "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
+    bar: "from-cyan-400 via-teal-400 to-violet-400",
+    userRow:
+      "border-cyan-400/24 bg-cyan-400/[0.08] shadow-[0_0_24px_rgba(34,211,238,0.08)]",
   },
   purple: {
     shell:
-      "border-violet-400/20 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.18),_transparent_32%),linear-gradient(180deg,rgba(16,10,31,0.96),rgba(11,10,22,0.98))]",
-    chipActive: "border-violet-400/30 bg-violet-400/12 text-violet-200",
-    chipIdle: "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
-    accent: "text-violet-300",
-    graph: "from-violet-400 via-fuchsia-400 to-cyan-400",
+      "border-violet-400/20 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.18),_transparent_34%),linear-gradient(180deg,rgba(18,11,36,0.96),rgba(10,10,22,0.98))]",
+    panel:
+      "border-violet-400/14 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.10),_transparent_30%),linear-gradient(180deg,rgba(16,10,31,0.92),rgba(11,10,22,0.98))]",
     iconBg: "border-violet-400/20 bg-violet-400/10",
+    accent: "text-violet-300",
+    activeTab:
+      "border-violet-400/35 bg-violet-400/14 text-violet-200 shadow-[0_0_24px_rgba(168,85,247,0.10)]",
+    idleTab: "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
+    bar: "from-violet-400 via-fuchsia-400 to-cyan-400",
+    userRow:
+      "border-violet-400/24 bg-violet-400/[0.08] shadow-[0_0_24px_rgba(168,85,247,0.08)]",
   },
   pink: {
     shell:
-      "border-pink-400/20 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.18),_transparent_32%),linear-gradient(180deg,rgba(28,10,25,0.96),rgba(14,9,18,0.98))]",
-    chipActive: "border-pink-400/30 bg-pink-400/12 text-pink-200",
-    chipIdle: "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
-    accent: "text-pink-300",
-    graph: "from-pink-400 via-fuchsia-400 to-violet-400",
+      "border-pink-400/20 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.18),_transparent_34%),linear-gradient(180deg,rgba(27,10,24,0.96),rgba(14,9,18,0.98))]",
+    panel:
+      "border-pink-400/14 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.10),_transparent_30%),linear-gradient(180deg,rgba(27,10,24,0.92),rgba(14,9,18,0.98))]",
     iconBg: "border-pink-400/20 bg-pink-400/10",
+    accent: "text-pink-300",
+    activeTab:
+      "border-pink-400/35 bg-pink-400/14 text-pink-200 shadow-[0_0_24px_rgba(244,114,182,0.10)]",
+    idleTab: "border-white/10 bg-white/5 text-white/60 hover:bg-white/10",
+    bar: "from-pink-400 via-fuchsia-400 to-violet-400",
+    userRow:
+      "border-pink-400/24 bg-pink-400/[0.08] shadow-[0_0_24px_rgba(244,114,182,0.08)]",
   },
 };
 
 function normalizeRows(rows = []) {
   return rows.map((row, index) => ({
-    rank: row.rank || index + 1,
-    username: row.username || row.wallet || row.wallet_address || "zwapper",
+    rank: Number(row.rank ?? index + 1),
+    username:
+      row.username ||
+      row.display_name ||
+      row.name ||
+      row.wallet ||
+      row.wallet_address ||
+      "zwapper",
     value: Number(row.value ?? row.score ?? 0),
-    wallet: row.wallet || row.wallet_address || "",
+    wallet: (row.wallet || row.wallet_address || "").toLowerCase(),
     tier: row.tier || "starter",
   }));
 }
 
-function LeaderboardBars({ rows, gradientClass }) {
+function getUserIdentity(user, walletAddress) {
+  const wallet = (walletAddress || "").toLowerCase();
+  const username = (user?.wallet_address || wallet)
+    ? "You"
+    : user?.username || "You";
+
+  return {
+    wallet,
+    username,
+  };
+}
+
+function buildDisplayRows(topRows = [], currentUserRow, currentWallet) {
+  const normalizedTop = topRows.slice(0, 5);
+
+  if (!currentWallet) {
+    return normalizedTop.map((row) => ({
+      ...row,
+      isCurrentUser: false,
+    }));
+  }
+
+  const topWithFlag = normalizedTop.map((row) => ({
+    ...row,
+    isCurrentUser: row.wallet === currentWallet,
+  }));
+
+  const userAlreadyInTop = topWithFlag.some((row) => row.isCurrentUser);
+  if (userAlreadyInTop) return topWithFlag;
+
+  if (!currentUserRow) return topWithFlag;
+
+  return [
+    ...topWithFlag.slice(0, 4),
+    {
+      ...currentUserRow,
+      isCurrentUser: true,
+      username: "You",
+    },
+  ];
+}
+
+function LeaderboardRows({ rows, gradientClass, userRowClass }) {
   const maxValue = Math.max(...rows.map((row) => row.value || 0), 1);
 
   return (
     <div className="space-y-3">
       {rows.map((entry) => {
-        const width = Math.max((entry.value / maxValue) * 100, 10);
+        const width = Math.max((entry.value / maxValue) * 100, 8);
 
         return (
-          <div key={`${entry.rank}-${entry.username}`} className="space-y-1.5">
-            <div className="flex items-center justify-between gap-3 text-xs">
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px] font-semibold text-white/70">
+          <div
+            key={`${entry.rank}-${entry.wallet || entry.username}`}
+            className={`rounded-[20px] border p-3 ${
+              entry.isCurrentUser
+                ? userRowClass
+                : "border-white/8 bg-black/20"
+            }`}
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px] font-semibold text-white/75">
                   {entry.rank}
                 </div>
 
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white/85">
-                    {entry.username}
+                  <p className="truncate text-sm font-semibold text-white">
+                    {entry.isCurrentUser ? "You" : entry.username}
                   </p>
-                  <p className="truncate text-[11px] text-white/35">
-                    {entry.wallet || entry.tier}
+                  <p className="truncate text-[11px] text-white/38">
+                    {entry.isCurrentUser
+                      ? entry.wallet || entry.tier
+                      : entry.wallet || entry.tier}
                   </p>
                 </div>
               </div>
 
               <div className="shrink-0 text-right">
-                <p className="text-sm font-semibold text-white">{entry.value}</p>
+                <p className="text-sm font-semibold text-white">
+                  {entry.value}
+                </p>
               </div>
             </div>
 
@@ -110,24 +183,31 @@ function LeaderboardBars({ rows, gradientClass }) {
 }
 
 export default function GameLeaderboard() {
+  const { user, walletAddress } = useApp();
+
   const [gameIndex, setGameIndex] = useState(0);
   const [scope, setScope] = useState("global");
-  const [rows, setRows] = useState([]);
+  const [topRows, setTopRows] = useState([]);
+  const [currentUserRow, setCurrentUserRow] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [popup, setPopup] = useState({
-    open: false,
-    message: "",
-  });
 
   const activeGame = GAME_ROTATION[gameIndex];
   const theme = THEMES[activeGame.color];
+  const currentUser = useMemo(
+    () => getUserIdentity(user, walletAddress),
+    [user, walletAddress]
+  );
 
   const currentLabel = useMemo(() => {
     const scopeLabel =
       scope === "global" ? "Global" : scope === "regional" ? "Regional" : "Local";
     return `${activeGame.label} • ${scopeLabel}`;
   }, [activeGame, scope]);
+
+  const displayedRows = useMemo(() => {
+    return buildDisplayRows(topRows, currentUserRow, currentUser.wallet);
+  }, [topRows, currentUserRow, currentUser.wallet]);
 
   const cycleGame = () => {
     setGameIndex((prev) => (prev + 1) % GAME_ROTATION.length);
@@ -139,153 +219,151 @@ export default function GameLeaderboard() {
 
     try {
       if (scope !== "global") {
-        setRows([]);
-        setError("Local and regional game boards need location-based backend support.");
+        setTopRows([]);
+        setCurrentUserRow(null);
+        setError("Local and regional boards need location-based backend support.");
         return;
       }
 
-      let data = [];
+      let topData = [];
+      let userData = null;
 
       if (typeof api.getGameLeaderboard === "function") {
         const res = await api.getGameLeaderboard(activeGame.id, scope, 5);
-        data = Array.isArray(res) ? res : res?.entries || [];
+        topData = Array.isArray(res) ? res : res?.entries || [];
       }
 
-      if (!Array.isArray(data) || data.length === 0) {
+      if ((!Array.isArray(topData) || topData.length === 0) && typeof api.getLeaderboard === "function") {
         const fallback = await api.getLeaderboard("games", 5);
-        data = Array.isArray(fallback) ? fallback : [];
+        topData = Array.isArray(fallback) ? fallback : [];
       }
 
-      setRows(normalizeRows(data));
+      const normalizedTop = normalizeRows(topData);
+      setTopRows(normalizedTop);
+
+      if (currentUser.wallet) {
+        const foundUser = normalizedTop.find((row) => row.wallet === currentUser.wallet);
+
+        if (foundUser) {
+          setCurrentUserRow({
+            ...foundUser,
+            username: "You",
+          });
+        } else {
+          userData = {
+            rank: user?.games_rank || user?.rank || 999,
+            username: "You",
+            value: Number(user?.games_played || 0),
+            wallet: currentUser.wallet,
+            tier: user?.tier || "starter",
+          };
+          setCurrentUserRow(userData);
+        }
+      } else {
+        setCurrentUserRow(null);
+      }
     } catch (err) {
-      setRows([]);
+      setTopRows([]);
+      setCurrentUserRow(null);
       setError(err.message || "Failed to fetch leaderboard");
     } finally {
       setLoading(false);
     }
-  }, [activeGame.id, scope]);
+  }, [activeGame.id, scope, currentUser.wallet, user]);
 
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
   return (
-    <>
-      <div
-        className={`rounded-[24px] border p-4 backdrop-blur-sm shadow-[0_14px_40px_rgba(0,0,0,0.24)] ${theme.shell}`}
-      >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${theme.iconBg}`}
-            >
-              <Trophy className={`h-4.5 w-4.5 ${theme.accent}`} />
-            </div>
-
-            <div>
-              <h3 className="text-sm font-semibold text-white">Leaderboard</h3>
-              <p className="text-xs text-white/45">{currentLabel}</p>
-            </div>
+    <div
+      className={`rounded-[24px] border p-4 backdrop-blur-sm shadow-[0_14px_40px_rgba(0,0,0,0.28)] ${theme.shell}`}
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${theme.iconBg}`}
+          >
+            <Trophy className={`h-5 w-5 ${theme.accent}`} />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={fetchLeaderboard}
-              variant="outline"
-              className="h-9 rounded-xl border-white/10 bg-white/5 px-3 text-white hover:bg-white/10"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-
-            <Button
-              onClick={cycleGame}
-              variant="outline"
-              className="h-9 rounded-xl border-white/10 bg-white/5 px-3 text-white hover:bg-white/10"
-            >
-              {activeGame.label}
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-white">Leaderboard</h3>
+            <p className="truncate text-xs text-white/45">{currentLabel}</p>
           </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          {SCOPE_OPTIONS.map((option) => {
-            const Icon = option.icon;
-            const isActive = scope === option.id;
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchLeaderboard}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
 
-            return (
-              <button
-                key={option.id}
-                onClick={() => {
-                  if (!option.enabled) {
-                    setPopup({
-                      open: true,
-                      message: `${option.label} game boards need location-based backend support.`,
-                    });
-                    return;
-                  }
-                  setScope(option.id);
-                }}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition ${
-                  isActive
-                    ? theme.chipActive
-                    : option.enabled
-                      ? theme.chipIdle
-                      : "border-white/8 bg-white/[0.03] text-white/25"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="rounded-[22px] border border-white/8 bg-black/20 p-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12 text-white/55">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Loading leaderboard...
-            </div>
-          ) : error ? (
-            <div className="py-6 text-center">
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                <BarChart3 className="h-4 w-4 text-white/40" />
-              </div>
-              <p className="text-sm font-medium text-white/70">{error}</p>
-            </div>
-          ) : rows.length > 0 ? (
-            <LeaderboardBars rows={rows} gradientClass={theme.graph} />
-          ) : (
-            <div className="py-6 text-center">
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                <BarChart3 className="h-4 w-4 text-white/40" />
-              </div>
-              <p className="text-sm font-medium text-white/70">
-                No leaderboard entries yet.
-              </p>
-            </div>
-          )}
+          <button
+            onClick={cycleGame}
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10"
+          >
+            {activeGame.label}
+          </button>
         </div>
       </div>
 
-      {popup.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[1.75rem] border border-cyan-400/30 bg-[#0f1029] p-5 text-center shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-            <p className="mb-4 text-sm leading-relaxed text-white/80">
-              {popup.message}
-            </p>
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        {SCOPE_OPTIONS.map((option) => {
+          const Icon = option.icon;
+          const isActive = scope === option.id;
 
-            <Button
-              onClick={() => setPopup({ open: false, message: "" })}
-              className="h-11 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-base font-semibold hover:from-cyan-400 hover:to-purple-400"
+          return (
+            <button
+              key={option.id}
+              onClick={() => option.enabled && setScope(option.id)}
+              className={`flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition ${
+                isActive
+                  ? theme.activeTab
+                  : option.enabled
+                  ? theme.idleTab
+                  : "border-white/8 bg-white/[0.03] text-white/25"
+              }`}
             >
-              Got it
-            </Button>
+              <Icon className="h-3.5 w-3.5" />
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={`rounded-[22px] border p-4 ${theme.panel}`}>
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-white/55">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading leaderboard...
           </div>
-        </div>
-      )}
-    </>
+        ) : error ? (
+          <div className="py-8 text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+              <BarChart3 className="h-4 w-4 text-white/40" />
+            </div>
+            <p className="text-sm font-medium text-white/70">{error}</p>
+          </div>
+        ) : displayedRows.length > 0 ? (
+          <LeaderboardRows
+            rows={displayedRows}
+            gradientClass={theme.bar}
+            userRowClass={theme.userRow}
+          />
+        ) : (
+          <div className="py-8 text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+              <BarChart3 className="h-4 w-4 text-white/40" />
+            </div>
+            <p className="text-sm font-medium text-white/70">
+              No leaderboard entries yet.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
