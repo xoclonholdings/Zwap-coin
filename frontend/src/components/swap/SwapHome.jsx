@@ -55,15 +55,15 @@ export default function SwapHome({
     );
   }
 
-  const momentumTitle = isConversionReady
+  const progressTitle = isConversionReady
     ? "Conversion Ready"
-    : "Build Toward Conversion";
+    : "Progress Zone";
 
-  const momentumBody = isConversionReady
-    ? "Your balance has reached the next conversion threshold."
-    : "Keep stacking zPts and move closer to your next ZWAP unlock.";
+  const progressBody = isConversionReady
+    ? "Your zPts balance is ready for conversion into ZWAP."
+    : "Track your build path and unlock conversion as your zPts balance grows.";
 
-  const momentumCta = isConversionReady ? "Convert zPts" : "View Progress";
+  const progressCta = isConversionReady ? "Convert zPts" : "Open Progress";
 
   return (
     <div
@@ -85,11 +85,11 @@ export default function SwapHome({
               </div>
 
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-                Build Toward Swap
+                Swap & Convert
               </h1>
 
               <p className="mt-1 text-sm text-emerald-50/65">
-                Accumulate value and unlock conversion as your balance grows.
+                Move value across your ZWAP ecosystem.
               </p>
             </div>
 
@@ -136,11 +136,11 @@ export default function SwapHome({
               </div>
 
               <h3 className="mt-2 text-xl font-semibold tracking-tight text-white">
-                {momentumTitle}
+                {progressTitle}
               </h3>
 
               <p className="mt-1 text-sm text-emerald-50/65">
-                {momentumBody}
+                {progressBody}
               </p>
             </div>
 
@@ -165,7 +165,7 @@ export default function SwapHome({
                 onClick={onOpenConvertModal}
                 className="inline-flex items-center justify-center rounded-2xl border border-emerald-300/30 bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-[#071511] shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)] transition hover:translate-y-[1px] hover:shadow-[0_6px_0_rgba(10,84,64,0.95),0_12px_20px_rgba(52,211,153,0.20),inset_0_1px_0_rgba(255,255,255,0.35)]"
               >
-                {momentumCta}
+                {progressCta}
               </button>
             </div>
           </div>
