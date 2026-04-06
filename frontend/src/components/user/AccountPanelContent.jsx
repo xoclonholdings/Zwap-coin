@@ -55,7 +55,7 @@ function AccountIdentityCard({
   );
 }
 
-function DrawerNavButton({ label, onClick, danger = false }) {
+function DrawerNavButton({ label, sublabel, onClick, danger = false }) {
   return (
     <button
       type="button"
@@ -63,12 +63,16 @@ function DrawerNavButton({ label, onClick, danger = false }) {
       className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
     >
       <span
-        className={`text-[28px] font-semibold leading-none transition ${
+        className={`block text-[28px] font-semibold leading-none transition ${
           danger ? "text-white hover:text-red-400" : "text-white"
         }`}
       >
         {label}
       </span>
+
+      {sublabel ? (
+        <p className="mt-2 text-sm text-gray-400">{sublabel}</p>
+      ) : null}
     </button>
   );
 }
@@ -311,13 +315,19 @@ export default function AccountPanelContent({
               />
 
               <DrawerNavButton
-                label="Referrals"
-                onClick={() => handleNavigate("/referrals")}
+                label="Learn"
+                onClick={() => handleNavigate("/learn")}
               />
 
               <DrawerNavButton
-                label="Learn"
-                onClick={() => handleNavigate("/learn")}
+                label="Developer"
+                sublabel="Submit a game to ZWAP"
+                onClick={() => handleNavigate("/developer/submit")}
+              />
+
+              <DrawerNavButton
+                label="Referral"
+                onClick={() => handleNavigate("/referral")}
               />
 
               <DrawerNavButton
