@@ -3,16 +3,13 @@ import math
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from services.leaderboard_game_service import (
+    get_top_game_leaderboard as _get_top_game_leaderboard,
+    get_user_game_rank as _get_user_game_rank,
+)
 
-# -------------------------
-# Helpers (pure functions)
-# -------------------------
 
 def generate_username(wallet_address: str, salt: str = "ZWAP") -> str:
-    """
-    Deterministic anonymized username from wallet address.
-    Keeps leaderboard display stable without exposing full wallet.
-    """
     raw = f"{salt}:{wallet_address.lower()}".encode("utf-8")
     h = hashlib.sha256(raw).hexdigest()
     return f"zwapper_{h[:8]}"
@@ -46,9 +43,6 @@ def _mask_wallet(wallet_address: Optional[str]) -> str:
 
 
 def _category_to_field(category: str) -> str:
-    """
-    Match current live user schema in server.py / MongoDB.
-    """
     mapping = {
         "steps": "total_steps",
         "games": "games_played",
@@ -60,10 +54,6 @@ def _category_to_field(category: str) -> str:
     return mapping[category]
 
 
-# -------------------------
-# Public API
-# -------------------------
-
 async def get_global_stats_and_top(
     db,
     category: str,
@@ -71,12 +61,6 @@ async def get_global_stats_and_top(
     include_anonymized_name: bool = True,
     include_wallet_preview: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Returns:
-    - totals for the selected category
-    - top users for the selected category
-    - global summary values useful for dashboards/ticker UI
-    """
     sort_field = _category_to_field(category)
     limit = max(1, min(int(limit), 100))
 
@@ -154,14 +138,6 @@ async def get_user_rank(
     include_neighbors: int = 0,
     include_anonymized_name: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Returns user rank data for one leaderboard category.
-
-    Ranking behavior:
-    - global rank: exact
-    - regional rank: exact if region exists, otherwise approximation
-    - local rank: approximation
-    """
     sort_field = _category_to_field(category)
     wallet = wallet_address.lower()
 
@@ -214,10 +190,7 @@ async def get_user_rank(
         "regional_rank": regional_rank,
         "local_rank": local_rank,
         "total_users": total_users,
-        "global": {
-            "rank": global_rank,
-            "total": total_users,
-        },
+        "global": {"rank": global_rank, "total": total_users},
         "regional": {
             "rank": regional_rank,
             "total": regional_total,
@@ -263,10 +236,43 @@ async def get_top_leaderboard(
     return data["top"]
 
 
+async def get_top_game_leaderboard(
+    db,
+    game_id: str,
+    limit: int = 100,
+    include_anonymized_name: bool = True,
+    include_wallet_preview: bool = True,
+) -> List[Dict[str, Any]]:
+    return await _get_top_game_leaderboard(
+        db=db,
+        game_id=game_id,
+        limit=limit,
+        include_anonymized_name=include_anonymized_name,
+        include_wallet_preview=include_wallet_preview,
+        generate_username=generate_username,
+        mask_wallet=_mask_wallet,
+    )
+
+
+async def get_user_game_rank(
+    db,
+    wallet_address: str,
+    game_id: str,
+    include_anonymized_name: bool = True,
+) -> Dict[str, Any]:
+    result = await _get_user_game_rank(
+        db=db,
+        wallet_address=wallet_address,
+        game_id=game_id,
+        include_anonymized_name=include_anonymized_name,
+        generate_username=generate_username,
+        mask_wallet=_mask_wallet,
+    )
+    result["generated_at"] = _utc_now().isoformat()
+    return result
+
+
 async def get_leaderboard_overview(db) -> Dict[str, Any]:
-    """
-    Future-friendly dashboard summary across all main leaderboard categories.
-    """
     total_users = await db.users.count_documents({})
 
     top_earner = await db.users.find_one(
@@ -325,10 +331,6 @@ async def get_leaderboard_overview(db) -> Dict[str, Any]:
     }
 
 
-# -------------------------
-# Internals
-# -------------------------
-
 async def _get_rank_neighbors(
     db,
     sort_field: str,
@@ -337,9 +339,6 @@ async def _get_rank_neighbors(
     span: int,
     include_anonymized_name: bool,
 ) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Returns nearby users above and below the user's value for context.
-    """
     span = max(1, min(int(span), 10))
 
     above_cursor = (
