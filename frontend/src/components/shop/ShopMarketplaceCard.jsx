@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ShoppingBag,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ZUPREME_LOGO } from "@/App";
+import ShopItemCard from "@/components/shop/ShopItemCard";
 import ShopPurchaseDialog from "@/components/shop/ShopPurchaseDialog";
 
 const SHOP_CATEGORIES = [
@@ -92,19 +89,6 @@ function getPaymentMethod(item) {
   return "zwap";
 }
 
-function getDisplayPrice(item) {
-  if (!item) return "";
-  const method = getPaymentMethod(item);
-
-  if (method === "stripe") {
-    return `$${Number(item.price_stripe || 0).toFixed(2)}`;
-  }
-  if (method === "zpts") {
-    return `${Number(item.price_zpts || 0)} zPts`;
-  }
-  return `${Number(item.price_zwap || 0)} ZWAP`;
-}
-
 export default function ShopMarketplaceCard({
   items = [],
   user,
@@ -116,11 +100,9 @@ export default function ShopMarketplaceCard({
   canAffordZpts,
   onPurchase,
   onStripeCheckout,
-  onViewInventory,
 }) {
   const [activeCategory, setActiveCategory] = useState("Sponsored");
   const [carouselIndex, setCarouselIndex] = useState(0);
-
   const [selectedItem, setSelectedItem] = useState(null);
   const [paymentType, setPaymentType] = useState("zwap");
 
@@ -171,14 +153,10 @@ export default function ShopMarketplaceCard({
       <motion.section
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,23,0.96),rgba(8,12,18,0.98))] p-4 backdrop-blur-sm"
+        className="rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(236,72,153,0.12),transparent_40%),linear-gradient(180deg,rgba(8,10,18,0.96),rgba(6,8,14,0.98))] p-4 backdrop-blur-sm"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="text-lg font-semibold text-white">
-              Marketplace
-            </h3>
-          </div>
+          <h3 className="text-lg font-semibold text-white">Marketplace</h3>
 
           <img
             src={ZUPREME_LOGO}
@@ -194,7 +172,7 @@ export default function ShopMarketplaceCard({
           <button
             type="button"
             onClick={prevItem}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-transparent text-white/70 hover:text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-transparent text-white/70 hover:text-pink-200"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -209,7 +187,7 @@ export default function ShopMarketplaceCard({
                 onClick={() => setActiveCategory(category)}
                 className={`whitespace-nowrap rounded-2xl px-4 py-3 text-xs font-medium transition ${
                   isActive
-                    ? "border border-cyan-400/18 bg-cyan-400/10 text-cyan-300"
+                    ? "border border-pink-500/25 bg-pink-500/10 text-pink-300"
                     : "border border-white/8 bg-white/[0.03] text-white/55 hover:text-white"
                 }`}
               >
@@ -221,7 +199,7 @@ export default function ShopMarketplaceCard({
           <button
             type="button"
             onClick={nextItem}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-transparent text-white/70 hover:text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-transparent text-white/70 hover:text-pink-200"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -234,68 +212,17 @@ export default function ShopMarketplaceCard({
             </div>
           ) : currentItem ? (
             <div className="space-y-4">
-              <AnimatePresence mode="wait">
-                <motion.button
-                  key={currentItem.id || currentItem._id}
-                  whileTap={{ scale: 0.985 }}
-                  initial={{ opacity: 0, x: 18 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -18 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => openItem(currentItem)}
-                  className="w-full overflow-hidden rounded-[24px] bg-cyan-400/[0.05] text-left transition hover:bg-cyan-400/[0.09]"
-                  type="button"
-                >
-                  <div className="aspect-[4/3] w-full overflow-hidden bg-black/25">
-                    {currentItem.image_url ? (
-                      <img
-                        src={currentItem.image_url}
-                        alt={currentItem.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <ShoppingBag className="h-12 w-12 text-white/20" />
-                      </div>
-                    )}
-                  </div>
-                </motion.button>
-              </AnimatePresence>
-
-              <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h4 className="truncate text-lg font-semibold text-white">
-                      {currentItem.name}
-                    </h4>
-                    <p className="mt-1 line-clamp-2 text-sm text-white/60">
-                      {currentItem.description ||
-                        "Redeem your rewards for something worth having."}
-                    </p>
-                  </div>
-
-                  <div className="shrink-0 rounded-full border border-cyan-400/15 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold text-cyan-200">
-                    {getDisplayPrice(currentItem)}
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <div className="text-[11px] font-medium uppercase tracking-wide text-cyan-300">
-                    {activeCategory}
-                  </div>
-
-                  <div className="text-[11px] uppercase tracking-wide text-white/35">
-                    {ownedItemIds?.has(currentItem.id || currentItem._id)
-                      ? "Owned item"
-                      : "Tap to view"}
-                  </div>
-                </div>
-              </div>
+              <ShopItemCard
+                item={currentItem}
+                categoryLabel={activeCategory}
+                isOwned={ownedItemIds?.has(currentItem.id || currentItem._id)}
+                onOpen={openItem}
+              />
 
               <button
                 type="button"
                 onClick={() => openItem(currentItem)}
-                className="w-full rounded-[20px] bg-[linear-gradient(135deg,#7cc36d,#8bd06c)] px-4 py-4 text-center text-2xl font-semibold text-[#081017]"
+                className="w-full rounded-[20px] bg-[linear-gradient(135deg,#ec4899,#a855f7)] px-4 py-4 text-center text-2xl font-semibold text-white shadow-[0_0_18px_rgba(236,72,153,0.35)]"
               >
                 Purchase
               </button>
@@ -308,7 +235,7 @@ export default function ShopMarketplaceCard({
                       onClick={() => setCarouselIndex(idx)}
                       className={`h-2 rounded-full transition-all ${
                         idx === carouselIndex
-                          ? "w-6 bg-cyan-400"
+                          ? "w-6 bg-pink-400"
                           : "w-2 bg-white/20 hover:bg-white/35"
                       }`}
                       type="button"
@@ -320,7 +247,7 @@ export default function ShopMarketplaceCard({
           ) : (
             <div className="rounded-[22px] bg-black/20 px-4 py-12 text-center">
               <p className="text-sm text-white/60">
-                No items in this section yet.
+                Nothing in this category yet.
               </p>
             </div>
           )}
@@ -341,7 +268,6 @@ export default function ShopMarketplaceCard({
         onClose={closeItem}
         onPurchase={() => onPurchase?.(selectedItem, paymentType)}
         onStripeCheckout={() => onStripeCheckout?.(selectedItem)}
-        onViewInventory={onViewInventory}
       />
     </>
   );
