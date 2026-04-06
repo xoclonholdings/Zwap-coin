@@ -33,6 +33,14 @@ export const TOKENS = {
     color: "text-violet-400",
     category: "internal",
   },
+  MATIC: {
+    name: "Polygon",
+    symbol: "MATIC",
+    address: "0x0000000000000000000000000000000000001010",
+    decimals: 18,
+    color: "text-violet-400",
+    category: "network",
+  },
   BTC: {
     name: "Bitcoin",
     symbol: "BTC",
@@ -61,12 +69,12 @@ export const TOKENS = {
 
 export const SWAP_MODES = [
   {
-    id: "convert-zpts",
-    name: "Convert zPts",
-    description: "Build toward a ZWAP unlock through accumulated zPts.",
+    id: "swap-pol",
+    name: "POL",
+    description: "Move ZWAP value toward Polygon.",
     status: "active",
-    fromToken: "zPTS",
-    toToken: "ZWAP",
+    fromToken: "ZWAP",
+    toToken: "MATIC",
   },
   {
     id: "swap-btc",
@@ -153,9 +161,9 @@ export default function SwapTab() {
   const [onchainBalance, setOnchainBalance] = useState(null);
   const [isLoadingOnchainBalance, setIsLoadingOnchainBalance] = useState(true);
 
-  const [activeMode, setActiveMode] = useState("convert-zpts");
-  const [fromToken, setFromToken] = useState("zPTS");
-  const [toToken, setToToken] = useState("ZWAP");
+  const [activeMode, setActiveMode] = useState("swap-pol");
+  const [fromToken, setFromToken] = useState("ZWAP");
+  const [toToken, setToToken] = useState("MATIC");
   const [fromAmount, setFromAmount] = useState("");
 
   const [activeService, setActiveService] = useState(null);
@@ -245,9 +253,8 @@ export default function SwapTab() {
 
   const availableToConvert = useMemo(() => {
     if (fromToken === "ZWAP") return swappableWalletZwapBalance;
-    if (fromToken === "zPTS") return walletZptsBalance;
     return 0;
-  }, [fromToken, swappableWalletZwapBalance, walletZptsBalance]);
+  }, [fromToken, swappableWalletZwapBalance]);
 
   const fromUsd = useMemo(() => {
     const amountNum = parseFloat(fromAmount || "0");
@@ -260,11 +267,6 @@ export default function SwapTab() {
   const estimatedOutput = useMemo(() => {
     const amt = parseFloat(fromAmount);
     if (!fromAmount || Number.isNaN(amt) || amt <= 0) return "—";
-
-    if (fromToken === "zPTS" && toToken === "ZWAP") {
-      return formatAmount(amt / ZPTS_CONVERSION_THRESHOLD, 2);
-    }
-
     if (!prices[fromToken] || !prices[toToken]) return "—";
 
     const fromValue = amt * prices[fromToken];
@@ -274,21 +276,11 @@ export default function SwapTab() {
   }, [fromAmount, fromToken, toToken, prices]);
 
   const rate = useMemo(() => {
-    if (fromToken === "zPTS" && toToken === "ZWAP") {
-      return "Threshold unlock";
-    }
-
     if (!prices[fromToken] || !prices[toToken]) return "—";
-
     return (prices[fromToken] / prices[toToken]).toFixed(4);
   }, [fromToken, toToken, prices]);
 
   const swapTokens = () => {
-    if (fromToken === "zPTS" || toToken === "zPTS") {
-      toast.message("zPts conversion follows the progress track.");
-      return;
-    }
-
     setFromToken(toToken);
     setToToken(fromToken);
   };
@@ -305,12 +297,7 @@ export default function SwapTab() {
       return;
     }
 
-    if (fromToken === "zPTS") {
-      setFromAmount(String(Math.floor(walletZptsBalance)));
-      return;
-    }
-
-    toast.message("Max is available for your current reward balance.");
+    toast.message("Max is available for your wallet ZWAP balance.");
   };
 
   const refreshSwapData = useCallback(async () => {
@@ -436,65 +423,6 @@ export default function SwapTab() {
       return;
     }
 
-    if (fromToken === "zPTS" && toToken === "ZWAP") {
-      if (!isConversionReady) {
-        setFeedback({
-          type: "info",
-          title: "Keep building",
-          message:
-            "Continue stacking zPts until your next conversion unlock is ready.",
-        });
-        toast.message("Keep building toward conversion");
-        return;
-      }
-
-      if (amountNum > walletZptsBalance) {
-        toast.error("Not enough zPts available");
-        return;
-      }
-
-      try {
-        setFeedback({
-          type: "pending",
-          title: "Converting progress",
-          message: "Processing your reward conversion...",
-        });
-
-        await api.convertZpts(walletAddress, amountNum);
-
-        if (typeof refreshUser === "function") {
-          await refreshUser();
-        }
-
-        const converted = amountNum / ZPTS_CONVERSION_THRESHOLD;
-
-        setFeedback({
-          type: "success",
-          title: "Conversion complete",
-          message: `${formatAmount(amountNum, 0)} zPts unlocked ${formatAmount(
-            converted,
-            2
-          )} ZWAP.`,
-        });
-
-        setFromAmount("");
-        setIsConvertModalOpen(false);
-        toast.success("zPts converted to ZWAP");
-        return;
-      } catch (error) {
-        console.error("zPts conversion failed", error);
-
-        setFeedback({
-          type: "error",
-          title: "Conversion failed",
-          message: "We could not complete your zPts conversion right now.",
-        });
-
-        toast.error("Conversion failed");
-        return;
-      }
-    }
-
     openEmbeddedSwapFlow();
   };
 
@@ -521,19 +449,16 @@ export default function SwapTab() {
   };
 
   const primaryActionLabel = useMemo(() => {
-    if (fromToken === "zPTS" && toToken === "ZWAP") {
-      return isConversionReady ? "Convert Now" : "Continue Building";
-    }
-
     if (fromToken === "ZWAP" && !hasWalletZwap) {
       return hasInternalZwapToClaim ? "Claim ZWAP" : "Claim to Wallet";
     }
 
+    if (toToken === "MATIC") return "Continue to POL";
     if (toToken === "BTC") return "Continue to BTC";
     if (toToken === "ETH") return "Continue to ETH";
     if (toToken === "USDC") return "Continue to USDC";
     return "Continue";
-  }, [fromToken, toToken, isConversionReady, hasWalletZwap, hasInternalZwapToClaim]);
+  }, [fromToken, toToken, hasWalletZwap, hasInternalZwapToClaim]);
 
   return (
     <SwapHome
