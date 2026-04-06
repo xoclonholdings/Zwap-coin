@@ -3,9 +3,9 @@ import { BookOpen, Headphones, Radio, Video } from "lucide-react";
 import { motion } from "framer-motion";
 
 const tabs = [
-  { id: "watch", label: "Watch", icon: Video },
-  { id: "listen", label: "Listen", icon: Headphones },
   { id: "live", label: "Live", icon: Radio },
+  { id: "listen", label: "Listen", icon: Headphones },
+  { id: "watch", label: "Watch", icon: Video },
   { id: "library", label: "Library", icon: BookOpen },
 ];
 
