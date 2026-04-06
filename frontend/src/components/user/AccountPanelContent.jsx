@@ -60,7 +60,7 @@ function DrawerNavButton({ label, sublabel, onClick, danger = false }) {
     <button
       type="button"
       onClick={onClick}
-      className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
+      className="block min-h-[88px] w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
     >
       <span
         className={`block text-[28px] font-semibold leading-none transition ${
@@ -100,12 +100,12 @@ export default function AccountPanelContent({
 
   const displayName = useMemo(() => {
     const resolved = generateUsername({
-      username: safeUser?.username || safeUser?.custom_username,
+      username: safeUser?.custom_username || safeUser?.username,
       walletAddress: walletAddress || safeUser?.wallet_address,
       email: safeAuthUser?.email || safeUser?.email,
     });
 
-    return resolved || "";
+    return resolved || "Zwapper";
   }, [safeUser, safeAuthUser, walletAddress]);
 
   const displaySubtext = useMemo(() => {
