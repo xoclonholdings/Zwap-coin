@@ -63,18 +63,12 @@ function AssetChip({ token, tokens, tokenLogos }) {
   );
 }
 
-function formatBalance(value, token) {
-  const num = Number(value || 0);
-  if (!Number.isFinite(num)) return "0";
-  return num.toFixed(token === "zPTS" ? 0 : 2);
-}
-
 function getModeMeta(mode) {
   switch (mode?.id) {
-    case "convert-zpts":
+    case "swap-pol":
       return {
-        shortLabel: "zPts",
-        Icon: Coins,
+        shortLabel: "POL",
+        Icon: ArrowRightLeft,
       };
     case "swap-btc":
       return {
@@ -89,7 +83,7 @@ function getModeMeta(mode) {
     case "swap-usdc":
       return {
         shortLabel: "USDC",
-        Icon: ArrowRightLeft,
+        Icon: Coins,
       };
     default:
       return {
@@ -111,7 +105,6 @@ export default function SwapCoreCard({
   fromUsd,
   estimatedOutput,
   rate,
-  availableToConvert,
   isLoadingPrices,
   primaryActionLabel,
   progressZone,
@@ -127,25 +120,24 @@ export default function SwapCoreCard({
     parseFloat(fromAmount) > 0;
 
   const disableFlip = fromToken === "zPTS" || toToken === "zPTS";
-  const visibleModes = modes.slice(0, 4);
+
+  const visibleModes = modes.filter((mode) => mode.id !== "convert-zpts").slice(0, 4);
 
   const helperTitle =
-    activeMode === "convert-zpts"
+    fromToken === "zPTS" && toToken === "ZWAP"
       ? "Progress toward ZWAP"
-      : "Estimated unlock value";
+      : "Swap Path";
 
   const helperLine =
-    activeMode === "convert-zpts"
+    fromToken === "zPTS" && toToken === "ZWAP"
       ? isConversionReady
-        ? "Conversion available once you continue."
+        ? "Your next conversion is available."
         : "Keep building until the next conversion unlock is ready."
-      : "Continue when you're ready to move value into this asset path.";
+      : "Review your selected path, then continue when you're ready.";
 
   const rateLine =
-    activeMode === "convert-zpts"
-      ? isConversionReady
-        ? "Unlock available"
-        : `Zone: ${progressZone}`
+    fromToken === "zPTS" && toToken === "ZWAP"
+      ? `Zone: ${progressZone}`
       : isLoadingPrices
       ? "Updating market path..."
       : `1 ${fromToken} ≈ ${rate} ${toToken}`;
@@ -164,10 +156,10 @@ export default function SwapCoreCard({
           </div>
 
           <h3 className="mt-1 text-xl font-semibold tracking-tight text-white">
-            Build Value
+            Convert Value
           </h3>
           <p className="mt-1 text-sm text-emerald-50/60">
-            Progress your balance and move it when the path is ready.
+            Clean reward conversion and simple asset movement.
           </p>
         </div>
 
@@ -217,7 +209,7 @@ export default function SwapCoreCard({
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3">
-        <div className="grid grid-cols-[1fr_auto] gap-3">
+        <div className="space-y-3">
           <div className="rounded-[20px] border border-white/8 bg-black/20 p-3">
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="text-[11px] uppercase tracking-wide text-white/45">
@@ -254,18 +246,9 @@ export default function SwapCoreCard({
                 </p>
               </div>
             </div>
-
-            <div className="mt-3 rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
-              <p className="text-[10px] uppercase tracking-wide text-white/40">
-                Available
-              </p>
-              <p className="mt-1 text-sm font-medium text-white/80">
-                {formatBalance(availableToConvert, fromToken)} {fromToken}
-              </p>
-            </div>
           </div>
 
-          <div className="flex items-center justify-center">
+          <div className="flex justify-center">
             <motion.button
               type="button"
               onClick={onSwapTokens}
@@ -281,27 +264,27 @@ export default function SwapCoreCard({
               <ArrowDown className="h-5 w-5" />
             </motion.button>
           </div>
-        </div>
 
-        <div className="mt-3 rounded-[20px] border border-white/8 bg-black/20 p-3">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="text-[11px] uppercase tracking-wide text-white/45">
-              To
-            </p>
-
-            <div className="rounded-xl border border-white/8 bg-white/5 px-2.5 py-1 text-[11px] text-white/45">
-              Estimate
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <AssetChip token={toToken} tokens={tokens} tokenLogos={tokenLogos} />
-
-            <div className="min-w-0 flex-1 text-right">
-              <p className="truncate text-[28px] font-semibold leading-none text-white">
-                {estimatedOutput}
+          <div className="rounded-[20px] border border-white/8 bg-black/20 p-3">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-[11px] uppercase tracking-wide text-white/45">
+                To
               </p>
-              <p className="mt-2 truncate text-xs text-white/35">{rateLine}</p>
+
+              <div className="rounded-xl border border-white/8 bg-white/5 px-2.5 py-1 text-[11px] text-white/45">
+                Estimate
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <AssetChip token={toToken} tokens={tokens} tokenLogos={tokenLogos} />
+
+              <div className="min-w-0 flex-1 text-right">
+                <p className="truncate text-[28px] font-semibold leading-none text-white">
+                  {estimatedOutput}
+                </p>
+                <p className="mt-2 truncate text-xs text-white/35">{rateLine}</p>
+              </div>
             </div>
           </div>
         </div>
