@@ -16,7 +16,6 @@ export default function ShopTab() {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inventoryLoading, setInventoryLoading] = useState(false);
-
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
@@ -95,6 +94,10 @@ export default function ShopTab() {
       (user?.zpts_balance || 0) >= Number(price || 0),
     [user]
   );
+
+  const resetPurchaseSuccess = useCallback(() => {
+    setPurchaseSuccess(false);
+  }, []);
 
   const handlePurchase = useCallback(
     async (item, paymentType) => {
@@ -185,6 +188,7 @@ export default function ShopTab() {
           onStripeCheckout={handleStripeCheckout}
           isPurchasing={isPurchasing}
           purchaseSuccess={purchaseSuccess}
+          onResetPurchaseSuccess={resetPurchaseSuccess}
         />
 
         <ShopInventoryCard
