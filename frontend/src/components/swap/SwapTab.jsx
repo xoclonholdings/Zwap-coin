@@ -145,10 +145,13 @@ function getProgressZone(zptsBalance) {
 }
 
 export default function SwapTab() {
-  const { user, refreshUser } = useApp();
+  const { user, walletAddress, refreshUser } = useApp();
 
   const [prices, setPrices] = useState({});
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
+
+  const [onchainBalance, setOnchainBalance] = useState(null);
+  const [isLoadingOnchainBalance, setIsLoadingOnchainBalance] = useState(true);
 
   const [activeMode, setActiveMode] = useState("convert-zpts");
   const [fromToken, setFromToken] = useState("zPTS");
@@ -164,14 +167,17 @@ export default function SwapTab() {
 
   const isPlus = user?.subscription_tier === "plus" || user?.tier === "plus";
 
-  const walletZwapBalance = Number(user?.zwap_balance ?? 0);
+  const internalZwapBalance = Number(user?.zwap_balance ?? 0);
   const walletZptsBalance = Number(user?.zpts_balance ?? 0);
+  const swappableWalletZwapBalance = Number(onchainBalance ?? 0);
 
   const progressZone = useMemo(() => {
     return getProgressZone(walletZptsBalance);
   }, [walletZptsBalance]);
 
   const isConversionReady = walletZptsBalance >= ZPTS_CONVERSION_THRESHOLD;
+  const hasWalletZwap = swappableWalletZwapBalance > 0;
+  const hasInternalZwapToClaim = internalZwapBalance > 0;
 
   const loadPrices = useCallback(async () => {
     try {
@@ -191,11 +197,42 @@ export default function SwapTab() {
     }
   }, []);
 
+  const loadOnchainBalance = useCallback(async () => {
+    if (!walletAddress) {
+      setOnchainBalance(null);
+      setIsLoadingOnchainBalance(false);
+      return;
+    }
+
+    try {
+      setIsLoadingOnchainBalance(true);
+      const data = await api.getOnchainBalance(walletAddress);
+
+      const rawBalance =
+        data?.onchain_balance ??
+        data?.zwap_balance ??
+        data?.balance ??
+        data?.ZWAP ??
+        0;
+
+      setOnchainBalance(Number(rawBalance) || 0);
+    } catch (error) {
+      console.error("Failed to load on-chain balance", error);
+      setOnchainBalance(0);
+    } finally {
+      setIsLoadingOnchainBalance(false);
+    }
+  }, [walletAddress]);
+
   useEffect(() => {
     loadPrices();
     const interval = setInterval(loadPrices, 30000);
     return () => clearInterval(interval);
   }, [loadPrices]);
+
+  useEffect(() => {
+    loadOnchainBalance();
+  }, [loadOnchainBalance]);
 
   useEffect(() => {
     const mode = SWAP_MODES.find((item) => item.id === activeMode);
@@ -207,10 +244,10 @@ export default function SwapTab() {
   }, [activeMode]);
 
   const availableToConvert = useMemo(() => {
-    if (fromToken === "ZWAP") return walletZwapBalance;
+    if (fromToken === "ZWAP") return swappableWalletZwapBalance;
     if (fromToken === "zPTS") return walletZptsBalance;
     return 0;
-  }, [fromToken, walletZwapBalance, walletZptsBalance]);
+  }, [fromToken, swappableWalletZwapBalance, walletZptsBalance]);
 
   const fromUsd = useMemo(() => {
     const amountNum = parseFloat(fromAmount || "0");
@@ -264,7 +301,7 @@ export default function SwapTab() {
 
   const handleSetMax = () => {
     if (fromToken === "ZWAP") {
-      setFromAmount(String(walletZwapBalance));
+      setFromAmount(String(swappableWalletZwapBalance));
       return;
     }
 
@@ -284,6 +321,8 @@ export default function SwapTab() {
         await refreshUser();
       }
 
+      await loadOnchainBalance();
+
       setFeedback({
         type: "success",
         title: "Balances refreshed",
@@ -300,7 +339,7 @@ export default function SwapTab() {
 
       toast.error("Failed to refresh");
     }
-  }, [refreshUser, loadPrices]);
+  }, [refreshUser, loadPrices, loadOnchainBalance]);
 
   const openEmbeddedSwapFlow = useCallback(() => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) {
@@ -310,6 +349,11 @@ export default function SwapTab() {
 
     if (fromToken === toToken) {
       toast.error("Select two different assets");
+      return;
+    }
+
+    if (fromToken === "ZWAP" && !hasWalletZwap) {
+      toast.error("Claim ZWAP to your wallet before swapping");
       return;
     }
 
@@ -334,10 +378,53 @@ export default function SwapTab() {
     window.setTimeout(() => {
       setIsRouteLoading(false);
     }, 1200);
-  }, [fromAmount, fromToken, toToken]);
+  }, [fromAmount, fromToken, toToken, hasWalletZwap]);
 
   const executePrimaryAction = async () => {
     const amountNum = parseFloat(fromAmount);
+
+    if (fromToken === "ZWAP" && !hasWalletZwap) {
+      if (hasInternalZwapToClaim) {
+        try {
+          setFeedback({
+            type: "pending",
+            title: "Claiming ZWAP",
+            message: "Sending your available ZWAP to your wallet...",
+          });
+
+          await api.claimZwap(walletAddress);
+
+          if (typeof refreshUser === "function") {
+            await refreshUser();
+          }
+
+          await loadOnchainBalance();
+
+          setFeedback({
+            type: "success",
+            title: "ZWAP claimed",
+            message: "Your ZWAP is now in your wallet and ready for swap.",
+          });
+
+          toast.success("ZWAP claimed to wallet");
+          return;
+        } catch (error) {
+          console.error("ZWAP claim failed", error);
+
+          setFeedback({
+            type: "error",
+            title: "Claim failed",
+            message: "We could not claim ZWAP to your wallet right now.",
+          });
+
+          toast.error("Claim failed");
+          return;
+        }
+      }
+
+      toast.error("Claim ZWAP to your wallet before swapping");
+      return;
+    }
 
     if (!fromAmount || !Number.isFinite(amountNum) || amountNum <= 0) {
       toast.error("Enter a valid amount");
@@ -354,7 +441,8 @@ export default function SwapTab() {
         setFeedback({
           type: "info",
           title: "Keep building",
-          message: "Continue stacking zPts until your next conversion unlock is ready.",
+          message:
+            "Continue stacking zPts until your next conversion unlock is ready.",
         });
         toast.message("Keep building toward conversion");
         return;
@@ -372,7 +460,7 @@ export default function SwapTab() {
           message: "Processing your reward conversion...",
         });
 
-        await api.convertZpts();
+        await api.convertZpts(walletAddress, amountNum);
 
         if (typeof refreshUser === "function") {
           await refreshUser();
@@ -437,17 +525,21 @@ export default function SwapTab() {
       return isConversionReady ? "Convert Now" : "Continue Building";
     }
 
+    if (fromToken === "ZWAP" && !hasWalletZwap) {
+      return hasInternalZwapToClaim ? "Claim ZWAP" : "Claim to Wallet";
+    }
+
     if (toToken === "BTC") return "Continue to BTC";
     if (toToken === "ETH") return "Continue to ETH";
     if (toToken === "USDC") return "Continue to USDC";
     return "Continue";
-  }, [fromToken, toToken, isConversionReady]);
+  }, [fromToken, toToken, isConversionReady, hasWalletZwap, hasInternalZwapToClaim]);
 
   return (
     <SwapHome
       user={user}
       isPlus={isPlus}
-      isLoadingPrices={isLoadingPrices}
+      isLoadingPrices={isLoadingPrices || isLoadingOnchainBalance}
       tokens={TOKENS}
       tokenLogos={TOKEN_LOGOS}
       modes={SWAP_MODES}
