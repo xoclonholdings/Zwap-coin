@@ -63,6 +63,18 @@ const connectWallet = (walletAddress) =>
 const walletStatus = () => stub("walletStatus", { connected: false });
 const disconnectWallet = () => stub("disconnectWallet", { disconnected: true });
 
+const convertZpts = (walletAddress, zptsAmount) =>
+  request("POST", "/wallet/convert-zpts", {
+    walletAddress,
+    zpts_amount: zptsAmount,
+  });
+
+const claimZwap = (walletAddress, amount = null) =>
+  request("POST", "/wallet/claim-zwap", {
+    walletAddress,
+    amount,
+  });
+
 // ---------------------------------------------------------------------------
 // User
 // ---------------------------------------------------------------------------
@@ -288,24 +300,11 @@ const cancelSubscription = (walletAddress) =>
   stub("cancelSubscription", { cancelled: true, wallet: walletAddress });
 
 // ---------------------------------------------------------------------------
-// zPts
-// ---------------------------------------------------------------------------
-
-const convertZptsToZwap = (walletAddress, zptsAmount) =>
-  request("POST", `/zpts/convert/${walletAddress}`, {
-    zpts_amount: zptsAmount,
-  });
-
-// ---------------------------------------------------------------------------
 // Treasury / Claims
 // ---------------------------------------------------------------------------
 
-const requestClaim = (walletAddress, amount) =>
-  stub("requestClaim", {
-    status: "not_implemented",
-    wallet: walletAddress,
-    amount,
-  });
+const requestClaim = (walletAddress, amount = null) =>
+  claimZwap(walletAddress, amount);
 
 const getClaimStatus = (claimId) =>
   stub("getClaimStatus", { claimId, status: "not_implemented" });
@@ -389,6 +388,8 @@ const api = {
   connectWallet,
   walletStatus,
   disconnectWallet,
+  convertZpts,
+  claimZwap,
 
   getUser,
   updateProfile,
@@ -430,8 +431,6 @@ const api = {
   getSubscriptionStatus,
   activateSubscription,
   cancelSubscription,
-
-  convertZptsToZwap,
 
   requestClaim,
   getClaimStatus,
