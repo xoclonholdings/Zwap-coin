@@ -15,7 +15,7 @@ export default function PlayArcadeCard({ onStartGame }) {
     }
   }, [selectedGame]);
 
-  const handleStart = () => {
+  const handlePlay = () => {
     if (!selectedGame || selectedGame.status !== "live") return;
     onStartGame?.(selectedGame);
   };
@@ -28,7 +28,7 @@ export default function PlayArcadeCard({ onStartGame }) {
             Arcade
           </p>
           <p className="mt-1 text-sm text-white/45">
-            Choose a game and enter the session.
+            Choose a game and open its session screen.
           </p>
         </div>
 
@@ -63,14 +63,14 @@ export default function PlayArcadeCard({ onStartGame }) {
           <button
             type="button"
             disabled={!selectedGame || selectedGame.status !== "live"}
-            onClick={handleStart}
+            onClick={handlePlay}
             className={`min-w-[220px] rounded-[20px] px-7 py-3.5 text-lg font-semibold transition-all ${
               selectedGame?.status === "live"
                 ? "bg-[linear-gradient(90deg,rgba(34,211,238,1),rgba(139,92,246,1),rgba(236,72,153,0.95))] text-[#071019] shadow-[0_0_34px_rgba(139,92,246,0.30)] active:scale-[0.98]"
                 : "border border-white/10 bg-white/[0.05] text-white/35"
             }`}
           >
-            Start
+            Play
           </button>
 
           {selectedGame?.mechanic ? (
