@@ -16,7 +16,7 @@ import EmailAuthModal from "../components/user/firsttimeuser/EmailAuthModal";
 import WalletModal from "../components/wallet/WalletModal";
 
 import MoveTab from "../components/move/MoveTab";
-import PlayPage from "../components/play/PlayPage";
+import PlayTab from "../components/play/PlayTab";
 import SwapTab from "../components/swap/SwapTab";
 import ShopTab from "../components/shop/ShopTab";
 
