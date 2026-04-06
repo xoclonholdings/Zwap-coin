@@ -16,7 +16,7 @@ import EmailAuthModal from "../components/user/firsttimeuser/EmailAuthModal";
 import WalletModal from "../components/wallet/WalletModal";
 
 import MoveTab from "../components/move/MoveTab";
-import PlayTab from "../components/play/PlayTab";
+import PlayPage from "../components/play/PlayPage";
 import SwapTab from "../components/swap/SwapTab";
 import ShopTab from "../components/shop/ShopTab";
 
@@ -204,7 +204,7 @@ export default function AppContent() {
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/move" element={<MoveTab />} />
-            <Route path="/play" element={<PlayTab />} />
+            <Route path="/play" element={<PlayPage />} />
             <Route path="/swap" element={<SwapTab />} />
             <Route path="/shop" element={<ShopTab />} />
             <Route path="/plus" element={<PlusPage />} />
