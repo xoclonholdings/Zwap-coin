@@ -32,8 +32,6 @@ export default function SwapHome({
   primaryActionLabel,
   hasInternalZwapToClaim,
   hasWalletZwap,
-  walletZwapBalance,
-  internalZwapBalance,
   zptsBalance,
   onSetFromAmount,
   onSwapTokens,
@@ -110,8 +108,6 @@ export default function SwapHome({
           availableToConvert={availableToConvert}
           isLoadingPrices={isLoadingPrices}
           primaryActionLabel={primaryActionLabel}
-          progressZone={progressZone}
-          isConversionReady={isConversionReady}
           hasWalletZwap={hasWalletZwap}
           hasInternalZwapToClaim={hasInternalZwapToClaim}
           onSetFromAmount={onSetFromAmount}
@@ -121,13 +117,8 @@ export default function SwapHome({
         />
 
         <SwapHistory
-          progressZone={progressZone}
-          isConversionReady={isConversionReady}
-          hasInternalZwapToClaim={hasInternalZwapToClaim}
-          hasWalletZwap={hasWalletZwap}
-          walletZwapBalance={walletZwapBalance}
-          internalZwapBalance={internalZwapBalance}
           zptsBalance={zptsBalance}
+          isConversionReady={isConversionReady}
           onOpenConvertModal={onOpenConvertModal}
         />
 
