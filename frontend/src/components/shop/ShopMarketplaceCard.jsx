@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
   ShoppingBag,
 } from "lucide-react";
 import { ZUPREME_LOGO } from "@/App";
@@ -106,7 +105,7 @@ function getDisplayPrice(item) {
   return `${Number(item.price_zwap || 0)} ZWAP`;
 }
 
-export default function ShopPortal({
+export default function ShopMarketplaceCard({
   items = [],
   user,
   ownedItemIds,
@@ -115,7 +114,6 @@ export default function ShopPortal({
   purchaseSuccess = false,
   canAffordZwap,
   canAffordZpts,
-  onRefresh,
   onPurchase,
   onStripeCheckout,
   onViewInventory,
@@ -176,42 +174,27 @@ export default function ShopPortal({
         className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,23,0.96),rgba(8,12,18,0.98))] p-4 backdrop-blur-sm"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-white/45">
-              Marketplace
-            </p>
-            <h3 className="mt-1 text-lg font-semibold text-white">
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-white">
               Marketplace
             </h3>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onRefresh}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white hover:bg-white/10"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
-
-            <div className="rounded-[18px] border border-pink-500/20 bg-[linear-gradient(135deg,rgba(236,72,153,0.10),rgba(139,92,246,0.08),rgba(8,16,23,0.94))] px-3 py-2">
-              <img
-                src={ZUPREME_LOGO}
-                alt="Zupreme Imports"
-                className="h-8 w-auto object-contain"
-                style={{
-                  filter: "drop-shadow(0 0 12px rgba(236,72,153,0.22))",
-                }}
-              />
-            </div>
-          </div>
+          <img
+            src={ZUPREME_LOGO}
+            alt="Zupreme Imports"
+            className="h-10 w-auto shrink-0 object-contain"
+            style={{
+              filter: "drop-shadow(0 0 12px rgba(236,72,153,0.22))",
+            }}
+          />
         </div>
 
         <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             onClick={prevItem}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/25 text-white hover:bg-white/10"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-transparent text-white/70 hover:text-white"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -238,7 +221,7 @@ export default function ShopPortal({
           <button
             type="button"
             onClick={nextItem}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/25 text-white hover:bg-white/10"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-transparent text-white/70 hover:text-white"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
