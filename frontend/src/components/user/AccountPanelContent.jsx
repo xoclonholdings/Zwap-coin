@@ -63,13 +63,7 @@ export default function AccountPanelContent({
   const navigate = useNavigate();
   const { logout: privyLogout } = usePrivy();
 
-  const {
-    user,
-    authUser,
-    walletAddress,
-    onchainBalance,
-    logoutAll,
-  } = useApp();
+  const { user, authUser, walletAddress, onchainBalance, logoutAll } = useApp();
 
   const [convertOpen, setConvertOpen] = useState(false);
 
@@ -84,11 +78,13 @@ export default function AccountPanelContent({
   const isPlus = safeUser?.tier === "plus";
 
   const displayName = useMemo(() => {
-    return generateUsername({
-      walletAddress,
+    const resolved = generateUsername({
+      username: safeUser?.username || safeUser?.custom_username,
+      walletAddress: walletAddress || safeUser?.wallet_address,
       email: safeAuthUser?.email || safeUser?.email,
-      username: safeUser?.custom_username || safeUser?.username,
     });
+
+    return resolved || "";
   }, [safeUser, safeAuthUser, walletAddress]);
 
   const displaySubtext = useMemo(() => {
@@ -100,16 +96,19 @@ export default function AccountPanelContent({
   }, [safeAuthUser, walletAddress]);
 
   const initials = useMemo(() => {
-    return (
-      displayName
-        .replace(/[^a-zA-Z0-9 ]/g, "")
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase() || "Z"
-    );
+    const cleaned = String(displayName || "")
+      .replace(/[^a-zA-Z0-9 ]/g, " ")
+      .trim();
+
+    if (!cleaned) return "Z";
+
+    const parts = cleaned.split(/\s+/).filter(Boolean);
+
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    return cleaned.slice(0, 2).toUpperCase();
   }, [displayName]);
 
   const zwapBalance =
