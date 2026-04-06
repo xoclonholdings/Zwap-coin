@@ -5,6 +5,8 @@ from services.leaderboard_service import (
     get_user_rank,
     get_top_leaderboard,
     get_leaderboard_overview,
+    get_top_game_leaderboard,
+    get_user_game_rank,
 )
 
 leaderboard_router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
@@ -64,6 +66,54 @@ async def leaderboard_user_rank(
             wallet_address=wallet_address.lower(),
             category=category,
             include_neighbors=neighbors,
+            include_anonymized_name=True,
+        )
+        if not result.get("found"):
+            raise HTTPException(status_code=404, detail="User not found")
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@leaderboard_router.get("/games/{game_id}")
+async def leaderboard_by_game(
+    request: Request,
+    game_id: str,
+    limit: int = Query(10, ge=1, le=100),
+):
+    """
+    Returns top leaderboard entries for a specific game.
+    Supports both old and renamed game IDs.
+    """
+    db = request.app.state.db
+    try:
+        return await get_top_game_leaderboard(
+            db=db,
+            game_id=game_id,
+            limit=limit,
+            include_anonymized_name=True,
+            include_wallet_preview=True,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@leaderboard_router.get("/games/{game_id}/user/{wallet_address}")
+async def leaderboard_user_game_rank(
+    request: Request,
+    game_id: str,
+    wallet_address: str,
+):
+    """
+    Returns a user's rank information for a specific game.
+    Supports both old and renamed game IDs.
+    """
+    db = request.app.state.db
+    try:
+        result = await get_user_game_rank(
+            db=db,
+            wallet_address=wallet_address.lower(),
+            game_id=game_id,
             include_anonymized_name=True,
         )
         if not result.get("found"):
