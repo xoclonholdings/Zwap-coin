@@ -61,12 +61,23 @@ function createInitialSession(game) {
 function SessionSplash({ game, onStart, onBack }) {
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-black/20 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="w-full max-w-[320px] rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01))] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
         {game?.logo ? (
-          <img
+          <motion.img
             src={game.logo}
             alt={game.name}
-            className="mx-auto mb-6 h-32 object-contain"
+            initial={{ opacity: 0.72, scale: 0.95, y: 8 }}
+            animate={{
+              opacity: 1,
+              scale: [1, 1.025, 1],
+              y: [0, -2, 0],
+            }}
+            transition={{
+              opacity: { duration: 0.28 },
+              scale: { duration: 2.6, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 2.6, repeat: Infinity, ease: "easeInOut" },
+            }}
+            className="mx-auto mb-8 h-40 object-contain drop-shadow-[0_0_34px_rgba(255,255,255,0.14)]"
           />
         ) : null}
 
@@ -74,29 +85,32 @@ function SessionSplash({ game, onStart, onBack }) {
           Ready
         </p>
 
-        <h2 className="mt-3 text-2xl font-semibold text-white">
-          {game?.name}
-        </h2>
-
-        {game?.mechanic ? (
-          <p className="mx-auto mt-3 max-w-[280px] text-sm leading-relaxed text-white/55">
-            {game.mechanic}
-          </p>
-        ) : null}
-
-        <div className="mt-8 flex flex-col gap-3">
-          <button
+        <div className="mt-7 flex flex-col items-center gap-3">
+          <motion.button
             type="button"
             onClick={onStart}
-            className="rounded-[20px] bg-[linear-gradient(90deg,rgba(34,211,238,1),rgba(139,92,246,1),rgba(236,72,153,0.95))] px-6 py-3.5 text-lg font-semibold text-[#071019] shadow-[0_0_34px_rgba(139,92,246,0.30)] transition active:scale-[0.98]"
+            whileTap={{ scale: 0.97 }}
+            animate={{
+              boxShadow: [
+                "0 0 18px rgba(34,211,238,0.10)",
+                "0 0 28px rgba(139,92,246,0.22)",
+                "0 0 18px rgba(34,211,238,0.10)",
+              ],
+            }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="min-w-[170px] rounded-[18px] bg-[linear-gradient(90deg,rgba(34,211,238,1),rgba(139,92,246,1),rgba(236,72,153,0.95))] px-6 py-2.5 text-base font-semibold tracking-[0.02em] text-[#071019] transition"
           >
             Start
-          </button>
+          </motion.button>
 
           <button
             type="button"
             onClick={onBack}
-            className="rounded-[20px] border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.08]"
+            className="min-w-[170px] rounded-[18px] border border-white/10 bg-white/[0.05] px-6 py-2.5 text-sm font-medium text-white/72 transition hover:bg-white/[0.08]"
           >
             Back to Arcade
           </button>
@@ -109,12 +123,18 @@ function SessionSplash({ game, onStart, onBack }) {
 function ComingSoonStage({ game, onBack }) {
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-black/20 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="w-full max-w-[320px] rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01))] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
         {game?.logo ? (
-          <img
+          <motion.img
             src={game.logo}
             alt={game.name}
-            className="mx-auto mb-6 h-32 object-contain opacity-90"
+            initial={{ opacity: 0.72, scale: 0.95 }}
+            animate={{ opacity: 0.95, scale: [1, 1.015, 1] }}
+            transition={{
+              opacity: { duration: 0.28 },
+              scale: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
+            }}
+            className="mx-auto mb-8 h-40 object-contain opacity-95 drop-shadow-[0_0_34px_rgba(255,255,255,0.10)]"
           />
         ) : null}
 
@@ -122,20 +142,10 @@ function ComingSoonStage({ game, onBack }) {
           Coming Soon
         </p>
 
-        <h2 className="mt-3 text-2xl font-semibold text-white">
-          {game?.name}
-        </h2>
-
-        {game?.mechanic ? (
-          <p className="mx-auto mt-3 max-w-[280px] text-sm leading-relaxed text-white/55">
-            {game.mechanic}
-          </p>
-        ) : null}
-
         <button
           type="button"
           onClick={onBack}
-          className="mt-8 rounded-[20px] border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.08]"
+          className="mt-8 min-w-[170px] rounded-[18px] border border-white/10 bg-white/[0.05] px-6 py-2.5 text-sm font-medium text-white/72 transition hover:bg-white/[0.08]"
         >
           Back to Arcade
         </button>
@@ -147,7 +157,7 @@ function ComingSoonStage({ game, onBack }) {
 function LivePlaceholderStage({ game, onEnd }) {
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-black/20 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="w-full max-w-[320px] rounded-[28px] border border-white/10 bg-black/20 p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
           Live Session
         </p>
@@ -156,7 +166,7 @@ function LivePlaceholderStage({ game, onEnd }) {
           {game?.name}
         </h2>
 
-        <p className="mx-auto mt-3 max-w-[320px] text-sm leading-relaxed text-white/55">
+        <p className="mx-auto mt-3 max-w-[280px] text-sm leading-relaxed text-white/55">
           Full gameplay wiring comes next. The fullscreen session flow is now in
           place.
         </p>
@@ -225,12 +235,7 @@ export default function PlayTab() {
     if (!activeGame || !session) return null;
 
     if (session.status === "coming") {
-      return (
-        <ComingSoonStage
-          game={activeGame}
-          onBack={handleBackToArcade}
-        />
-      );
+      return <ComingSoonStage game={activeGame} onBack={handleBackToArcade} />;
     }
 
     if (session.status === "splash") {
@@ -243,12 +248,7 @@ export default function PlayTab() {
       );
     }
 
-    return (
-      <LivePlaceholderStage
-        game={activeGame}
-        onEnd={handleEndSession}
-      />
-    );
+    return <LivePlaceholderStage game={activeGame} onEnd={handleEndSession} />;
   };
 
   if (activeGame && session) {
