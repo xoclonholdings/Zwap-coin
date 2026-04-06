@@ -9,10 +9,6 @@ import MoveRewardsFeedback from "@/components/move/MoveRewardsFeedback";
 const DEFAULT_STEP_GOAL = 10000;
 const MILES_PER_STEP = 0.00045;
 
-function getTierDailyZptsCap(tierConfig) {
-  return tierConfig?.daily_zpts_cap ?? tierConfig?.dailyZptsCap ?? 75;
-}
-
 function formatPace(secondsPerMile) {
   if (!Number.isFinite(secondsPerMile) || secondsPerMile <= 0) return "--";
 
@@ -41,8 +37,6 @@ export default function MoveTab() {
   const isPlus = tierKey === "plus";
   const hasWallet = Boolean(walletAddress);
 
-  const dailyZptsCap = getTierDailyZptsCap(tierConfig);
-  const dailyZptsEarned = Number(user?.daily_zpts_earned || 0);
   const stepGoal = Math.max(Number(user?.step_goal) || DEFAULT_STEP_GOAL, 1);
 
   const calculateRewards = useCallback(
@@ -189,8 +183,6 @@ export default function MoveTab() {
 
       <MoveHome
         isPlus={isPlus}
-        dailyZptsCap={dailyZptsCap}
-        dailyZptsEarned={dailyZptsEarned}
         steps={steps}
         stepGoal={stepGoal}
         progressPercent={progressPercent}
