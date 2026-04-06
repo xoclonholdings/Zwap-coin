@@ -484,6 +484,11 @@ export default function SwapTab() {
       isConversionReady={isConversionReady}
       isConvertModalOpen={isConvertModalOpen}
       primaryActionLabel={primaryActionLabel}
+      hasInternalZwapToClaim={hasInternalZwapToClaim}
+      hasWalletZwap={hasWalletZwap}
+      walletZwapBalance={swappableWalletZwapBalance}
+      internalZwapBalance={internalZwapBalance}
+      zptsBalance={walletZptsBalance}
       onSetFromAmount={setFromAmount}
       onSwapTokens={swapTokens}
       onSelectMode={handleSelectMode}
