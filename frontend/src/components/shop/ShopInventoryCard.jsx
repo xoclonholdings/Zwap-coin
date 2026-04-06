@@ -20,7 +20,7 @@ export default function ShopInventoryDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg rounded-3xl border-pink-500/30 bg-[#0f1029]">
+      <DialogContent className="sm:max-w-lg rounded-3xl border-pink-500/30 bg-[linear-gradient(180deg,rgba(14,10,24,0.98),rgba(9,8,18,0.99))]">
         <DialogHeader>
           <DialogTitle className="text-xl text-white">
             Your Inventory
@@ -63,32 +63,32 @@ export default function ShopInventoryDialog({
                   </p>
 
                   <div className="mt-2 flex items-center gap-2">
-                    {item.download_url && (
+                    {item.download_url ? (
                       <Button
                         size="sm"
                         onClick={() => window.open(item.download_url)}
-                        className="h-7 px-2 text-xs bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30"
+                        className="h-7 bg-pink-500/15 px-2 text-xs text-pink-200 hover:bg-pink-500/25"
                       >
                         <Download className="mr-1 h-3 w-3" />
                         Download
                       </Button>
-                    )}
+                    ) : null}
 
-                    {item.external_url && (
+                    {item.external_url ? (
                       <Button
                         size="sm"
                         onClick={() => window.open(item.external_url)}
-                        className="h-7 px-2 text-xs bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                        className="h-7 bg-pink-500/15 px-2 text-xs text-pink-200 hover:bg-pink-500/25"
                       >
                         <ExternalLink className="mr-1 h-3 w-3" />
                         Open
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
-                  <Check className="h-4 w-4 text-emerald-400" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pink-500/15">
+                  <Check className="h-4 w-4 text-pink-300" />
                 </div>
               </div>
             ))}
@@ -98,7 +98,7 @@ export default function ShopInventoryDialog({
         <div className="mt-4">
           <Button
             onClick={onClose}
-            className="w-full bg-gradient-to-r from-pink-500 to-purple-500"
+            className="w-full bg-[linear-gradient(135deg,#ec4899,#a855f7)] text-white"
           >
             Close
           </Button>
