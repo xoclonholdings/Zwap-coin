@@ -7,6 +7,7 @@ import {
   Coins,
   Info,
   Sparkles,
+  Wallet,
 } from "lucide-react";
 
 function TokenIcon({ token, tokenLogos, size = "md" }) {
@@ -107,8 +108,8 @@ export default function SwapCoreCard({
   rate,
   isLoadingPrices,
   primaryActionLabel,
-  progressZone,
-  isConversionReady,
+  hasWalletZwap,
+  hasInternalZwapToClaim,
   onSetFromAmount,
   onSwapTokens,
   onSetMax,
@@ -119,28 +120,19 @@ export default function SwapCoreCard({
     Number.isFinite(parseFloat(fromAmount)) &&
     parseFloat(fromAmount) > 0;
 
-  const disableFlip = fromToken === "zPTS" || toToken === "zPTS";
+  const visibleModes = modes.slice(0, 4);
 
-  const visibleModes = modes.filter((mode) => mode.id !== "convert-zpts").slice(0, 4);
+  const helperTitle = hasWalletZwap ? "Swap Path" : "Wallet Required";
 
-  const helperTitle =
-    fromToken === "zPTS" && toToken === "ZWAP"
-      ? "Progress toward ZWAP"
-      : "Swap Path";
+  const helperLine = hasWalletZwap
+    ? "Review your selected path, then continue when you're ready."
+    : hasInternalZwapToClaim
+    ? "ZWAP must be claimed to your wallet before swap can continue."
+    : "You need wallet-held ZWAP before swap can begin.";
 
-  const helperLine =
-    fromToken === "zPTS" && toToken === "ZWAP"
-      ? isConversionReady
-        ? "Your next conversion is available."
-        : "Keep building until the next conversion unlock is ready."
-      : "Review your selected path, then continue when you're ready.";
-
-  const rateLine =
-    fromToken === "zPTS" && toToken === "ZWAP"
-      ? `Zone: ${progressZone}`
-      : isLoadingPrices
-      ? "Updating market path..."
-      : `1 ${fromToken} ≈ ${rate} ${toToken}`;
+  const rateLine = isLoadingPrices
+    ? "Updating market path..."
+    : `1 ${fromToken} ≈ ${rate} ${toToken}`;
 
   return (
     <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.12),transparent_34%),linear-gradient(180deg,rgba(9,22,19,0.98),rgba(7,13,16,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.30)]">
@@ -242,24 +234,46 @@ export default function SwapCoreCard({
                   className="block w-full bg-transparent text-right text-[28px] font-semibold leading-none text-white outline-none placeholder:text-white/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <p className="mt-2 truncate text-xs text-white/35">
-                  {fromUsd === "0.00" ? "Value will appear here" : `≈ $${fromUsd}`}
+                  {fromUsd === "0.00"
+                    ? "Value will appear here"
+                    : `≈ $${fromUsd}`}
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-3">
+            <div className="flex items-start gap-2">
+              <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-300" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-white/80">
+                  {helperTitle}
+                </p>
+                <p className="mt-0.5 text-[11px] text-white/55">
+                  {helperLine}
+                </p>
+              </div>
+            </div>
+
+            {!hasWalletZwap && (
+              <button
+                type="button"
+                onClick={onPrimaryAction}
+                className="mt-3 inline-flex w-full items-center justify-center rounded-[20px] border border-white/10 bg-white/6 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                <Wallet className="mr-2 h-4 w-4" />
+                Claim to Wallet
+              </button>
+            )}
           </div>
 
           <div className="flex justify-center">
             <motion.button
               type="button"
               onClick={onSwapTokens}
-              disabled={disableFlip}
-              whileHover={disableFlip ? {} : { rotate: 180 }}
-              whileTap={disableFlip ? {} : { scale: 0.92 }}
-              className={`flex h-11 w-11 items-center justify-center rounded-full border-4 border-[#081017] transition ${
-                disableFlip
-                  ? "cursor-not-allowed bg-white/6 text-white/25"
-                  : "bg-white/8 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.18)] hover:bg-white/12"
-              }`}
+              whileHover={{ rotate: 180 }}
+              whileTap={{ scale: 0.92 }}
+              className="flex h-11 w-11 items-center justify-center rounded-full border-4 border-[#081017] bg-white/8 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.18)] transition hover:bg-white/12"
             >
               <ArrowDown className="h-5 w-5" />
             </motion.button>
@@ -283,34 +297,30 @@ export default function SwapCoreCard({
                 <p className="truncate text-[28px] font-semibold leading-none text-white">
                   {estimatedOutput}
                 </p>
-                <p className="mt-2 truncate text-xs text-white/35">{rateLine}</p>
+                <p className="mt-2 truncate text-xs text-white/35">
+                  {rateLine}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-white/8 bg-white/5 px-3 py-2.5">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-300" />
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-white/80">{helperTitle}</p>
-            <p className="mt-0.5 text-[11px] text-white/55">{helperLine}</p>
-          </div>
-        </div>
-
-        <motion.button
-          type="button"
-          onClick={onPrimaryAction}
-          disabled={!canSubmit}
-          whileTap={canSubmit ? { scale: 0.985, y: 2 } : {}}
-          className={`mt-4 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3.5 text-sm font-semibold transition ${
-            canSubmit
-              ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_10px_0_rgba(10,84,64,0.95),0_16px_28px_rgba(52,211,153,0.24),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
-              : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
-          }`}
-        >
-          <ArrowRightLeft className="mr-2 h-4 w-4" />
-          {primaryActionLabel}
-        </motion.button>
+        {hasWalletZwap && (
+          <motion.button
+            type="button"
+            onClick={onPrimaryAction}
+            disabled={!canSubmit}
+            whileTap={canSubmit ? { scale: 0.985, y: 2 } : {}}
+            className={`mt-4 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3.5 text-sm font-semibold transition ${
+              canSubmit
+                ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_10px_0_rgba(10,84,64,0.95),0_16px_28px_rgba(52,211,153,0.24),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
+            }`}
+          >
+            <ArrowRightLeft className="mr-2 h-4 w-4" />
+            {primaryActionLabel}
+          </motion.button>
+        )}
       </div>
     </div>
   );
