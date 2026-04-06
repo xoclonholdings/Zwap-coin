@@ -55,6 +55,24 @@ function AccountIdentityCard({
   );
 }
 
+function DrawerNavButton({ label, onClick, danger = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
+    >
+      <span
+        className={`text-[28px] font-semibold leading-none transition ${
+          danger ? "text-white hover:text-red-400" : "text-white"
+        }`}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export default function AccountPanelContent({
   onNavigate,
   onClose,
@@ -62,7 +80,6 @@ export default function AccountPanelContent({
 }) {
   const navigate = useNavigate();
   const { logout: privyLogout } = usePrivy();
-
   const { user, authUser, walletAddress, onchainBalance, logoutAll } = useApp();
 
   const [convertOpen, setConvertOpen] = useState(false);
@@ -161,8 +178,12 @@ export default function AccountPanelContent({
 
     if (shieldClickCountRef.current >= 3) {
       shieldClickCountRef.current = 0;
-      clearTimeout(shieldTimerRef.current);
-      shieldTimerRef.current = null;
+
+      if (shieldTimerRef.current) {
+        clearTimeout(shieldTimerRef.current);
+        shieldTimerRef.current = null;
+      }
+
       handleNavigate("/admin");
     }
   };
@@ -284,46 +305,32 @@ export default function AccountPanelContent({
             </button>
 
             <div className="space-y-3">
-              <button
-                type="button"
+              <DrawerNavButton
+                label="Profile"
                 onClick={() => handleNavigate("/profile")}
-                className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
-              >
-                <span className="text-[28px] font-semibold leading-none text-white">
-                  Profile
-                </span>
-              </button>
+              />
 
-              <button
-                type="button"
+              <DrawerNavButton
+                label="Referrals"
+                onClick={() => handleNavigate("/referrals")}
+              />
+
+              <DrawerNavButton
+                label="Learn"
                 onClick={() => handleNavigate("/learn")}
-                className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
-              >
-                <span className="text-[28px] font-semibold leading-none text-white">
-                  Learn
-                </span>
-              </button>
+              />
 
-              <button
-                type="button"
+              <DrawerNavButton
+                label="Contact"
                 onClick={() => handleNavigate("/contact")}
-                className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
-              >
-                <span className="text-[28px] font-semibold leading-none text-white">
-                  Contact
-                </span>
-              </button>
+              />
 
               {isAuthenticated ? (
-                <button
-                  type="button"
+                <DrawerNavButton
+                  label="Sign Out"
                   onClick={handleSignOut}
-                  className="block w-full rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:bg-white/[0.05]"
-                >
-                  <span className="text-[28px] font-semibold leading-none text-white transition hover:text-red-400">
-                    Sign Out
-                  </span>
-                </button>
+                  danger
+                />
               ) : null}
             </div>
 
