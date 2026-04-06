@@ -1,315 +1,169 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRightLeft, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { useApp } from "@/App";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRightLeft, Sparkles, TrendingUp, X } from "lucide-react";
 
-const API = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "") + "/api";
+function ModalShell({ children, onClose }) {
+  return ReactDOM.createPortal(
+    <AnimatePresence>
+      <motion.div
+        key="convert-zpts-modal-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm"
+      >
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.985 }}
+            className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/10 bg-[#081017] text-white shadow-[0_24px_70px_rgba(0,0,0,0.48)]"
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
+              aria-label="Close progress modal"
+            >
+              <X className="h-4 w-4" />
+            </button>
 
-// 1000 zPts => 1 ZWAP
-const RATE = 1000;
+            {children}
+          </motion.div>
+        </div>
+      </motion.div>
+    </AnimatePresence>,
+    document.body
+  );
+}
 
-export default function ConvertZPtsModal({ open, onClose, onConverted }) {
-  const { walletAddress } = useApp();
-
-  const [zptsAmount, setZptsAmount] = useState("");
-  const [step, setStep] = useState("edit"); // edit | confirm | processing | done
-  const [processingPct, setProcessingPct] = useState(0);
-  const [saving, setSaving] = useState(false);
-
-  const parsed = useMemo(() => {
-    const n = Number(zptsAmount);
-    if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.floor(n));
-  }, [zptsAmount]);
-
-  const zwapOut = useMemo(() => Math.floor(parsed / RATE), [parsed]);
-  const zptsSpent = useMemo(() => zwapOut * RATE, [zwapOut]);
-
-  const canProceed =
-    !!walletAddress &&
-    parsed >= RATE &&
-    zwapOut > 0 &&
-    zptsSpent > 0;
-
-  const reset = () => {
-    setZptsAmount("");
-    setStep("edit");
-    setProcessingPct(0);
-    setSaving(false);
-  };
-
-  const close = () => {
-    reset();
-    onClose?.();
-  };
-
-  const requestConvert = async () => {
-    if (!walletAddress) {
-      toast.error("Connect your wallet first.");
-      return;
-    }
-
-    if (parsed < RATE) {
-      toast.error(`Minimum conversion is ${RATE} zPts.`);
-      return;
-    }
-
-    if (zwapOut <= 0) {
-      toast.error("Enter at least 1000 zPts to receive 1 ZWAP.");
-      return;
-    }
-
-    setSaving(true);
-    setStep("processing");
-    setProcessingPct(0);
-
-    const t = setInterval(() => {
-      setProcessingPct((p) => (p >= 92 ? p : p + Math.floor(Math.random() * 7) + 2));
-    }, 120);
-
-    try {
-      const res = await fetch(`${API}/wallet/convert-zpts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress,
-          zpts_amount: zptsSpent,
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        const msg = data?.detail || "Conversion failed";
-        throw new Error(msg);
-      }
-
-      setProcessingPct(100);
-      setStep("done");
-      toast.success(`Converted ${zptsSpent} zPts → ${zwapOut} ZWAP`);
-
-      onConverted?.(data);
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.message || "Conversion failed");
-      setStep("confirm");
-    } finally {
-      clearInterval(t);
-      setSaving(false);
-    }
-  };
-
+export default function ConvertZPtsModal({
+  open,
+  onClose,
+  isReady,
+  progressZone,
+  zptsBalance,
+  onConvert,
+}) {
   if (!open) return null;
 
-  const modalContent = (
-    <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm overflow-y-auto p-4">
-      <div className="min-h-full flex items-start sm:items-center justify-center py-6 sm:py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 14, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 14, scale: 0.98 }}
-          className="relative w-full max-w-md max-h-[calc(100vh-3rem)] overflow-hidden rounded-2xl border border-cyan-900/40 bg-[#0a0b1e] text-white shadow-[0_0_60px_rgba(0,245,255,0.12)]"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-            <div className="flex items-center gap-2">
-              <ArrowRightLeft className="w-5 h-5 text-cyan-400" />
-              <div>
-                <div className="font-bold leading-tight">Convert zPts → ZWAP</div>
-                <div className="text-[11px] text-gray-400">
-                  Rate: {RATE.toLocaleString()} zPts = 1 ZWAP
-                </div>
-              </div>
+  const safeZpts = Math.floor(Number(zptsBalance ?? 0));
+  const helperText = isReady
+    ? "Your balance is ready to unlock conversion."
+    : "Keep building your balance to reach the next conversion unlock.";
+
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.16),transparent_38%),linear-gradient(180deg,rgba(10,24,22,0.98),rgba(7,15,14,0.99))] p-5">
+        <div className="pr-12">
+          <div className="flex items-center gap-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/25 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.22),rgba(52,211,153,0.10))] shadow-[0_0_22px_rgba(52,211,153,0.12)]">
+              <TrendingUp className="h-5 w-5 text-emerald-300" />
             </div>
 
-            <button
-              onClick={close}
-              className="p-2 rounded hover:bg-white/5 text-gray-300 hover:text-white"
-              aria-label="Close conversion modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-emerald-200/70">
+                Progress Checkpoint
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">
+                Build Toward ZWAP
+              </h2>
+            </div>
           </div>
 
-          {/* Body */}
-          <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(100vh-10rem)]">
-            {!walletAddress && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
-                Connect a wallet to convert points.
-              </div>
-            )}
+          <p className="mt-4 text-sm text-emerald-50/65">
+            {helperText}
+          </p>
+        </div>
 
-            <AnimatePresence mode="wait">
-              {step === "edit" && (
-                <motion.div
-                  key="edit"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-3"
-                >
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-400">Enter zPts to convert</label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={zptsAmount}
-                      onChange={(e) => setZptsAmount(e.target.value)}
-                      placeholder={`Minimum ${RATE}`}
-                    />
-                    <div className="text-[11px] text-gray-500">
-                      We convert in chunks of {RATE.toLocaleString()} zPts.
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-cyan-900/40 bg-black/30 p-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">You spend</span>
-                      <span className="font-semibold text-purple-300">
-                        {zptsSpent.toLocaleString()} zPts
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm mt-1">
-                      <span className="text-gray-400">You receive</span>
-                      <span className="font-semibold text-cyan-300">
-                        {zwapOut.toLocaleString()} ZWAP
-                      </span>
-                    </div>
-
-                    {parsed > 0 && parsed < RATE && (
-                      <div className="text-[11px] text-amber-300 mt-2">
-                        Add {RATE - parsed} more zPts to reach the minimum.
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" className="text-gray-300" onClick={close}>
-                      Cancel
-                    </Button>
-                    <Button
-                      className="bg-cyan-600 hover:bg-cyan-700"
-                      disabled={!canProceed}
-                      onClick={() => setStep("confirm")}
-                    >
-                      Continue
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-
-              {step === "confirm" && (
-                <motion.div
-                  key="confirm"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-3"
-                >
-                  <div className="rounded-xl border border-purple-900/40 bg-purple-500/10 p-3 text-sm">
-                    <div className="flex items-center gap-2 text-purple-200">
-                      <Sparkles className="w-4 h-4" />
-                      <span className="font-semibold">Confirm conversion</span>
-                    </div>
-
-                    <div className="text-gray-300 mt-2">
-                      Spend{" "}
-                      <span className="text-purple-200 font-semibold">
-                        {zptsSpent.toLocaleString()} zPts
-                      </span>{" "}
-                      to receive{" "}
-                      <span className="text-cyan-200 font-semibold">
-                        {zwapOut.toLocaleString()} ZWAP
-                      </span>
-                      .
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      className="text-gray-300"
-                      onClick={() => setStep("edit")}
-                      disabled={saving}
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      className="bg-cyan-600 hover:bg-cyan-700"
-                      onClick={requestConvert}
-                      disabled={!canProceed || saving}
-                    >
-                      Convert Now
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-
-              {step === "processing" && (
-                <motion.div
-                  key="processing"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-3"
-                >
-                  <div className="text-sm text-gray-300">
-                    Converting{" "}
-                    <span className="text-purple-200 font-semibold">
-                      {zptsSpent.toLocaleString()} zPts
-                    </span>{" "}
-                    →
-                    <span className="text-cyan-200 font-semibold">
-                      {" "}
-                      {zwapOut.toLocaleString()} ZWAP
-                    </span>
-                  </div>
-
-                  <div className="w-full h-3 rounded-full bg-gray-800 overflow-hidden border border-gray-700">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-purple-500 to-cyan-500"
-                      initial={{ width: "0%" }}
-                      animate={{ width: `${processingPct}%` }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  </div>
-
-                  <div className="text-[11px] text-gray-500">
-                    Updating balances and writing to the ledger…
-                  </div>
-                </motion.div>
-              )}
-
-              {step === "done" && (
-                <motion.div
-                  key="done"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-3"
-                >
-                  <div className="rounded-xl border border-emerald-900/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
-                    Conversion complete ✅
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={close}>
-                      Done
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+              Current Zone
+            </p>
+            <p className="mt-2 text-sm font-semibold text-emerald-300">
+              {progressZone}
+            </p>
           </div>
-        </motion.div>
+
+          <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+              zPts Balance
+            </p>
+            <p className="mt-2 text-sm font-semibold text-violet-300">
+              {safeZpts.toLocaleString()}
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
-  );
 
-  return ReactDOM.createPortal(modalContent, document.body);
+      <div className="space-y-4 p-5">
+        <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <ArrowRightLeft className="h-5 w-5 text-cyan-300" />
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
+                Unlock Path
+              </p>
+              <p className="mt-2 text-base font-semibold text-white">
+                zPts progress can unlock ZWAP conversion
+              </p>
+              <p className="mt-1 text-sm leading-6 text-white/60">
+                Build your balance, then convert once the threshold is available.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-400/10">
+              <Sparkles className="h-5 w-5 text-violet-300" />
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
+                Status
+              </p>
+              <p className="mt-2 text-base font-semibold text-white">
+                {isReady ? "Conversion available now" : "Still building momentum"}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-white/60">
+                {isReady
+                  ? "You can continue into conversion now."
+                  : "Keep accumulating zPts to unlock the next conversion step."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex flex-1 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+          >
+            Close
+          </button>
+
+          <button
+            type="button"
+            onClick={onConvert}
+            disabled={!isReady}
+            className={`inline-flex flex-1 items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+              isReady
+                ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_6px_0_rgba(10,84,64,0.95),0_12px_20px_rgba(52,211,153,0.20),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
+            }`}
+          >
+            {isReady ? "Convert Now" : "Keep Building"}
+          </button>
+        </div>
+      </div>
+    </ModalShell>
+  );
 }
