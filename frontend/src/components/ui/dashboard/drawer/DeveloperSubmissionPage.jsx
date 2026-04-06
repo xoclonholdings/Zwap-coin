@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import PlaySubmissionPortal from "../play/PlaySubmissionPortal";
+import PlaySubmissionPortal from "./PlaySubmissionPortal";
 
 export default function DeveloperSubmissionPage() {
   const navigate = useNavigate();
