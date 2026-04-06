@@ -22,6 +22,7 @@ import ShopTab from "../components/shop/ShopTab";
 
 import SubscriptionSuccess from "../components/SubscriptionSuccess";
 import ProfilePage from "../components/user/profile/ProfilePage";
+import ReferralPage from "../components/user/profile/ReferralPage";
 import ContactPage from "../components/ContactPage";
 import PrivacyPage from "../components/docs/PrivacyPage";
 import TermsPage from "../components/docs/TermsPage";
@@ -52,7 +53,15 @@ export default function AppContent() {
   const navigate = useNavigate();
   const { isOnline } = useNetworkStatus();
 
-  const protectedRoutes = ["/dashboard", "/move", "/play", "/shop", "/swap", "/success"];
+  const protectedRoutes = [
+    "/dashboard",
+    "/move",
+    "/play",
+    "/shop",
+    "/swap",
+    "/success",
+  ];
+
   const isProtectedRoute =
     protectedRoutes.includes(location.pathname) && !isAuthenticated;
 
@@ -166,11 +175,19 @@ export default function AppContent() {
     return <AdminPanel />;
   }
 
-  const settingsPages = ["/profile", "/contact", "/privacy", "/terms"];
+  const settingsPages = [
+    "/profile",
+    "/referrals",
+    "/contact",
+    "/privacy",
+    "/terms",
+  ];
+
   if (settingsPages.includes(location.pathname)) {
     return (
       <Routes>
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/referrals" element={<ReferralPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
@@ -208,7 +225,10 @@ export default function AppContent() {
             <Route path="/swap" element={<SwapTab />} />
             <Route path="/shop" element={<ShopTab />} />
             <Route path="/plus" element={<PlusPage />} />
-            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+            <Route
+              path="/subscription/success"
+              element={<SubscriptionSuccess />}
+            />
             <Route path="/subscription/cancel" element={<PlusPage />} />
             <Route path="/success" element={<ShopTab />} />
             <Route path="/cancel" element={<ShopTab />} />
