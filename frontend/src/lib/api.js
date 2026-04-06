@@ -349,24 +349,37 @@ const getUserRank = async (walletAddress, category, neighbors = 0) => {
 };
 
 // ---------------------------------------------------------------------------
-// Per-Game Leaderboards (future-ready)
+// Per-Game Leaderboards (LIVE)
 // ---------------------------------------------------------------------------
 
-const getGameLeaderboard = (gameId, scope = "global", limit = 10) =>
-  stub("getGameLeaderboard", {
-    game_id: gameId,
-    scope,
-    limit,
-    entries: [],
-  });
+const getGameLeaderboard = (gameId, limit = 10) =>
+  request(
+    "GET",
+    `/leaderboard/games/${encodeURIComponent(
+      gameId
+    )}?limit=${encodeURIComponent(limit)}`
+  );
 
-const getGameLeaderboardChart = (gameId, scope = "global", limit = 5) =>
-  stub("getGameLeaderboardChart", {
-    game_id: gameId,
-    scope,
-    limit,
-    entries: [],
-  });
+const getUserGameRank = async (walletAddress, gameId) => {
+  try {
+    return await request(
+      "GET",
+      `/leaderboard/games/${encodeURIComponent(
+        gameId
+      )}/user/${encodeURIComponent(walletAddress)}`
+    );
+  } catch {
+    return null;
+  }
+};
+
+const getGameLeaderboardChart = (gameId, limit = 5) =>
+  request(
+    "GET",
+    `/leaderboard/games/${encodeURIComponent(
+      gameId
+    )}?limit=${encodeURIComponent(limit)}`
+  );
 
 // ---------------------------------------------------------------------------
 // Export all methods as default object
@@ -428,6 +441,7 @@ const api = {
   getLeaderboardStats,
   getUserRank,
   getGameLeaderboard,
+  getUserGameRank,
   getGameLeaderboardChart,
 };
 
