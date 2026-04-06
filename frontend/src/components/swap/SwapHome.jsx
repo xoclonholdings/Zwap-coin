@@ -25,7 +25,6 @@ export default function SwapHome({
   isFullscreen,
   isRouteLoading,
   feedback,
-  availableToConvert,
   progressZone,
   isConversionReady,
   isConvertModalOpen,
@@ -105,7 +104,6 @@ export default function SwapHome({
           fromUsd={fromUsd}
           estimatedOutput={estimatedOutput}
           rate={rate}
-          availableToConvert={availableToConvert}
           isLoadingPrices={isLoadingPrices}
           primaryActionLabel={primaryActionLabel}
           hasWalletZwap={hasWalletZwap}
