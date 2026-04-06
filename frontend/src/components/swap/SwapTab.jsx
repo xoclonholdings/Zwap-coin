@@ -63,7 +63,7 @@ export const SWAP_MODES = [
   {
     id: "convert-zpts",
     name: "Convert zPts",
-    description: "Turn points into ZWAP inside your reward flow.",
+    description: "Build toward a ZWAP unlock through accumulated zPts.",
     status: "active",
     fromToken: "zPTS",
     toToken: "ZWAP",
@@ -101,6 +101,8 @@ export const SWAP_PROVIDER = {
   iframeSupported: true,
 };
 
+const ZPTS_CONVERSION_THRESHOLD = 1000;
+
 const mapTokenToRouteAddress = (tokenKey) => {
   return TOKENS[tokenKey]?.address || "";
 };
@@ -127,6 +129,21 @@ const formatAmount = (value, digits = 6) => {
   });
 };
 
+function getProgressZone(zptsBalance) {
+  const balance = Math.max(0, Number(zptsBalance || 0));
+
+  if (balance >= ZPTS_CONVERSION_THRESHOLD) {
+    return "Conversion Ready";
+  }
+
+  const ratio = balance / ZPTS_CONVERSION_THRESHOLD;
+
+  if (ratio >= 0.95) return "Near Conversion";
+  if (ratio >= 0.7) return "Approaching";
+  if (ratio >= 0.3) return "Building";
+  return "Starting";
+}
+
 export default function SwapTab() {
   const { user, refreshUser } = useApp();
 
@@ -143,9 +160,18 @@ export default function SwapTab() {
   const [isRouteLoading, setIsRouteLoading] = useState(false);
 
   const [feedback, setFeedback] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
 
   const isPlus = user?.subscription_tier === "plus" || user?.tier === "plus";
+
+  const walletZwapBalance = Number(user?.zwap_balance ?? 0);
+  const walletZptsBalance = Number(user?.zpts_balance ?? 0);
+
+  const progressZone = useMemo(() => {
+    return getProgressZone(walletZptsBalance);
+  }, [walletZptsBalance]);
+
+  const isConversionReady = walletZptsBalance >= ZPTS_CONVERSION_THRESHOLD;
 
   const loadPrices = useCallback(async () => {
     try {
@@ -180,9 +206,6 @@ export default function SwapTab() {
     setFromAmount("");
   }, [activeMode]);
 
-  const walletZwapBalance = Number(user?.zwap_balance ?? 0);
-  const walletZptsBalance = Number(user?.zpts_balance ?? 0);
-
   const availableToConvert = useMemo(() => {
     if (fromToken === "ZWAP") return walletZwapBalance;
     if (fromToken === "zPTS") return walletZptsBalance;
@@ -202,7 +225,7 @@ export default function SwapTab() {
     if (!fromAmount || Number.isNaN(amt) || amt <= 0) return "—";
 
     if (fromToken === "zPTS" && toToken === "ZWAP") {
-      return formatAmount(amt / 1000, 6);
+      return formatAmount(amt / ZPTS_CONVERSION_THRESHOLD, 2);
     }
 
     if (!prices[fromToken] || !prices[toToken]) return "—";
@@ -210,35 +233,22 @@ export default function SwapTab() {
     const fromValue = amt * prices[fromToken];
     const toAmt = fromValue / (prices[toToken] || 1);
 
-    return formatAmount(toAmt, toToken === "USDC" ? 2 : 6);
+    return formatAmount(toAmt, toToken === "USDC" ? 2 : 4);
   }, [fromAmount, fromToken, toToken, prices]);
 
   const rate = useMemo(() => {
     if (fromToken === "zPTS" && toToken === "ZWAP") {
-      return "0.001000";
+      return "Threshold unlock";
     }
 
     if (!prices[fromToken] || !prices[toToken]) return "—";
 
-    return (prices[fromToken] / prices[toToken]).toFixed(6);
+    return (prices[fromToken] / prices[toToken]).toFixed(4);
   }, [fromToken, toToken, prices]);
-
-  const bestRouteLabel = useMemo(() => {
-    if (fromToken === "zPTS" && toToken === "ZWAP") return "Direct conversion";
-    if (toToken === "BTC") return "Bitcoin path selected";
-    if (toToken === "ETH") return "Ethereum path selected";
-    if (toToken === "USDC") return "Stable path selected";
-    return "Swap path selected";
-  }, [fromToken, toToken]);
-
-  const readyNowLabel = useMemo(() => {
-    if (fromToken === "zPTS") return `${Math.floor(walletZptsBalance)} zPts`;
-    return `${walletZwapBalance.toFixed(2)} ZWAP`;
-  }, [fromToken, walletZptsBalance, walletZwapBalance]);
 
   const swapTokens = () => {
     if (fromToken === "zPTS" || toToken === "zPTS") {
-      toast.message("zPts conversion follows a guided path.");
+      toast.message("zPts conversion follows the progress track.");
       return;
     }
 
@@ -263,7 +273,7 @@ export default function SwapTab() {
       return;
     }
 
-    toast.message("Max is currently available for reward balances.");
+    toast.message("Max is available for your current reward balance.");
   };
 
   const refreshSwapData = useCallback(async () => {
@@ -277,7 +287,7 @@ export default function SwapTab() {
       setFeedback({
         type: "success",
         title: "Balances refreshed",
-        message: "Your swap and reward balances are now up to date.",
+        message: "Your swap progress and balances are up to date.",
       });
 
       toast.success("Swap data refreshed");
@@ -291,17 +301,6 @@ export default function SwapTab() {
       toast.error("Failed to refresh");
     }
   }, [refreshUser, loadPrices]);
-
-  const recordHistoryItem = useCallback((item) => {
-    setHistory((prev) => [
-      {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        timestamp: new Date().toISOString(),
-        ...item,
-      },
-      ...prev,
-    ]);
-  }, []);
 
   const openEmbeddedSwapFlow = useCallback(() => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) {
@@ -332,16 +331,10 @@ export default function SwapTab() {
       message: `Opening ${fromAmount} ${fromToken} → ${toToken}`,
     });
 
-    recordHistoryItem({
-      type: "route-opened",
-      label: `${fromAmount} ${fromToken} → ${toToken}`,
-      status: "Opened in app",
-    });
-
     window.setTimeout(() => {
       setIsRouteLoading(false);
     }, 1200);
-  }, [fromAmount, fromToken, toToken, recordHistoryItem]);
+  }, [fromAmount, fromToken, toToken]);
 
   const executePrimaryAction = async () => {
     const amountNum = parseFloat(fromAmount);
@@ -357,6 +350,16 @@ export default function SwapTab() {
     }
 
     if (fromToken === "zPTS" && toToken === "ZWAP") {
+      if (!isConversionReady) {
+        setFeedback({
+          type: "info",
+          title: "Keep building",
+          message: "Continue stacking zPts until your next conversion unlock is ready.",
+        });
+        toast.message("Keep building toward conversion");
+        return;
+      }
+
       if (amountNum > walletZptsBalance) {
         toast.error("Not enough zPts available");
         return;
@@ -365,7 +368,7 @@ export default function SwapTab() {
       try {
         setFeedback({
           type: "pending",
-          title: "Converting zPts",
+          title: "Converting progress",
           message: "Processing your reward conversion...",
         });
 
@@ -375,27 +378,19 @@ export default function SwapTab() {
           await refreshUser();
         }
 
-        const converted = amountNum / 1000;
+        const converted = amountNum / ZPTS_CONVERSION_THRESHOLD;
 
         setFeedback({
           type: "success",
           title: "Conversion complete",
-          message: `${formatAmount(amountNum, 0)} zPts converted into ${formatAmount(
+          message: `${formatAmount(amountNum, 0)} zPts unlocked ${formatAmount(
             converted,
-            6
+            2
           )} ZWAP.`,
         });
 
-        recordHistoryItem({
-          type: "conversion",
-          label: `${formatAmount(amountNum, 0)} zPts → ${formatAmount(
-            converted,
-            6
-          )} ZWAP`,
-          status: "Completed",
-        });
-
         setFromAmount("");
+        setIsConvertModalOpen(false);
         toast.success("zPts converted to ZWAP");
         return;
       } catch (error) {
@@ -429,13 +424,24 @@ export default function SwapTab() {
     toast.success("Returned to ZWAP");
   };
 
+  const openConvertModal = () => {
+    setIsConvertModalOpen(true);
+  };
+
+  const closeConvertModal = () => {
+    setIsConvertModalOpen(false);
+  };
+
   const primaryActionLabel = useMemo(() => {
-    if (fromToken === "zPTS" && toToken === "ZWAP") return "Convert Now";
+    if (fromToken === "zPTS" && toToken === "ZWAP") {
+      return isConversionReady ? "Convert Now" : "Continue Building";
+    }
+
     if (toToken === "BTC") return "Continue to BTC";
     if (toToken === "ETH") return "Continue to ETH";
     if (toToken === "USDC") return "Continue to USDC";
     return "Continue";
-  }, [fromToken, toToken]);
+  }, [fromToken, toToken, isConversionReady]);
 
   return (
     <SwapHome
@@ -456,10 +462,10 @@ export default function SwapTab() {
       isFullscreen={isFullscreen}
       isRouteLoading={isRouteLoading}
       feedback={feedback}
-      history={history}
       availableToConvert={availableToConvert}
-      readyNowLabel={readyNowLabel}
-      bestRouteLabel={bestRouteLabel}
+      progressZone={progressZone}
+      isConversionReady={isConversionReady}
+      isConvertModalOpen={isConvertModalOpen}
       primaryActionLabel={primaryActionLabel}
       onSetFromAmount={setFromAmount}
       onSwapTokens={swapTokens}
@@ -467,6 +473,8 @@ export default function SwapTab() {
       onSetMax={handleSetMax}
       onRefresh={refreshSwapData}
       onPrimaryAction={executePrimaryAction}
+      onOpenConvertModal={openConvertModal}
+      onCloseConvertModal={closeConvertModal}
       onCloseFeedback={() => setFeedback(null)}
       onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
       onCloseSwapService={closeSwapService}
