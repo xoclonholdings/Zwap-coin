@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { GAMES } from "@/games";
+import { GAMES } from "@/gamesIndex";
 
 export default function PlayTab({ onStartGame }) {
   const [selectedGame, setSelectedGame] = useState(GAMES[0]);
