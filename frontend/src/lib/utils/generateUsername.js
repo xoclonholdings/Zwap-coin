@@ -37,12 +37,12 @@ export function generateUsername({
   walletAddress,
   email,
   username,
-}) {
-  // ✅ priority order (DO NOT CHANGE)
+} = {}) {
+  // saved/backend username always wins
   if (username) return username;
 
   const seedSource = walletAddress || email || "";
-  if (!seedSource) return "Zwapper";
+  if (!seedSource) return "";
 
   let seed;
 
@@ -53,7 +53,6 @@ export function generateUsername({
   }
 
   const safeSeed = Math.abs(seed);
-
   const adjIndex = safeSeed % ADJECTIVES.length;
   const nounIndex = Math.floor(safeSeed / 7) % NOUNS.length;
   const num = safeSeed % 999;
