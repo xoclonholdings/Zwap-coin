@@ -91,6 +91,14 @@ def _mask_wallet(wallet_address: Optional[str]) -> str:
     return f"{wallet[:6]}...{wallet[-4:]}"
 
 
+def _resolve_username(user: Optional[Dict[str, Any]], wallet_address: Optional[str]) -> str:
+    if user and user.get("username"):
+        return user["username"]
+    if wallet_address:
+        return generate_username(wallet_address)
+    return ""
+
+
 def _category_to_field(category: str) -> str:
     mapping = {
         "steps": "total_steps",
@@ -160,7 +168,7 @@ async def get_global_stats_and_top(
             entry["wallet"] = _mask_wallet(wallet)
 
         if include_anonymized_name and wallet:
-            entry["username"] = user.get("username") or generate_username(wallet)
+            entry["username"] = _resolve_username(user, wallet)
 
         if "region" in user:
             entry["region"] = user.get("region")
@@ -262,7 +270,7 @@ async def get_user_rank(
     }
 
     if include_anonymized_name:
-        result["username"] = user.get("username") or generate_username(wallet)
+        result["username"] = _resolve_username(user, wallet)
 
     if include_neighbors and include_neighbors > 0:
         result["neighbors"] = await _get_rank_neighbors(
@@ -371,7 +379,7 @@ async def get_leaderboard_overview(db) -> Dict[str, Any]:
 
         wallet = user.get("wallet_address")
         return {
-            "username": user.get("username") or (generate_username(wallet) if wallet else "N/A"),
+            "username": _resolve_username(user, wallet) or "N/A",
             "wallet": _mask_wallet(wallet),
             "value": user.get(field, 0),
             "tier": user.get("tier", "starter"),
@@ -427,7 +435,7 @@ async def _get_rank_neighbors(
             "tier": user.get("tier", "starter"),
         }
         if include_anonymized_name and wallet:
-            entry["username"] = user.get("username") or generate_username(wallet)
+            entry["username"] = _resolve_username(user, wallet)
         above.append(entry)
 
     below: List[Dict[str, Any]] = []
@@ -440,7 +448,7 @@ async def _get_rank_neighbors(
             "tier": user.get("tier", "starter"),
         }
         if include_anonymized_name and wallet:
-            entry["username"] = user.get("username") or generate_username(wallet)
+            entry["username"] = _resolve_username(user, wallet)
         below.append(entry)
 
     me = {
@@ -448,6 +456,7 @@ async def _get_rank_neighbors(
         "wallet": _mask_wallet(wallet_address),
         "value": user_value,
     }
+
     if include_anonymized_name:
         me["username"] = generate_username(wallet_address)
 
