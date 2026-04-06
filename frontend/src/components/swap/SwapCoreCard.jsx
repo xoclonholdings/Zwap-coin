@@ -114,7 +114,8 @@ export default function SwapCoreCard({
   availableToConvert,
   isLoadingPrices,
   primaryActionLabel,
-  bestRouteLabel,
+  progressZone,
+  isConversionReady,
   onSetFromAmount,
   onSwapTokens,
   onSetMax,
@@ -128,34 +129,50 @@ export default function SwapCoreCard({
   const disableFlip = fromToken === "zPTS" || toToken === "zPTS";
   const visibleModes = modes.slice(0, 4);
 
+  const helperTitle =
+    activeMode === "convert-zpts"
+      ? "Progress toward ZWAP"
+      : "Estimated unlock value";
+
   const helperLine =
     activeMode === "convert-zpts"
-      ? "Direct conversion inside ZWAP"
-      : "You’ll confirm in your wallet";
+      ? isConversionReady
+        ? "Conversion available once you continue."
+        : "Keep building until the next conversion unlock is ready."
+      : "Continue when you're ready to move value into this asset path.";
+
+  const rateLine =
+    activeMode === "convert-zpts"
+      ? isConversionReady
+        ? "Unlock available"
+        : `Zone: ${progressZone}`
+      : isLoadingPrices
+      ? "Updating market path..."
+      : `1 ${fromToken} ≈ ${rate} ${toToken}`;
 
   return (
-    <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.10),_transparent_34%),linear-gradient(180deg,rgba(9,18,30,0.98),rgba(7,13,24,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.30)]">
+    <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.12),transparent_34%),linear-gradient(180deg,rgba(9,22,19,0.98),rgba(7,13,16,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.30)]">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <p className="text-[11px] uppercase tracking-[0.26em] text-white/40">
+            <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-100/45">
               Utility Flow
             </p>
-            <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300">
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
               Guided
             </div>
           </div>
 
           <h3 className="mt-1 text-xl font-semibold tracking-tight text-white">
-            Convert Value
+            Build Value
           </h3>
-          <p className="mt-1 text-sm text-white/55">
-            Clean reward conversion without exposing the machinery.
+          <p className="mt-1 text-sm text-emerald-50/60">
+            Progress your balance and move it when the path is ready.
           </p>
         </div>
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-400/10">
-          <Sparkles className="h-5 w-5 text-violet-300" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10">
+          <Sparkles className="h-5 w-5 text-emerald-300" />
         </div>
       </div>
 
@@ -187,7 +204,7 @@ export default function SwapCoreCard({
                 whileTap={{ scale: 0.98 }}
                 className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-semibold transition ${
                   isActive
-                    ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-300 shadow-[0_0_0_1px_rgba(34,211,238,0.10)]"
+                    ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 shadow-[0_0_0_1px_rgba(52,211,153,0.10)]"
                     : "border-white/8 bg-white/5 text-white/72 hover:bg-white/8"
                 }`}
               >
@@ -210,7 +227,7 @@ export default function SwapCoreCard({
               <button
                 type="button"
                 onClick={onSetMax}
-                className="inline-flex h-8 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 text-[11px] font-medium text-cyan-300 transition hover:bg-cyan-400/15"
+                className="inline-flex h-8 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-400/15"
               >
                 Max
               </button>
@@ -232,7 +249,9 @@ export default function SwapCoreCard({
                   onChange={(e) => onSetFromAmount(e.target.value)}
                   className="block w-full bg-transparent text-right text-[28px] font-semibold leading-none text-white outline-none placeholder:text-white/20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <p className="mt-2 truncate text-xs text-white/40">≈ ${fromUsd}</p>
+                <p className="mt-2 truncate text-xs text-white/35">
+                  {fromUsd === "0.00" ? "Value will appear here" : `≈ $${fromUsd}`}
+                </p>
               </div>
             </div>
 
@@ -256,7 +275,7 @@ export default function SwapCoreCard({
               className={`flex h-11 w-11 items-center justify-center rounded-full border-4 border-[#081017] transition ${
                 disableFlip
                   ? "cursor-not-allowed bg-white/6 text-white/25"
-                  : "bg-white/8 text-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.18)] hover:bg-white/12"
+                  : "bg-white/8 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.18)] hover:bg-white/12"
               }`}
             >
               <ArrowDown className="h-5 w-5" />
@@ -282,20 +301,16 @@ export default function SwapCoreCard({
               <p className="truncate text-[28px] font-semibold leading-none text-white">
                 {estimatedOutput}
               </p>
-              <p className="mt-2 truncate text-xs text-white/40">
-                {isLoadingPrices
-                  ? "Updating price..."
-                  : `1 ${fromToken} ≈ ${rate} ${toToken}`}
-              </p>
+              <p className="mt-2 truncate text-xs text-white/35">{rateLine}</p>
             </div>
           </div>
         </div>
 
         <div className="mt-3 flex items-start gap-2 rounded-2xl border border-white/8 bg-white/5 px-3 py-2.5">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-300" />
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-300" />
           <div className="min-w-0">
-            <p className="text-xs font-medium text-white/80">{helperLine}</p>
-            <p className="mt-0.5 text-[11px] text-cyan-300">{bestRouteLabel}</p>
+            <p className="text-xs font-medium text-white/80">{helperTitle}</p>
+            <p className="mt-0.5 text-[11px] text-white/55">{helperLine}</p>
           </div>
         </div>
 
@@ -306,7 +321,7 @@ export default function SwapCoreCard({
           whileTap={canSubmit ? { scale: 0.985, y: 2 } : {}}
           className={`mt-4 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3.5 text-sm font-semibold transition ${
             canSubmit
-              ? "border border-cyan-300/30 bg-cyan-400 text-[#04121a] shadow-[0_10px_0_rgba(8,95,111,0.95),0_16px_28px_rgba(34,211,238,0.24),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(8,95,111,0.95),0_14px_24px_rgba(34,211,238,0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
+              ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_10px_0_rgba(10,84,64,0.95),0_16px_28px_rgba(52,211,153,0.24),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
               : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
           }`}
         >
