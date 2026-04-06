@@ -38,17 +38,11 @@ function DashboardCenterContent({
   return (
     <div className="w-full min-w-0">
       <div className="space-y-4">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
           <DashboardHero username={username} currentTier={currentTier} />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
           <DashboardDailyLoopCard
             streak={streak}
             canClaim={canClaimDaily}
@@ -59,10 +53,7 @@ function DashboardCenterContent({
           />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
           <DashboardDailyTasksCard
             tasks={tasks}
             completedTaskCount={completedTaskCount}
@@ -74,10 +65,7 @@ function DashboardCenterContent({
           />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
           <DashboardStatusCard
             movePercent={stepsPercent}
             playPercent={playPercent}
@@ -113,6 +101,9 @@ export default function Dashboard() {
       : authUser && typeof authUser === "object"
         ? authUser
         : {};
+
+  const safeUser = user && typeof user === "object" ? user : null;
+  const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
 
   const hasWallet = !!walletAddress;
 
@@ -160,7 +151,6 @@ export default function Dashboard() {
   );
 
   const stepGoal = Math.max(Number(profile?.step_goal) || 5000, 0);
-
   const gamesPlayed = Math.max(Number(profile?.games_played_today) || 0, 0);
   const gameGoal = Math.max(Number(profile?.daily_game_goal) || 1, 0);
   const currentTier = String(profile?.tier || "starter").toLowerCase();
@@ -185,22 +175,21 @@ export default function Dashboard() {
         4: 25,
         5: 30,
         6: 35,
-        7: 100,
+        7: 50,
       };
 
       return rewardTable[Math.min(Math.max(projectedStreak, 1), 7)] || 10;
     })();
 
   const username = useMemo(() => {
-    const safeUser = user && typeof user === "object" ? user : null;
-    const safeAuthUser = authUser && typeof authUser === "object" ? authUser : null;
-
-    return generateUsername({
-      walletAddress,
-      email: safeAuthUser?.email || safeUser?.email,
-      username: safeUser?.custom_username || safeUser?.username,
-    });
-  }, [user, authUser, walletAddress]);
+    return (
+      generateUsername({
+        username: safeUser?.username || safeUser?.custom_username || safeAuthUser?.username,
+        walletAddress: walletAddress || safeUser?.wallet_address,
+        email: safeAuthUser?.email || safeUser?.email,
+      }) || ""
+    );
+  }, [safeUser, safeAuthUser, walletAddress]);
 
   const safeStepGoal = Math.max(stepGoal, 1);
   const safeGameGoal = Math.max(gameGoal, 1);
@@ -237,7 +226,7 @@ export default function Dashboard() {
 
   const handleClaimDaily = async () => {
     if (!hasWallet) {
-      openWalletUpgradeFlow();
+      openWalletUpgradeFlow?.();
       return;
     }
 
