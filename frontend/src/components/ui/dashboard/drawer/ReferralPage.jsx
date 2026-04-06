@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Copy, Share2 } from "lucide-react";
 import { useApp } from "@/app/AppProvider";
+import MobileAppFrame from "@/components/ui/layout/MobileAppFrame";
 
 export default function ReferralPage() {
   const navigate = useNavigate();
@@ -36,10 +37,9 @@ export default function ReferralPage() {
       referralCode && referralCode !== "No Code Yet"
         ? ` Use my referral code: ${referralCode}`
         : "";
-    const walletPart = walletAddress ? ` (${walletAddress})` : "";
 
-    return `${base}${codePart}${walletPart}`;
-  }, [referralCode, walletAddress]);
+    return `${base}${codePart}`;
+  }, [referralCode]);
 
   const handleCopyCode = async () => {
     if (!referralCode || referralCode === "No Code Yet") return;
@@ -68,90 +68,107 @@ export default function ReferralPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] text-white">
-      <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="rounded-full border border-white/10 p-2 transition hover:bg-white/[0.05]"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300/80">
-            Referrals
-          </p>
-          <p className="text-sm text-gray-400">
-            Invite others and earn from their activity.
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-5 px-4 py-5">
-        <div className="rounded-[1.5rem] border border-cyan-400/20 bg-cyan-500/10 p-4 shadow-[0_0_18px_rgba(34,211,238,0.08)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">
-            Your Code
-          </p>
-
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="truncate text-lg font-semibold text-white">
-              {referralCode}
-            </p>
-
+    <MobileAppFrame>
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.08),_rgba(10,11,30,0.98)_38%,_rgba(10,11,30,1)_100%)] text-white">
+        <div className="shrink-0 border-b border-white/10 px-4 py-4">
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleCopyCode}
-              disabled={referralCode === "No Code Yet"}
-              className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                referralCode === "No Code Yet"
-                  ? "cursor-not-allowed border border-white/10 bg-white/[0.03] text-gray-500"
-                  : "border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/20"
-              }`}
+              onClick={() => navigate(-1)}
+              className="rounded-full border border-white/10 p-2 transition hover:bg-white/[0.05]"
             >
-              <Copy className="h-4 w-4" />
-              Copy
+              <ChevronLeft className="h-5 w-5" />
             </button>
+
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-300/80">
+                Referrals
+              </p>
+              <p className="text-sm text-gray-400">
+                Invite others and earn from their activity.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500">
-            Invite
-          </p>
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5">
+          <div className="space-y-5 pb-6">
+            <div className="rounded-[1.5rem] border border-cyan-400/20 bg-cyan-500/10 p-4 shadow-[0_0_18px_rgba(34,211,238,0.08)]">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">
+                Your Code
+              </p>
 
-          <p className="mt-2 text-sm text-gray-400">
-            Share your referral code and earn bonus zPts when invited users earn rewards.
-          </p>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="truncate text-lg font-semibold text-white">
+                  {referralCode}
+                </p>
 
-          <button
-            type="button"
-            onClick={handleInvite}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-90"
-          >
-            <Share2 className="h-4 w-4" />
-            Invite Friends
-          </button>
-        </div>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  disabled={referralCode === "No Code Yet"}
+                  className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    referralCode === "No Code Yet"
+                      ? "cursor-not-allowed border border-white/10 bg-white/[0.03] text-gray-500"
+                      : "border border-cyan-400/30 text-cyan-300 hover:bg-cyan-500/20"
+                  }`}
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy
+                </button>
+              </div>
+            </div>
 
-        <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500">
-            Referral Stats
-          </p>
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500">
+                Invite
+              </p>
 
-          <div className="mt-3 flex items-center justify-between text-sm">
-            <span className="text-gray-400">Total Referrals</span>
-            <span className="font-semibold text-white">{referralCount}</span>
-          </div>
+              <p className="mt-2 text-sm text-gray-400">
+                Share your referral code and earn bonus zPts when invited users earn rewards.
+              </p>
 
-          <div className="mt-2 flex items-center justify-between text-sm">
-            <span className="text-gray-400">Earnings</span>
-            <span className="font-semibold text-purple-400">
-              {referralEarnings} zPts
-            </span>
+              <button
+                type="button"
+                onClick={handleInvite}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+              >
+                <Share2 className="h-4 w-4" />
+                Invite Friends
+              </button>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_18px_rgba(255,255,255,0.02)]">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-gray-500">
+                Referral Stats
+              </p>
+
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <span className="text-gray-400">Total Referrals</span>
+                <span className="font-semibold text-white">{referralCount}</span>
+              </div>
+
+              <div className="mt-2 flex items-center justify-between text-sm">
+                <span className="text-gray-400">Earnings</span>
+                <span className="font-semibold text-purple-400">
+                  {referralEarnings} zPts
+                </span>
+              </div>
+
+              {walletAddress ? (
+                <div className="mt-4 rounded-[1rem] border border-white/10 bg-white/[0.02] p-3">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-gray-500">
+                    Wallet
+                  </p>
+                  <p className="mt-1 truncate text-sm text-gray-300">
+                    {walletAddress}
+                  </p>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </MobileAppFrame>
   );
 }
