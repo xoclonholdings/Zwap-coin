@@ -12,8 +12,9 @@ export default function useZwapAuthState() {
 
     return {
       ready,
-      authenticated: hasLegacyAuth || hasPrivyAuth,
+      authenticated: hasPrivyAuth,
       privyAuthenticated: hasPrivyAuth,
+      legacyAuthenticated: hasLegacyAuth,
       privyUser: user || null,
     };
   }, [walletAddress, authUser, ready, authenticated, user]);
