@@ -6,6 +6,12 @@ export default function PrivyProviderWrapper({ children }) {
     <PrivyProvider
       appId={process.env.REACT_APP_PRIVY_APP_ID}
       config={{
+        loginMethods: ["email", "wallet"],
+        appearance: {
+          theme: "dark",
+          accentColor: "#22d3ee",
+          walletList: ["detected_wallets", "metamask", "coinbase_wallet"],
+        },
         embeddedWallets: {
           ethereum: {
             createOnLogin: "users-without-wallets",
