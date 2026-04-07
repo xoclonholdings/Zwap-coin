@@ -13,7 +13,8 @@ export function AppProvider({ children }) {
   const [authUser, setAuthUser] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
 
-  const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] = useState(false);
+  const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] =
+    useState(false);
   const [isEmailAuthModalOpen, setIsEmailAuthModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
@@ -23,13 +24,7 @@ export function AppProvider({ children }) {
   const [showSplash, setShowSplash] = useState(true);
   const [onchainBalance, setOnchainBalance] = useState(null);
 
-  const isPrivyOnlyAuth =
-    !!authUser &&
-    authUser?.authProvider === "privy" &&
-    !walletAddress;
-
-  const isAuthenticated =
-    !!walletAddress || (!!authUser && !isPrivyOnlyAuth);
+  const isAuthenticated = !!walletAddress || !!authUser;
 
   const closeAllAuthModals = () => {
     setIsReturningUserPromptOpen(false);
@@ -56,17 +51,22 @@ export function AppProvider({ children }) {
         data?.onchain_balance !== undefined
       ) {
         setOnchainBalance(data.onchain_balance);
+      } else {
+        setOnchainBalance(null);
       }
     } catch (error) {
       console.log("Failed to fetch on-chain balance:", error);
+      setOnchainBalance(null);
     }
   };
 
   const loadWalletUser = async (address) => {
     const normalizedAddress = normalizeWallet(address);
+
     if (!normalizedAddress) {
       setUser(null);
       setWalletAddress(null);
+      setOnchainBalance(null);
       localStorage.removeItem("zwap_wallet");
       setIsLoading(false);
       return;
@@ -89,6 +89,7 @@ export function AppProvider({ children }) {
         localStorage.removeItem("zwap_wallet");
         setWalletAddress(null);
         setUser(null);
+        setOnchainBalance(null);
       }
     } finally {
       setIsLoading(false);
@@ -103,12 +104,18 @@ export function AppProvider({ children }) {
       try {
         const parsedAuthUser = JSON.parse(savedAuthUser);
 
-        if (parsedAuthUser?.walletAddress) {
-          parsedAuthUser.walletAddress = normalizeWallet(parsedAuthUser.walletAddress);
-        }
+        const normalizedAuthUser = parsedAuthUser?.walletAddress
+          ? {
+              ...parsedAuthUser,
+              walletAddress: normalizeWallet(parsedAuthUser.walletAddress),
+            }
+          : parsedAuthUser;
 
-        setAuthUser(parsedAuthUser);
-        localStorage.setItem("zwap_auth_user", JSON.stringify(parsedAuthUser));
+        setAuthUser(normalizedAuthUser);
+        localStorage.setItem(
+          "zwap_auth_user",
+          JSON.stringify(normalizedAuthUser)
+        );
       } catch (error) {
         console.log("Failed to parse saved auth user");
         localStorage.removeItem("zwap_auth_user");
@@ -134,6 +141,7 @@ export function AppProvider({ children }) {
 
   const connectWallet = async (address) => {
     const normalizedAddress = normalizeWallet(address);
+
     if (!normalizedAddress) {
       throw new Error("Invalid wallet address");
     }
@@ -185,10 +193,7 @@ export function AppProvider({ children }) {
     setOnchainBalance(null);
     localStorage.removeItem("zwap_wallet");
 
-    if (authUser?.authProvider === "privy") {
-      setAuthUser(null);
-      localStorage.removeItem("zwap_auth_user");
-    } else if (authUser?.walletAddress) {
+    if (authUser) {
       const updatedAuthUser = {
         ...authUser,
         walletAddress: null,
@@ -205,8 +210,19 @@ export function AppProvider({ children }) {
   };
 
   const logoutAll = () => {
-    disconnectWallet();
-    logoutEmailUser();
+    setUser(null);
+    setAuthUser(null);
+    setWalletAddress(null);
+    setOnchainBalance(null);
+
+    setPendingAction(null);
+
+    localStorage.removeItem("zwap_wallet");
+    localStorage.removeItem("zwap_auth_user");
+    localStorage.removeItem("zwap_email");
+
+    sessionStorage.removeItem("zwap_force_new_user");
+
     closeAllAuthModals();
   };
 
