@@ -13,9 +13,9 @@ export default function PrivyProviderWrapper({ children }) {
           walletList: ["detected_wallets", "metamask", "coinbase_wallet"],
         },
         embeddedWallets: {
-          ethereum: {
-            createOnLogin: "users-without-wallets",
-          },
+          createOnLogin: "users-without-wallets",
+          requireUserPasswordOnCreate: false,
+          showWalletUIs: true,
         },
       }}
     >
