@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useApp } from "@/App";
 import BreakerzGame from "@/components/games/breakerz/BreakerzGame";
+import StackzGame from "@/components/games/stackz/StackzGame";
 import PlayHome from "./PlayHome";
 import PlayArcadeCard from "./PlayArcadeCard";
 import GameLeaderboard from "./GameLeaderboard";
@@ -261,7 +262,33 @@ export default function PlayTab() {
 
               return {
                 ...prev,
-                totalScore: Number(prev.totalScore || 0) + Number(result?.score || 0),
+                totalScore:
+                  Number(prev.totalScore || 0) + Number(result?.score || 0),
+                round: Number(result?.round || prev.round),
+                level: Number(result?.level || prev.level),
+              };
+            });
+
+            handleEndSession();
+          }}
+        />
+      );
+    }
+
+    if (activeGame.id === "stackz") {
+      return (
+        <StackzGame
+          isPlaying={session.status === "live"}
+          level={session.level}
+          round={session.round}
+          onGameEnd={(result) => {
+            setSession((prev) => {
+              if (!prev) return prev;
+
+              return {
+                ...prev,
+                totalScore:
+                  Number(prev.totalScore || 0) + Number(result?.score || 0),
                 round: Number(result?.round || prev.round),
                 level: Number(result?.level || prev.level),
               };
