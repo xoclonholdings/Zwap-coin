@@ -1,4 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
+import stackzLogo from "@/assets/games/stackz_game_logo.PNG";
+import { STACKZ_CANVAS } from "./stackzConfig";
+import { createStackzEngine } from "./stackzEngine";
+import { renderStackzFrame } from "./stackzRenderer";
+import { attachStackzInput } from "./stackzInput";
 
 export default function StackzGame({
   onGameEnd,
@@ -8,6 +13,7 @@ export default function StackzGame({
 }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  const engineRef = useRef(null);
 
   const [gameState, setGameState] = useState("idle");
   const [uiState, setUiState] = useState({
@@ -34,47 +40,66 @@ export default function StackzGame({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    const engine = createStackzEngine({
+      startingLevel: Math.max(1, Number(level) || 1),
+      startingRound: Math.max(1, Number(round) || 1),
+    });
 
-    let lastTime = 0;
+    engineRef.current = engine;
+
+    const detachInput = attachStackzInput({
+      canvas,
+      onMoveLeft: () => engine.moveLeft(),
+      onMoveRight: () => engine.moveRight(),
+      onRotate: () => engine.rotateActive(),
+      onSoftDropStart: () => engine.softDropStart(),
+      onSoftDropStop: () => engine.softDropStop(),
+      onHardDrop: () => engine.hardDrop(),
+      onTogglePause: () => {
+        engine.togglePause();
+        const paused = engine.isPaused();
+        setGameState(paused ? "paused" : "live");
+        setUiState((prev) => ({
+          ...prev,
+          paused,
+          exitOpen: false,
+        }));
+      },
+    });
+
+    let mounted = true;
 
     const loop = (ts) => {
-      if (gameState !== "live") return;
+      if (!mounted) return;
 
-      const dt = ts - lastTime;
-      lastTime = ts;
+      const activeEngine = engineRef.current;
+      if (!activeEngine) return;
 
-      ctx.clearRect(0, 0, width, height);
+      const frame = activeEngine.tick(ts);
+      renderStackzFrame(ctx, frame);
 
-      const bg = ctx.createLinearGradient(0, 0, 0, height);
-      bg.addColorStop(0, "#0a0b1e");
-      bg.addColorStop(1, "#050816");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, width, height);
+      setUiState((prev) => ({
+        ...prev,
+        round: frame.round,
+        level: frame.level,
+        score: frame.score,
+        lines: frame.lines,
+        paused: frame.paused,
+        finished: frame.finished,
+      }));
 
-      ctx.strokeStyle = "rgba(168,85,247,0.12)";
-      for (let x = 0; x < width; x += 16) {
-        ctx.beginPath();
-        ctx.moveTo(x + 0.5, 0);
-        ctx.lineTo(x + 0.5, height);
-        ctx.stroke();
+      if (activeEngine.isFinished()) {
+        const result = activeEngine.getResult();
+        onGameEnd?.({
+          score: result.score,
+          round: result.round,
+          level: result.level,
+          cleared: false,
+          lines: result.lines,
+          gameId: "stackz",
+        });
+        return;
       }
-
-      for (let y = 0; y < height; y += 16) {
-        ctx.beginPath();
-        ctx.moveTo(0, y + 0.5);
-        ctx.lineTo(width, y + 0.5);
-        ctx.stroke();
-      }
-
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.font = "600 14px sans-serif";
-      ctx.fillText("STACKZ MODULE LOADED", 18, 28);
-
-      ctx.fillStyle = "rgba(255,255,255,0.58)";
-      ctx.font = "12px sans-serif";
-      ctx.fillText("Next: engine + pieces + controls", 18, 50);
 
       animationRef.current = requestAnimationFrame(loop);
     };
@@ -82,11 +107,16 @@ export default function StackzGame({
     animationRef.current = requestAnimationFrame(loop);
 
     return () => {
+      mounted = false;
+      detachInput?.();
+
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+
+      engineRef.current = null;
     };
-  }, [gameState]);
+  }, [gameState, level, round, onGameEnd]);
 
   const handleStart = () => {
     setGameState("live");
@@ -98,15 +128,25 @@ export default function StackzGame({
   };
 
   const handlePause = () => {
-    if (gameState !== "live") return;
-    setGameState("paused");
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    engine.togglePause();
+    const paused = engine.isPaused();
+
+    setGameState(paused ? "paused" : "live");
     setUiState((prev) => ({
       ...prev,
-      paused: true,
+      paused,
+      exitOpen: false,
     }));
   };
 
   const handleResume = () => {
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    engine.resume();
     setGameState("live");
     setUiState((prev) => ({
       ...prev,
@@ -130,6 +170,11 @@ export default function StackzGame({
   };
 
   const handleConfirmExit = () => {
+    const engine = engineRef.current;
+    if (engine) {
+      engine.confirmExit();
+    }
+
     setGameState("exit");
     setUiState((prev) => ({
       ...prev,
@@ -200,17 +245,19 @@ export default function StackzGame({
       <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-3 py-3">
         <canvas
           ref={canvasRef}
-          width={320}
-          height={520}
+          width={STACKZ_CANVAS.width}
+          height={STACKZ_CANVAS.height}
           className="h-full w-full max-h-full max-w-[320px] rounded-[24px] border border-violet-400/20 bg-[#050912] shadow-[0_20px_60px_rgba(0,0,0,0.35)] touch-none"
         />
 
         {gameState === "splash" ? (
           <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
             <div className="w-full max-w-[320px] rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01))] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-              <div className="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-[28px] border border-violet-400/20 bg-violet-400/10 shadow-[0_0_34px_rgba(168,85,247,0.16)]">
-                <span className="text-5xl">🟦</span>
-              </div>
+              <img
+                src={stackzLogo}
+                alt="Stackz"
+                className="mx-auto mb-8 h-24 object-contain drop-shadow-[0_0_32px_rgba(168,85,247,0.18)]"
+              />
 
               <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
                 Ready
