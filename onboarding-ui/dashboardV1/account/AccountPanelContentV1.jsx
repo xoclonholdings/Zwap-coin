@@ -21,8 +21,15 @@ export default function AccountPanelContentV1({
   onAdminTrigger,
   onLearnOpen,
   onStreamOpen,
+
+  onOpenFAQ,
+  onOpenContact,
+  onOpenAbout,
+  onOpenSupportChat,
+
   learnUnlocked = false,
   streamUnlocked = false,
+
   user,
   authUser,
   displayName,
@@ -32,14 +39,14 @@ export default function AccountPanelContentV1({
   tier = "zwapper",
   zptsBalance = 0,
   zwapBalance = 0,
-  walletAddress,
+  walletAddress = "",
+
   inventoryItems = [],
   achievements = [],
   trophyCount = 0,
   trophyBonusPercent = 0,
 }) {
   const { authenticated, logout } = usePrivy();
-
   const [activeView, setActiveView] = useState("home");
 
   const adminTapCountRef = useRef(0);
@@ -136,6 +143,10 @@ export default function AccountPanelContentV1({
     return (
       <HelpViewV1
         onBack={() => setActiveView("home")}
+        onOpenFAQ={onOpenFAQ}
+        onOpenContact={onOpenContact}
+        onOpenAbout={onOpenAbout}
+        onOpenSupportChat={onOpenSupportChat}
       />
     );
   }
@@ -217,9 +228,7 @@ export default function AccountPanelContentV1({
             ) : null}
           </div>
 
-          <AccountShieldCardV1
-            onClick={handleAdminTap}
-          />
+          <AccountShieldCardV1 onClick={handleAdminTap} />
         </div>
       </div>
 
