@@ -18,6 +18,9 @@ export default function DashboardV1() {
     isZwapAltView,
     isSwapUnlocked,
 
+    shopUnlocked,
+    gardenUnlocked,
+
     streakDays,
     dailySteps,
     lessonsCompletedToday,
@@ -28,7 +31,6 @@ export default function DashboardV1() {
     growthStage,
     plantName,
     rarePlantUnlocked,
-    gardenUnlocked,
 
     longestStreak,
     totalBlooms,
@@ -37,6 +39,23 @@ export default function DashboardV1() {
     daysUntilNextBloom,
     nextRareUnlock,
     streakGraceDaysRemaining,
+
+    completedTaskCount,
+    totalTaskCount,
+
+    badgeVisibilityUnlocked,
+    learnUnlocked,
+    streamUnlocked,
+    assistUnlocked,
+
+    profileNeedsSetup,
+    hasNewHighScore,
+    canSpendZpts,
+    shouldSaveZpts,
+
+    zwapMode,
+    zwapMessage,
+    zwapHint,
   } = useV1DashboardState();
 
   return (
@@ -65,6 +84,22 @@ export default function DashboardV1() {
         <DashboardWindowZwap
           isAltView={isZwapAltView}
           isSwapUnlocked={isSwapUnlocked}
+          mode={zwapMode}
+          systemMessage={zwapMessage}
+          nextStep={zwapHint}
+          completedTaskCount={completedTaskCount}
+          totalTaskCount={totalTaskCount}
+          shopUnlocked={shopUnlocked}
+          gardenUnlocked={gardenUnlocked}
+          badgeVisibilityUnlocked={badgeVisibilityUnlocked}
+          learnUnlocked={learnUnlocked}
+          streamUnlocked={streamUnlocked}
+          assistUnlocked={assistUnlocked}
+          swapUnlocked={isSwapUnlocked}
+          profileNeedsSetup={profileNeedsSetup}
+          hasNewHighScore={hasNewHighScore}
+          canSpendZpts={canSpendZpts}
+          shouldSaveZpts={shouldSaveZpts}
           zptsBalance={zptsBalance}
           zptsPercent={zptsPercent}
           streakDays={streakDays}
@@ -77,7 +112,6 @@ export default function DashboardV1() {
           growthStage={growthStage}
           plantName={plantName}
           rarePlantUnlocked={rarePlantUnlocked}
-          gardenUnlocked={gardenUnlocked}
           longestStreak={longestStreak}
           totalBlooms={totalBlooms}
           activeDays={activeDays}
