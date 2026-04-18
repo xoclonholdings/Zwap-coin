@@ -264,6 +264,10 @@ export default function AppHeaderV1({
   onAdminTrigger,
   onLearnOpen,
   onStreamOpen,
+  onOpenFAQ,
+  onOpenContact,
+  onOpenAbout,
+  onOpenSupportChat,
 }) {
   const [accountDrawerOpen, setAccountDrawerOpen] = useState(false);
 
@@ -392,6 +396,10 @@ export default function AppHeaderV1({
         onAdminTrigger={onAdminTrigger}
         onLearnOpen={onLearnOpen}
         onStreamOpen={onStreamOpen}
+        onOpenFAQ={onOpenFAQ}
+        onOpenContact={onOpenContact}
+        onOpenAbout={onOpenAbout}
+        onOpenSupportChat={onOpenSupportChat}
       />
     </>
   );
