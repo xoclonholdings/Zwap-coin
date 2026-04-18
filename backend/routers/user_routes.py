@@ -36,6 +36,18 @@ class UserResponse(BaseModel):
     total_earned: float = 0.0
     created_at: str
 
+    # enterprise anchor fields
+    organization_id: Optional[str] = None
+    organization_name: Optional[str] = None
+    organization_type: Optional[str] = None
+    department_name: Optional[str] = None
+    team_name: Optional[str] = None
+    manager_id: Optional[str] = None
+    member_role: Optional[str] = None
+    employee_status: Optional[str] = None
+    family_group_id: Optional[str] = None
+    organization_joined_at: Optional[str] = None
+
 
 class AssistSendRequest(BaseModel):
     sender_wallet: str
@@ -248,6 +260,18 @@ async def connect_wallet(user_data: UserCreate, request: Request):
 
             # movement daily marker
             "badge_last_move_day": None,
+
+            # enterprise anchor fields
+            "organization_id": None,
+            "organization_name": None,
+            "organization_type": None,
+            "department_name": None,
+            "team_name": None,
+            "manager_id": None,
+            "member_role": None,
+            "employee_status": None,
+            "family_group_id": None,
+            "organization_joined_at": None,
         }
 
         await db.users.insert_one(new_user)
@@ -275,6 +299,18 @@ async def connect_wallet(user_data: UserCreate, request: Request):
             "games_played": 0,
             "total_earned": 100.0,
             "created_at": now_iso,
+
+            # enterprise anchor fields
+            "organization_id": None,
+            "organization_name": None,
+            "organization_type": None,
+            "department_name": None,
+            "team_name": None,
+            "manager_id": None,
+            "member_role": None,
+            "employee_status": None,
+            "family_group_id": None,
+            "organization_joined_at": None,
         }
         fallback_user = ensure_username(fallback_user)
         return UserResponse(**fallback_user)
