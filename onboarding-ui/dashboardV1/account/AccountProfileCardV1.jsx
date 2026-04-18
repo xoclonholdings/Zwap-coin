@@ -9,7 +9,7 @@ function shortenAddress(address = "") {
 
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
-  if (!safe) return "Z";
+  if (!safe) return "";
 
   const parts = safe.split(/\s+/).filter(Boolean);
 
@@ -20,25 +20,8 @@ function buildInitials(name = "") {
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
 
-function resolveDisplayName({
-  displayName,
-  username,
-  authUser,
-  user,
-  walletAddress,
-}) {
-  if (displayName) return displayName;
-  if (username) return username;
-  if (authUser?.email?.address) {
-    return authUser.email.address.split("@")[0];
-  }
-  if (user?.email) {
-    return String(user.email).split("@")[0];
-  }
-  if (walletAddress) {
-    return `Zwapper ${walletAddress.slice(2, 6)}`;
-  }
-  return "Zwapper";
+function resolveUsername({ user, username }) {
+  return user?.username || username || "";
 }
 
 function resolveSubtext({ subtext, authUser, user, walletAddress }) {
@@ -46,7 +29,7 @@ function resolveSubtext({ subtext, authUser, user, walletAddress }) {
   if (authUser?.email?.address) return authUser.email.address;
   if (user?.email) return user.email;
   if (walletAddress) return shortenAddress(walletAddress);
-  return "Account active";
+  return "";
 }
 
 function TierPill({ tier = "zwapper" }) {
@@ -70,19 +53,15 @@ function TierPill({ tier = "zwapper" }) {
 export default function AccountProfileCardV1({
   user,
   authUser,
-  displayName,
   username,
   subtext,
   initials,
   tier = "zwapper",
-  walletAddress,
+  walletAddress = "",
 }) {
-  const resolvedDisplayName = resolveDisplayName({
-    displayName,
-    username,
-    authUser,
+  const resolvedUsername = resolveUsername({
     user,
-    walletAddress,
+    username,
   });
 
   const resolvedSubtext = resolveSubtext({
@@ -92,7 +71,7 @@ export default function AccountProfileCardV1({
     walletAddress,
   });
 
-  const resolvedInitials = initials || buildInitials(resolvedDisplayName);
+  const resolvedInitials = initials || buildInitials(resolvedUsername);
 
   return (
     <div className="rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),transparent_42%),linear-gradient(180deg,rgba(14,24,34,0.96),rgba(8,14,20,0.98))] p-4 shadow-[0_14px_36px_rgba(0,0,0,0.32)]">
@@ -103,11 +82,14 @@ export default function AccountProfileCardV1({
 
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-semibold tracking-[-0.03em] text-white">
-            {resolvedDisplayName}
+            {resolvedUsername}
           </div>
-          <div className="mt-1 truncate text-sm text-white/56">
-            {resolvedSubtext}
-          </div>
+
+          {resolvedSubtext ? (
+            <div className="mt-1 truncate text-sm text-white/56">
+              {resolvedSubtext}
+            </div>
+          ) : null}
         </div>
       </div>
 
