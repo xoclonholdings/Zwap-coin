@@ -1,12 +1,19 @@
 import React from "react";
 import useV1DashboardState from "@/hooks/useV1DashboardState";
-import AppHeaderV1 from "@/components/ui/dashboard/v1/AppHeaderV1";
 import DashboardWindowMove from "@/components/ui/dashboard/v1/DashboardWindowMove";
 import DashboardWindowPlay from "@/components/ui/dashboard/v1/DashboardWindowPlay";
 import DashboardWindowShop from "@/components/ui/dashboard/v1/DashboardWindowShop";
 import DashboardWindowZwap from "@/components/ui/dashboard/v1/DashboardWindowZwap";
 
-export default function DashboardV1() {
+export default function DashboardV1({
+  shopUnlocked: shopUnlockedProp,
+  gardenUnlocked: gardenUnlockedProp,
+  badgeVisibilityUnlocked: badgeVisibilityUnlockedProp,
+  learnUnlocked: learnUnlockedProp,
+  streamUnlocked: streamUnlockedProp,
+  assistUnlocked: assistUnlockedProp,
+  swapUnlocked: swapUnlockedProp,
+}) {
   const {
     steps,
     stepsPercent,
@@ -58,15 +65,32 @@ export default function DashboardV1() {
     zwapHint,
   } = useV1DashboardState();
 
+  const resolvedShopUnlocked =
+    typeof shopUnlockedProp === "boolean" ? shopUnlockedProp : shopUnlocked;
+
+  const resolvedGardenUnlocked =
+    typeof gardenUnlockedProp === "boolean" ? gardenUnlockedProp : gardenUnlocked;
+
+  const resolvedBadgeVisibilityUnlocked =
+    typeof badgeVisibilityUnlockedProp === "boolean"
+      ? badgeVisibilityUnlockedProp
+      : badgeVisibilityUnlocked;
+
+  const resolvedLearnUnlocked =
+    typeof learnUnlockedProp === "boolean" ? learnUnlockedProp : learnUnlocked;
+
+  const resolvedStreamUnlocked =
+    typeof streamUnlockedProp === "boolean" ? streamUnlockedProp : streamUnlocked;
+
+  const resolvedAssistUnlocked =
+    typeof assistUnlockedProp === "boolean" ? assistUnlockedProp : assistUnlocked;
+
+  const resolvedSwapUnlocked =
+    typeof swapUnlockedProp === "boolean" ? swapUnlockedProp : isSwapUnlocked;
+
   return (
     <div className="flex w-full justify-center px-3 pb-6">
       <div className="flex w-full max-w-[430px] flex-col gap-3">
-        <AppHeaderV1
-          stepsPercent={stepsPercent}
-          zptsPercent={zptsPercent}
-          zptsBalance={zptsBalance}
-        />
-
         <DashboardWindowMove
           steps={steps}
           stepsPercent={stepsPercent}
@@ -79,23 +103,24 @@ export default function DashboardV1() {
 
         <DashboardWindowShop
           zptsBalance={zptsBalance}
+          shopUnlocked={resolvedShopUnlocked}
         />
 
         <DashboardWindowZwap
           isAltView={isZwapAltView}
-          isSwapUnlocked={isSwapUnlocked}
+          isSwapUnlocked={resolvedSwapUnlocked}
           mode={zwapMode}
           systemMessage={zwapMessage}
           nextStep={zwapHint}
           completedTaskCount={completedTaskCount}
           totalTaskCount={totalTaskCount}
-          shopUnlocked={shopUnlocked}
-          gardenUnlocked={gardenUnlocked}
-          badgeVisibilityUnlocked={badgeVisibilityUnlocked}
-          learnUnlocked={learnUnlocked}
-          streamUnlocked={streamUnlocked}
-          assistUnlocked={assistUnlocked}
-          swapUnlocked={isSwapUnlocked}
+          shopUnlocked={resolvedShopUnlocked}
+          gardenUnlocked={resolvedGardenUnlocked}
+          badgeVisibilityUnlocked={resolvedBadgeVisibilityUnlocked}
+          learnUnlocked={resolvedLearnUnlocked}
+          streamUnlocked={resolvedStreamUnlocked}
+          assistUnlocked={resolvedAssistUnlocked}
+          swapUnlocked={resolvedSwapUnlocked}
           profileNeedsSetup={profileNeedsSetup}
           hasNewHighScore={hasNewHighScore}
           canSpendZpts={canSpendZpts}
