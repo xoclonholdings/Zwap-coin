@@ -289,13 +289,24 @@ function buildVoiceMessage({
   };
 }
 
-function buildLegacyTaskItems({
+function buildAltTaskItems({
   completedTaskCount = 0,
+  learnUnlocked = false,
+  shopUnlocked = false,
+  assistUnlocked = false,
 }) {
-  const labels = ["Login", "Move", "Play", "Learn"];
+  const fourthLabel = assistUnlocked
+    ? "Assist"
+    : learnUnlocked
+    ? "Learn"
+    : shopUnlocked
+    ? "Shop"
+    : "Complete Loop";
+
+  const labels = ["Login", "Move", "Play", fourthLabel];
 
   return labels.map((label, index) => ({
-    id: label.toLowerCase(),
+    id: `${label.toLowerCase().replace(/\s+/g, "-")}-${index}`,
     label,
     completed: index < completedTaskCount,
   }));
@@ -326,7 +337,6 @@ export default function DashboardWindowZwap({
   canSpendZpts = false,
   shouldSaveZpts = false,
 
-  zptsBalance = 0,
   zptsPercent = 0,
 
   streakDays = 0,
@@ -447,11 +457,14 @@ export default function DashboardWindowZwap({
     shouldSaveZpts,
   ]);
 
-  const legacyTaskItems = useMemo(() => {
-    return buildLegacyTaskItems({
+  const altTaskItems = useMemo(() => {
+    return buildAltTaskItems({
       completedTaskCount,
+      learnUnlocked,
+      shopUnlocked,
+      assistUnlocked,
     });
-  }, [completedTaskCount]);
+  }, [completedTaskCount, learnUnlocked, shopUnlocked, assistUnlocked]);
 
   const handleClick = () => {
     if (typeof onOpenZwap === "function") {
@@ -508,7 +521,7 @@ export default function DashboardWindowZwap({
         </div>
 
         <div className="mt-5 space-y-3">
-          {legacyTaskItems.map((task) => (
+          {altTaskItems.map((task) => (
             <div
               key={task.id}
               className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
