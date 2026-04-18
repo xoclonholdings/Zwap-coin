@@ -58,6 +58,10 @@ export default function SimplifiedDashboard({
   onAdminTrigger,
   onLearnOpen,
   onStreamOpen,
+  onOpenFAQ,
+  onOpenContact,
+  onOpenAbout,
+  onOpenSupportChat,
 
   className = "",
 }) {
@@ -120,6 +124,10 @@ export default function SimplifiedDashboard({
           onAdminTrigger={onAdminTrigger}
           onLearnOpen={onLearnOpen}
           onStreamOpen={onStreamOpen}
+          onOpenFAQ={onOpenFAQ}
+          onOpenContact={onOpenContact}
+          onOpenAbout={onOpenAbout}
+          onOpenSupportChat={onOpenSupportChat}
         />
 
         <main className="min-h-0 flex-1 overflow-y-auto pb-6">
