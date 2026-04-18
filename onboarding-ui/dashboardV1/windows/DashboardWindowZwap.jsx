@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, ChevronRight, Lock } from "lucide-react";
+import GardenWindow from "./garden/GardenWindow";
 
 const DEFAULT_IDLE_MESSAGES = [
   "Ready when you are.",
@@ -288,7 +289,21 @@ function buildVoiceMessage({
   };
 }
 
+function buildLegacyTaskItems({
+  completedTaskCount = 0,
+}) {
+  const labels = ["Login", "Move", "Play", "Learn"];
+
+  return labels.map((label, index) => ({
+    id: label.toLowerCase(),
+    label,
+    completed: index < completedTaskCount,
+  }));
+}
+
 export default function DashboardWindowZwap({
+  isAltView = false,
+
   mode = "idle",
   systemMessage = "",
   eventType = "",
@@ -310,6 +325,28 @@ export default function DashboardWindowZwap({
   hasNewHighScore = false,
   canSpendZpts = false,
   shouldSaveZpts = false,
+
+  zptsBalance = 0,
+  zptsPercent = 0,
+
+  streakDays = 0,
+  dailySteps = 0,
+  gamesPlayedToday = 0,
+  lessonsCompletedToday = 0,
+  lastActiveAt = null,
+  fullLoopCompleted = false,
+
+  healthPercent = 0,
+  growthStage = "seed",
+  plantName = "Garden",
+  rarePlantUnlocked = false,
+  longestStreak = 0,
+  totalBlooms = 0,
+  activeDays = 0,
+  missedDays = 0,
+  daysUntilNextBloom = 0,
+  nextRareUnlock = null,
+  streakGraceDaysRemaining = 3,
 
   onOpenZwap,
   className = "",
@@ -410,6 +447,12 @@ export default function DashboardWindowZwap({
     shouldSaveZpts,
   ]);
 
+  const legacyTaskItems = useMemo(() => {
+    return buildLegacyTaskItems({
+      completedTaskCount,
+    });
+  }, [completedTaskCount]);
+
   const handleClick = () => {
     if (typeof onOpenZwap === "function") {
       onOpenZwap();
@@ -418,6 +461,74 @@ export default function DashboardWindowZwap({
 
   const isActive = mode === "active";
   const idleMessage = safeIdleMessages[idleIndex] || DEFAULT_IDLE_MESSAGES[0];
+
+  if (isAltView && gardenUnlocked) {
+    return (
+      <GardenWindow
+        streakDays={streakDays}
+        dailySteps={dailySteps}
+        gamesPlayedToday={gamesPlayedToday}
+        lessonsCompletedToday={lessonsCompletedToday}
+        lastActiveAt={lastActiveAt}
+        fullLoopCompleted={fullLoopCompleted}
+        healthPercent={healthPercent}
+        growthStage={growthStage}
+        plantName={plantName}
+        rarePlantUnlocked={rarePlantUnlocked}
+        longestStreak={longestStreak}
+        totalBlooms={totalBlooms}
+        activeDays={activeDays}
+        missedDays={missedDays}
+        daysUntilNextBloom={daysUntilNextBloom}
+        nextRareUnlock={nextRareUnlock}
+        streakGraceDaysRemaining={streakGraceDaysRemaining}
+      />
+    );
+  }
+
+  if (isAltView && !gardenUnlocked) {
+    return (
+      <div className="rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.12),transparent_34%),linear-gradient(180deg,rgba(14,20,30,0.98),rgba(7,10,16,1))] p-4 shadow-[0_14px_34px_rgba(0,0,0,0.28)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/82">
+              ZWAP!
+            </div>
+            <div className="mt-3 text-[1rem] font-semibold tracking-[-0.03em] text-white">
+              Tasks
+            </div>
+            <div className="mt-1 text-sm text-white/58">
+              {buildTaskLabel(completedTaskCount, totalTaskCount)}
+            </div>
+          </div>
+
+          <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-white/52">
+            Alternate
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {legacyTaskItems.map((task) => (
+            <div
+              key={task.id}
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
+            >
+              <span className={task.completed ? "text-white" : "text-white/60"}>
+                {task.label}
+              </span>
+              <span
+                className={`text-[11px] uppercase tracking-[0.12em] ${
+                  task.completed ? "text-cyan-300" : "text-white/35"
+                }`}
+              >
+                {task.completed ? "Done" : "Open"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <button
@@ -515,7 +626,10 @@ export default function DashboardWindowZwap({
         ) : (
           <div className="mt-5">
             <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
-              <div className="h-full w-[58%] rounded-full bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-400 shadow-[0_0_12px_rgba(34,211,238,0.16)]" />
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-400 shadow-[0_0_12px_rgba(34,211,238,0.16)]"
+                style={{ width: `${Math.max(8, Math.min(zptsPercent || 58, 100))}%` }}
+              />
             </div>
           </div>
         )}
