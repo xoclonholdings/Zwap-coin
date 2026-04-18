@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import AccountDrawerV1 from "./account/AccountDrawerV1";
 
 function clamp(value, min = 0, max = 1) {
   return Math.min(Math.max(value, min), max);
@@ -44,8 +45,12 @@ function resolveDayProgress({
   streamDailyGoalMinutes = 20,
   streamUnlocked = false,
 }) {
-  const moveRatio = clamp(Number(todaySteps || 0) / Math.max(1, Number(dailyStepGoal || 1)));
-  const taskRatio = clamp(Number(completedTasks || 0) / Math.max(1, Number(totalTasks || 1)));
+  const moveRatio = clamp(
+    Number(todaySteps || 0) / Math.max(1, Number(dailyStepGoal || 1))
+  );
+  const taskRatio = clamp(
+    Number(completedTasks || 0) / Math.max(1, Number(totalTasks || 1))
+  );
 
   if (!streamUnlocked) {
     const blended = clamp(moveRatio * 0.7 + taskRatio * 0.3);
@@ -61,10 +66,13 @@ function resolveDayProgress({
   }
 
   const streamRatio = clamp(
-    Number(streamMinutesToday || 0) / Math.max(1, Number(streamDailyGoalMinutes || 1))
+    Number(streamMinutesToday || 0) /
+      Math.max(1, Number(streamDailyGoalMinutes || 1))
   );
 
-  const blended = clamp(moveRatio * 0.5 + taskRatio * 0.25 + streamRatio * 0.25);
+  const blended = clamp(
+    moveRatio * 0.5 + taskRatio * 0.25 + streamRatio * 0.25
+  );
 
   return {
     label: "Day",
@@ -170,6 +178,7 @@ function ProgressLane({
         <span className="truncate text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">
           {label}
         </span>
+
         <span className="shrink-0 text-[11px] font-medium tracking-[-0.02em] text-white/70">
           {valueText}
         </span>
@@ -199,7 +208,9 @@ function StatusPill({ label, detail, tone, pulse = false }) {
         <span
           className={[
             "inline-block h-1.5 w-1.5 shrink-0 rounded-full",
-            pulse ? "bg-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.8)]" : "bg-white/45",
+            pulse
+              ? "bg-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.8)]"
+              : "bg-white/45",
           ].join(" ")}
         />
         <span className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]">
@@ -216,16 +227,28 @@ function StatusPill({ label, detail, tone, pulse = false }) {
 
 export default function AppHeaderV1({
   zptsBalance = 0,
+  zwapBalance = 0,
   todaySteps = 0,
   dailyStepGoal = 10000,
   completedTasks = 0,
   totalTasks = 4,
   displayName = "Zwapper",
+  username = "",
   initials,
   isOnline = true,
-  onOpenAccount,
   isSticky = true,
   className = "",
+
+  user,
+  authUser,
+  subtext = "",
+  tier = "zwapper",
+  walletAddress = "",
+
+  inventoryItems = [],
+  achievements = [],
+  trophyCount = 0,
+  trophyBonusPercent = 0,
 
   shopUnlocked = false,
   gardenUnlocked = false,
@@ -237,10 +260,16 @@ export default function AppHeaderV1({
   streamDailyGoalMinutes = 20,
   isListening = false,
   activeAudioTitle = "",
+
+  onAdminTrigger,
+  onLearnOpen,
+  onStreamOpen,
 }) {
+  const [accountDrawerOpen, setAccountDrawerOpen] = useState(false);
+
   const accountInitials = useMemo(() => {
-    return initials || buildInitials(displayName);
-  }, [initials, displayName]);
+    return initials || buildInitials(displayName || username || "Zwapper");
+  }, [initials, displayName, username]);
 
   const progressModel = useMemo(() => {
     return resolveDayProgress({
@@ -285,59 +314,85 @@ export default function AppHeaderV1({
   ]);
 
   return (
-    <div
-      className={[
-        isSticky ? "sticky top-0 z-30" : "",
-        "w-full px-3 pt-3",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.97))] px-3 py-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
-            <ProgressLane
-              label={progressModel.label}
-              valueText={progressModel.valueText}
-              progress={progressModel.progress}
-              glowClassName={progressModel.glowClassName}
-              fillClassName={progressModel.fillClassName}
-            />
-
-            <div className="mt-2.5">
-              <StatusPill
-                label={statusModel.label}
-                detail={statusModel.detail}
-                tone={statusModel.tone}
-                pulse={statusModel.pulse}
+    <>
+      <div
+        className={[
+          isSticky ? "sticky top-0 z-30" : "",
+          "w-full px-3 pt-3",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.97))] px-3 py-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <ProgressLane
+                label={progressModel.label}
+                valueText={progressModel.valueText}
+                progress={progressModel.progress}
+                glowClassName={progressModel.glowClassName}
+                fillClassName={progressModel.fillClassName}
               />
+
+              <div className="mt-2.5">
+                <StatusPill
+                  label={statusModel.label}
+                  detail={statusModel.detail}
+                  tone={statusModel.tone}
+                  pulse={statusModel.pulse}
+                />
+              </div>
             </div>
+
+            <div className="shrink-0 pt-0.5 text-center">
+              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">
+                zPts
+              </div>
+              <div className="mt-1 text-[1rem] font-semibold tracking-[-0.04em] text-cyan-300">
+                {formatZpts(zptsBalance)}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setAccountDrawerOpen(true)}
+              className="relative mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/18 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(8,14,20,0.98))] text-sm font-semibold tracking-[0.02em] text-white shadow-[0_0_18px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
+              aria-label="Open account"
+            >
+              {accountInitials}
+
+              {isOnline ? (
+                <span className="absolute bottom-[2px] right-[2px] h-2.5 w-2.5 rounded-full border border-[#081018] bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.55)]" />
+              ) : null}
+            </button>
           </div>
-
-          <div className="shrink-0 pt-0.5 text-center">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">
-              zPts
-            </div>
-            <div className="mt-1 text-[1rem] font-semibold tracking-[-0.04em] text-cyan-300">
-              {formatZpts(zptsBalance)}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onOpenAccount}
-            className="relative mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/18 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(8,14,20,0.98))] text-sm font-semibold tracking-[0.02em] text-white shadow-[0_0_18px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
-            aria-label="Open account"
-          >
-            {accountInitials}
-
-            {isOnline ? (
-              <span className="absolute bottom-[2px] right-[2px] h-2.5 w-2.5 rounded-full border border-[#081018] bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.55)]" />
-            ) : null}
-          </button>
         </div>
       </div>
-    </div>
+
+      <AccountDrawerV1
+        open={accountDrawerOpen}
+        onOpenChange={setAccountDrawerOpen}
+        user={user}
+        authUser={authUser}
+        displayName={displayName}
+        username={username}
+        subtext={subtext}
+        initials={initials}
+        tier={tier}
+        zptsBalance={zptsBalance}
+        zwapBalance={zwapBalance}
+        walletAddress={walletAddress}
+        inventoryItems={inventoryItems}
+        achievements={achievements}
+        trophyCount={trophyCount}
+        trophyBonusPercent={trophyBonusPercent}
+        learnUnlocked={learnUnlocked}
+        streamUnlocked={streamUnlocked}
+        onAdminTrigger={onAdminTrigger}
+        onLearnOpen={onLearnOpen}
+        onStreamOpen={onStreamOpen}
+      />
+    </>
   );
 }
