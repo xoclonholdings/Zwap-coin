@@ -23,17 +23,9 @@ function deriveShopUnlocked({
   user,
   lifetimeZpts,
 }) {
-  if (typeof explicitShopUnlocked === "boolean") {
-    return explicitShopUnlocked;
-  }
-
-  if (typeof user?.shop_unlocked === "boolean") {
-    return user.shop_unlocked;
-  }
-
-  if (typeof user?.shopUnlocked === "boolean") {
-    return user.shopUnlocked;
-  }
+  if (typeof explicitShopUnlocked === "boolean") return explicitShopUnlocked;
+  if (typeof user?.shop_unlocked === "boolean") return user.shop_unlocked;
+  if (typeof user?.shopUnlocked === "boolean") return user.shopUnlocked;
 
   return lifetimeZpts >= 1000;
 }
@@ -44,17 +36,9 @@ function deriveGardenUnlocked({
   streakDays,
   fullLoopCompleted,
 }) {
-  if (typeof explicitGardenUnlocked === "boolean") {
-    return explicitGardenUnlocked;
-  }
-
-  if (typeof user?.garden_unlocked === "boolean") {
-    return user.garden_unlocked;
-  }
-
-  if (typeof user?.gardenUnlocked === "boolean") {
-    return user.gardenUnlocked;
-  }
+  if (typeof explicitGardenUnlocked === "boolean") return explicitGardenUnlocked;
+  if (typeof user?.garden_unlocked === "boolean") return user.garden_unlocked;
+  if (typeof user?.gardenUnlocked === "boolean") return user.gardenUnlocked;
 
   return streakDays >= 3 || fullLoopCompleted;
 }
@@ -64,17 +48,9 @@ function deriveRarePlantUnlocked({
   user,
   streakDays,
 }) {
-  if (typeof explicitRarePlantUnlocked === "boolean") {
-    return explicitRarePlantUnlocked;
-  }
-
-  if (typeof user?.rare_plant_unlocked === "boolean") {
-    return user.rare_plant_unlocked;
-  }
-
-  if (typeof user?.rarePlantUnlocked === "boolean") {
-    return user.rarePlantUnlocked;
-  }
+  if (typeof explicitRarePlantUnlocked === "boolean") return explicitRarePlantUnlocked;
+  if (typeof user?.rare_plant_unlocked === "boolean") return user.rare_plant_unlocked;
+  if (typeof user?.rarePlantUnlocked === "boolean") return user.rarePlantUnlocked;
 
   return streakDays >= 30;
 }
@@ -95,7 +71,6 @@ function deriveGrowthStage({
     user?.growthStage;
 
   if (incoming && incoming !== "seed") return incoming;
-
   if (streakDays >= 14 || (fullLoopCompleted && activeDays >= 10)) return "mature";
   if (streakDays >= 7 || activeDays >= 6) return "young";
   if (streakDays >= 3 || activeDays >= 3) return "sprout";
@@ -125,21 +100,10 @@ function deriveHealthPercent({
 
   let health = 70;
 
-  if (missedDays > 0) {
-    health -= missedDays * 10;
-  }
-
-  if (fullLoopCompleted) {
-    health += 15;
-  }
-
-  if (streakDays > 0) {
-    health += 5;
-  }
-
-  if (dailySteps >= 5000) {
-    health += 5;
-  }
+  if (missedDays > 0) health -= missedDays * 10;
+  if (fullLoopCompleted) health += 15;
+  if (streakDays > 0) health += 5;
+  if (dailySteps >= 5000) health += 5;
 
   if (
     dailySteps >= 3000 &&
@@ -195,13 +159,108 @@ function deriveNextRareUnlock({
   return "Rare growth unlocked";
 }
 
+function deriveCompletedTaskCount({
+  explicitCompletedTaskCount,
+  user,
+  gamesPlayedToday,
+  dailySteps,
+  fullLoopCompleted,
+}) {
+  if (explicitCompletedTaskCount != null) {
+    return Math.max(0, toNumber(explicitCompletedTaskCount, 0));
+  }
+
+  const stored =
+    user?.completed_task_count ??
+    user?.completedTaskCount ??
+    user?.daily_tasks_completed;
+
+  if (stored != null) {
+    return Math.max(0, toNumber(stored, 0));
+  }
+
+  let count = 1; // login assumed on active dashboard view
+
+  if (dailySteps > 0) count += 1;
+  if (gamesPlayedToday > 0) count += 1;
+  if (fullLoopCompleted) count = Math.max(count, 4);
+
+  return count;
+}
+
+function deriveTotalTaskCount({
+  explicitTotalTaskCount,
+  user,
+}) {
+  if (explicitTotalTaskCount != null) {
+    return Math.max(1, toNumber(explicitTotalTaskCount, 4));
+  }
+
+  const stored =
+    user?.total_task_count ??
+    user?.totalTaskCount ??
+    user?.daily_tasks_total;
+
+  if (stored != null) {
+    return Math.max(1, toNumber(stored, 4));
+  }
+
+  return 4;
+}
+
+function deriveBooleanFlag(explicitValue, userValues = [], fallback = false) {
+  if (typeof explicitValue === "boolean") return explicitValue;
+
+  for (const value of userValues) {
+    if (typeof value === "boolean") return value;
+  }
+
+  return fallback;
+}
+
+function deriveSpendState({
+  explicitCanSpendZpts,
+  explicitShouldSaveZpts,
+  user,
+  zptsBalance,
+  shopUnlocked,
+}) {
+  const canSpendZpts = deriveBooleanFlag(
+    explicitCanSpendZpts,
+    [user?.can_spend_zpts, user?.canSpendZpts],
+    shopUnlocked && zptsBalance >= 100
+  );
+
+  const shouldSaveZpts = deriveBooleanFlag(
+    explicitShouldSaveZpts,
+    [user?.should_save_zpts, user?.shouldSaveZpts],
+    shopUnlocked && zptsBalance < 500
+  );
+
+  return {
+    canSpendZpts,
+    shouldSaveZpts,
+  };
+}
+
 function deriveZwapCopy({
+  explicitZwapMode,
+  explicitZwapMessage,
+  explicitZwapHint,
   isSwapUnlocked,
   gardenUnlocked,
   streakDays,
   fullLoopCompleted,
   zptsBalance,
 }) {
+  if (explicitZwapMode || explicitZwapMessage || explicitZwapHint) {
+    return {
+      zwapMode: explicitZwapMode || "active",
+      zwapMessage: explicitZwapMessage || "",
+      zwapHint: explicitZwapHint || "",
+    };
+  }
+
   if (isSwapUnlocked) {
     return {
       zwapMode: "active",
@@ -255,7 +314,6 @@ export default function useV1DashboardState({
 
   zptsBalance,
   zptsDailyCap = 300,
-
   lifetimeZpts,
 
   shopUnlocked: explicitShopUnlocked,
@@ -281,6 +339,19 @@ export default function useV1DashboardState({
   daysUntilNextBloom: explicitDaysUntilNextBloom,
   nextRareUnlock: explicitNextRareUnlock,
   streakGraceDaysRemaining,
+
+  completedTaskCount: explicitCompletedTaskCount,
+  totalTaskCount: explicitTotalTaskCount,
+
+  badgeVisibilityUnlocked: explicitBadgeVisibilityUnlocked,
+  learnUnlocked: explicitLearnUnlocked,
+  streamUnlocked: explicitStreamUnlocked,
+  assistUnlocked: explicitAssistUnlocked,
+
+  profileNeedsSetup: explicitProfileNeedsSetup,
+  hasNewHighScore: explicitHasNewHighScore,
+  canSpendZpts: explicitCanSpendZpts,
+  shouldSaveZpts: explicitShouldSaveZpts,
 
   zwapMode: explicitZwapMode,
   zwapMessage: explicitZwapMessage,
@@ -557,6 +628,93 @@ export default function useV1DashboardState({
     rarePlantUnlocked,
   ]);
 
+  const resolvedCompletedTaskCount = useMemo(() => {
+    return deriveCompletedTaskCount({
+      explicitCompletedTaskCount,
+      user,
+      gamesPlayedToday: normalizedGamesPlayedToday,
+      dailySteps: normalizedSteps,
+      fullLoopCompleted: normalizedFullLoopCompleted,
+    });
+  }, [
+    explicitCompletedTaskCount,
+    user,
+    normalizedGamesPlayedToday,
+    normalizedSteps,
+    normalizedFullLoopCompleted,
+  ]);
+
+  const resolvedTotalTaskCount = useMemo(() => {
+    return deriveTotalTaskCount({
+      explicitTotalTaskCount,
+      user,
+    });
+  }, [explicitTotalTaskCount, user]);
+
+  const badgeVisibilityUnlocked = useMemo(() => {
+    return deriveBooleanFlag(
+      explicitBadgeVisibilityUnlocked,
+      [user?.badge_visibility_unlocked, user?.badgeVisibilityUnlocked],
+      normalizedStreakDays >= 7 || normalizedTotalBlooms > 0
+    );
+  }, [explicitBadgeVisibilityUnlocked, user, normalizedStreakDays, normalizedTotalBlooms]);
+
+  const learnUnlocked = useMemo(() => {
+    return deriveBooleanFlag(
+      explicitLearnUnlocked,
+      [user?.learn_unlocked, user?.learnUnlocked],
+      false
+    );
+  }, [explicitLearnUnlocked, user]);
+
+  const streamUnlocked = useMemo(() => {
+    return deriveBooleanFlag(
+      explicitStreamUnlocked,
+      [user?.stream_unlocked, user?.streamUnlocked],
+      false
+    );
+  }, [explicitStreamUnlocked, user]);
+
+  const assistUnlocked = useMemo(() => {
+    return deriveBooleanFlag(
+      explicitAssistUnlocked,
+      [user?.assist_unlocked, user?.assistUnlocked],
+      false
+    );
+  }, [explicitAssistUnlocked, user]);
+
+  const profileNeedsSetup = useMemo(() => {
+    return deriveBooleanFlag(
+      explicitProfileNeedsSetup,
+      [user?.profile_needs_setup, user?.profileNeedsSetup],
+      !Boolean(user?.username || user?.display_name || user?.displayName)
+    );
+  }, [explicitProfileNeedsSetup, user]);
+
+  const hasNewHighScore = useMemo(() => {
+    return deriveBooleanFlag(
+      explicitHasNewHighScore,
+      [user?.has_new_high_score, user?.hasNewHighScore],
+      false
+    );
+  }, [explicitHasNewHighScore, user]);
+
+  const spendState = useMemo(() => {
+    return deriveSpendState({
+      explicitCanSpendZpts,
+      explicitShouldSaveZpts,
+      user,
+      zptsBalance: normalizedZptsBalance,
+      shopUnlocked,
+    });
+  }, [
+    explicitCanSpendZpts,
+    explicitShouldSaveZpts,
+    user,
+    normalizedZptsBalance,
+    shopUnlocked,
+  ]);
+
   const stepsPercent = useMemo(() => {
     return percent(normalizedSteps, normalizedStepGoal);
   }, [normalizedSteps, normalizedStepGoal]);
@@ -570,17 +728,9 @@ export default function useV1DashboardState({
   }, [normalizedZptsBalance, normalizedZptsDailyCap]);
 
   const resolvedIsSwapUnlocked = useMemo(() => {
-    if (typeof explicitIsSwapUnlocked === "boolean") {
-      return explicitIsSwapUnlocked;
-    }
-
-    if (typeof user?.swap_unlocked === "boolean") {
-      return user.swap_unlocked;
-    }
-
-    if (typeof user?.isSwapUnlocked === "boolean") {
-      return user.isSwapUnlocked;
-    }
+    if (typeof explicitIsSwapUnlocked === "boolean") return explicitIsSwapUnlocked;
+    if (typeof user?.swap_unlocked === "boolean") return user.swap_unlocked;
+    if (typeof user?.isSwapUnlocked === "boolean") return user.isSwapUnlocked;
 
     return false;
   }, [explicitIsSwapUnlocked, user]);
@@ -594,15 +744,10 @@ export default function useV1DashboardState({
   }, [explicitIsZwapAltView, isZwapAltViewState]);
 
   const zwapCopy = useMemo(() => {
-    if (explicitZwapMode || explicitZwapMessage || explicitZwapHint) {
-      return {
-        zwapMode: explicitZwapMode || "active",
-        zwapMessage: explicitZwapMessage || "",
-        zwapHint: explicitZwapHint || "",
-      };
-    }
-
     return deriveZwapCopy({
+      explicitZwapMode,
+      explicitZwapMessage,
+      explicitZwapHint,
       isSwapUnlocked: resolvedIsSwapUnlocked,
       gardenUnlocked,
       streakDays: normalizedStreakDays,
@@ -643,10 +788,23 @@ export default function useV1DashboardState({
     zptsPercent,
     zptsDailyCap: normalizedZptsDailyCap,
 
+    completedTaskCount: resolvedCompletedTaskCount,
+    totalTaskCount: resolvedTotalTaskCount,
+
     shopUnlocked,
     gardenUnlocked,
     rarePlantUnlocked,
     isSwapUnlocked: resolvedIsSwapUnlocked,
+
+    badgeVisibilityUnlocked,
+    learnUnlocked,
+    streamUnlocked,
+    assistUnlocked,
+
+    profileNeedsSetup,
+    hasNewHighScore,
+    canSpendZpts: spendState.canSpendZpts,
+    shouldSaveZpts: spendState.shouldSaveZpts,
 
     isZwapAltView: resolvedIsZwapAltView,
     setIsZwapAltView: setIsZwapAltViewState,
