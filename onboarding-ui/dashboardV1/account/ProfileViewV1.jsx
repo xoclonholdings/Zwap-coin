@@ -10,7 +10,7 @@ function shortenAddress(address = "") {
 
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
-  if (!safe) return "Z";
+  if (!safe) return "";
 
   const parts = safe.split(/\s+/).filter(Boolean);
 
@@ -22,37 +22,18 @@ function buildInitials(name = "") {
 }
 
 function formatMemberSince(value) {
-  if (!value) return "Recently";
+  if (!value) return "";
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Recently";
+    return "";
   }
 
   return date.toLocaleDateString(undefined, {
     month: "short",
     year: "numeric",
   });
-}
-
-function resolveProfileUsername({
-  username,
-  user,
-  authUser,
-  displayName,
-  walletAddress,
-}) {
-  if (user?.username) return user.username;
-  if (username) return username;
-  if (displayName) return displayName;
-  if (authUser?.email?.address) {
-    return authUser.email.address.split("@")[0];
-  }
-  if (walletAddress) {
-    return `Zwapper ${walletAddress.slice(2, 6)}`;
-  }
-  return "Zwapper";
 }
 
 function TierPill({ tier = "zwapper" }) {
@@ -91,24 +72,14 @@ export default function ProfileViewV1({
   onEditProfile,
   onCopyWallet,
   user,
-  authUser,
   username = "",
-  displayName = "",
   email = "",
   walletAddress = "",
   tier = "zwapper",
   memberSince = "",
   trophyCount = 0,
-  primaryIdentity = "Starter",
 }) {
-  const resolvedUsername = resolveProfileUsername({
-    username,
-    user,
-    authUser,
-    displayName,
-    walletAddress,
-  });
-
+  const resolvedUsername = user?.username || username;
   const initials = buildInitials(resolvedUsername);
   const memberSinceLabel = formatMemberSince(memberSince);
 
@@ -188,7 +159,7 @@ export default function ProfileViewV1({
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Member Since" value={memberSinceLabel} />
             <StatCard label="Trophies" value={String(trophyCount)} />
-            <StatCard label="Identity" value={primaryIdentity} />
+            <StatCard label="Identity" value={resolvedUsername} />
             <StatCard
               label="Tier"
               value={tier === "zitizen" ? "Zitizen" : "Zwapper"}
