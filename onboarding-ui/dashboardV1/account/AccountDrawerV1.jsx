@@ -6,6 +6,29 @@ export default function AccountDrawerV1({
   open = false,
   onOpenChange,
   trigger,
+
+  user,
+  authUser,
+  displayName,
+  username,
+  subtext,
+  initials,
+  tier = "zwapper",
+  zptsBalance = 0,
+  zwapBalance = 0,
+  walletAddress = "",
+
+  inventoryItems = [],
+  achievements = [],
+  trophyCount = 0,
+  trophyBonusPercent = 0,
+
+  learnUnlocked = false,
+  streamUnlocked = false,
+
+  onAdminTrigger,
+  onLearnOpen,
+  onStreamOpen,
 }) {
   const handleOpen = () => {
     onOpenChange?.(true);
@@ -35,7 +58,6 @@ export default function AccountDrawerV1({
           text-white
           shadow-[-24px_0_60px_rgba(0,0,0,0.45)]
           backdrop-blur-xl
-          sm:w-[390px]
         "
       >
         <div className="relative flex h-full flex-col overflow-hidden">
@@ -46,7 +68,28 @@ export default function AccountDrawerV1({
           </div>
 
           <div className="relative z-10 flex h-full flex-col">
-            <AccountPanelContentV1 onClose={handleClose} />
+            <AccountPanelContentV1
+              onClose={handleClose}
+              onAdminTrigger={onAdminTrigger}
+              onLearnOpen={onLearnOpen}
+              onStreamOpen={onStreamOpen}
+              learnUnlocked={learnUnlocked}
+              streamUnlocked={streamUnlocked}
+              user={user}
+              authUser={authUser}
+              displayName={displayName}
+              username={username}
+              subtext={subtext}
+              initials={initials}
+              tier={tier}
+              zptsBalance={zptsBalance}
+              zwapBalance={zwapBalance}
+              walletAddress={walletAddress}
+              inventoryItems={inventoryItems}
+              achievements={achievements}
+              trophyCount={trophyCount}
+              trophyBonusPercent={trophyBonusPercent}
+            />
           </div>
         </div>
       </SheetContent>
