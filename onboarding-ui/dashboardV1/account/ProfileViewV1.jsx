@@ -189,7 +189,10 @@ export default function ProfileViewV1({
             <StatCard label="Member Since" value={memberSinceLabel} />
             <StatCard label="Trophies" value={String(trophyCount)} />
             <StatCard label="Identity" value={primaryIdentity} />
-            <StatCard label="Tier" value={tier === "zitizen" ? "Zitizen" : "Zwapper"} />
+            <StatCard
+              label="Tier"
+              value={tier === "zitizen" ? "Zitizen" : "Zwapper"}
+            />
           </div>
         </div>
       </div>
