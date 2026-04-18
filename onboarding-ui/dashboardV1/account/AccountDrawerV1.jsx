@@ -29,6 +29,11 @@ export default function AccountDrawerV1({
   onAdminTrigger,
   onLearnOpen,
   onStreamOpen,
+
+  onOpenFAQ,
+  onOpenContact,
+  onOpenAbout,
+  onOpenSupportChat,
 }) {
   const handleOpen = () => {
     onOpenChange?.(true);
@@ -73,6 +78,10 @@ export default function AccountDrawerV1({
               onAdminTrigger={onAdminTrigger}
               onLearnOpen={onLearnOpen}
               onStreamOpen={onStreamOpen}
+              onOpenFAQ={onOpenFAQ}
+              onOpenContact={onOpenContact}
+              onOpenAbout={onOpenAbout}
+              onOpenSupportChat={onOpenSupportChat}
               learnUnlocked={learnUnlocked}
               streamUnlocked={streamUnlocked}
               user={user}
