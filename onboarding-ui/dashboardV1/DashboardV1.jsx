@@ -14,12 +14,39 @@ export default function DashboardV1() {
     playPercent,
     zptsBalance,
     zptsPercent,
+
+    isZwapAltView,
+    isSwapUnlocked,
+
+    streakDays,
+    dailySteps,
+    lessonsCompletedToday,
+    lastActiveAt,
+    fullLoopCompleted,
+
+    healthPercent,
+    growthStage,
+    plantName,
+    rarePlantUnlocked,
+    gardenUnlocked,
+
+    longestStreak,
+    totalBlooms,
+    activeDays,
+    missedDays,
+    daysUntilNextBloom,
+    nextRareUnlock,
+    streakGraceDaysRemaining,
   } = useV1DashboardState();
 
   return (
-    <div className="w-full flex justify-center px-3 pb-6">
-      <div className="w-full max-w-[430px] flex flex-col gap-3">
-        <AppHeaderV1 />
+    <div className="flex w-full justify-center px-3 pb-6">
+      <div className="flex w-full max-w-[430px] flex-col gap-3">
+        <AppHeaderV1
+          stepsPercent={stepsPercent}
+          zptsPercent={zptsPercent}
+          zptsBalance={zptsBalance}
+        />
 
         <DashboardWindowMove
           steps={steps}
@@ -36,8 +63,28 @@ export default function DashboardV1() {
         />
 
         <DashboardWindowZwap
+          isAltView={isZwapAltView}
+          isSwapUnlocked={isSwapUnlocked}
           zptsBalance={zptsBalance}
           zptsPercent={zptsPercent}
+          streakDays={streakDays}
+          dailySteps={dailySteps}
+          gamesPlayedToday={gamesPlayedToday}
+          lessonsCompletedToday={lessonsCompletedToday}
+          lastActiveAt={lastActiveAt}
+          fullLoopCompleted={fullLoopCompleted}
+          healthPercent={healthPercent}
+          growthStage={growthStage}
+          plantName={plantName}
+          rarePlantUnlocked={rarePlantUnlocked}
+          gardenUnlocked={gardenUnlocked}
+          longestStreak={longestStreak}
+          totalBlooms={totalBlooms}
+          activeDays={activeDays}
+          missedDays={missedDays}
+          daysUntilNextBloom={daysUntilNextBloom}
+          nextRareUnlock={nextRareUnlock}
+          streakGraceDaysRemaining={streakGraceDaysRemaining}
         />
       </div>
     </div>
