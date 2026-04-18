@@ -21,6 +21,40 @@ function buildInitials(name = "") {
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
 
+function formatMemberSince(value) {
+  if (!value) return "Recently";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Recently";
+  }
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function resolveProfileUsername({
+  username,
+  user,
+  authUser,
+  displayName,
+  walletAddress,
+}) {
+  if (user?.username) return user.username;
+  if (username) return username;
+  if (displayName) return displayName;
+  if (authUser?.email?.address) {
+    return authUser.email.address.split("@")[0];
+  }
+  if (walletAddress) {
+    return `Zwapper ${walletAddress.slice(2, 6)}`;
+  }
+  return "Zwapper";
+}
+
 function TierPill({ tier = "zwapper" }) {
   const isPlus = String(tier || "").toLowerCase() === "zitizen";
 
@@ -56,7 +90,10 @@ export default function ProfileViewV1({
   onBack,
   onEditProfile,
   onCopyWallet,
-  username = "Zwapper",
+  user,
+  authUser,
+  username = "",
+  displayName = "",
   email = "",
   walletAddress = "",
   tier = "zwapper",
@@ -64,7 +101,16 @@ export default function ProfileViewV1({
   trophyCount = 0,
   primaryIdentity = "Starter",
 }) {
-  const initials = buildInitials(username);
+  const resolvedUsername = resolveProfileUsername({
+    username,
+    user,
+    authUser,
+    displayName,
+    walletAddress,
+  });
+
+  const initials = buildInitials(resolvedUsername);
+  const memberSinceLabel = formatMemberSince(memberSince);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(8,14,20,0.98),rgba(4,8,14,1))] text-white">
@@ -86,6 +132,7 @@ export default function ProfileViewV1({
           type="button"
           onClick={onEditProfile}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70"
+          aria-label="Edit profile"
         >
           <Pencil size={16} strokeWidth={2} />
         </button>
@@ -100,7 +147,7 @@ export default function ProfileViewV1({
               </div>
 
               <div className="mt-4 text-[20px] font-semibold tracking-[-0.04em] text-white">
-                {username}
+                {resolvedUsername}
               </div>
 
               {email ? (
@@ -130,6 +177,7 @@ export default function ProfileViewV1({
                   type="button"
                   onClick={onCopyWallet}
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/60"
+                  aria-label="Copy wallet address"
                 >
                   <Copy size={14} strokeWidth={2} />
                 </button>
@@ -138,25 +186,10 @@ export default function ProfileViewV1({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              label="Member Since"
-              value={memberSince || "Recently"}
-            />
-
-            <StatCard
-              label="Trophies"
-              value={String(trophyCount)}
-            />
-
-            <StatCard
-              label="Identity"
-              value={primaryIdentity}
-            />
-
-            <StatCard
-              label="Tier"
-              value={tier === "zitizen" ? "Zitizen" : "Zwapper"}
-            />
+            <StatCard label="Member Since" value={memberSinceLabel} />
+            <StatCard label="Trophies" value={String(trophyCount)} />
+            <StatCard label="Identity" value={primaryIdentity} />
+            <StatCard label="Tier" value={tier === "zitizen" ? "Zitizen" : "Zwapper"} />
           </div>
         </div>
       </div>
