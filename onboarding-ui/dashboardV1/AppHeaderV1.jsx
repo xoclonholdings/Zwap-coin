@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Sprout, BookOpen, Play, Award } from "lucide-react";
 
 import AccountDrawer from "@/components/ui/dashboard/drawer/AccountDrawer";
+import AccountPanelContentV1 from "./AccountPanelContentV1";
+import AdminPanelV1 from "./admin/AdminPanelV1";
 
 function clampPercent(value) {
   const num = Number(value);
@@ -40,12 +42,7 @@ function ProgressBar({ percent = 0 }) {
   );
 }
 
-function HeaderIconButton({
-  label,
-  icon,
-  unlocked = false,
-  onClick,
-}) {
+function HeaderIconButton({ label, icon, unlocked = false, onClick }) {
   return (
     <button
       type="button"
@@ -114,17 +111,49 @@ function HeaderPopup({ popup, onClose }) {
 export default function AppHeaderV1({
   progressPercent = 0,
   zptsBalance = 0,
+  zwapBalance = 0,
   username = "",
+  displayName = "",
+  subtext = "",
+  initials,
 
+  user,
+  authUser,
+
+  tier = "zwapper",
+  walletAddress = "",
+  isOnline = true,
+
+  todaySteps = 0,
+  dailyStepGoal = 10000,
+  completedTasks = 0,
+  totalTasks = 4,
+
+  inventoryItems = [],
+  achievements = [],
+  trophyCount = 0,
+  trophyBonusPercent = 0,
+
+  shopUnlocked = false,
   gardenUnlocked = false,
+  badgeVisibilityUnlocked = false,
   learnUnlocked = false,
   streamUnlocked = false,
-  badgesUnlocked = false,
+  assistUnlocked = false,
+  swapUnlocked = false,
 
-  gardenProgressPercent = 0,
-  learnProgressPercent = 0,
-  streamProgressPercent = 0,
-  badgesProgressPercent = 0,
+  streamMinutesToday = 0,
+  streamDailyGoalMinutes = 20,
+  isListening = false,
+  activeAudioTitle = "",
+
+  onAdminTrigger,
+  onLearnOpen,
+  onStreamOpen,
+  onOpenFAQ,
+  onOpenContact,
+  onOpenAbout,
+  onOpenSupportChat,
 
   onGardenClick,
   onLearnClick,
@@ -132,10 +161,18 @@ export default function AppHeaderV1({
   onBadgeClick,
 }) {
   const [accountOpen, setAccountOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [popup, setPopup] = useState(null);
 
   const popupRef = useRef(null);
-  const initials = useMemo(() => getInitials(username), [username]);
+
+  const resolvedName = useMemo(() => {
+    return displayName || username || user?.username || "U";
+  }, [displayName, username, user]);
+
+  const resolvedInitials = useMemo(() => {
+    return initials || getInitials(resolvedName);
+  }, [initials, resolvedName]);
 
   useEffect(() => {
     function handlePointerDown(event) {
@@ -174,7 +211,7 @@ export default function AppHeaderV1({
       openLockedPopup({
         title: "Garden Locked",
         message: "Complete more daily activity to unlock Garden.",
-        progressPercent: gardenProgressPercent,
+        progressPercent: 0,
         helperText: "Keep building consistency.",
       });
       return;
@@ -182,7 +219,9 @@ export default function AppHeaderV1({
 
     setPopup(null);
 
-    if (onGardenClick) onGardenClick();
+    if (typeof onGardenClick === "function") {
+      onGardenClick();
+    }
   }
 
   function handleLearnTap() {
@@ -190,7 +229,7 @@ export default function AppHeaderV1({
       openLockedPopup({
         title: "Learn Locked",
         message: "Complete more progress to unlock Learn.",
-        progressPercent: learnProgressPercent,
+        progressPercent: 0,
         helperText: "Modules will appear here.",
       });
       return;
@@ -198,7 +237,14 @@ export default function AppHeaderV1({
 
     setPopup(null);
 
-    if (onLearnClick) onLearnClick();
+    if (typeof onLearnClick === "function") {
+      onLearnClick();
+      return;
+    }
+
+    if (typeof onLearnOpen === "function") {
+      onLearnOpen();
+    }
   }
 
   function handleStreamTap() {
@@ -206,7 +252,7 @@ export default function AppHeaderV1({
       openLockedPopup({
         title: "Stream Locked",
         message: "Complete more progress to unlock Stream.",
-        progressPercent: streamProgressPercent,
+        progressPercent: 0,
         helperText: "Audio and playlists will appear here.",
       });
       return;
@@ -214,15 +260,22 @@ export default function AppHeaderV1({
 
     setPopup(null);
 
-    if (onStreamClick) onStreamClick();
+    if (typeof onStreamClick === "function") {
+      onStreamClick();
+      return;
+    }
+
+    if (typeof onStreamOpen === "function") {
+      onStreamOpen();
+    }
   }
 
   function handleBadgeTap() {
-    if (!badgesUnlocked) {
+    if (!badgeVisibilityUnlocked) {
       openLockedPopup({
         title: "Badges Locked",
         message: "Complete more progress to unlock Badges.",
-        progressPercent: badgesProgressPercent,
+        progressPercent: 0,
         helperText: "Your progression will appear here.",
       });
       return;
@@ -230,7 +283,18 @@ export default function AppHeaderV1({
 
     setPopup(null);
 
-    if (onBadgeClick) onBadgeClick();
+    if (typeof onBadgeClick === "function") {
+      onBadgeClick();
+    }
+  }
+
+  function handleAdminOpen() {
+    setAccountOpen(false);
+    setAdminOpen(true);
+
+    if (typeof onAdminTrigger === "function") {
+      onAdminTrigger();
+    }
   }
 
   return (
@@ -268,15 +332,12 @@ export default function AppHeaderV1({
 
             <HeaderIconButton
               label="Badges"
-              unlocked={badgesUnlocked}
+              unlocked={badgeVisibilityUnlocked}
               onClick={handleBadgeTap}
               icon={<Award size={15} />}
             />
 
-            <HeaderPopup
-              popup={popup}
-              onClose={() => setPopup(null)}
-            />
+            <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
           </div>
 
           <div className="shrink-0 whitespace-nowrap text-sm font-bold text-white">
@@ -289,14 +350,45 @@ export default function AppHeaderV1({
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-gradient-to-br from-cyan-500/20 to-violet-500/20 text-xs font-bold text-white shadow-[0_0_12px_rgba(34,211,238,0.15)]"
             aria-label="Open account drawer"
           >
-            {initials}
+            {resolvedInitials}
           </button>
         </div>
       </header>
 
-      <AccountDrawer
-        open={accountOpen}
-        onOpenChange={setAccountOpen}
+      <AccountDrawer open={accountOpen} onOpenChange={setAccountOpen}>
+        <AccountPanelContentV1
+          onClose={() => setAccountOpen(false)}
+          onAdminTrigger={handleAdminOpen}
+          onLearnOpen={onLearnOpen}
+          onStreamOpen={onStreamOpen}
+          onOpenFAQ={onOpenFAQ}
+          onOpenContact={onOpenContact}
+          onOpenAbout={onOpenAbout}
+          onOpenSupportChat={onOpenSupportChat}
+          learnUnlocked={learnUnlocked}
+          streamUnlocked={streamUnlocked}
+          user={user}
+          authUser={authUser}
+          username={username}
+          subtext={subtext}
+          initials={resolvedInitials}
+          tier={tier}
+          zptsBalance={zptsBalance}
+          zwapBalance={zwapBalance}
+          walletAddress={walletAddress}
+          inventoryItems={inventoryItems}
+          achievements={achievements}
+          trophyCount={trophyCount}
+          trophyBonusPercent={trophyBonusPercent}
+        />
+      </AccountDrawer>
+
+      <AdminPanelV1
+        isOpen={adminOpen}
+        onClose={() => setAdminOpen(false)}
+        onLogout={() => setAdminOpen(false)}
+        dashboardData={null}
+        onRefresh={() => {}}
       />
     </>
   );
