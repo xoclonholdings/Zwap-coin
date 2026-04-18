@@ -73,7 +73,7 @@ export default function AccountPanelContentV1({
       adminTapResetRef.current = null;
     }, 1200);
 
-    if (adminTapCountRef.current >= 5) {
+    if (adminTapCountRef.current >= 3) {
       adminTapCountRef.current = 0;
 
       if (adminTapResetRef.current) {
