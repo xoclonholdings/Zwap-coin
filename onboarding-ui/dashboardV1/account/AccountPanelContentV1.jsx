@@ -100,11 +100,14 @@ export default function AccountPanelContentV1({
     return (
       <ProfileViewV1
         onBack={() => setActiveView("home")}
-        username={username || displayName || "Zwapper"}
+        user={user}
+        authUser={authUser}
+        username={username}
+        displayName={displayName}
         email={authUser?.email?.address || user?.email || ""}
         walletAddress={walletAddress}
         tier={tier}
-        memberSince={user?.created_at || "Recently"}
+        memberSince={user?.created_at || ""}
         trophyCount={trophyCount}
         primaryIdentity={user?.primary_badge_identity || "Starter"}
       />
@@ -132,11 +135,7 @@ export default function AccountPanelContentV1({
   }
 
   if (activeView === "settings") {
-    return (
-      <SettingsViewV1
-        onBack={() => setActiveView("home")}
-      />
-    );
+    return <SettingsViewV1 onBack={() => setActiveView("home")} />;
   }
 
   if (activeView === "help") {
@@ -152,19 +151,11 @@ export default function AccountPanelContentV1({
   }
 
   if (activeView === "privacy") {
-    return (
-      <PrivacyViewV1
-        onBack={() => setActiveView("home")}
-      />
-    );
+    return <PrivacyViewV1 onBack={() => setActiveView("home")} />;
   }
 
   if (activeView === "terms") {
-    return (
-      <TermsViewV1
-        onBack={() => setActiveView("home")}
-      />
-    );
+    return <TermsViewV1 onBack={() => setActiveView("home")} />;
   }
 
   return (
