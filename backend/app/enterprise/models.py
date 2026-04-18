@@ -1,0 +1,5 @@
+ORGANIZATIONS_COLLECTION = "organizations"
+ORGANIZATION_MEMBERSHIPS_COLLECTION = "organization_memberships"
+ORGANIZATION_CHALLENGES_COLLECTION = "organization_challenges"
+ORGANIZATION_REWARDS_COLLECTION = "organization_rewards"
+ORGANIZATION_ANALYTICS_COLLECTION = "organization_analytics"
