@@ -32,7 +32,6 @@ export default function AccountPanelContentV1({
 
   user,
   authUser,
-  displayName,
   username,
   subtext,
   initials,
@@ -59,6 +58,8 @@ export default function AccountPanelContentV1({
       }
     };
   }, []);
+
+  const resolvedUsername = user?.username || username || "";
 
   const handleAdminTap = () => {
     adminTapCountRef.current += 1;
@@ -101,15 +102,12 @@ export default function AccountPanelContentV1({
       <ProfileViewV1
         onBack={() => setActiveView("home")}
         user={user}
-        authUser={authUser}
-        username={username}
-        displayName={displayName}
+        username={resolvedUsername}
         email={authUser?.email?.address || user?.email || ""}
         walletAddress={walletAddress}
         tier={tier}
         memberSince={user?.created_at || ""}
         trophyCount={trophyCount}
-        primaryIdentity={user?.primary_badge_identity || "Starter"}
       />
     );
   }
@@ -175,8 +173,7 @@ export default function AccountPanelContentV1({
           <AccountProfileCardV1
             user={user}
             authUser={authUser}
-            displayName={displayName}
-            username={username}
+            username={resolvedUsername}
             subtext={subtext}
             initials={initials}
             tier={tier}
