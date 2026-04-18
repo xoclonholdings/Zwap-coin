@@ -18,73 +18,10 @@ function formatZpts(value) {
   return toNumber(value, 0).toLocaleString();
 }
 
-function buildTaskPreview({
-  completedTaskCount,
-  taskStates,
-  shopUnlocked,
-}) {
-  if (Array.isArray(taskStates) && taskStates.length > 0) {
-    return taskStates.slice(0, 4).map((task, index) => ({
-      id: task?.id || `task-${index}`,
-      label: String(task?.label || "").trim() || `Task ${index + 1}`,
-      completed: Boolean(task?.completed),
-    }));
-  }
-
-  const labels = shopUnlocked
-    ? ["Login", "Move", "Play", "Shop"]
-    : ["Login", "Move", "Play", "Learn"];
-
-  return labels.map((label, index) => ({
-    id: label.toLowerCase(),
-    label,
-    completed: index < completedTaskCount,
-  }));
-}
-
-function deriveMoveStatus({
-  todaySteps,
-  stepGoal,
-  isMoveActive,
-}) {
-  if (isMoveActive) return "active";
-
-  const progress = percent(todaySteps, stepGoal);
-
-  if (progress >= 100) return "on-track";
-  if (todaySteps > 0) return "on-track";
-  return "idle";
-}
-
-function derivePlayStatus({
-  gamesPlayedToday,
-  isPlayActive,
-}) {
-  if (isPlayActive) return "active";
-  if (gamesPlayedToday > 0) return "played-today";
-  return "ready";
-}
-
-function deriveTasksStatus({
-  completedTaskCount,
-  totalTaskCount,
-}) {
-  if (completedTaskCount >= totalTaskCount && totalTaskCount > 0) {
-    return "complete";
-  }
-
-  if (completedTaskCount > 0) {
-    return "in-progress";
-  }
-
-  return "ready";
-}
-
 function deriveShopUnlocked({
   explicitShopUnlocked,
   user,
-  completedTaskCount,
-  totalTaskCount,
+  lifetimeZpts,
 }) {
   if (typeof explicitShopUnlocked === "boolean") {
     return explicitShopUnlocked;
@@ -98,72 +35,209 @@ function deriveShopUnlocked({
     return user.shopUnlocked;
   }
 
-  return completedTaskCount >= totalTaskCount && totalTaskCount > 0;
+  return lifetimeZpts >= 1000;
 }
 
-function deriveZwapWindowState({
-  explicitMode,
-  explicitMessage,
-  explicitHint,
-  shopUnlocked,
-  moveStatus,
-  playStatus,
-  tasksStatus,
-  completedTaskCount,
-  totalTaskCount,
+function deriveGardenUnlocked({
+  explicitGardenUnlocked,
+  user,
+  streakDays,
+  fullLoopCompleted,
 }) {
-  if (explicitMode || explicitMessage || explicitHint) {
-    return {
-      zwapMode: explicitMode || "active",
-      zwapMessage: explicitMessage || "",
-      zwapHint: explicitHint || "",
-    };
+  if (typeof explicitGardenUnlocked === "boolean") {
+    return explicitGardenUnlocked;
   }
 
-  if (shopUnlocked) {
+  if (typeof user?.garden_unlocked === "boolean") {
+    return user.garden_unlocked;
+  }
+
+  if (typeof user?.gardenUnlocked === "boolean") {
+    return user.gardenUnlocked;
+  }
+
+  return streakDays >= 3 || fullLoopCompleted;
+}
+
+function deriveRarePlantUnlocked({
+  explicitRarePlantUnlocked,
+  user,
+  streakDays,
+}) {
+  if (typeof explicitRarePlantUnlocked === "boolean") {
+    return explicitRarePlantUnlocked;
+  }
+
+  if (typeof user?.rare_plant_unlocked === "boolean") {
+    return user.rare_plant_unlocked;
+  }
+
+  if (typeof user?.rarePlantUnlocked === "boolean") {
+    return user.rarePlantUnlocked;
+  }
+
+  return streakDays >= 30;
+}
+
+function deriveGrowthStage({
+  explicitGrowthStage,
+  user,
+  streakDays,
+  activeDays,
+  fullLoopCompleted,
+  rarePlantUnlocked,
+}) {
+  if (rarePlantUnlocked || streakDays >= 30) return "rare";
+
+  const incoming =
+    explicitGrowthStage ??
+    user?.growth_stage ??
+    user?.growthStage;
+
+  if (incoming && incoming !== "seed") return incoming;
+
+  if (streakDays >= 14 || (fullLoopCompleted && activeDays >= 10)) return "mature";
+  if (streakDays >= 7 || activeDays >= 6) return "young";
+  if (streakDays >= 3 || activeDays >= 3) return "sprout";
+  return "seed";
+}
+
+function deriveHealthPercent({
+  explicitHealthPercent,
+  user,
+  missedDays,
+  fullLoopCompleted,
+  streakDays,
+  dailySteps,
+  gamesPlayedToday,
+  lessonsCompletedToday,
+}) {
+  const incoming = toNumber(
+    explicitHealthPercent ??
+      user?.health_percent ??
+      user?.healthPercent,
+    NaN
+  );
+
+  if (Number.isFinite(incoming)) {
+    return clamp(incoming, 0, 100);
+  }
+
+  let health = 70;
+
+  if (missedDays > 0) {
+    health -= missedDays * 10;
+  }
+
+  if (fullLoopCompleted) {
+    health += 15;
+  }
+
+  if (streakDays > 0) {
+    health += 5;
+  }
+
+  if (dailySteps >= 5000) {
+    health += 5;
+  }
+
+  if (
+    dailySteps >= 3000 &&
+    gamesPlayedToday > 0 &&
+    lessonsCompletedToday > 0
+  ) {
+    health += 10;
+  }
+
+  return clamp(health, 0, 100);
+}
+
+function deriveDaysUntilNextBloom({
+  explicitDaysUntilNextBloom,
+  user,
+  growthStage,
+  streakDays,
+}) {
+  const incoming = toNumber(
+    explicitDaysUntilNextBloom ??
+      user?.days_until_next_bloom ??
+      user?.daysUntilNextBloom,
+    NaN
+  );
+
+  if (Number.isFinite(incoming)) {
+    return Math.max(0, incoming);
+  }
+
+  if (growthStage === "seed") return Math.max(0, 3 - streakDays);
+  if (growthStage === "sprout") return Math.max(0, 7 - streakDays);
+  if (growthStage === "young") return Math.max(0, 14 - streakDays);
+  return 0;
+}
+
+function deriveNextRareUnlock({
+  explicitNextRareUnlock,
+  user,
+  streakDays,
+  rarePlantUnlocked,
+}) {
+  const incoming =
+    explicitNextRareUnlock ??
+    user?.next_rare_unlock ??
+    user?.nextRareUnlock;
+
+  if (incoming != null) return incoming;
+
+  if (rarePlantUnlocked && streakDays >= 90) return "Rare growth unlocked";
+  if (streakDays < 30) return 30;
+  if (streakDays < 60) return 60;
+  if (streakDays < 90) return 90;
+  return "Rare growth unlocked";
+}
+
+function deriveZwapCopy({
+  isSwapUnlocked,
+  gardenUnlocked,
+  streakDays,
+  fullLoopCompleted,
+  zptsBalance,
+}) {
+  if (isSwapUnlocked) {
     return {
       zwapMode: "active",
-      zwapMessage: "Shop is ready.",
+      zwapMessage: "Swap access is ready when you are.",
       zwapHint: "",
     };
   }
 
-  if (tasksStatus === "complete") {
+  if (gardenUnlocked && streakDays >= 3) {
     return {
       zwapMode: "active",
-      zwapMessage: "Daily loop complete.",
-      zwapHint: "Nice work.",
+      zwapMessage: "Your effort is starting to take shape.",
+      zwapHint: "",
     };
   }
 
-  if (playStatus === "played-today") {
+  if (fullLoopCompleted) {
     return {
       zwapMode: "active",
-      zwapMessage: "You just earned.",
-      zwapHint: "Want to keep going?",
+      zwapMessage: "You completed the loop.",
+      zwapHint: "Keep that rhythm.",
     };
   }
 
-  if (moveStatus === "active") {
+  if (zptsBalance > 0) {
     return {
       zwapMode: "active",
-      zwapMessage: "You’re moving.",
-      zwapHint: "Keep it going.",
-    };
-  }
-
-  if (completedTaskCount > 0 && completedTaskCount < totalTaskCount) {
-    return {
-      zwapMode: "active",
-      zwapMessage: "You’re in motion.",
-      zwapHint: "Finish today strong.",
+      zwapMessage: "You just moved the system forward.",
+      zwapHint: "",
     };
   }
 
   return {
     zwapMode: "idle",
-    zwapMessage: "Ready when you are.",
-    zwapHint: explicitHint || "",
+    zwapMessage: "Earn, learn, and unlock swapping.",
+    zwapHint: "",
   };
 }
 
@@ -176,27 +250,49 @@ export default function useV1DashboardState({
   isMoveActive = false,
 
   gamesPlayedToday,
-  playGoal = 3,
+  playGoal = 1,
   isPlayActive = false,
 
-  completedTaskCount,
-  totalTaskCount = 4,
-  taskStates,
-
   zptsBalance,
+  zptsDailyCap = 300,
+
+  lifetimeZpts,
 
   shopUnlocked: explicitShopUnlocked,
+  gardenUnlocked: explicitGardenUnlocked,
+  rarePlantUnlocked: explicitRarePlantUnlocked,
+
+  isZwapAltView: explicitIsZwapAltView,
+  isSwapUnlocked: explicitIsSwapUnlocked,
+
+  streakDays,
+  lessonsCompletedToday,
+  lastActiveAt,
+  fullLoopCompleted,
+
+  healthPercent: explicitHealthPercent,
+  growthStage: explicitGrowthStage,
+  plantName,
+
+  longestStreak,
+  totalBlooms,
+  activeDays,
+  missedDays,
+  daysUntilNextBloom: explicitDaysUntilNextBloom,
+  nextRareUnlock: explicitNextRareUnlock,
+  streakGraceDaysRemaining,
 
   zwapMode: explicitZwapMode,
   zwapMessage: explicitZwapMessage,
   zwapHint: explicitZwapHint,
 } = {}) {
   const [accountOpen, setAccountOpen] = useState(false);
+  const [isZwapAltViewState, setIsZwapAltViewState] = useState(false);
 
   const openAccount = () => setAccountOpen(true);
   const closeAccount = () => setAccountOpen(false);
 
-  const normalizedTodaySteps = useMemo(() => {
+  const normalizedSteps = useMemo(() => {
     return toNumber(
       todaySteps ??
         user?.today_steps ??
@@ -234,43 +330,10 @@ export default function useV1DashboardState({
         playGoal ??
           user?.play_goal ??
           user?.daily_play_goal,
-        3
+        1
       )
     );
   }, [playGoal, user]);
-
-  const normalizedCompletedTaskCount = useMemo(() => {
-    return clamp(
-      toNumber(
-        completedTaskCount ??
-          user?.completed_task_count ??
-          user?.daily_tasks_completed,
-        0
-      ),
-      0,
-      Math.max(
-        1,
-        toNumber(
-          totalTaskCount ??
-            user?.total_task_count ??
-            user?.daily_tasks_total,
-          4
-        )
-      )
-    );
-  }, [completedTaskCount, totalTaskCount, user]);
-
-  const normalizedTotalTaskCount = useMemo(() => {
-    return Math.max(
-      1,
-      toNumber(
-        totalTaskCount ??
-          user?.total_task_count ??
-          user?.daily_tasks_total,
-        4
-      )
-    );
-  }, [totalTaskCount, user]);
 
   const normalizedZptsBalance = useMemo(() => {
     return toNumber(
@@ -282,140 +345,334 @@ export default function useV1DashboardState({
     );
   }, [zptsBalance, user]);
 
-  const moveProgressPercent = useMemo(() => {
-    return percent(normalizedTodaySteps, normalizedStepGoal);
-  }, [normalizedTodaySteps, normalizedStepGoal]);
+  const normalizedLifetimeZpts = useMemo(() => {
+    return toNumber(
+      lifetimeZpts ??
+        user?.lifetime_zpts ??
+        user?.lifetimeZpts ??
+        user?.total_zpts_earned,
+      normalizedZptsBalance
+    );
+  }, [lifetimeZpts, user, normalizedZptsBalance]);
 
-  const moveStatus = useMemo(() => {
-    return deriveMoveStatus({
-      todaySteps: normalizedTodaySteps,
-      stepGoal: normalizedStepGoal,
-      isMoveActive,
-    });
-  }, [normalizedTodaySteps, normalizedStepGoal, isMoveActive]);
+  const normalizedZptsDailyCap = useMemo(() => {
+    return Math.max(
+      1,
+      toNumber(
+        zptsDailyCap ??
+          user?.daily_zpts_cap ??
+          user?.zpts_daily_cap,
+        300
+      )
+    );
+  }, [zptsDailyCap, user]);
 
-  const playProgressPercent = useMemo(() => {
-    return percent(normalizedGamesPlayedToday, normalizedPlayGoal);
-  }, [normalizedGamesPlayedToday, normalizedPlayGoal]);
+  const normalizedStreakDays = useMemo(() => {
+    return toNumber(
+      streakDays ??
+        user?.streak_days ??
+        user?.daily_streak,
+      0
+    );
+  }, [streakDays, user]);
 
-  const playStatus = useMemo(() => {
-    return derivePlayStatus({
-      gamesPlayedToday: normalizedGamesPlayedToday,
-      isPlayActive,
-    });
-  }, [normalizedGamesPlayedToday, isPlayActive]);
+  const normalizedLessonsCompletedToday = useMemo(() => {
+    return toNumber(
+      lessonsCompletedToday ??
+        user?.lessons_completed_today ??
+        user?.lessonsCompletedToday,
+      0
+    );
+  }, [lessonsCompletedToday, user]);
 
-  const tasksProgressPercent = useMemo(() => {
-    return percent(normalizedCompletedTaskCount, normalizedTotalTaskCount);
-  }, [normalizedCompletedTaskCount, normalizedTotalTaskCount]);
+  const normalizedLastActiveAt = useMemo(() => {
+    return (
+      lastActiveAt ??
+      user?.last_active_at ??
+      user?.lastActiveAt ??
+      null
+    );
+  }, [lastActiveAt, user]);
 
-  const tasksStatus = useMemo(() => {
-    return deriveTasksStatus({
-      completedTaskCount: normalizedCompletedTaskCount,
-      totalTaskCount: normalizedTotalTaskCount,
-    });
-  }, [normalizedCompletedTaskCount, normalizedTotalTaskCount]);
+  const normalizedFullLoopCompleted = useMemo(() => {
+    return Boolean(
+      fullLoopCompleted ??
+        user?.full_loop_completed ??
+        user?.fullLoopCompleted
+    );
+  }, [fullLoopCompleted, user]);
+
+  const normalizedActiveDays = useMemo(() => {
+    return toNumber(
+      activeDays ??
+        user?.active_days ??
+        user?.activeDays,
+      normalizedStreakDays
+    );
+  }, [activeDays, user, normalizedStreakDays]);
+
+  const normalizedMissedDays = useMemo(() => {
+    return toNumber(
+      missedDays ??
+        user?.missed_days ??
+        user?.missedDays,
+      0
+    );
+  }, [missedDays, user]);
+
+  const normalizedLongestStreak = useMemo(() => {
+    return toNumber(
+      longestStreak ??
+        user?.longest_streak ??
+        user?.longestStreak,
+      normalizedStreakDays
+    );
+  }, [longestStreak, user, normalizedStreakDays]);
+
+  const normalizedTotalBlooms = useMemo(() => {
+    return toNumber(
+      totalBlooms ??
+        user?.total_blooms ??
+        user?.totalBlooms,
+      0
+    );
+  }, [totalBlooms, user]);
+
+  const normalizedStreakGraceDaysRemaining = useMemo(() => {
+    return Math.max(
+      0,
+      toNumber(
+        streakGraceDaysRemaining ??
+          user?.streak_grace_days_remaining ??
+          user?.streakGraceDaysRemaining,
+        Math.max(0, 3 - normalizedMissedDays)
+      )
+    );
+  }, [streakGraceDaysRemaining, user, normalizedMissedDays]);
+
+  const normalizedPlantName = useMemo(() => {
+    return (
+      plantName ??
+      user?.plant_name ??
+      user?.plantName ??
+      "Garden"
+    );
+  }, [plantName, user]);
 
   const shopUnlocked = useMemo(() => {
     return deriveShopUnlocked({
       explicitShopUnlocked,
       user,
-      completedTaskCount: normalizedCompletedTaskCount,
-      totalTaskCount: normalizedTotalTaskCount,
+      lifetimeZpts: normalizedLifetimeZpts,
+    });
+  }, [explicitShopUnlocked, user, normalizedLifetimeZpts]);
+
+  const gardenUnlocked = useMemo(() => {
+    return deriveGardenUnlocked({
+      explicitGardenUnlocked,
+      user,
+      streakDays: normalizedStreakDays,
+      fullLoopCompleted: normalizedFullLoopCompleted,
     });
   }, [
-    explicitShopUnlocked,
+    explicitGardenUnlocked,
     user,
-    normalizedCompletedTaskCount,
-    normalizedTotalTaskCount,
+    normalizedStreakDays,
+    normalizedFullLoopCompleted,
   ]);
 
-  const normalizedTaskPreview = useMemo(() => {
-    return buildTaskPreview({
-      completedTaskCount: normalizedCompletedTaskCount,
-      taskStates: taskStates ?? user?.taskStates ?? user?.daily_task_states,
-      shopUnlocked,
+  const rarePlantUnlocked = useMemo(() => {
+    return deriveRarePlantUnlocked({
+      explicitRarePlantUnlocked,
+      user,
+      streakDays: normalizedStreakDays,
     });
-  }, [normalizedCompletedTaskCount, taskStates, user, shopUnlocked]);
+  }, [explicitRarePlantUnlocked, user, normalizedStreakDays]);
 
-  const zptsDisplay = useMemo(() => {
-    return formatZpts(normalizedZptsBalance);
-  }, [normalizedZptsBalance]);
+  const resolvedGrowthStage = useMemo(() => {
+    return deriveGrowthStage({
+      explicitGrowthStage,
+      user,
+      streakDays: normalizedStreakDays,
+      activeDays: normalizedActiveDays,
+      fullLoopCompleted: normalizedFullLoopCompleted,
+      rarePlantUnlocked,
+    });
+  }, [
+    explicitGrowthStage,
+    user,
+    normalizedStreakDays,
+    normalizedActiveDays,
+    normalizedFullLoopCompleted,
+    rarePlantUnlocked,
+  ]);
 
-  const zwapWindowState = useMemo(() => {
-    return deriveZwapWindowState({
-      explicitMode: explicitZwapMode,
-      explicitMessage: explicitZwapMessage,
-      explicitHint: explicitZwapHint,
-      shopUnlocked,
-      moveStatus,
-      playStatus,
-      tasksStatus,
-      completedTaskCount: normalizedCompletedTaskCount,
-      totalTaskCount: normalizedTotalTaskCount,
+  const resolvedHealthPercent = useMemo(() => {
+    return deriveHealthPercent({
+      explicitHealthPercent,
+      user,
+      missedDays: normalizedMissedDays,
+      fullLoopCompleted: normalizedFullLoopCompleted,
+      streakDays: normalizedStreakDays,
+      dailySteps: normalizedSteps,
+      gamesPlayedToday: normalizedGamesPlayedToday,
+      lessonsCompletedToday: normalizedLessonsCompletedToday,
+    });
+  }, [
+    explicitHealthPercent,
+    user,
+    normalizedMissedDays,
+    normalizedFullLoopCompleted,
+    normalizedStreakDays,
+    normalizedSteps,
+    normalizedGamesPlayedToday,
+    normalizedLessonsCompletedToday,
+  ]);
+
+  const resolvedDaysUntilNextBloom = useMemo(() => {
+    return deriveDaysUntilNextBloom({
+      explicitDaysUntilNextBloom,
+      user,
+      growthStage: resolvedGrowthStage,
+      streakDays: normalizedStreakDays,
+    });
+  }, [
+    explicitDaysUntilNextBloom,
+    user,
+    resolvedGrowthStage,
+    normalizedStreakDays,
+  ]);
+
+  const resolvedNextRareUnlock = useMemo(() => {
+    return deriveNextRareUnlock({
+      explicitNextRareUnlock,
+      user,
+      streakDays: normalizedStreakDays,
+      rarePlantUnlocked,
+    });
+  }, [
+    explicitNextRareUnlock,
+    user,
+    normalizedStreakDays,
+    rarePlantUnlocked,
+  ]);
+
+  const stepsPercent = useMemo(() => {
+    return percent(normalizedSteps, normalizedStepGoal);
+  }, [normalizedSteps, normalizedStepGoal]);
+
+  const playPercent = useMemo(() => {
+    return percent(normalizedGamesPlayedToday, normalizedPlayGoal);
+  }, [normalizedGamesPlayedToday, normalizedPlayGoal]);
+
+  const zptsPercent = useMemo(() => {
+    return percent(normalizedZptsBalance, normalizedZptsDailyCap);
+  }, [normalizedZptsBalance, normalizedZptsDailyCap]);
+
+  const resolvedIsSwapUnlocked = useMemo(() => {
+    if (typeof explicitIsSwapUnlocked === "boolean") {
+      return explicitIsSwapUnlocked;
+    }
+
+    if (typeof user?.swap_unlocked === "boolean") {
+      return user.swap_unlocked;
+    }
+
+    if (typeof user?.isSwapUnlocked === "boolean") {
+      return user.isSwapUnlocked;
+    }
+
+    return false;
+  }, [explicitIsSwapUnlocked, user]);
+
+  const resolvedIsZwapAltView = useMemo(() => {
+    if (typeof explicitIsZwapAltView === "boolean") {
+      return explicitIsZwapAltView;
+    }
+
+    return isZwapAltViewState;
+  }, [explicitIsZwapAltView, isZwapAltViewState]);
+
+  const zwapCopy = useMemo(() => {
+    if (explicitZwapMode || explicitZwapMessage || explicitZwapHint) {
+      return {
+        zwapMode: explicitZwapMode || "active",
+        zwapMessage: explicitZwapMessage || "",
+        zwapHint: explicitZwapHint || "",
+      };
+    }
+
+    return deriveZwapCopy({
+      isSwapUnlocked: resolvedIsSwapUnlocked,
+      gardenUnlocked,
+      streakDays: normalizedStreakDays,
+      fullLoopCompleted: normalizedFullLoopCompleted,
+      zptsBalance: normalizedZptsBalance,
     });
   }, [
     explicitZwapMode,
     explicitZwapMessage,
     explicitZwapHint,
-    shopUnlocked,
-    moveStatus,
-    playStatus,
-    tasksStatus,
-    normalizedCompletedTaskCount,
-    normalizedTotalTaskCount,
+    resolvedIsSwapUnlocked,
+    gardenUnlocked,
+    normalizedStreakDays,
+    normalizedFullLoopCompleted,
+    normalizedZptsBalance,
   ]);
 
   return {
-    account: {
-      accountOpen,
-      setAccountOpen,
-      openAccount,
-      closeAccount,
-    },
+    accountOpen,
+    setAccountOpen,
+    openAccount,
+    closeAccount,
 
-    move: {
-      todaySteps: normalizedTodaySteps,
-      stepGoal: normalizedStepGoal,
-      moveProgressPercent,
-      moveStatus,
-      isMoveActive: Boolean(isMoveActive),
-    },
+    isMoveActive: Boolean(isMoveActive),
+    isPlayActive: Boolean(isPlayActive),
 
-    play: {
-      gamesPlayedToday: normalizedGamesPlayedToday,
-      playGoal: normalizedPlayGoal,
-      playProgressPercent,
-      playStatus,
-      isPlayActive: Boolean(isPlayActive),
-    },
+    steps: normalizedSteps,
+    dailySteps: normalizedSteps,
+    stepGoal: normalizedStepGoal,
+    stepsPercent,
 
-    tasks: {
-      completedTaskCount: normalizedCompletedTaskCount,
-      totalTaskCount: normalizedTotalTaskCount,
-      tasksProgressPercent,
-      tasksStatus,
-      taskPreview: normalizedTaskPreview,
-    },
+    gamesPlayedToday: normalizedGamesPlayedToday,
+    playGoal: normalizedPlayGoal,
+    playPercent,
 
-    zpts: {
-      zptsBalance: normalizedZptsBalance,
-      zptsDisplay,
-    },
+    zptsBalance: normalizedZptsBalance,
+    zptsDisplay: formatZpts(normalizedZptsBalance),
+    zptsPercent,
+    zptsDailyCap: normalizedZptsDailyCap,
 
-    unlocks: {
-      shopUnlocked,
-    },
+    shopUnlocked,
+    gardenUnlocked,
+    rarePlantUnlocked,
+    isSwapUnlocked: resolvedIsSwapUnlocked,
 
-    zwap: {
-      zwapMode: zwapWindowState.zwapMode,
-      zwapMessage: zwapWindowState.zwapMessage,
-      zwapHint: zwapWindowState.zwapHint,
-    },
+    isZwapAltView: resolvedIsZwapAltView,
+    setIsZwapAltView: setIsZwapAltViewState,
 
-    user: {
-      user,
-      authUser,
-    },
+    streakDays: normalizedStreakDays,
+    lessonsCompletedToday: normalizedLessonsCompletedToday,
+    lastActiveAt: normalizedLastActiveAt,
+    fullLoopCompleted: normalizedFullLoopCompleted,
+
+    healthPercent: resolvedHealthPercent,
+    growthStage: resolvedGrowthStage,
+    plantName: normalizedPlantName,
+
+    longestStreak: normalizedLongestStreak,
+    totalBlooms: normalizedTotalBlooms,
+    activeDays: normalizedActiveDays,
+    missedDays: normalizedMissedDays,
+    daysUntilNextBloom: resolvedDaysUntilNextBloom,
+    nextRareUnlock: resolvedNextRareUnlock,
+    streakGraceDaysRemaining: normalizedStreakGraceDaysRemaining,
+
+    zwapMode: zwapCopy.zwapMode,
+    zwapMessage: zwapCopy.zwapMessage,
+    zwapHint: zwapCopy.zwapHint,
+
+    user,
+    authUser,
   };
 }
