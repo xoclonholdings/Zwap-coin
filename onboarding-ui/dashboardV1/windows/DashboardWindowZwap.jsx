@@ -2,39 +2,79 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, ChevronRight, Lock } from "lucide-react";
 
 const DEFAULT_IDLE_MESSAGES = [
-  "Keep going.",
-  "There’s more here.",
-  "You’re building something.",
   "Ready when you are.",
+  "A little movement starts the loop.",
+  "Progress begins with one action.",
+  "You can open this up today.",
 ];
+
+function buildTaskLabel(completedTaskCount = 0, totalTaskCount = 4) {
+  return `${completedTaskCount} of ${totalTaskCount} tasks complete`;
+}
 
 function pickHints({
   shopUnlocked,
+  gardenUnlocked = false,
+  badgeVisibilityUnlocked = false,
   learnUnlocked = false,
   streamUnlocked = false,
+  assistUnlocked = false,
   swapUnlocked = false,
+  hasNewHighScore = false,
+  profileNeedsSetup = false,
+  canSpendZpts = false,
+  shouldSaveZpts = false,
 }) {
   const hints = [];
 
-  if (!learnUnlocked) {
-    hints.push({ label: "Learn", unlocked: false });
+  if (profileNeedsSetup) {
+    hints.push({ label: "Update Profile", unlocked: true });
+  }
+
+  if (hasNewHighScore) {
+    hints.push({ label: "New High Score", unlocked: true });
   }
 
   if (shopUnlocked) {
-    hints.push({ label: "Shop", unlocked: true });
+    hints.push({
+      label: canSpendZpts ? "Check Shop" : shouldSaveZpts ? "Save zPts" : "Shop Open",
+      unlocked: true,
+    });
   } else {
     hints.push({ label: "Shop", unlocked: false });
   }
 
-  if (!streamUnlocked) {
+  if (gardenUnlocked) {
+    hints.push({ label: "Garden Active", unlocked: true });
+  }
+
+  if (badgeVisibilityUnlocked) {
+    hints.push({ label: "View Badges", unlocked: true });
+  }
+
+  if (learnUnlocked) {
+    hints.push({ label: "Learn Open", unlocked: true });
+  } else {
+    hints.push({ label: "Learn", unlocked: false });
+  }
+
+  if (streamUnlocked) {
+    hints.push({ label: "Stream Open", unlocked: true });
+  } else {
     hints.push({ label: "Stream", unlocked: false });
+  }
+
+  if (assistUnlocked) {
+    hints.push({ label: "Assist Ready", unlocked: true });
   }
 
   if (!swapUnlocked) {
     hints.push({ label: "Swap", unlocked: false });
+  } else {
+    hints.push({ label: "Swap Ready", unlocked: true });
   }
 
-  return hints.slice(0, 2);
+  return hints.slice(0, 3);
 }
 
 function HintPill({ label, unlocked = false }) {
@@ -52,35 +92,200 @@ function HintPill({ label, unlocked = false }) {
   );
 }
 
-function buildActiveMessage({
-  message,
-  eventType,
+function buildVoiceMessage({
+  mode,
+  systemMessage,
   nextStep,
+  eventType,
+  completedTaskCount,
+  totalTaskCount,
   shopUnlocked,
+  gardenUnlocked,
+  learnUnlocked,
+  streamUnlocked,
+  assistUnlocked,
+  swapUnlocked,
+  badgeVisibilityUnlocked,
+  profileNeedsSetup,
+  hasNewHighScore,
+  canSpendZpts,
+  shouldSaveZpts,
 }) {
-  if (message) return { primary: message, secondary: nextStep || "" };
+  const taskLine = buildTaskLabel(completedTaskCount, totalTaskCount);
 
-  if (eventType === "move_progress") {
-    return { primary: "You’re moving.", secondary: nextStep || "Keep it going." };
+  if (systemMessage) {
+    return {
+      primary: systemMessage,
+      secondary: nextStep || "",
+      taskLine,
+    };
   }
 
-  if (eventType === "play_complete") {
-    return { primary: "You just earned.", secondary: nextStep || "Want to keep going?" };
-  }
-
-  if (eventType === "task_complete") {
-    return { primary: "Task complete.", secondary: nextStep || "What’s next?" };
+  if (swapUnlocked) {
+    return {
+      primary: "Value is becoming real.",
+      secondary: nextStep || "Spend, hold, or swap with intention.",
+      taskLine,
+    };
   }
 
   if (eventType === "milestone") {
-    return { primary: "Milestone reached.", secondary: nextStep || "Nice work." };
+    return {
+      primary: "Milestone reached.",
+      secondary: nextStep || "Your progress is starting to show.",
+      taskLine,
+    };
   }
 
-  if (eventType === "shop_unlock" || shopUnlocked) {
-    return { primary: "Shop is ready.", secondary: nextStep || "" };
+  if (eventType === "shop_unlock") {
+    return {
+      primary: "Shop is ready.",
+      secondary: nextStep || "Effort just opened value.",
+      taskLine,
+    };
   }
 
-  return { primary: "Keep going.", secondary: "" };
+  if (eventType === "garden_unlock" || gardenUnlocked) {
+    if (completedTaskCount >= totalTaskCount && totalTaskCount > 0) {
+      return {
+        primary: "Your effort has taken form.",
+        secondary: nextStep || "Daily loop complete. Your garden is responding.",
+        taskLine,
+      };
+    }
+
+    return {
+      primary: "Something is growing now.",
+      secondary: nextStep || "Consistency unlocked a living layer.",
+      taskLine,
+    };
+  }
+
+  if (eventType === "full_loop" || (completedTaskCount >= totalTaskCount && totalTaskCount > 0)) {
+    return {
+      primary: "Daily loop complete.",
+      secondary: nextStep || "That day counts.",
+      taskLine,
+    };
+  }
+
+  if (eventType === "task_complete") {
+    return {
+      primary: "Task complete.",
+      secondary: nextStep || "Keep the loop moving.",
+      taskLine,
+    };
+  }
+
+  if (eventType === "play_complete") {
+    return {
+      primary: "You just earned.",
+      secondary: nextStep || "That moved the system forward.",
+      taskLine,
+    };
+  }
+
+  if (eventType === "move_progress") {
+    return {
+      primary: "You’re moving.",
+      secondary: nextStep || "Keep the rhythm going.",
+      taskLine,
+    };
+  }
+
+  if (profileNeedsSetup) {
+    return {
+      primary: "Your profile still has room to grow.",
+      secondary: nextStep || "Add identity to your progress.",
+      taskLine,
+    };
+  }
+
+  if (hasNewHighScore) {
+    return {
+      primary: "A new high score is waiting.",
+      secondary: nextStep || "Your last session changed something.",
+      taskLine,
+    };
+  }
+
+  if (badgeVisibilityUnlocked) {
+    return {
+      primary: "Your identity layer is opening.",
+      secondary: nextStep || "Check your badges and see what is forming.",
+      taskLine,
+    };
+  }
+
+  if (learnUnlocked) {
+    return {
+      primary: "Learn is open now.",
+      secondary: nextStep || "Knowledge adds another route forward.",
+      taskLine,
+    };
+  }
+
+  if (streamUnlocked) {
+    return {
+      primary: "Stream is live.",
+      secondary: nextStep || "Try a walk-and-listen session.",
+      taskLine,
+    };
+  }
+
+  if (assistUnlocked) {
+    return {
+      primary: "Support is part of the system now.",
+      secondary: nextStep || "You can move more than your own score.",
+      taskLine,
+    };
+  }
+
+  if (shopUnlocked && canSpendZpts) {
+    return {
+      primary: "Shop is open.",
+      secondary: nextStep || "Spend carefully or hold for something bigger.",
+      taskLine,
+    };
+  }
+
+  if (shopUnlocked && shouldSaveZpts) {
+    return {
+      primary: "You could spend now.",
+      secondary: nextStep || "Saving might open something heavier later.",
+      taskLine,
+    };
+  }
+
+  if (shopUnlocked) {
+    return {
+      primary: "Shop is ready.",
+      secondary: nextStep || "Effort has started opening value.",
+      taskLine,
+    };
+  }
+
+  if (completedTaskCount > 0 && completedTaskCount < totalTaskCount) {
+    return {
+      primary: "You’re in motion.",
+      secondary: nextStep || "A little more completes the loop.",
+      taskLine,
+    };
+  }
+
+  if (mode === "idle") {
+    return {
+      primary: "Ready when you are.",
+      secondary: nextStep || "A little movement starts the loop.",
+      taskLine,
+    };
+  }
+
+  return {
+    primary: "Keep going.",
+    secondary: nextStep || "",
+    taskLine,
+  };
 }
 
 export default function DashboardWindowZwap({
@@ -89,10 +294,23 @@ export default function DashboardWindowZwap({
   eventType = "",
   nextStep = "",
   idleMessages = DEFAULT_IDLE_MESSAGES,
+
+  completedTaskCount = 0,
+  totalTaskCount = 4,
+
   shopUnlocked = false,
+  gardenUnlocked = false,
+  badgeVisibilityUnlocked = false,
   learnUnlocked = false,
   streamUnlocked = false,
+  assistUnlocked = false,
   swapUnlocked = false,
+
+  profileNeedsSetup = false,
+  hasNewHighScore = false,
+  canSpendZpts = false,
+  shouldSaveZpts = false,
+
   onOpenZwap,
   className = "",
   rotateIdle = true,
@@ -102,6 +320,7 @@ export default function DashboardWindowZwap({
     const cleaned = Array.isArray(idleMessages)
       ? idleMessages.filter(Boolean).map((msg) => String(msg))
       : [];
+
     return cleaned.length ? cleaned : DEFAULT_IDLE_MESSAGES;
   }, [idleMessages]);
 
@@ -123,23 +342,73 @@ export default function DashboardWindowZwap({
     };
   }, [mode, rotateIdle, idleRotateMs, safeIdleMessages]);
 
-  const activeContent = useMemo(() => {
-    return buildActiveMessage({
-      message: systemMessage,
-      eventType,
+  const voiceContent = useMemo(() => {
+    return buildVoiceMessage({
+      mode,
+      systemMessage,
       nextStep,
+      eventType,
+      completedTaskCount,
+      totalTaskCount,
       shopUnlocked,
+      gardenUnlocked,
+      learnUnlocked,
+      streamUnlocked,
+      assistUnlocked,
+      swapUnlocked,
+      badgeVisibilityUnlocked,
+      profileNeedsSetup,
+      hasNewHighScore,
+      canSpendZpts,
+      shouldSaveZpts,
     });
-  }, [systemMessage, eventType, nextStep, shopUnlocked]);
+  }, [
+    mode,
+    systemMessage,
+    nextStep,
+    eventType,
+    completedTaskCount,
+    totalTaskCount,
+    shopUnlocked,
+    gardenUnlocked,
+    learnUnlocked,
+    streamUnlocked,
+    assistUnlocked,
+    swapUnlocked,
+    badgeVisibilityUnlocked,
+    profileNeedsSetup,
+    hasNewHighScore,
+    canSpendZpts,
+    shouldSaveZpts,
+  ]);
 
   const visibleHints = useMemo(() => {
     return pickHints({
       shopUnlocked,
+      gardenUnlocked,
+      badgeVisibilityUnlocked,
       learnUnlocked,
       streamUnlocked,
+      assistUnlocked,
       swapUnlocked,
+      hasNewHighScore,
+      profileNeedsSetup,
+      canSpendZpts,
+      shouldSaveZpts,
     });
-  }, [shopUnlocked, learnUnlocked, streamUnlocked, swapUnlocked]);
+  }, [
+    shopUnlocked,
+    gardenUnlocked,
+    badgeVisibilityUnlocked,
+    learnUnlocked,
+    streamUnlocked,
+    assistUnlocked,
+    swapUnlocked,
+    hasNewHighScore,
+    profileNeedsSetup,
+    canSpendZpts,
+    shouldSaveZpts,
+  ]);
 
   const handleClick = () => {
     if (typeof onOpenZwap === "function") {
@@ -197,23 +466,33 @@ export default function DashboardWindowZwap({
               </div>
             </div>
 
-            <div className="mt-3 min-h-[44px]">
+            <div className="mt-3 min-h-[64px]">
               {isActive ? (
                 <>
                   <div className="text-[1rem] font-semibold tracking-[-0.03em] text-white">
-                    {activeContent.primary}
+                    {voiceContent.primary}
                   </div>
 
-                  {activeContent.secondary ? (
+                  {voiceContent.secondary ? (
                     <div className="mt-1 text-sm font-medium tracking-[-0.02em] text-white/58">
-                      {activeContent.secondary}
+                      {voiceContent.secondary}
                     </div>
                   ) : null}
+
+                  <div className="mt-2 text-[11px] uppercase tracking-[0.16em] text-white/48">
+                    {voiceContent.taskLine}
+                  </div>
                 </>
               ) : (
-                <div className="text-[1rem] font-medium tracking-[-0.03em] text-white/82">
-                  {idleMessage}
-                </div>
+                <>
+                  <div className="text-[1rem] font-medium tracking-[-0.03em] text-white/82">
+                    {idleMessage}
+                  </div>
+
+                  <div className="mt-2 text-[11px] uppercase tracking-[0.16em] text-white/48">
+                    {buildTaskLabel(completedTaskCount, totalTaskCount)}
+                  </div>
+                </>
               )}
             </div>
           </div>
