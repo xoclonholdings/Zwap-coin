@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
 
-import MobileAppFrame from "@/components/ui/layout/MobileAppFrame";
 import AppHeader from "../components/ui/dashboard/AppHeader";
 import NewsTicker from "../components/ui/dashboard/NewsTicker";
 import Dashboard from "../components/ui/dashboard/Dashboard";
@@ -29,6 +28,7 @@ import TermsPage from "../components/docs/TermsPage";
 import AdminPanel from "../components/admin/AdminPanel";
 import LearnPage from "../components/learn/LearnPage";
 import PlusPage from "../components/PlusPage";
+import V1App from "@/v1/V1App";
 
 import { useApp } from "./AppProvider";
 
@@ -85,6 +85,10 @@ export default function AppContent() {
     }
   }, [isAuthenticated, pendingAction, navigate, setPendingAction]);
 
+  if (location.pathname === "/") {
+    return <Navigate to="/v1" replace />;
+  }
+
   if (!initialized) {
     return (
       <div className="flex h-[100dvh] items-center justify-center bg-[#0a0b1e]">
@@ -130,17 +134,6 @@ export default function AppContent() {
     return <Navigate to={isAuthenticated ? "/dashboard" : "/start"} replace />;
   }
 
-  if (location.pathname === "/") {
-    const forceNewUser = sessionStorage.getItem("zwap_force_new_user") === "1";
-
-    if (forceNewUser) {
-      sessionStorage.removeItem("zwap_force_new_user");
-      return <Navigate to="/start" replace />;
-    }
-
-    return <Navigate to={isAuthenticated ? "/dashboard" : "/start"} replace />;
-  }
-
   if (isProtectedRoute) {
     return <Navigate to="/" replace />;
   }
@@ -173,6 +166,10 @@ export default function AppContent() {
 
   if (location.pathname === "/admin") {
     return <AdminPanel />;
+  }
+
+  if (location.pathname === "/v1" || location.pathname.startsWith("/v1/")) {
+    return <V1App />;
   }
 
   const settingsPages = [
@@ -213,33 +210,31 @@ export default function AppContent() {
   }
 
   return (
-    <MobileAppFrame>
-      <div className="flex h-[100dvh] flex-col overflow-hidden">
-        <AppHeader isOnline={isOnline} />
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
+      <AppHeader isOnline={isOnline} />
 
-        <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain pt-[84px]">
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/move" element={<MoveTab />} />
-            <Route path="/play" element={<PlayTab />} />
-            <Route path="/swap" element={<SwapTab />} />
-            <Route path="/shop" element={<ShopTab />} />
-            <Route path="/plus" element={<PlusPage />} />
-            <Route
-              path="/subscription/success"
-              element={<SubscriptionSuccess />}
-            />
-            <Route path="/subscription/cancel" element={<PlusPage />} />
-            <Route path="/success" element={<ShopTab />} />
-            <Route path="/cancel" element={<ShopTab />} />
-          </Routes>
-        </main>
+      <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain pt-[84px]">
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/move" element={<MoveTab />} />
+          <Route path="/play" element={<PlayTab />} />
+          <Route path="/swap" element={<SwapTab />} />
+          <Route path="/shop" element={<ShopTab />} />
+          <Route path="/plus" element={<PlusPage />} />
+          <Route
+            path="/subscription/success"
+            element={<SubscriptionSuccess />}
+          />
+          <Route path="/subscription/cancel" element={<PlusPage />} />
+          <Route path="/success" element={<ShopTab />} />
+          <Route path="/cancel" element={<ShopTab />} />
+        </Routes>
+      </main>
 
-        <div className="shrink-0 border-t border-cyan-500/10 bg-[#0a0b1e]">
-          <NewsTicker />
-          <TabNavigation />
-        </div>
+      <div className="shrink-0 border-t border-cyan-500/10 bg-[#0a0b1e]">
+        <NewsTicker />
+        <TabNavigation />
       </div>
-    </MobileAppFrame>
+    </div>
   );
 }

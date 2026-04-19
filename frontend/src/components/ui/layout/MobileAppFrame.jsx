@@ -43,9 +43,11 @@ export default function MobileAppFrame({ children }) {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#050510] text-white">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden border-x border-white/5 bg-[#0a0b1e] shadow-[0_0_40px_rgba(0,0,0,0.35)]">
+    <div className="h-[100dvh] w-full overflow-hidden bg-[#050510] text-white">
+      <div className="mx-auto h-[100dvh] w-full max-w-[430px] overflow-hidden md:px-0">
+        <div className="relative isolate flex h-full w-full transform-gpu flex-col overflow-hidden border-x border-white/5 bg-[#0a0b1e] shadow-[0_0_40px_rgba(0,0,0,0.35)]">
         {children}
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import "@/App.css";
 import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
 import { AppProvider } from "@/app/AppProvider";
 import AppContent from "@/app/AppContent";
+import MobileAppFrame from "@/components/ui/layout/MobileAppFrame";
 
 // Re-exports
 export { useApp, AppContext } from "@/app/AppProvider";
@@ -72,7 +73,9 @@ function App() {
     <BrowserRouter>
       <PrivyProviderWrapper>
         <AppProvider>
-          <AppContent />
+          <MobileAppFrame>
+            <AppContent />
+          </MobileAppFrame>
         </AppProvider>
       </PrivyProviderWrapper>
     </BrowserRouter>
