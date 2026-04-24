@@ -10,6 +10,7 @@ import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
 import SignupGate from "@/v1/signup/SignupGate";
 import SignupOnboarding from "@/v1/signup/SignupOnboarding";
+import { hasSeenV1Onboarding, markV1OnboardingSeen } from "@/v1/V1OnboardingStorage";
 
 const V1_BASE = "/v1";
 
@@ -39,6 +40,7 @@ export default function V1App() {
   const [zptsBalance, setZptsBalance] = useState(0);
   const [triedMove, setTriedMove] = useState(false);
   const [triedPlay, setTriedPlay] = useState(false);
+  const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
 
   const displayName = useMemo(() => {
     return buildDisplayName({ authUser, user, walletAddress });
@@ -94,12 +96,18 @@ export default function V1App() {
     nextTriedMove = triedMove,
     nextTriedPlay = triedPlay,
   } = {}) => {
-    const nextRoute = getNextOnboardingRoute({
-      nextTriedMove,
-      nextTriedPlay,
-    });
+    if (nextTriedMove && nextTriedPlay) {
+      markV1OnboardingSeen();
+      navigate(signupGateRoute);
+      return;
+    }
 
-    navigate(nextRoute);
+    navigate(
+      getNextOnboardingRoute({
+        nextTriedMove,
+        nextTriedPlay,
+      })
+    );
   };
 
   return (
@@ -107,13 +115,19 @@ export default function V1App() {
       <Route
         path={V1_BASE}
         element={
-          <LandingSequence
-            onSelect={(target) => {
-              if (target === "move") navigate(moveRoute);
-              if (target === "play") navigate(playRoute);
-              if (target === "learn") navigate(aboutRoute);
-            }}
-          />
+          isAuthenticated ? (
+            <Navigate to={dashboardRoute} replace />
+          ) : onboardingSeen ? (
+            <Navigate to={signupRoute} replace />
+          ) : (
+            <LandingSequence
+              onSelect={(target) => {
+                if (target === "move") navigate(moveRoute);
+                if (target === "play") navigate(playRoute);
+                if (target === "learn") navigate(aboutRoute);
+              }}
+            />
+          )
         }
       />
 
@@ -144,7 +158,10 @@ export default function V1App() {
             }}
             onTryPlay={() => {
               const nextTriedMove = true;
+
+              setMoveActive(false);
               setTriedMove(nextTriedMove);
+
               advanceOnboarding({
                 nextTriedMove,
                 nextTriedPlay: triedPlay,
@@ -220,6 +237,8 @@ export default function V1App() {
               onBeginAuth={() => navigate(signupRoute)}
               onExitOnboarding={() => navigate(dashboardRoute)}
             />
+          ) : onboardingSeen ? (
+            <Navigate to={signupRoute} replace />
           ) : (
             <Navigate
               to={getNextOnboardingRoute({
@@ -235,13 +254,17 @@ export default function V1App() {
       <Route
         path={`${V1_BASE}/signup`}
         element={
-          <SignupOnboarding
-            navigate={navigate}
-            dashboardRoute={dashboardRoute}
-            onAuthSuccess={() => {
-              navigate(dashboardRoute);
-            }}
-          />
+          isAuthenticated ? (
+            <Navigate to={dashboardRoute} replace />
+          ) : (
+            <SignupOnboarding
+              navigate={navigate}
+              dashboardRoute={dashboardRoute}
+              onAuthSuccess={() => {
+                navigate(dashboardRoute);
+              }}
+            />
+          )
         }
       />
 
