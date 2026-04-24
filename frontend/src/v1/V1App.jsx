@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
@@ -40,22 +40,19 @@ export default function V1App() {
   const [triedMove, setTriedMove] = useState(false);
   const [triedPlay, setTriedPlay] = useState(false);
 
-  useEffect(() => {
-    if (!moveActive) return undefined;
-
-    const timer = window.setInterval(() => {
-      setTodaySteps((prev) => Math.min(prev + 24, 360));
-      setZptsBalance((prev) => Math.min(prev + 2, 36));
-    }, 850);
-
-    return () => window.clearInterval(timer);
-  }, [moveActive]);
-
   const displayName = useMemo(() => {
     return buildDisplayName({ authUser, user, walletAddress });
   }, [authUser, user, walletAddress]);
 
   const tier = user?.subscription_tier === "plus" ? "zitizen" : "zwapper";
+
+  const moveRoute = `${V1_BASE}/move`;
+  const playRoute = `${V1_BASE}/play`;
+  const aboutRoute = `${V1_BASE}/about`;
+  const signupGateRoute = `${V1_BASE}/signup-gate`;
+  const signupRoute = `${V1_BASE}/signup`;
+  const dashboardRoute = `${V1_BASE}/dashboard`;
+
   const shopUnlocked = zptsBalance >= 30 || (isAuthenticated && triedMove && triedPlay);
 
   const taskStates = useMemo(() => {
@@ -74,23 +71,35 @@ export default function V1App() {
     return taskStates.filter((task) => task.completed).length;
   }, [taskStates]);
 
-  const moveRoute = `${V1_BASE}/move`;
-  const playRoute = `${V1_BASE}/play`;
-  const aboutRoute = `${V1_BASE}/about`;
-  const signupGateRoute = `${V1_BASE}/signup-gate`;
-  const signupRoute = `${V1_BASE}/signup`;
-  const dashboardRoute = `${V1_BASE}/dashboard`;
-
-  const maybeOpenSignupGate = ({
+  const getNextOnboardingRoute = ({
     nextTriedMove = triedMove,
     nextTriedPlay = triedPlay,
   } = {}) => {
-    if (!isAuthenticated && nextTriedMove && nextTriedPlay) {
-      navigate(signupGateRoute);
-      return true;
+    if (nextTriedMove && nextTriedPlay) {
+      return signupGateRoute;
     }
 
-    return false;
+    if (nextTriedMove && !nextTriedPlay) {
+      return playRoute;
+    }
+
+    if (!nextTriedMove && nextTriedPlay) {
+      return moveRoute;
+    }
+
+    return V1_BASE;
+  };
+
+  const advanceOnboarding = ({
+    nextTriedMove = triedMove,
+    nextTriedPlay = triedPlay,
+  } = {}) => {
+    const nextRoute = getNextOnboardingRoute({
+      nextTriedMove,
+      nextTriedPlay,
+    });
+
+    navigate(nextRoute);
   };
 
   return (
@@ -126,22 +135,38 @@ export default function V1App() {
         element={
           <MoveOnboardingSequence
             totalSteps={todaySteps}
-            progressPercent={Math.min((todaySteps / 180) * 100, 100)}
+            progressPercent={Math.min((todaySteps / 20) * 100, 100)}
             onStartTracking={() => {
               setMoveActive(true);
-              setTriedMove(true);
             }}
             onStopTracking={() => {
               setMoveActive(false);
-              maybeOpenSignupGate({ nextTriedMove: true });
             }}
-            onTryPlay={() => navigate(playRoute)}
-            onLearnMore={() => navigate(aboutRoute)}
-            onMoveMilestone={({ displayedZpts = 0 }) => {
+            onTryPlay={() => {
               const nextTriedMove = true;
               setTriedMove(nextTriedMove);
+              advanceOnboarding({
+                nextTriedMove,
+                nextTriedPlay: triedPlay,
+              });
+            }}
+            onLearnMore={() => navigate(aboutRoute)}
+            onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
+              const nextTriedMove = true;
+
+              setMoveActive(false);
+              setTriedMove(nextTriedMove);
+              setTodaySteps((prev) => Math.max(prev, displayedSteps));
               setZptsBalance((prev) => Math.max(prev, displayedZpts));
-              maybeOpenSignupGate({ nextTriedMove, nextTriedPlay: triedPlay });
+
+              advanceOnboarding({
+                nextTriedMove,
+                nextTriedPlay: triedPlay,
+              });
+            }}
+            onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
+              setTodaySteps((prev) => Math.max(prev, displayedSteps));
+              setZptsBalance((prev) => Math.max(prev, displayedZpts));
             }}
           />
         }
@@ -155,17 +180,27 @@ export default function V1App() {
             onForceMove={() => navigate(moveRoute)}
             onStackzComplete={() => {
               const nextTriedPlay = true;
+
               setTriedPlay(nextTriedPlay);
               setGamesPlayedToday((prev) => prev + 1);
               setZptsBalance((prev) => prev + 10);
-              maybeOpenSignupGate({ nextTriedMove: triedMove, nextTriedPlay });
+
+              advanceOnboarding({
+                nextTriedMove: triedMove,
+                nextTriedPlay,
+              });
             }}
             onBreakerzComplete={() => {
               const nextTriedPlay = true;
+
               setTriedPlay(nextTriedPlay);
               setGamesPlayedToday((prev) => prev + 1);
               setZptsBalance((prev) => prev + 12);
-              maybeOpenSignupGate({ nextTriedMove: triedMove, nextTriedPlay });
+
+              advanceOnboarding({
+                nextTriedMove: triedMove,
+                nextTriedPlay,
+              });
             }}
             navigate={navigate}
             moveRoute={moveRoute}
@@ -178,12 +213,20 @@ export default function V1App() {
         element={
           isAuthenticated ? (
             <Navigate to={dashboardRoute} replace />
-          ) : (
+          ) : triedMove && triedPlay ? (
             <SignupGate
               hasTriedMove={triedMove}
               hasTriedPlay={triedPlay}
               onBeginAuth={() => navigate(signupRoute)}
               onExitOnboarding={() => navigate(dashboardRoute)}
+            />
+          ) : (
+            <Navigate
+              to={getNextOnboardingRoute({
+                nextTriedMove: triedMove,
+                nextTriedPlay: triedPlay,
+              })}
+              replace
             />
           )
         }
@@ -212,7 +255,7 @@ export default function V1App() {
             zptsBalance={zptsBalance}
             zwapBalance={0}
             todaySteps={todaySteps}
-            stepGoal={180}
+            stepGoal={20}
             isMoveActive={moveActive}
             gamesPlayedToday={gamesPlayedToday}
             playGoal={2}
