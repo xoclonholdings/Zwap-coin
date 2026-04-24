@@ -1,78 +1,80 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const HOLD = 1400;
-const REWARD_HOLD = 1600;
+const VOICE_HOLD_MS = 1600;
+const REWARD_HOLD_MS = 1700;
 
-export default function usePlayOnboardingMachine({
-  onComplete,
-  triedMove = false,
-}) {
-  const [phase, setPhase] = useState("voice-1");
+export default function usePlayOnboardingMachine({ triedMove = false, onComplete }) {
+  const [phase, setPhase] = useState("voice-start");
+  const [voice, setVoice] = useState("Play a round.");
   const [showVoice, setShowVoice] = useState(true);
 
   const completedRef = useRef(false);
+  const timerRef = useRef(null);
 
-  // ---- VOICE → GAME ----
-  useEffect(() => {
-    if (phase !== "voice-1") return;
-
-    const t = setTimeout(() => {
-      setShowVoice(false);
-      setPhase("game");
-    }, HOLD);
-
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  // ---- REWARD → FINAL VOICE ----
-  useEffect(() => {
-    if (phase !== "reward") return;
-
-    const t = setTimeout(() => {
-      setShowVoice(true);
-      setPhase("voice-2");
-    }, REWARD_HOLD);
-
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  // ---- FINAL VOICE → COMPLETE ----
-  useEffect(() => {
-    if (phase !== "voice-2") return;
-
-    const t = setTimeout(() => {
-      if (!completedRef.current) {
-        completedRef.current = true;
-
-        onComplete?.({
-          triedPlay: true,
-          shouldRouteToMove: !triedMove,
-        });
-      }
-    }, HOLD);
-
-    return () => clearTimeout(t);
-  }, [phase, onComplete, triedMove]);
-
-  // ---- GAME END HANDLER ----
-  const handleGameEnd = () => {
-    setPhase("reward");
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
-  // ---- VOICE TEXT ----
-  const voice =
-    phase === "voice-1"
-      ? "Play a round."
-      : phase === "voice-2"
-      ? triedMove
-        ? "Nice."
-        : "Now try Move."
-      : "";
+  const completePlay = useCallback(() => {
+    if (completedRef.current) return;
+
+    completedRef.current = true;
+
+    if (typeof onComplete === "function") {
+      onComplete({
+        triedPlay: true,
+        displayedZpts: 50,
+        shouldRouteToMove: !triedMove,
+      });
+    }
+  }, [onComplete, triedMove]);
+
+  useEffect(() => {
+    clearTimer();
+
+    if (phase === "voice-start") {
+      setVoice("Play a round.");
+      setShowVoice(true);
+
+      timerRef.current = setTimeout(() => {
+        setShowVoice(false);
+        setPhase("game");
+      }, VOICE_HOLD_MS);
+    }
+
+    if (phase === "reward") {
+      setShowVoice(false);
+
+      timerRef.current = setTimeout(() => {
+        setVoice(triedMove ? "Nice." : "Now try Move.");
+        setShowVoice(true);
+        setPhase("voice-complete");
+      }, REWARD_HOLD_MS);
+    }
+
+    if (phase === "voice-complete") {
+      timerRef.current = setTimeout(() => {
+        completePlay();
+      }, VOICE_HOLD_MS);
+    }
+
+    return () => {
+      clearTimer();
+    };
+  }, [phase, triedMove, completePlay]);
+
+  const handleGameEnd = useCallback(() => {
+    setShowVoice(false);
+    setPhase("reward");
+  }, []);
 
   return {
     phase,
-    showVoice,
     voice,
+    showVoice,
     handleGameEnd,
   };
 }
