@@ -24,7 +24,6 @@ export default function StackzOnboardingGame({
     level: Math.max(1, Number(level) || 1),
     score: 0,
     lines: 0,
-    paused: false,
     finished: false,
   });
 
@@ -59,17 +58,7 @@ export default function StackzOnboardingGame({
       onSoftDropStart: () => engine.softDropStart(),
       onSoftDropStop: () => engine.softDropStop(),
       onHardDrop: () => engine.hardDrop(),
-      onTogglePause: () => {
-        engine.togglePause();
-
-        const paused = engine.isPaused();
-
-        setGameState(paused ? "paused" : "live");
-        setUiState((prev) => ({
-          ...prev,
-          paused,
-        }));
-      },
+      onTogglePause: () => {},
     });
 
     let mounted = true;
@@ -88,7 +77,6 @@ export default function StackzOnboardingGame({
         round: result.round,
         level: result.level,
         lines: result.lines,
-        paused: false,
         finished: true,
       }));
 
@@ -119,7 +107,6 @@ export default function StackzOnboardingGame({
         level: frame.level,
         score: frame.score,
         lines: frame.lines,
-        paused: frame.paused,
         finished: frame.finished,
       }));
 
@@ -149,36 +136,7 @@ export default function StackzOnboardingGame({
     setGameState("live");
     setUiState((prev) => ({
       ...prev,
-      paused: false,
       finished: false,
-    }));
-  };
-
-  const handlePause = () => {
-    const engine = engineRef.current;
-    if (!engine) return;
-
-    engine.togglePause();
-
-    const paused = engine.isPaused();
-
-    setGameState(paused ? "paused" : "live");
-    setUiState((prev) => ({
-      ...prev,
-      paused,
-    }));
-  };
-
-  const handleResume = () => {
-    const engine = engineRef.current;
-    if (!engine) return;
-
-    engine.resume();
-
-    setGameState("live");
-    setUiState((prev) => ({
-      ...prev,
-      paused: false,
     }));
   };
 
@@ -249,34 +207,6 @@ export default function StackzOnboardingGame({
               </button>
             </div>
           </div>
-        ) : null}
-
-        {gameState === "paused" ? (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 px-4 backdrop-blur-md">
-            <div className="w-full max-w-[320px] rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.10),transparent_35%),linear-gradient(180deg,rgba(11,18,28,0.96),rgba(7,11,18,0.98))] p-5 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-              <p className="text-[11px] uppercase tracking-[0.24em] text-violet-300/70">
-                Paused
-              </p>
-
-              <button
-                type="button"
-                onClick={handleResume}
-                className="mt-5 flex w-full items-center justify-center rounded-[20px] bg-[linear-gradient(90deg,rgba(168,85,247,1),rgba(236,72,153,0.95),rgba(34,211,238,1))] px-5 py-3.5 text-base font-semibold text-white transition active:scale-[0.98]"
-              >
-                Resume
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {gameState === "live" ? (
-          <button
-            type="button"
-            onClick={handlePause}
-            className="absolute right-4 top-4 z-20 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75 backdrop-blur-md transition active:scale-[0.98]"
-          >
-            Pause
-          </button>
         ) : null}
       </div>
     </div>
