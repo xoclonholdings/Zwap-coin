@@ -24,7 +24,7 @@ export function VoiceView({ text }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="whitespace-nowrap text-4xl font-black tracking-[-0.05em] text-white"
+      className="whitespace-nowrap text-center text-4xl font-black tracking-[-0.05em] text-white"
     >
       {text}
     </motion.div>
@@ -33,14 +33,14 @@ export function VoiceView({ text }) {
 
 export function CounterView({ steps, zpts }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
-      transition={{ duration: 0.5 }}
-      className="absolute left-1/2 top-[13%] w-full max-w-[340px] -translate-x-1/2 px-4"
-    >
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md">
+    <div className="absolute left-1/2 top-[12%] w-[316px] -translate-x-1/2">
+      <motion.div
+        initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
+        transition={{ duration: 0.5 }}
+        className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md"
+      >
         <div>
           <div className="text-xl font-black tracking-[-0.03em] text-white">
             {steps}
@@ -60,8 +60,8 @@ export function CounterView({ steps, zpts }) {
             zPTS
           </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -78,7 +78,7 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
         type="button"
         onClick={onStart}
         className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
-        aria-label={isTracking ? "Movement tracking active" : "Start movement tracking"}
+        aria-label={isTracking ? "Stop walking session" : "Start walking session"}
       >
         <div
           className={`absolute inset-0 rounded-full p-[10px] transition-transform duration-200 group-active:scale-[0.98] ${
@@ -113,19 +113,17 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
 
 export function PlayButton({ onClick }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.55 }}
-      className="absolute bottom-[10%] left-1/2 w-[260px] -translate-x-1/2"
-    >
-      <button
+    <div className="absolute bottom-[10%] left-1/2 w-[260px] -translate-x-1/2">
+      <motion.button
         type="button"
         onClick={onClick}
+        initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.55 }}
         className="w-full rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
       >
         Play
-      </button>
-    </motion.div>
+      </motion.button>
+    </div>
   );
 }
