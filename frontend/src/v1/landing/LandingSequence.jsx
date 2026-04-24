@@ -74,13 +74,13 @@ export default function LandingSequence({ onSelect }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
-      <div className="absolute left-1/2 top-1/2 h-[560px] w-[310px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
+      <div className="absolute left-1/2 top-1/2 h-[560px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
 
-      <div className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 text-[11px] font-semibold tracking-[0.16em] text-white/35">
+      <div className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tracking-[0.16em] text-white/35">
         TAP ANYWHERE TO SKIP
       </div>
 
-      <div className="relative z-10 flex min-h-[560px] w-full max-w-[390px] flex-col items-center justify-center px-8 text-center">
+      <div className="relative z-10 flex min-h-[560px] w-full max-w-[460px] flex-col items-center justify-center px-10 text-center">
         <AnimatePresence mode="wait">
           {phase === 0 && (
             <motion.div
@@ -102,7 +102,7 @@ export default function LandingSequence({ onSelect }) {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
               transition={{ duration: 0.65 }}
-              className="text-4xl font-black tracking-[-0.05em]"
+              className="whitespace-nowrap text-4xl font-black tracking-[-0.05em]"
             >
               You made it…
             </motion.div>
@@ -115,7 +115,7 @@ export default function LandingSequence({ onSelect }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 1.02 }}
               transition={{ duration: 0.7 }}
-              className="flex flex-col items-center"
+              className="flex w-full flex-col items-center"
             >
               <motion.img
                 src={zwapLogo}
@@ -126,7 +126,7 @@ export default function LandingSequence({ onSelect }) {
                 className="mb-8 w-48 drop-shadow-[0_0_32px_rgba(34,211,238,0.48)]"
               />
 
-              <div className="text-3xl font-black tracking-[-0.05em]">
+              <div className="whitespace-nowrap text-3xl font-black tracking-[-0.05em]">
                 Welcome to ZWAP!
               </div>
 
@@ -134,7 +134,7 @@ export default function LandingSequence({ onSelect }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 0.75, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.45 }}
-                className="mt-4 text-sm font-bold tracking-[0.24em] text-cyan-300"
+                className="mt-4 whitespace-nowrap text-sm font-bold tracking-[0.24em] text-cyan-300"
               >
                 MOVE. PLAY. EARN TODAY.
               </motion.div>
@@ -148,7 +148,7 @@ export default function LandingSequence({ onSelect }) {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
               transition={{ duration: 0.65 }}
-              className="text-4xl font-black tracking-[-0.05em]"
+              className="whitespace-nowrap text-4xl font-black tracking-[-0.05em]"
             >
               Let’s get you started.
             </motion.div>
