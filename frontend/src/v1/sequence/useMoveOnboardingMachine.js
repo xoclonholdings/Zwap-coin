@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const VOICE_HOLD_MS = 1600;
+const REDIRECT_VOICE_HOLD_MS = 1900;
+
 const FIRST_NO_MOVE_DELAY_MS = 6500;
 const SECOND_NO_MOVE_DELAY_MS = 7000;
-const PLAY_OFFER_DELAY_MS = 3500;
+const PLAY_REDIRECT_DELAY_MS = 6500;
 const STOPPED_MOVING_DELAY_MS = 4500;
 
 export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }) {
@@ -19,7 +21,6 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
 
   const voiceTimerRef = useRef(null);
   const idleTimerRef = useRef(null);
-  const playOfferTimerRef = useRef(null);
   const stoppedTimerRef = useRef(null);
 
   const clearTimer = (timerRef) => {
@@ -32,7 +33,6 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
   const clearAllTimers = useCallback(() => {
     clearTimer(voiceTimerRef);
     clearTimer(idleTimerRef);
-    clearTimer(playOfferTimerRef);
     clearTimer(stoppedTimerRef);
   }, []);
 
@@ -90,13 +90,13 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
     if (deltaSteps <= 0) return;
 
     clearTimer(idleTimerRef);
-    clearTimer(playOfferTimerRef);
     clearTimer(stoppedTimerRef);
     setShowPlay(false);
 
     if (!movedOnceRef.current) {
       movedOnceRef.current = true;
       idleNudgeCountRef.current = 0;
+
       setMode("voice-success");
       showVoiceThen("That’s it.", "active");
       return;
@@ -121,12 +121,16 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
     if (movedOnceRef.current) return undefined;
 
     clearTimer(idleTimerRef);
-    clearTimer(playOfferTimerRef);
 
-    const delay =
-      idleNudgeCountRef.current === 0
-        ? FIRST_NO_MOVE_DELAY_MS
-        : SECOND_NO_MOVE_DELAY_MS;
+    let delay = FIRST_NO_MOVE_DELAY_MS;
+
+    if (idleNudgeCountRef.current === 1) {
+      delay = SECOND_NO_MOVE_DELAY_MS;
+    }
+
+    if (idleNudgeCountRef.current >= 2) {
+      delay = PLAY_REDIRECT_DELAY_MS;
+    }
 
     idleTimerRef.current = setTimeout(() => {
       if (movedOnceRef.current) return;
@@ -139,21 +143,21 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
         return;
       }
 
-      setMode("play-offer-wait");
-
-      playOfferTimerRef.current = setTimeout(() => {
-        if (movedOnceRef.current) return;
-
-        setMode("play-offer");
-        setShowVoice(false);
-        setShowPlay(true);
-      }, PLAY_OFFER_DELAY_MS);
+      setMode("voice-play-redirect");
+      showVoiceThen("Can’t move yet?\nTry Play.", "play-offer", REDIRECT_VOICE_HOLD_MS);
     }, delay);
 
     return () => {
       clearTimer(idleTimerRef);
     };
   }, [isTracking, mode, showVoice, showVoiceThen]);
+
+  useEffect(() => {
+    if (mode !== "play-offer") return;
+
+    setShowVoice(false);
+    setShowPlay(true);
+  }, [mode]);
 
   useEffect(() => {
     return () => {
