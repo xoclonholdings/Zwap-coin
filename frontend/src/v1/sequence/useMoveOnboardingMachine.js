@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const HOLD = 1400;
-const NO_MOVE = 2600;
-const STOPPED = 2500;
-const LONG_IDLE = 7000;
+const VOICE_HOLD_MS = 1600;
+const FIRST_NO_MOVE_DELAY_MS = 6000;
+const REPEAT_NO_MOVE_DELAY_MS = 6500;
+const STOPPED_MOVING_DELAY_MS = 4500;
+const PLAY_OPTION_DELAY_MS = 18000;
 
-export default function useMoveOnboardingMachine({
-  totalSteps,
-  onStartTracking,
-}) {
+export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }) {
   const [mode, setMode] = useState("voice-start");
   const [voice, setVoice] = useState("Tap to start.");
   const [showVoice, setShowVoice] = useState(true);
@@ -18,112 +16,177 @@ export default function useMoveOnboardingMachine({
   const startStepsRef = useRef(0);
   const lastMoveRef = useRef(null);
   const movedOnceRef = useRef(false);
+  const nudgeCountRef = useRef(0);
 
-  // ---- START FLOW ----
-  useEffect(() => {
-    if (mode !== "voice-start") return;
+  const voiceTimerRef = useRef(null);
+  const idleTimerRef = useRef(null);
+  const stoppedTimerRef = useRef(null);
+  const playTimerRef = useRef(null);
 
-    const t = setTimeout(() => {
-      setShowVoice(false);
-      setMode("ring-idle");
-    }, HOLD);
-
-    return () => clearTimeout(t);
-  }, [mode]);
-
-  const startTracking = () => {
-    setIsTracking(true);
-    setMode("voice-move");
-    setVoice("Take a few steps.");
-    setShowVoice(true);
-
-    startStepsRef.current = totalSteps;
-    lastMoveRef.current = Date.now();
-
-    onStartTracking?.();
-
-    setTimeout(() => {
-      setShowVoice(false);
-      setMode("waiting");
-    }, HOLD);
+  const clearTimer = (timerRef) => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
-  // ---- MOVEMENT DETECTION ----
-  useEffect(() => {
-    if (!isTracking) return;
+  const clearAllTimers = useCallback(() => {
+    clearTimer(voiceTimerRef);
+    clearTimer(idleTimerRef);
+    clearTimer(stoppedTimerRef);
+    clearTimer(playTimerRef);
+  }, []);
 
-    const delta = totalSteps - startStepsRef.current;
+  const showVoiceThen = useCallback(
+    (nextVoice, nextModeAfterVoice, holdMs = VOICE_HOLD_MS) => {
+      clearTimer(voiceTimerRef);
 
-    if (delta > 0) {
-      lastMoveRef.current = Date.now();
-
-      if (!movedOnceRef.current) {
-        movedOnceRef.current = true;
-
-        setMode("voice-success");
-        setVoice("That’s it.");
-        setShowVoice(true);
-
-        setTimeout(() => {
-          setShowVoice(false);
-          setMode("active");
-        }, HOLD);
-      }
-    }
-  }, [totalSteps, isTracking]);
-
-  // ---- NO MOVEMENT ----
-  useEffect(() => {
-    if (!isTracking || mode !== "waiting") return;
-
-    const t = setTimeout(() => {
-      setMode("voice-nudge");
-      setVoice("Just a few steps.");
+      setVoice(nextVoice);
       setShowVoice(true);
 
-      setTimeout(() => {
+      voiceTimerRef.current = setTimeout(() => {
         setShowVoice(false);
-        setMode("waiting");
-      }, HOLD);
-    }, NO_MOVE);
+        setMode(nextModeAfterVoice);
+      }, holdMs);
+    },
+    []
+  );
 
-    return () => clearTimeout(t);
-  }, [mode, isTracking]);
+  const armNoMovementTimer = useCallback(() => {
+    clearTimer(idleTimerRef);
 
-  // ---- STOPPED ----
+    const delay =
+      nudgeCountRef.current === 0
+        ? FIRST_NO_MOVE_DELAY_MS
+        : REPEAT_NO_MOVE_DELAY_MS;
+
+    idleTimerRef.current = setTimeout(() => {
+      if (movedOnceRef.current) return;
+
+      nudgeCountRef.current += 1;
+      setMode("voice-nudge");
+      showVoiceThen("Just a few steps.", "waiting");
+    }, delay);
+  }, [showVoiceThen]);
+
+  const armStoppedMovingTimer = useCallback(() => {
+    clearTimer(stoppedTimerRef);
+
+    stoppedTimerRef.current = setTimeout(() => {
+      if (!movedOnceRef.current) return;
+
+      setMode("voice-continue");
+      showVoiceThen("Keep going.", "active");
+
+      lastMoveRef.current = Date.now();
+    }, STOPPED_MOVING_DELAY_MS);
+  }, [showVoiceThen]);
+
+  const armPlayOptionTimer = useCallback(() => {
+    clearTimer(playTimerRef);
+
+    playTimerRef.current = setTimeout(() => {
+      if (movedOnceRef.current) return;
+
+      setShowPlay(true);
+    }, PLAY_OPTION_DELAY_MS);
+  }, []);
+
   useEffect(() => {
-    if (!isTracking || mode !== "active") return;
+    if (mode !== "voice-start") return undefined;
 
-    const i = setInterval(() => {
-      const idle = Date.now() - (lastMoveRef.current || Date.now());
+    showVoiceThen("Tap to start.", "ring-idle");
 
-      if (idle > STOPPED) {
-        setMode("voice-continue");
-        setVoice("Keep going.");
-        setShowVoice(true);
+    return () => {
+      clearTimer(voiceTimerRef);
+    };
+  }, [mode, showVoiceThen]);
 
-        setTimeout(() => {
-          setShowVoice(false);
-          setMode("active");
-        }, HOLD);
-      }
-    }, 800);
+  const startTracking = useCallback(() => {
+    if (isTracking) return;
 
-    return () => clearInterval(i);
-  }, [mode, isTracking]);
+    clearAllTimers();
 
-  // ---- LONG IDLE → PLAY ----
+    setIsTracking(true);
+    setShowPlay(false);
+    setMode("voice-move");
+
+    startStepsRef.current = Number(totalSteps || 0);
+    lastMoveRef.current = Date.now();
+    movedOnceRef.current = false;
+    nudgeCountRef.current = 0;
+
+    if (typeof onStartTracking === "function") {
+      onStartTracking();
+    }
+
+    showVoiceThen("Take a few steps.", "waiting");
+    armPlayOptionTimer();
+  }, [
+    isTracking,
+    totalSteps,
+    onStartTracking,
+    clearAllTimers,
+    showVoiceThen,
+    armPlayOptionTimer,
+  ]);
+
+  useEffect(() => {
+    if (!isTracking) return undefined;
+    if (mode !== "waiting") return undefined;
+    if (movedOnceRef.current) return undefined;
+
+    armNoMovementTimer();
+
+    return () => {
+      clearTimer(idleTimerRef);
+    };
+  }, [isTracking, mode, armNoMovementTimer]);
+
   useEffect(() => {
     if (!isTracking) return;
 
-    const t = setTimeout(() => {
-      if (!movedOnceRef.current) {
-        setShowPlay(true);
-      }
-    }, LONG_IDLE);
+    const currentSteps = Number(totalSteps || 0);
+    const startSteps = Number(startStepsRef.current || 0);
+    const deltaSteps = currentSteps - startSteps;
 
-    return () => clearTimeout(t);
-  }, [isTracking]);
+    if (deltaSteps <= 0) return;
+
+    lastMoveRef.current = Date.now();
+    clearTimer(idleTimerRef);
+    clearTimer(stoppedTimerRef);
+    clearTimer(playTimerRef);
+    setShowPlay(false);
+
+    if (!movedOnceRef.current) {
+      movedOnceRef.current = true;
+      setMode("voice-success");
+      showVoiceThen("That’s it.", "active");
+      return;
+    }
+
+    if (mode === "active") {
+      armStoppedMovingTimer();
+    }
+  }, [totalSteps, isTracking, mode, showVoiceThen, armStoppedMovingTimer]);
+
+  useEffect(() => {
+    if (!isTracking) return undefined;
+    if (mode !== "active") return undefined;
+    if (!movedOnceRef.current) return undefined;
+
+    armStoppedMovingTimer();
+
+    return () => {
+      clearTimer(stoppedTimerRef);
+    };
+  }, [isTracking, mode, armStoppedMovingTimer]);
+
+  useEffect(() => {
+    return () => {
+      clearAllTimers();
+    };
+  }, [clearAllTimers]);
 
   return {
     mode,
