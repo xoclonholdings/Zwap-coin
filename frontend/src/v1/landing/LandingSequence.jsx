@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import zwapLogo from "../../assets/Zwap_logo_full.png";
 
 export default function LandingSequence({ onSelect }) {
   const [phase, setPhase] = useState(null);
   const [skipped, setSkipped] = useState(false);
 
-  // CINEMATIC PHASE TIMELINE
   useEffect(() => {
     if (skipped) return;
 
@@ -18,43 +18,38 @@ export default function LandingSequence({ onSelect }) {
       });
 
     const runSequence = async () => {
-      // Hey…
       setPhase(0);
-      await wait(2100);
-      if (cancelled) return;
-
-      setPhase(null);
-      await wait(450);
-      if (cancelled) return;
-
-      // You made it...
-      setPhase(1);
-      await wait(1500);
+      await wait(2200);
       if (cancelled) return;
 
       setPhase(null);
       await wait(500);
       if (cancelled) return;
 
-      // Welcome to ZWAP
-      setPhase(2);
-      await wait(1900);
+      setPhase(1);
+      await wait(1700);
       if (cancelled) return;
 
       setPhase(null);
       await wait(550);
       if (cancelled) return;
 
-      // Let’s get you started.
-      setPhase(3);
-      await wait(1600);
+      setPhase(2);
+      await wait(2600);
       if (cancelled) return;
 
       setPhase(null);
-      await wait(500);
+      await wait(600);
       if (cancelled) return;
 
-      // Actions
+      setPhase(3);
+      await wait(1800);
+      if (cancelled) return;
+
+      setPhase(null);
+      await wait(550);
+      if (cancelled) return;
+
       setPhase(4);
     };
 
@@ -74,26 +69,27 @@ export default function LandingSequence({ onSelect }) {
   return (
     <div
       onClick={skip}
-      className="relative h-screen w-full flex items-center justify-center bg-black text-white overflow-hidden"
+      className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white"
     >
-      {/* BACKGROUND GLOW */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.08),_transparent_60%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
-      <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-xs font-medium tracking-[0.08em] text-white/40">
-        Tap anywhere to skip
+      <div className="absolute left-1/2 top-1/2 h-[560px] w-[310px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
+
+      <div className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 text-[11px] font-semibold tracking-[0.16em] text-white/35">
+        TAP ANYWHERE TO SKIP
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-6">
-        {/* TEXT SEQUENCE */}
+      <div className="relative z-10 flex min-h-[560px] w-full max-w-[390px] flex-col items-center justify-center px-8 text-center">
         <AnimatePresence mode="wait">
           {phase === 0 && (
             <motion.div
               key="hey"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.45 }}
-              className="text-xl"
+              initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
+              transition={{ duration: 0.65 }}
+              className="text-5xl font-black tracking-[-0.05em]"
             >
               Hey…
             </motion.div>
@@ -102,34 +98,45 @@ export default function LandingSequence({ onSelect }) {
           {phase === 1 && (
             <motion.div
               key="you-made-it"
-              initial={{ opacity: 0, filter: "blur(6px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.45 }}
-              className="text-xl"
+              initial={{ opacity: 0, y: 12, filter: "blur(10px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
+              transition={{ duration: 0.65 }}
+              className="text-4xl font-black tracking-[-0.05em]"
             >
-              You made it...
+              You made it…
             </motion.div>
           )}
 
           {phase === 2 && (
             <motion.div
               key="welcome"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center gap-3"
+              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 1.02 }}
+              transition={{ duration: 0.7 }}
+              className="flex flex-col items-center"
             >
-              <div className="text-2xl font-semibold">Welcome to ZWAP!</div>
+              <motion.img
+                src={zwapLogo}
+                alt="ZWAP!"
+                initial={{ opacity: 0, scale: 0.82, filter: "blur(14px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                transition={{ duration: 0.75, delay: 0.15 }}
+                className="mb-8 w-48 drop-shadow-[0_0_32px_rgba(34,211,238,0.48)]"
+              />
+
+              <div className="text-3xl font-black tracking-[-0.05em]">
+                Welcome to ZWAP!
+              </div>
 
               <motion.div
-                initial={{ opacity: 0, filter: "blur(8px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{ duration: 0.45, delay: 0.18 }}
-                className="text-cyan-400 text-lg"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 0.75, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.45 }}
+                className="mt-4 text-sm font-bold tracking-[0.24em] text-cyan-300"
               >
-                ZWAP!
+                MOVE. PLAY. EARN TODAY.
               </motion.div>
             </motion.div>
           )}
@@ -137,58 +144,63 @@ export default function LandingSequence({ onSelect }) {
           {phase === 3 && (
             <motion.div
               key="start"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.45 }}
-              className="text-xl"
+              initial={{ opacity: 0, y: 12, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
+              transition={{ duration: 0.65 }}
+              className="text-4xl font-black tracking-[-0.05em]"
             >
               Let’s get you started.
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ACTION AREA */}
         {phase === 4 && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.45 }}
-            className="flex flex-col items-center gap-4 mt-8"
+            initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.65 }}
+            className="flex w-full flex-col items-center gap-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex gap-4">
+            <img
+              src={zwapLogo}
+              alt="ZWAP!"
+              className="mb-5 w-40 opacity-95 drop-shadow-[0_0_28px_rgba(34,211,238,0.38)]"
+            />
+
+            <div className="flex w-full gap-4">
               <motion.button
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => onSelect("move")}
-                className="px-6 py-3 rounded-xl border border-cyan-400/40 bg-cyan-400/10 text-cyan-300"
+                className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
               >
                 Move
               </motion.button>
 
               <motion.button
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => onSelect("play")}
-                className="px-6 py-3 rounded-xl border border-purple-400/40 bg-purple-400/10 text-purple-300"
+                className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
               >
                 Play
               </motion.button>
             </div>
 
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 0.8, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.18 }}
-              className="text-sm"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 0.75, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.18 }}
+              className="text-sm font-bold text-white/55"
             >
-              Or...
+              Or…
             </motion.div>
 
             <motion.button
-              initial={{ opacity: 0, filter: "blur(6px)" }}
-              animate={{ opacity: 0.6, filter: "blur(0px)" }}
-              transition={{ duration: 0.35, delay: 0.32 }}
-              className="text-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.75 }}
+              transition={{ duration: 0.4, delay: 0.32 }}
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70"
               onClick={() => onSelect("learn")}
             >
               Learn More
