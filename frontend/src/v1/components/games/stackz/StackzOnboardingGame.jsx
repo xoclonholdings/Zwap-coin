@@ -5,6 +5,8 @@ import { createStackzEngine } from "./StackzEngine";
 import { renderStackzFrame } from "./stackzRenderer";
 import { attachStackzInput } from "./stackzInput";
 
+const ONBOARDING_REWARD_ZPTS = 50;
+
 export default function StackzOnboardingGame({
   onGameEnd,
   isPlaying,
@@ -98,6 +100,7 @@ export default function StackzOnboardingGame({
         lines: result.lines,
         gameId: "stackz",
         onboarding: true,
+        zpts: ONBOARDING_REWARD_ZPTS,
       });
     };
 
@@ -180,14 +183,14 @@ export default function StackzOnboardingGame({
   };
 
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#050816] text-white">
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816] text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-[-8%] h-[220px] w-[220px] rounded-full bg-violet-500/10 blur-3xl" />
         <div className="absolute right-[-10%] top-[10%] h-[220px] w-[220px] rounded-full bg-pink-500/10 blur-3xl" />
         <div className="absolute bottom-[-12%] left-[20%] h-[220px] w-[220px] rounded-full bg-cyan-500/10 blur-3xl" />
       </div>
 
-      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur-xl">
+      <div className="relative z-10 grid grid-cols-3 items-center border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur-xl">
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/70">
             Stackz
@@ -206,34 +209,22 @@ export default function StackzOnboardingGame({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
-              Lines
-            </p>
-            <p className="mt-1 text-sm font-semibold text-cyan-300">
-              {uiState.lines}
-            </p>
-          </div>
-
-          {gameState === "live" ? (
-            <button
-              type="button"
-              onClick={handlePause}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75 transition active:scale-[0.98]"
-            >
-              Pause
-            </button>
-          ) : null}
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+            Reward
+          </p>
+          <p className="mt-1 text-sm font-semibold text-cyan-300">
+            +{ONBOARDING_REWARD_ZPTS} zPts
+          </p>
         </div>
       </div>
 
-      <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center p-0">
+      <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
         <canvas
           ref={canvasRef}
           width={STACKZ_CANVAS.width}
           height={STACKZ_CANVAS.height}
-          className="h-full w-full max-h-full max-w-full bg-[#050912] object-contain touch-none"
+          className="h-full w-full bg-[#050912] object-contain touch-none"
         />
 
         {gameState === "splash" ? (
@@ -246,7 +237,7 @@ export default function StackzOnboardingGame({
               />
 
               <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
-                Round 1
+                Ready
               </p>
 
               <button
@@ -267,35 +258,6 @@ export default function StackzOnboardingGame({
                 Paused
               </p>
 
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2 text-center">
-                  <p className="text-[10px] uppercase tracking-wide text-white/40">
-                    Round
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-white">
-                    {uiState.round}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2 text-center">
-                  <p className="text-[10px] uppercase tracking-wide text-white/40">
-                    Score
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-violet-300">
-                    {Number(uiState.score || 0).toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2 text-center">
-                  <p className="text-[10px] uppercase tracking-wide text-white/40">
-                    Lines
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-cyan-300">
-                    {uiState.lines}
-                  </p>
-                </div>
-              </div>
-
               <button
                 type="button"
                 onClick={handleResume}
@@ -305,6 +267,16 @@ export default function StackzOnboardingGame({
               </button>
             </div>
           </div>
+        ) : null}
+
+        {gameState === "live" ? (
+          <button
+            type="button"
+            onClick={handlePause}
+            className="absolute right-4 top-4 z-20 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75 backdrop-blur-md transition active:scale-[0.98]"
+          >
+            Pause
+          </button>
         ) : null}
       </div>
     </div>
