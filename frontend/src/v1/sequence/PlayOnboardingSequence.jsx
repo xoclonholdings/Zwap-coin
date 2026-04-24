@@ -1,7 +1,7 @@
 import React from "react";
 import { AnimatePresence } from "framer-motion";
 
-import StackzGame from "@/v1/components/games/stackz/StackzGame";
+import StackzOnboardingGame from "@/v1/components/games/stackz/StackzOnboardingGame";
 
 import usePlayOnboardingMachine from "./usePlayOnboardingMachine";
 import {
@@ -17,30 +17,34 @@ export default function PlayOnboardingSequence({
   stackzLevel = 1,
   stackzRound = 1,
 }) {
-  const { phase, voice, showVoice, handleGameEnd } = usePlayOnboardingMachine({
-    triedMove,
-    onComplete,
-  });
+  const { phase, voice, showVoice, handleGameEnd } =
+    usePlayOnboardingMachine({
+      triedMove,
+      onComplete,
+    });
 
   return (
     <AnimatePresence mode="wait">
+      {/* VOICE */}
       {showVoice && (
         <PlayShell key={`voice-${phase}`}>
           <PlayVoiceView text={voice} />
         </PlayShell>
       )}
 
+      {/* GAME (FULLSCREEN) */}
       {!showVoice && phase === "game" && (
         <PlayGameStage key="play-game">
-          <StackzGame
+          <StackzOnboardingGame
             isPlaying={true}
             level={stackzLevel}
-            round={stackzRound}
+            round={1} // 🔒 FORCE ONE ROUND
             onGameEnd={handleGameEnd}
           />
         </PlayGameStage>
       )}
 
+      {/* REWARD */}
       {!showVoice && phase === "reward" && (
         <PlayShell key="play-reward">
           <PlayRewardView amount={50} />
