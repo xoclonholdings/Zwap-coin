@@ -24,7 +24,7 @@ export function VoiceView({ text }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="whitespace-nowrap text-center text-4xl font-black tracking-[-0.05em] text-white"
+      className="text-center text-4xl font-black tracking-[-0.05em] text-white"
     >
       {text}
     </motion.div>
@@ -78,24 +78,13 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
         type="button"
         onClick={onStart}
         className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
-        aria-label={isTracking ? "Stop walking session" : "Start walking session"}
       >
         <div
-          className={`absolute inset-0 rounded-full p-[10px] transition-transform duration-200 group-active:scale-[0.98] ${
-            isTracking
-              ? "shadow-[0_0_60px_rgba(34,211,238,0.24)]"
-              : "shadow-[0_0_40px_rgba(34,211,238,0.14)]"
-          }`}
+          className="absolute inset-0 rounded-full p-[10px] transition-transform duration-200 group-active:scale-[0.98] shadow-[0_0_40px_rgba(34,211,238,0.14)]"
           style={buildRingStyle(progressPercent)}
         >
           <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),rgba(8,23,22,1)_55%)]">
-            <div
-              className={`rounded-full px-7 py-3 text-base font-semibold uppercase tracking-[0.18em] transition ${
-                isTracking
-                  ? "bg-red-500/85 text-white shadow-[0_0_24px_rgba(239,68,68,0.35)]"
-                  : "bg-cyan-400/85 text-[#041214] shadow-[0_0_24px_rgba(34,211,238,0.35)]"
-              }`}
-            >
+            <div className="rounded-full bg-cyan-400/85 px-7 py-3 text-base font-semibold uppercase tracking-[0.18em] text-[#041214] shadow-[0_0_24px_rgba(34,211,238,0.35)]">
               {isTracking ? "Stop" : "Start"}
             </div>
           </div>
@@ -111,18 +100,38 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
   );
 }
 
-export function PlayButton({ onClick }) {
+export function PlayButton({ onClick, onLearnMore }) {
   return (
-    <div className="absolute bottom-[10%] left-1/2 w-[260px] -translate-x-1/2">
+    <div className="absolute left-1/2 top-1/2 flex w-full max-w-[320px] -translate-x-1/2 -translate-y-1/2 flex-col items-center">
       <motion.button
         type="button"
         onClick={onClick}
         initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={{ duration: 0.55 }}
-        className="w-full rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
+        className="w-full rounded-2xl border border-purple-300/50 bg-purple-400/20 px-6 py-5 text-xl font-black text-purple-100 shadow-[0_0_40px_rgba(180,134,255,0.28)]"
       >
         Play
+      </motion.button>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.7 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="mt-5 text-sm font-bold text-white/55"
+      >
+        Or
+      </motion.div>
+
+      <motion.button
+        type="button"
+        onClick={onLearnMore}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.75 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+        className="mt-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70"
+      >
+        Learn More
       </motion.button>
     </div>
   );
