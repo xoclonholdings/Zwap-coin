@@ -4,11 +4,10 @@ import zwapLogo from "../../assets/Zwap_logo_full.png";
 
 export default function LandingSequence({ onSelect }) {
   const [phase, setPhase] = useState(null);
-  const [skipped, setSkipped] = useState(false);
+  const [waitingForContinue, setWaitingForContinue] = useState(false);
+  const [continuing, setContinuing] = useState(false);
 
   useEffect(() => {
-    if (skipped) return;
-
     let cancelled = false;
     let timer;
 
@@ -35,11 +34,36 @@ export default function LandingSequence({ onSelect }) {
       if (cancelled) return;
 
       setPhase(2);
-      await wait(2600);
+      await wait(1500);
       if (cancelled) return;
 
+      setWaitingForContinue(true);
+    };
+
+    runSequence();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!continuing) return;
+
+    let cancelled = false;
+    let timer;
+
+    const wait = (ms) =>
+      new Promise((resolve) => {
+        timer = setTimeout(resolve, ms);
+      });
+
+    const continueSequence = async () => {
+      setWaitingForContinue(false);
+
       setPhase(null);
-      await wait(600);
+      await wait(450);
       if (cancelled) return;
 
       setPhase(3);
@@ -53,22 +77,23 @@ export default function LandingSequence({ onSelect }) {
       setPhase(4);
     };
 
-    runSequence();
+    continueSequence();
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [skipped]);
+  }, [continuing]);
 
-  const skip = () => {
-    setSkipped(true);
-    setPhase(4);
+  const handleTap = () => {
+    if (phase === 2 && waitingForContinue && !continuing) {
+      setContinuing(true);
+    }
   };
 
   return (
     <div
-      onClick={skip}
+      onClick={handleTap}
       className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
@@ -76,9 +101,20 @@ export default function LandingSequence({ onSelect }) {
 
       <div className="absolute left-1/2 top-1/2 h-[560px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
 
-      <div className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tracking-[0.16em] text-white/35">
-        TAP ANYWHERE TO SKIP
-      </div>
+      <AnimatePresence>
+        {waitingForContinue && !continuing && (
+          <motion.div
+            key="tap-to-continue"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 0.72, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.45 }}
+            className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tracking-[0.16em] text-white/40"
+          >
+            TAP TO CONTINUE
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 flex min-h-[560px] w-full max-w-[460px] flex-col items-center justify-center px-10 text-center">
         <AnimatePresence mode="wait">
