@@ -60,11 +60,10 @@ function VoiceBlock({ lines }) {
 function CenterOverlay({ displayedSteps, displayedZpts, emphasized = false }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: emphasized ? 1.02 : 1 }}
-      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+      initial={{ scale: 0.98 }}
+      animate={{ scale: emphasized ? 1.02 : 1 }}
       transition={{ duration: 0.26 }}
-      className="mx-auto w-full max-w-[320px] rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md"
+      className="mx-auto w-full rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md"
     >
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
         <div className="text-lg font-black tracking-[-0.03em] text-white">
@@ -471,20 +470,24 @@ export default function MoveOnboardingSequence({
 
         <AnimatePresence>
           {showOverlay && !voiceVisible && (
-            <motion.div
-              key="movement-overlay"
+            <div
+              key="movement-overlay-shell"
               className="absolute left-1/2 top-[14%] w-full max-w-[340px] -translate-x-1/2 px-3"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.22 }}
             >
-              <CenterOverlay
-                displayedSteps={displayedSteps}
-                displayedZpts={displayedZpts}
-                emphasized={overlayEmphasis}
-              />
-            </motion.div>
+              <motion.div
+                key="movement-overlay"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.22 }}
+              >
+                <CenterOverlay
+                  displayedSteps={displayedSteps}
+                  displayedZpts={displayedZpts}
+                  emphasized={overlayEmphasis}
+                />
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
