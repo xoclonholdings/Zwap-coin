@@ -1,131 +1,120 @@
-import { motion } from "framer-motion";
+import React, { useMemo } from "react";
 
-function buildRingStyle(progressPercent = 0) {
-  const safePercent = Math.min(Math.max(Number(progressPercent || 0), 0), 100);
-  const degrees = safePercent * 3.6;
+function formatDuration(totalSeconds) {
+  const safe = Math.max(0, Number(totalSeconds || 0));
+  const mins = Math.floor(safe / 60);
+  const secs = safe % 60;
 
-  return {
-    background: `conic-gradient(
-      from 180deg,
-      rgba(34,211,238,1) 0deg,
-      rgba(45,212,191,1) ${degrees * 0.65}deg,
-      rgba(168,85,247,1) ${degrees}deg,
-      rgba(255,255,255,0.08) ${degrees}deg,
-      rgba(255,255,255,0.08) 360deg
-    )`,
-  };
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-export function VoiceView({ text }) {
-  return (
-    <motion.div
-      key={text}
-      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
-      transition={{ duration: 0.65 }}
-      className="whitespace-nowrap text-4xl font-black tracking-[-0.05em] text-white"
-    >
-      {text}
-    </motion.div>
-  );
-}
+export default function MoveCoreMovementCard({
+  isTracking,
+  sessionSeconds,
+  progressPercent,
+  remainingSteps,
+  pace,
+  onToggleTracking,
+}) {
+  const ringStyle = useMemo(() => {
+    const degrees = progressPercent * 3.6;
 
-export function CounterView({ steps, zpts }) {
+    return {
+      background: `conic-gradient(
+        from 180deg,
+        rgba(34,211,238,1) 0deg,
+        rgba(45,212,191,1) ${degrees * 0.65}deg,
+        rgba(168,85,247,1) ${degrees}deg,
+        rgba(255,255,255,0.08) ${degrees}deg,
+        rgba(255,255,255,0.08) 360deg
+      )`,
+    };
+  }, [progressPercent]);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
-      transition={{ duration: 0.5 }}
-      className="absolute left-1/2 top-[13%] w-full max-w-[340px] -translate-x-1/2 px-4"
-    >
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md">
-        <div>
-          <div className="text-xl font-black tracking-[-0.03em] text-white">
-            {steps}
-          </div>
-          <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
-            STEPS
-          </div>
+    <div className="rounded-[26px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_34%),linear-gradient(180deg,rgba(10,25,35,0.96),rgba(5,15,20,0.98))] p-4 shadow-[0_14px_40px_rgba(0,0,0,0.45)]">
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl border border-cyan-400/15 bg-[linear-gradient(180deg,rgba(18,40,56,0.92),rgba(10,22,32,0.95))] px-3 py-2 shadow-[0_0_18px_rgba(34,211,238,0.08)]">
+          <p className="text-[10px] uppercase tracking-wide text-cyan-100/55">
+            Status
+          </p>
+          <p
+            className={`mt-1 text-sm font-medium ${
+              isTracking ? "text-emerald-300" : "text-white/75"
+            }`}
+          >
+            {isTracking ? "Active" : "Idle"}
+          </p>
         </div>
 
-        <div className="h-10 w-px bg-white/15" />
+        <div className="rounded-2xl border border-cyan-400/15 bg-[linear-gradient(180deg,rgba(18,40,56,0.92),rgba(10,22,32,0.95))] px-3 py-2 shadow-[0_0_18px_rgba(34,211,238,0.08)]">
+          <p className="text-[10px] uppercase tracking-wide text-cyan-100/55">
+            Timer
+          </p>
+          <p className="mt-1 text-sm font-medium text-white/90">
+            {formatDuration(sessionSeconds)}
+          </p>
+        </div>
 
-        <div>
-          <div className="text-xl font-black tracking-[-0.03em] text-cyan-300">
-            +{zpts}
-          </div>
-          <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
-            zPTS
-          </div>
+        <div className="rounded-2xl border border-cyan-400/15 bg-[linear-gradient(180deg,rgba(18,40,56,0.92),rgba(10,22,32,0.95))] px-3 py-2 shadow-[0_0_18px_rgba(34,211,238,0.08)]">
+          <p className="text-[10px] uppercase tracking-wide text-cyan-100/55">
+            Pace
+          </p>
+          <p className="mt-1 text-sm font-medium text-cyan-300">{pace}</p>
         </div>
       </div>
-    </motion.div>
-  );
-}
 
-export function RingView({ isTracking, onStart, progressPercent = 0 }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.96, filter: "blur(10px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-      transition={{ duration: 0.55 }}
-      className="relative"
-    >
-      <button
-        type="button"
-        onClick={onStart}
-        className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
-        aria-label={isTracking ? "Movement tracking active" : "Start movement tracking"}
-      >
-        <div
-          className={`absolute inset-0 rounded-full p-[10px] transition-transform duration-200 group-active:scale-[0.98] ${
-            isTracking
-              ? "shadow-[0_0_60px_rgba(34,211,238,0.24)]"
-              : "shadow-[0_0_40px_rgba(34,211,238,0.14)]"
-          }`}
-          style={buildRingStyle(progressPercent)}
-        >
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),rgba(8,23,22,1)_55%)]">
+      <div className="rounded-[26px] border border-cyan-400/12 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),transparent_42%),linear-gradient(180deg,rgba(8,20,28,0.96),rgba(6,14,20,0.98))] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="flex items-center justify-center">
+          <button
+            type="button"
+            onClick={onToggleTracking}
+            className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
+            aria-label={isTracking ? "Stop walking session" : "Start walking session"}
+          >
             <div
-              className={`rounded-full px-7 py-3 text-base font-semibold uppercase tracking-[0.18em] transition ${
+              className={`absolute inset-0 rounded-full p-[10px] transition-transform duration-200 group-active:scale-[0.98] ${
                 isTracking
-                  ? "bg-red-500/85 text-white shadow-[0_0_24px_rgba(239,68,68,0.35)]"
-                  : "bg-cyan-400/85 text-[#041214] shadow-[0_0_24px_rgba(34,211,238,0.35)]"
+                  ? "shadow-[0_0_60px_rgba(34,211,238,0.24)]"
+                  : "shadow-[0_0_40px_rgba(34,211,238,0.14)]"
               }`}
+              style={ringStyle}
             >
-              {isTracking ? "Stop" : "Start"}
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),rgba(8,23,22,1)_55%)]">
+                <div
+                  className={`rounded-full px-7 py-3 text-base font-semibold uppercase tracking-[0.18em] transition ${
+                    isTracking
+                      ? "bg-red-500/85 text-white shadow-[0_0_24px_rgba(239,68,68,0.35)]"
+                      : "bg-cyan-400/85 text-[#041214] shadow-[0_0_24px_rgba(34,211,238,0.35)]"
+                  }`}
+                >
+                  {isTracking ? "Stop" : "Start"}
+                </div>
+              </div>
             </div>
+          </button>
+        </div>
+
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between text-xs text-white/55">
+            <span>Goal progress</span>
+            <span>{progressPercent.toFixed(0)}%</span>
           </div>
-        </div>
-      </button>
 
-      {!isTracking && (
-        <div className="pointer-events-none absolute left-1/2 top-full mt-5 -translate-x-1/2 whitespace-nowrap text-sm font-bold text-white/80">
-          Tap Start
-        </div>
-      )}
-    </motion.div>
-  );
-}
+          <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-400 transition-all duration-300 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
 
-export function PlayButton({ onClick }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.55 }}
-      className="absolute bottom-[10%] left-1/2 w-[260px] -translate-x-1/2"
-    >
-      <button
-        type="button"
-        onClick={onClick}
-        className="w-full rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
-      >
-        Play
-      </button>
-    </motion.div>
+          <p className="mt-2 text-center text-sm text-white/65">
+            {remainingSteps > 0
+              ? `${remainingSteps.toLocaleString()} steps to goal`
+              : "Goal cleared. Keep stacking."}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
