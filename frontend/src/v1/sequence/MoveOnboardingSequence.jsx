@@ -11,8 +11,9 @@ const FALLBACK_TWO_DELAY_MS = 6500;
 const FALLBACK_THREE_DELAY_MS = 7500;
 
 const ONBOARDING_MOVE_DISPLAY_CAP = 15;
-const STEPS_PER_DISPLAY_ZPT = 12;
+const STEPS_PER_DISPLAY_ZPT = 25;
 const MEANINGFUL_DISPLAY_THRESHOLD = 6;
+const MAX_STEP_JUMP_PER_UPDATE = 12;
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -67,7 +68,7 @@ function CenterOverlay({ displayedSteps, displayedZpts, emphasized = false }) {
       }}
       exit={{ opacity: 0, y: 10, scale: 0.98 }}
       transition={{ duration: 0.26 }}
-      className="w-full rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md"
+      className="mx-auto w-full max-w-[320px] rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md"
     >
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
         <div className="text-lg font-black tracking-[-0.03em] text-white">
@@ -174,6 +175,8 @@ export default function MoveOnboardingSequence({
   const [isTracking, setIsTracking] = useState(false);
 
   const [displayedSteps, setDisplayedSteps] = useState(0);
+  const displayedStepsRef = useRef(0);
+
   const [displayedZpts, setDisplayedZpts] = useState(0);
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayEmphasis, setOverlayEmphasis] = useState(false);
@@ -325,17 +328,24 @@ export default function MoveOnboardingSequence({
     if (!isTracking) return;
 
     const sessionStart = sessionStartStepsRef.current ?? Number(totalSteps || 0);
-    const deltaSteps = Math.max(0, Number(totalSteps || 0) - Number(sessionStart || 0));
+    const rawDeltaSteps = Math.max(0, Number(totalSteps || 0) - Number(sessionStart || 0));
+
+    const previousDisplayedSteps = displayedStepsRef.current;
+    const safeDeltaSteps =
+      rawDeltaSteps > previousDisplayedSteps + MAX_STEP_JUMP_PER_UPDATE
+        ? previousDisplayedSteps + MAX_STEP_JUMP_PER_UPDATE
+        : rawDeltaSteps;
+
+    displayedStepsRef.current = safeDeltaSteps;
+    setDisplayedSteps(safeDeltaSteps);
 
     const nextDisplayedZpts = clamp(
-      Math.floor(deltaSteps / STEPS_PER_DISPLAY_ZPT),
+      Math.floor(safeDeltaSteps / STEPS_PER_DISPLAY_ZPT),
       0,
       ONBOARDING_MOVE_DISPLAY_CAP
     );
 
-    setDisplayedSteps(deltaSteps);
-
-    if (deltaSteps > 0) {
+    if (safeDeltaSteps > 0) {
       lastMovementAtRef.current = Date.now();
 
       if (phase === "fallback-1" || phase === "fallback-2" || phase === "fallback-3") {
@@ -361,7 +371,7 @@ export default function MoveOnboardingSequence({
 
       if (typeof onMoveMilestone === "function") {
         onMoveMilestone({
-          displayedSteps: deltaSteps,
+          displayedSteps: safeDeltaSteps,
           displayedZpts: nextDisplayedZpts,
         });
       }
@@ -406,6 +416,8 @@ export default function MoveOnboardingSequence({
       sessionStartStepsRef.current = Number(totalSteps || 0);
       lastMovementAtRef.current = Date.now();
       meaningfulMilestoneSentRef.current = false;
+
+      displayedStepsRef.current = 0;
       setDisplayedSteps(0);
       setDisplayedZpts(0);
 
@@ -458,16 +470,14 @@ export default function MoveOnboardingSequence({
 
       <div className="relative z-10 flex min-h-[560px] w-full max-w-[460px] flex-col items-center justify-center px-10 text-center">
         <AnimatePresence mode="wait">
-          {voiceVisible && (
-            <VoiceBlock key={`voice-${phase}`} lines={voiceLines} />
-          )}
+          {voiceVisible && <VoiceBlock key={`voice-${phase}`} lines={voiceLines} />}
         </AnimatePresence>
 
         <AnimatePresence>
           {showOverlay && !voiceVisible && (
             <motion.div
               key="movement-overlay"
-              className="absolute left-1/2 top-[14%] w-[330px] -translate-x-1/2"
+              className="absolute left-1/2 top-[14%] w-full max-w-[340px] -translate-x-1/2 px-3"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
