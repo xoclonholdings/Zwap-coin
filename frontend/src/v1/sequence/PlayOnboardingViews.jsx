@@ -54,13 +54,13 @@ export function PlayRewardView({ amount = 50 }) {
 export function PlayGameStage({ children }) {
   return (
     <motion.div
-      className="relative h-screen w-full overflow-hidden bg-black text-white"
+      className="fixed inset-0 z-30 h-screen w-screen overflow-hidden bg-black text-white"
       initial={{ opacity: 0, filter: "blur(8px)" }}
       animate={{ opacity: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, filter: "blur(8px)" }}
       transition={{ duration: 0.35 }}
     >
-      {children}
+      <div className="h-full w-full overflow-hidden">{children}</div>
     </motion.div>
   );
 }
