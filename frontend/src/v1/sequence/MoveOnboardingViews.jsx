@@ -1,5 +1,21 @@
 import { motion } from "framer-motion";
 
+function buildRingStyle(progressPercent = 0) {
+  const safePercent = Math.min(Math.max(Number(progressPercent || 0), 0), 100);
+  const degrees = safePercent * 3.6;
+
+  return {
+    background: `conic-gradient(
+      from 180deg,
+      rgba(34,211,238,1) 0deg,
+      rgba(45,212,191,1) ${degrees * 0.65}deg,
+      rgba(168,85,247,1) ${degrees}deg,
+      rgba(255,255,255,0.08) ${degrees}deg,
+      rgba(255,255,255,0.08) 360deg
+    )`,
+  };
+}
+
 export function VoiceView({ text }) {
   return (
     <motion.div
@@ -49,7 +65,7 @@ export function CounterView({ steps, zpts }) {
   );
 }
 
-export function RingView({ isTracking, onStart }) {
+export function RingView({ isTracking, onStart, progressPercent = 0 }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96, filter: "blur(10px)" }}
@@ -61,18 +77,26 @@ export function RingView({ isTracking, onStart }) {
       <button
         type="button"
         onClick={onStart}
-        className="group relative h-[270px] w-[270px] rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
+        className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
+        aria-label={isTracking ? "Movement tracking active" : "Start movement tracking"}
       >
-        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,_rgba(34,211,238,1)_0deg,_rgba(45,212,191,1)_120deg,_rgba(168,85,247,1)_260deg,_rgba(255,255,255,0.08)_260deg,_rgba(255,255,255,0.08)_360deg)] p-[10px] shadow-[0_0_58px_rgba(34,211,238,0.22)] transition-transform duration-200 group-active:scale-[0.98]">
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),rgba(8,23,22,1)_58%)]">
+        <div
+          className={`absolute inset-0 rounded-full p-[10px] transition-transform duration-200 group-active:scale-[0.98] ${
+            isTracking
+              ? "shadow-[0_0_60px_rgba(34,211,238,0.24)]"
+              : "shadow-[0_0_40px_rgba(34,211,238,0.14)]"
+          }`}
+          style={buildRingStyle(progressPercent)}
+        >
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),rgba(8,23,22,1)_55%)]">
             <div
-              className={`rounded-full px-8 py-3 text-sm font-black uppercase tracking-[0.22em] shadow-[0_0_28px_rgba(34,211,238,0.42)] ${
+              className={`rounded-full px-7 py-3 text-base font-semibold uppercase tracking-[0.18em] transition ${
                 isTracking
-                  ? "bg-red-500/90 text-white"
-                  : "bg-cyan-300 text-[#041214]"
+                  ? "bg-red-500/85 text-white shadow-[0_0_24px_rgba(239,68,68,0.35)]"
+                  : "bg-cyan-400/85 text-[#041214] shadow-[0_0_24px_rgba(34,211,238,0.35)]"
               }`}
             >
-              {isTracking ? "Active" : "Start"}
+              {isTracking ? "Stop" : "Start"}
             </div>
           </div>
         </div>
