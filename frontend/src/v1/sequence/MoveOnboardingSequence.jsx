@@ -61,11 +61,7 @@ function CenterOverlay({ displayedSteps, displayedZpts, emphasized = false }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        scale: emphasized ? 1.02 : 1,
-      }}
+      animate={{ opacity: 1, y: 0, scale: emphasized ? 1.02 : 1 }}
       exit={{ opacity: 0, y: 10, scale: 0.98 }}
       transition={{ duration: 0.26 }}
       className="mx-auto w-full max-w-[320px] rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md"
