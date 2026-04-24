@@ -21,6 +21,7 @@ export default function MoveOnboardingSequence({
   totalSteps = 0,
   onStartTracking,
   onTryPlay,
+  onLearnMore,
 }) {
   const { voice, showVoice, isTracking, startTracking, showPlay } =
     useMoveOnboardingMachine({
@@ -68,7 +69,9 @@ export default function MoveOnboardingSequence({
           </div>
         )}
 
-        {showPlay && !showVoice && <PlayButton onClick={onTryPlay} />}
+        {showPlay && !showVoice && (
+          <PlayButton onClick={onTryPlay} onLearnMore={onLearnMore} />
+        )}
       </div>
     </div>
   );
