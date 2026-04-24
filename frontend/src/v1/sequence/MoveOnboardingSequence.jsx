@@ -40,6 +40,8 @@ export default function MoveOnboardingSequence({
     return Math.min((displayedSteps / 20) * 100, 100);
   }, [displayedSteps]);
 
+  const showAction = !showVoice && !showPlay;
+
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
@@ -52,11 +54,11 @@ export default function MoveOnboardingSequence({
           {showVoice && <VoiceView text={voice} />}
         </AnimatePresence>
 
-        {!showVoice && isTracking && (
+        {showAction && isTracking && (
           <CounterView steps={displayedSteps} zpts={displayedZpts} />
         )}
 
-        {!showVoice && (
+        {showAction && (
           <div className="absolute bottom-[12%] left-1/2 -translate-x-1/2">
             <RingView
               isTracking={isTracking}
