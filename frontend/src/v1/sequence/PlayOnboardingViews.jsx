@@ -51,6 +51,47 @@ export function PlayRewardView({ amount = 50 }) {
   );
 }
 
+export function PlayMoveOfferView({ onTryMove, onLearnMore }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
+      transition={{ duration: 0.65 }}
+      className="flex w-full flex-col items-center gap-5"
+    >
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.96 }}
+        onClick={onTryMove}
+        className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
+      >
+        Move
+      </motion.button>
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 0.75, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.18 }}
+        className="text-sm font-bold text-white/55"
+      >
+        Or
+      </motion.div>
+
+      <motion.button
+        type="button"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.75 }}
+        transition={{ duration: 0.4, delay: 0.32 }}
+        className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70"
+        onClick={onLearnMore}
+      >
+        Learn More
+      </motion.button>
+    </motion.div>
+  );
+}
+
 export function PlayGameStage({ children }) {
   return (
     <motion.div
