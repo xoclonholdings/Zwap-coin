@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const TRANSITION_GAP_MS = 240;
+const TRANSITION_GAP_MS = 320;
 
 const STEPS = [
-  { id: "voice-1", type: "voice", duration: 2600 },
-  { id: "voice-2", type: "voice", duration: 2600 },
-  { id: "proof-1", type: "proof-actions", duration: 3000 },
-  { id: "voice-3", type: "voice", duration: 2500 },
-  { id: "proof-2", type: "proof-shop", duration: 3200 },
-  { id: "voice-4", type: "voice", duration: 2800 },
-  { id: "anchor", type: "anchor", duration: 2400 },
+  { id: "voice-1", type: "voice", duration: 3100 },
+  { id: "voice-2", type: "voice", duration: 3100 },
+  { id: "proof-1", type: "proof-actions", duration: 3500 },
+  { id: "voice-3", type: "voice", duration: 3000 },
+  { id: "proof-2", type: "proof-shop", duration: 3700 },
+  { id: "voice-4", type: "voice", duration: 3200 },
+  { id: "anchor", type: "anchor", duration: 2900 },
   { id: "final", type: "final", duration: 0 },
 ];
 
