@@ -17,28 +17,38 @@ export default function DashboardV1() {
   } = useV1DashboardState();
 
   return (
-    <div className="w-full flex justify-center px-3 pb-6">
-      <div className="w-full max-w-[430px] flex flex-col gap-3">
+    <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden px-3 py-3">
+      <div className="shrink-0">
         <AppHeaderV1 />
+      </div>
 
-        <DashboardWindowMove
-          steps={steps}
-          stepsPercent={stepsPercent}
-        />
+      <div className="mt-3 grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3">
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowMove
+            steps={steps}
+            stepsPercent={stepsPercent}
+          />
+        </div>
 
-        <DashboardWindowPlay
-          gamesPlayedToday={gamesPlayedToday}
-          playPercent={playPercent}
-        />
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowPlay
+            gamesPlayedToday={gamesPlayedToday}
+            playPercent={playPercent}
+          />
+        </div>
 
-        <DashboardWindowShop
-          zptsBalance={zptsBalance}
-        />
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowShop
+            zptsBalance={zptsBalance}
+          />
+        </div>
 
-        <DashboardWindowZwap
-          zptsBalance={zptsBalance}
-          zptsPercent={zptsPercent}
-        />
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowZwap
+            zptsBalance={zptsBalance}
+            zptsPercent={zptsPercent}
+          />
+        </div>
       </div>
     </div>
   );
