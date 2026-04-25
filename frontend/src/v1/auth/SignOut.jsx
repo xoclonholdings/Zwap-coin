@@ -1,5 +1,3 @@
-// frontend/src/v1/auth/SignOut.jsx
-
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -23,11 +21,11 @@ export default function SignOut({ nextRoute = "/v1/signin" }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       navigate(nextRoute, { replace: true });
-    }, 1200);
+    }, 1400);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [navigate, nextRoute]);
 
   return (
@@ -35,14 +33,15 @@ export default function SignOut({ nextRoute = "/v1/signin" }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        transition={{ duration: 0.65 }}
         className="flex flex-col items-center gap-4"
       >
-        <div className="text-[2.2rem] font-black tracking-[-0.06em] text-white">
+        <div className="text-[2.2rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
           You’re signed out.
         </div>
 
         <div className="text-sm font-bold text-white/55">
-          See you next time.
+          Routing you back to Sign In.
         </div>
       </motion.div>
     </Shell>
