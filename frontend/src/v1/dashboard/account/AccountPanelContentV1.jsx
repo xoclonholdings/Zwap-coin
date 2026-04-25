@@ -1,4 +1,5 @@
 import React, { useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "@/app/AppProvider";
 
 function shortenAddress(address = "") {
@@ -53,8 +54,12 @@ function formatZpts(value) {
 function formatZwap(value) {
   const num = Number(value || 0);
   if (!Number.isFinite(num)) return "0";
-  if (num >= 1000) return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  if (num >= 1) return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (num >= 1000) {
+    return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  }
+  if (num >= 1) {
+    return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
   return num.toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
@@ -129,6 +134,7 @@ export default function AccountPanelContentV1({
   walletAddress,
   showUpgrade = false,
 }) {
+  const navigate = useNavigate();
   const { isAuthenticated, logoutAll } = useApp();
 
   const adminTapCountRef = useRef(0);
@@ -174,11 +180,13 @@ export default function AccountPanelContentV1({
 
   const handleSignOut = async () => {
     try {
-      await logoutAll();
+      await logoutAll?.();
     } finally {
       if (typeof onClose === "function") {
         onClose();
       }
+
+      navigate("/v1/signout", { replace: true });
     }
   };
 
