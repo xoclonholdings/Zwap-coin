@@ -6,6 +6,7 @@ import { useApp } from "@/app/AppProvider";
 import OnboardingAboutPage from "@/v1/about/OnboardingAboutPage";
 import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
 import SignIn from "@/v1/auth/SignIn";
+import SignOut from "@/v1/auth/SignOut";
 import LandingSequence from "@/v1/landing/LandingSequence";
 import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
@@ -59,6 +60,7 @@ export default function V1App() {
   const signupGateRoute = `${V1_BASE}/signup-gate`;
   const signupRoute = `${V1_BASE}/signup`;
   const signInRoute = `${V1_BASE}/signin`;
+  const signOutRoute = `${V1_BASE}/signout`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
 
   const openDashboard = () => {
@@ -260,6 +262,11 @@ export default function V1App() {
             onSuccess={openDashboard}
           />
         }
+      />
+
+      <Route
+        path={`${V1_BASE}/signout`}
+        element={<SignOut nextRoute={signInRoute} />}
       />
 
       <Route
