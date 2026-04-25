@@ -1,21 +1,14 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Sprout, BookOpen, Play, Award } from "lucide-react";
 
 function clamp(value, min = 0, max = 1) {
   return Math.min(Math.max(value, min), max);
 }
 
-function formatCompactSteps(value) {
-  const safe = Number(value || 0);
-
-  if (safe >= 1000000) {
-    return `${(safe / 1000000).toFixed(1).replace(".0", "")}m`;
-  }
-
-  if (safe >= 1000) {
-    return `${(safe / 1000).toFixed(1).replace(".0", "")}k`;
-  }
-
-  return `${safe}`;
+function clampPercent(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.min(100, num));
 }
 
 function formatZpts(value) {
@@ -24,7 +17,7 @@ function formatZpts(value) {
 
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
-  if (!safe) return "Z";
+  if (!safe) return "U";
 
   const parts = safe.split(/\s+/).filter(Boolean);
   if (parts.length === 1) {
@@ -34,34 +27,81 @@ function buildInitials(name = "") {
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
 
-function CompactProgress({
-  label,
-  valueText,
-  progress = 0,
-  glowClassName = "",
-  fillClassName = "",
-}) {
+function HeaderProgress({ progress = 0 }) {
   const safeProgress = clamp(progress);
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="truncate text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">
-          {label}
-        </span>
-        <span className="shrink-0 text-[11px] font-medium tracking-[-0.02em] text-white/70">
-          {valueText}
-        </span>
-      </div>
-
-      <div
-        className={`h-1.5 overflow-hidden rounded-full bg-white/8 ${glowClassName}`}
-      >
+      <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 shadow-[0_0_14px_rgba(34,211,238,0.08)]">
         <div
-          className={`h-full rounded-full transition-all duration-300 ${fillClassName}`}
+          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-400 shadow-[0_0_14px_rgba(34,211,238,0.22)] transition-all duration-300"
           style={{ width: `${safeProgress * 100}%` }}
         />
       </div>
+    </div>
+  );
+}
+
+function HeaderIconButton({ label, icon, unlocked = false, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={[
+        "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition active:scale-[0.96]",
+        unlocked
+          ? "border-cyan-400/35 bg-cyan-500/12 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.16)]"
+          : "border-white/8 bg-white/[0.03] text-white/25",
+      ].join(" ")}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function HeaderPopup({ popup, onClose }) {
+  if (!popup) return null;
+
+  const safePercent = clampPercent(popup.progressPercent ?? 0);
+
+  return (
+    <div className="absolute left-0 top-full z-40 mt-2 w-[220px] rounded-2xl border border-white/10 bg-[#0c1220]/95 p-3 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/80">
+        {popup.title}
+      </div>
+
+      <div className="text-[12px] leading-5 text-white/80">
+        {popup.message}
+      </div>
+
+      <div className="mt-3">
+        <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-white/45">
+          <span>Progress</span>
+          <span>{safePercent}%</span>
+        </div>
+
+        <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-violet-400 transition-all duration-300"
+            style={{ width: `${safePercent}%` }}
+          />
+        </div>
+      </div>
+
+      {popup.helperText ? (
+        <div className="mt-2 text-[10px] leading-4 text-white/45">
+          {popup.helperText}
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-3 text-[10px] font-medium uppercase tracking-[0.14em] text-cyan-300/80"
+      >
+        Close
+      </button>
     </div>
   );
 }
@@ -72,13 +112,31 @@ export default function AppHeaderV1({
   dailyStepGoal = 10000,
   completedTasks = 0,
   totalTasks = 4,
-  displayName = "Zwapper",
+  displayName = "",
   initials,
   isOnline = true,
   onOpenAccount,
   isSticky = true,
   className = "",
+
+  gardenUnlocked = false,
+  learnUnlocked = false,
+  streamUnlocked = false,
+  badgesUnlocked = false,
+
+  gardenProgressPercent = 0,
+  learnProgressPercent = 0,
+  streamProgressPercent = 0,
+  badgesProgressPercent = 0,
+
+  onGardenClick,
+  onLearnClick,
+  onStreamClick,
+  onBadgeClick,
 }) {
+  const [popup, setPopup] = useState(null);
+  const popupRef = useRef(null);
+
   const safeStepGoal = Math.max(1, Number(dailyStepGoal || 1));
   const safeCompletedTasks = Math.max(0, Number(completedTasks || 0));
   const safeTotalTasks = Math.max(1, Number(totalTasks || 1));
@@ -91,9 +149,100 @@ export default function AppHeaderV1({
     return clamp(safeCompletedTasks / safeTotalTasks);
   }, [safeCompletedTasks, safeTotalTasks]);
 
+  const dailyProgress = useMemo(() => {
+    return clamp((moveProgress + taskProgress) / 2);
+  }, [moveProgress, taskProgress]);
+
   const accountInitials = useMemo(() => {
     return initials || buildInitials(displayName);
   }, [initials, displayName]);
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (!popupRef.current) return;
+      if (popupRef.current.contains(event.target)) return;
+      setPopup(null);
+    }
+
+    if (popup) {
+      document.addEventListener("mousedown", handlePointerDown);
+      document.addEventListener("touchstart", handlePointerDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [popup]);
+
+  function openLockedPopup({ title, message, progressPercent, helperText }) {
+    setPopup({
+      title,
+      message,
+      progressPercent,
+      helperText,
+    });
+  }
+
+  function handleGardenTap() {
+    if (!gardenUnlocked) {
+      openLockedPopup({
+        title: "Garden Locked",
+        message: "Complete more daily activity to unlock Garden.",
+        progressPercent: gardenProgressPercent,
+        helperText: "Keep building consistency.",
+      });
+      return;
+    }
+
+    setPopup(null);
+    if (onGardenClick) onGardenClick();
+  }
+
+  function handleLearnTap() {
+    if (!learnUnlocked) {
+      openLockedPopup({
+        title: "Learn Locked",
+        message: "Complete more progress to unlock Learn.",
+        progressPercent: learnProgressPercent,
+        helperText: "Modules will appear here.",
+      });
+      return;
+    }
+
+    setPopup(null);
+    if (onLearnClick) onLearnClick();
+  }
+
+  function handleStreamTap() {
+    if (!streamUnlocked) {
+      openLockedPopup({
+        title: "Stream Locked",
+        message: "Complete more progress to unlock Stream.",
+        progressPercent: streamProgressPercent,
+        helperText: "Audio and playlists will appear here.",
+      });
+      return;
+    }
+
+    setPopup(null);
+    if (onStreamClick) onStreamClick();
+  }
+
+  function handleBadgeTap() {
+    if (!badgesUnlocked) {
+      openLockedPopup({
+        title: "Badges Locked",
+        message: "Complete more progress to unlock Badges.",
+        progressPercent: badgesProgressPercent,
+        helperText: "Your progression will appear here.",
+      });
+      return;
+    }
+
+    setPopup(null);
+    if (onBadgeClick) onBadgeClick();
+  }
 
   return (
     <div
@@ -106,33 +255,44 @@ export default function AppHeaderV1({
         .join(" ")}
     >
       <div className="flex h-[72px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <div className="min-w-0 flex-[1.05]">
-          <CompactProgress
-            label="Move"
-            valueText={`${formatCompactSteps(todaySteps)} / ${formatCompactSteps(
-              dailyStepGoal
-            )}`}
-            progress={moveProgress}
-            glowClassName="shadow-[0_0_14px_rgba(34,211,238,0.08)]"
-            fillClassName="bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-400 shadow-[0_0_14px_rgba(34,211,238,0.22)]"
+        <HeaderProgress progress={dailyProgress} />
+
+        <div
+          ref={popupRef}
+          className="relative flex shrink-0 items-center gap-1"
+        >
+          <HeaderIconButton
+            label="Garden"
+            unlocked={gardenUnlocked}
+            onClick={handleGardenTap}
+            icon={<Sprout size={15} />}
           />
+
+          <HeaderIconButton
+            label="Learn"
+            unlocked={learnUnlocked}
+            onClick={handleLearnTap}
+            icon={<BookOpen size={15} />}
+          />
+
+          <HeaderIconButton
+            label="Stream"
+            unlocked={streamUnlocked}
+            onClick={handleStreamTap}
+            icon={<Play size={15} />}
+          />
+
+          <HeaderIconButton
+            label="Badges"
+            unlocked={badgesUnlocked}
+            onClick={handleBadgeTap}
+            icon={<Award size={15} />}
+          />
+
+          <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
         </div>
 
-        <div className="h-9 w-px shrink-0 bg-white/8" />
-
-        <div className="min-w-0 flex-[0.95]">
-          <CompactProgress
-            label="Today"
-            valueText={`${safeCompletedTasks}/${safeTotalTasks}`}
-            progress={taskProgress}
-            glowClassName="shadow-[0_0_14px_rgba(168,85,247,0.07)]"
-            fillClassName="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 shadow-[0_0_14px_rgba(168,85,247,0.16)]"
-          />
-        </div>
-
-        <div className="h-9 w-px shrink-0 bg-white/8" />
-
-        <div className="shrink-0 text-center">
+        <div className="shrink-0 whitespace-nowrap text-center">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">
             zPts
           </div>
