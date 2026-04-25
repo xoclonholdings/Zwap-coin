@@ -42,6 +42,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 dump.rdb
+frontend/*.log
+frontend/build-run.log
 
 # System files
 .DS_Store
@@ -73,6 +75,11 @@ agenthub/agents/youtube/db
 *.pack
 *.deb
 *.dylib
+
+# Local clone and backup folders
+repo-zwap-backup/
+repo-zwap-stable/
+repo-zwap-stable-backup-*/
 
 # Build caches
 .cache/
