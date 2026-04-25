@@ -36,28 +36,19 @@ function getVoiceLines(stepId) {
   return [];
 }
 
-function getTargetLabel(nextTarget) {
-  if (nextTarget === "move") return "Move";
-  if (nextTarget === "play") return "Play";
-  return "Continue";
-}
-
 export default function OnboardingAboutPage({
   hasTriedMove = false,
   hasTriedPlay = false,
   onMove,
   onPlay,
-  onSignupGate,
   navigate,
   moveRoute = "/move",
   playRoute = "/play",
-  signupGateRoute = "/signup-gate",
 }) {
   const {
     currentStep,
     isPaused,
     isFinal,
-    nextTarget,
     goNext,
     togglePause,
   } = useAboutOnboardingMachine({
@@ -65,40 +56,25 @@ export default function OnboardingAboutPage({
     hasTriedPlay,
   });
 
-  const handleContinue = () => {
-    if (nextTarget === "move") {
-      if (typeof onMove === "function") {
-        onMove();
-        return;
-      }
-
-      if (typeof navigate === "function") {
-        navigate(moveRoute);
-      }
-
-      return;
-    }
-
-    if (nextTarget === "play") {
-      if (typeof onPlay === "function") {
-        onPlay();
-        return;
-      }
-
-      if (typeof navigate === "function") {
-        navigate(playRoute);
-      }
-
-      return;
-    }
-
-    if (typeof onSignupGate === "function") {
-      onSignupGate();
+  const handleMove = () => {
+    if (typeof onMove === "function") {
+      onMove();
       return;
     }
 
     if (typeof navigate === "function") {
-      navigate(signupGateRoute);
+      navigate(moveRoute);
+    }
+  };
+
+  const handlePlay = () => {
+    if (typeof onPlay === "function") {
+      onPlay();
+      return;
+    }
+
+    if (typeof navigate === "function") {
+      navigate(playRoute);
     }
   };
 
@@ -133,8 +109,10 @@ export default function OnboardingAboutPage({
         {currentStep.type === "final" && (
           <FinalContinueView
             key={currentStep.id}
-            targetLabel={getTargetLabel(nextTarget)}
-            onContinue={handleContinue}
+            hasTriedMove={hasTriedMove}
+            hasTriedPlay={hasTriedPlay}
+            onMove={handleMove}
+            onPlay={handlePlay}
           />
         )}
       </AnimatePresence>
