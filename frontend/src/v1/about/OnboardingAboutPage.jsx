@@ -18,7 +18,7 @@ function getVoiceLines(stepId) {
   }
 
   if (stepId === "voice-2") {
-    return ["Move.", "Play.", "ZWAP! keeps score."];
+    return ["Whether MOVE", "or PLAY...", "ZWAP! keeps the score."];
   }
 
   if (stepId === "voice-3") {
