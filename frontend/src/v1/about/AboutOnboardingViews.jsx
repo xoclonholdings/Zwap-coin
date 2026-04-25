@@ -1,6 +1,22 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+function renderGradientLine(line) {
+  if (!line.includes("ZWAP!")) return line;
+
+  const parts = line.split("ZWAP!");
+
+  return (
+    <>
+      {parts[0]}
+      <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]">
+        ZWAP!
+      </span>
+      {parts[1]}
+    </>
+  );
+}
+
 export function AboutShell({ children }) {
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
@@ -18,21 +34,27 @@ export function AboutShell({ children }) {
 
 export function AboutControls({ isPaused, onPause, onNext }) {
   return (
-    <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3">
+    <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-4">
       <button
         type="button"
         onClick={onPause}
-        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-bold tracking-[0.12em] text-white/55 backdrop-blur-md"
+        aria-label={isPaused ? "Resume" : "Pause"}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 backdrop-blur-md transition active:scale-95"
       >
-        {isPaused ? "RESUME" : "PAUSE"}
+        {isPaused ? (
+          <span className="ml-[2px] text-[15px]">▶</span>
+        ) : (
+          <span className="text-[15px]">Ⅱ</span>
+        )}
       </button>
 
       <button
         type="button"
         onClick={onNext}
-        className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[11px] font-bold tracking-[0.12em] text-cyan-100 backdrop-blur-md"
+        aria-label="Next"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-100 backdrop-blur-md transition active:scale-95"
       >
-        NEXT
+        <span className="ml-[2px] text-[15px]">▶</span>
       </button>
     </div>
   );
@@ -46,14 +68,14 @@ export function VoiceView({ lines }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex flex-col items-center justify-center gap-3"
+      className="flex max-w-[330px] flex-col items-center justify-center gap-3"
     >
       {lines.map((line) => (
         <div
           key={line}
-          className="text-center text-3xl font-black leading-[1.05] tracking-[-0.05em] text-white"
+          className="text-center text-[2.15rem] font-black leading-[1.03] tracking-[-0.065em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
         >
-          {line}
+          {renderGradientLine(line)}
         </div>
       ))}
     </motion.div>
@@ -71,10 +93,10 @@ export function ActionProofView() {
     >
       <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md">
         <div>
-          <div className="text-xl font-black tracking-[-0.03em] text-white">
+          <div className="text-2xl font-black tracking-[-0.05em] text-white">
             20
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
+          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             STEPS
           </div>
         </div>
@@ -82,10 +104,10 @@ export function ActionProofView() {
         <div className="h-10 w-px bg-white/15" />
 
         <div>
-          <div className="text-xl font-black tracking-[-0.03em] text-cyan-300">
+          <div className="text-2xl font-black tracking-[-0.05em] text-cyan-300">
             +50
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
+          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             zPTS
           </div>
         </div>
@@ -93,10 +115,10 @@ export function ActionProofView() {
 
       <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-purple-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(180,134,255,0.14)] backdrop-blur-md">
         <div>
-          <div className="text-xl font-black tracking-[-0.03em] text-white">
+          <div className="text-2xl font-black tracking-[-0.05em] text-white">
             Play
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
+          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             ROUND
           </div>
         </div>
@@ -104,10 +126,10 @@ export function ActionProofView() {
         <div className="h-10 w-px bg-white/15" />
 
         <div>
-          <div className="text-xl font-black tracking-[-0.03em] text-purple-200">
+          <div className="text-2xl font-black tracking-[-0.05em] text-purple-200">
             +50
           </div>
-          <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
+          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             zPTS
           </div>
         </div>
@@ -149,7 +171,7 @@ export function ShopProofView() {
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.34, delay: 0.12 * index }}
-            className={`absolute left-1/2 flex h-[92px] w-[220px] -translate-x-1/2 items-center rounded-[24px] border px-6 text-lg font-black tracking-[-0.04em] ${colorMap[card.color]}`}
+            className={`absolute left-1/2 flex h-[92px] w-[220px] -translate-x-1/2 items-center rounded-[24px] border px-6 text-xl font-black tracking-[-0.055em] ${colorMap[card.color]}`}
             style={{
               top: `${index * 48}px`,
               rotate: `${[-6, 4, -2, 7][index]}deg`,
@@ -173,13 +195,13 @@ export function AnchorView() {
       transition={{ duration: 0.65 }}
       className="flex flex-col items-center gap-3"
     >
-      <div className="text-5xl font-black tracking-[-0.06em] text-white">
+      <div className="text-5xl font-black tracking-[-0.07em] text-white">
         Move.
       </div>
-      <div className="text-5xl font-black tracking-[-0.06em] text-cyan-300">
+      <div className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-5xl font-black tracking-[-0.07em] text-transparent">
         Play.
       </div>
-      <div className="text-2xl font-black tracking-[-0.05em] text-white/85">
+      <div className="text-2xl font-black tracking-[-0.055em] text-white/85">
         Earn Today.
       </div>
     </motion.div>
