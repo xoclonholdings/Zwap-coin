@@ -106,10 +106,10 @@ export default function LandingSequence({ onSelect }) {
           <motion.div
             key="tap-to-continue"
             initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 0.72, y: 0 }}
+            animate={{ opacity: 0.58, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
             transition={{ duration: 0.45 }}
-            className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tracking-[0.16em] text-white/40"
+            className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium tracking-[0.22em] text-white/45"
           >
             TAP TO CONTINUE
           </motion.div>
@@ -153,17 +153,58 @@ export default function LandingSequence({ onSelect }) {
               transition={{ duration: 0.7 }}
               className="flex w-full flex-col items-center"
             >
-              <motion.img
-                src={zwapLogo}
-                alt="ZWAP!"
+              <motion.div
                 initial={{ opacity: 0, scale: 0.82, filter: "blur(14px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                transition={{ duration: 0.75, delay: 0.15 }}
-                className="mb-8 w-48 drop-shadow-[0_0_32px_rgba(34,211,238,0.48)]"
-              />
+                animate={{
+                  opacity: 1,
+                  scale: [0.98, 1.035, 1],
+                  filter: [
+                    "blur(0px) drop-shadow(0 0 22px rgba(34,211,238,0.42))",
+                    "blur(0px) drop-shadow(0 0 42px rgba(180,134,255,0.42))",
+                    "blur(0px) drop-shadow(0 0 30px rgba(34,211,238,0.46))",
+                  ],
+                }}
+                transition={{
+                  opacity: { duration: 0.75, delay: 0.15 },
+                  scale: {
+                    duration: 2.6,
+                    delay: 0.15,
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                    ease: "easeInOut",
+                  },
+                  filter: {
+                    duration: 2.6,
+                    delay: 0.15,
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                    ease: "easeInOut",
+                  },
+                }}
+                className="relative mb-8 w-48"
+              >
+                <img src={zwapLogo} alt="ZWAP!" className="w-full" />
 
-              <div className="whitespace-nowrap text-3xl font-black tracking-[-0.05em]">
-                Welcome to ZWAP!
+                <motion.div
+                  aria-hidden="true"
+                  initial={{ x: "-80%", opacity: 0 }}
+                  animate={{ x: ["-80%", "115%"], opacity: [0, 0.8, 0] }}
+                  transition={{
+                    duration: 2.4,
+                    delay: 1,
+                    repeat: Infinity,
+                    repeatDelay: 1.8,
+                    ease: "easeInOut",
+                  }}
+                  className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/45 to-transparent mix-blend-screen"
+                />
+              </motion.div>
+
+              <div className="whitespace-nowrap text-3xl font-black tracking-[-0.05em] text-white">
+                Welcome to{" "}
+                <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]">
+                  ZWAP!
+                </span>
               </div>
 
               <motion.div
