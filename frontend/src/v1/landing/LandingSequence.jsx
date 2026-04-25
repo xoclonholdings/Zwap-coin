@@ -96,28 +96,29 @@ export default function LandingSequence({ onSelect }) {
       onClick={handleTap}
       className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white"
     >
-      {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
-      {/* Phone Frame */}
       <div className="absolute left-1/2 top-1/2 h-[560px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
 
-      {/* CONTENT WRAPPER (IMPORTANT FOR CENTERING) */}
       <div className="relative z-10 flex min-h-[560px] w-full max-w-[460px] flex-col items-center justify-center px-10 text-center">
-
-        {/* TAP TO CONTINUE — NOW PROPERLY CENTERED */}
         <AnimatePresence>
           {waitingForContinue && !continuing && (
             <motion.div
               key="tap-to-continue"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 0.6, y: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 0.78, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.45 }}
-              className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center text-[10px] font-medium tracking-[0.22em] text-white/45"
+              transition={{ duration: 0.5 }}
+              className="absolute bottom-7 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-4 whitespace-nowrap"
             >
-              TAP TO CONTINUE
+              <div className="h-px w-12 bg-gradient-to-r from-transparent via-cyan-300/55 to-cyan-300/70 shadow-[0_0_10px_rgba(34,211,238,0.35)]" />
+
+              <div className="text-[10px] font-medium uppercase tracking-[0.34em] text-white/66 drop-shadow-[0_0_10px_rgba(34,211,238,0.22)]">
+                Tap to Continue
+              </div>
+
+              <div className="h-px w-12 bg-gradient-to-l from-transparent via-cyan-300/55 to-cyan-300/70 shadow-[0_0_10px_rgba(34,211,238,0.35)]" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -158,12 +159,19 @@ export default function LandingSequence({ onSelect }) {
               transition={{ duration: 0.7 }}
               className="flex w-full flex-col items-center"
             >
-              {/* LOGO (PULSE ONLY) */}
               <motion.img
                 src={zwapLogo}
                 alt="ZWAP!"
                 initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: [1, 1.05, 1] }}
+                animate={{
+                  opacity: 1,
+                  scale: [1, 1.045, 1],
+                  filter: [
+                    "drop-shadow(0 0 24px rgba(34,211,238,0.42))",
+                    "drop-shadow(0 0 42px rgba(180,134,255,0.38))",
+                    "drop-shadow(0 0 28px rgba(34,211,238,0.45))",
+                  ],
+                }}
                 transition={{
                   opacity: { duration: 0.6 },
                   scale: {
@@ -171,13 +179,18 @@ export default function LandingSequence({ onSelect }) {
                     repeat: Infinity,
                     ease: "easeInOut",
                   },
+                  filter: {
+                    duration: 2.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
                 }}
-                className="mb-8 w-48 drop-shadow-[0_0_32px_rgba(34,211,238,0.45)]"
+                className="mb-8 w-48"
               />
 
-              <div className="text-3xl font-black tracking-[-0.05em] text-white">
+              <div className="whitespace-nowrap text-3xl font-black tracking-[-0.05em] text-white">
                 Welcome to{" "}
-                <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]">
                   ZWAP!
                 </span>
               </div>
@@ -186,7 +199,7 @@ export default function LandingSequence({ onSelect }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 0.75, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.45 }}
-                className="mt-4 text-sm font-bold tracking-[0.24em] text-cyan-300"
+                className="mt-4 whitespace-nowrap text-sm font-bold tracking-[0.24em] text-cyan-300"
               >
                 MOVE. PLAY. EARN TODAY.
               </motion.div>
@@ -200,7 +213,7 @@ export default function LandingSequence({ onSelect }) {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -8, filter: "blur(8px)" }}
               transition={{ duration: 0.65 }}
-              className="text-4xl font-black tracking-[-0.05em]"
+              className="whitespace-nowrap text-4xl font-black tracking-[-0.05em]"
             >
               Let’s get you started.
             </motion.div>
@@ -209,37 +222,54 @@ export default function LandingSequence({ onSelect }) {
 
         {phase === 4 && (
           <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.65 }}
             className="flex w-full flex-col items-center gap-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <img src={zwapLogo} alt="ZWAP!" className="mb-5 w-40 opacity-95" />
+            <img
+              src={zwapLogo}
+              alt="ZWAP!"
+              className="mb-5 w-40 opacity-95 drop-shadow-[0_0_28px_rgba(34,211,238,0.38)]"
+            />
 
             <div className="flex w-full gap-4">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.96 }}
                 onClick={() => onSelect("move")}
-                className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100"
+                className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
               >
                 Move
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileTap={{ scale: 0.96 }}
                 onClick={() => onSelect("play")}
-                className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100"
+                className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
               >
                 Play
-              </button>
+              </motion.button>
             </div>
 
-            <div className="text-sm font-bold text-white/55">Or…</div>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 0.75, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.18 }}
+              className="text-sm font-bold text-white/55"
+            >
+              Or…
+            </motion.div>
 
-            <button
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.75 }}
+              transition={{ duration: 0.4, delay: 0.32 }}
+              className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70"
               onClick={() => onSelect("learn")}
-              className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/70"
             >
               Learn More
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </div>
