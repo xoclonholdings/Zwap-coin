@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Sprout, BookOpen, Play, Award } from "lucide-react";
 
-import AccountDrawerV1 from "./AccountDrawerV1";
+import AccountDrawerV1 from "./account/AccountDrawerV1";
 
 function clamp(value, min = 0, max = 1) {
   return Math.min(Math.max(value, min), max);
