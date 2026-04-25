@@ -193,7 +193,7 @@ export default function StackzOnboardingGame({
               <img
                 src={stackzLogo}
                 alt="Stackz"
-                className="mx-auto mb-8 h-24 object-contain drop-shadow-[0_0_32px_rgba(168,85,247,0.18)]"
+                className="mx-auto mb-8 w-[230px] max-w-[82%] object-contain drop-shadow-[0_0_36px_rgba(168,85,247,0.28)]"
               />
 
               <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
