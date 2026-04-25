@@ -17,6 +17,33 @@ function renderGradientLine(line) {
   );
 }
 
+function AnimatedValue({ values, className = "" }) {
+  return (
+    <motion.div
+      animate={{ opacity: [1, 0, 1] }}
+      transition={{
+        duration: 0.55,
+        repeat: values.length - 1,
+        repeatDelay: 0.55,
+        ease: "easeInOut",
+      }}
+      className={className}
+    >
+      <motion.span
+        animate={{ y: [0, -4, 0] }}
+        transition={{
+          duration: 0.55,
+          repeat: values.length - 1,
+          repeatDelay: 0.55,
+          ease: "easeInOut",
+        }}
+      >
+        {values[values.length - 1]}
+      </motion.span>
+    </motion.div>
+  );
+}
+
 export function AboutShell({ children }) {
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
@@ -83,6 +110,19 @@ export function VoiceView({ lines }) {
 }
 
 export function ActionProofView() {
+  const stepFrames = [
+    { steps: "5", zpts: "+10" },
+    { steps: "10", zpts: "+20" },
+    { steps: "15", zpts: "+35" },
+    { steps: "20", zpts: "+50" },
+  ];
+
+  const roundFrames = [
+    { round: "Round 1", zpts: "+10" },
+    { round: "Round 2", zpts: "+25" },
+    { round: "Round 3", zpts: "+50" },
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
@@ -91,11 +131,29 @@ export function ActionProofView() {
       transition={{ duration: 0.55 }}
       className="flex w-full max-w-[320px] flex-col items-center gap-5"
     >
-      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(34,211,238,0.16)] backdrop-blur-md">
+      <motion.div
+        animate={{
+          boxShadow: [
+            "0 0 28px rgba(34,211,238,0.10)",
+            "0 0 46px rgba(34,211,238,0.20)",
+            "0 0 28px rgba(34,211,238,0.10)",
+          ],
+        }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center backdrop-blur-md"
+      >
         <div>
-          <div className="text-2xl font-black tracking-[-0.05em] text-white">
-            20
-          </div>
+          <motion.div
+            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
+            transition={{
+              duration: 3.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="text-2xl font-black tracking-[-0.05em] text-white"
+          >
+            {stepFrames[stepFrames.length - 1].steps}
+          </motion.div>
           <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             STEPS
           </div>
@@ -104,36 +162,62 @@ export function ActionProofView() {
         <div className="h-10 w-px bg-white/15" />
 
         <div>
-          <div className="text-2xl font-black tracking-[-0.05em] text-cyan-300">
-            +50
-          </div>
+          <motion.div
+            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
+            transition={{
+              duration: 3.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="text-2xl font-black tracking-[-0.05em] text-cyan-300"
+          >
+            {stepFrames[stepFrames.length - 1].zpts}
+          </motion.div>
           <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             zPTS
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-purple-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(180,134,255,0.14)] backdrop-blur-md">
-        <div>
-          <div className="text-2xl font-black tracking-[-0.05em] text-white">
-            Play
-          </div>
-          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
-            ROUND
-          </div>
+      <motion.div
+        initial={{ opacity: 0.78 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="w-full rounded-[28px] border border-purple-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(180,134,255,0.14)] backdrop-blur-md"
+      >
+        <div className="mb-4 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+          {roundFrames.map((frame, index) => (
+            <React.Fragment key={frame.round}>
+              <motion.div
+                initial={{ opacity: 0.35, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.42,
+                  delay: 0.35 + index * 0.45,
+                  repeat: Infinity,
+                  repeatDelay: 2.1,
+                }}
+                className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-3"
+              >
+                <div className="text-[12px] font-black tracking-[-0.03em] text-white">
+                  {frame.round}
+                </div>
+                <div className="mt-1 text-[13px] font-black tracking-[-0.03em] text-purple-200">
+                  {frame.zpts}
+                </div>
+              </motion.div>
+
+              {index < roundFrames.length - 1 && (
+                <div className="text-sm font-black text-cyan-200/70">&gt;</div>
+              )}
+            </React.Fragment>
+          ))}
         </div>
 
-        <div className="h-10 w-px bg-white/15" />
-
-        <div>
-          <div className="text-2xl font-black tracking-[-0.05em] text-purple-200">
-            +50
-          </div>
-          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
-            zPTS
-          </div>
+        <div className="text-[10px] font-black tracking-[0.22em] text-white/45">
+          ROUNDS BUILD zPTS
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
