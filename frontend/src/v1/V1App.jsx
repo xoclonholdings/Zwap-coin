@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
@@ -10,7 +10,10 @@ import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
 import SignupGate from "@/v1/signup/SignupGate";
 import SignupOnboarding from "@/v1/signup/SignupOnboarding";
-import { hasSeenV1Onboarding, markV1OnboardingSeen } from "@/v1/V1OnboardingStorage";
+import {
+  hasSeenV1Onboarding,
+  markV1OnboardingSeen,
+} from "@/v1/V1OnboardingStorage";
 
 const V1_BASE = "/v1";
 
@@ -42,6 +45,16 @@ export default function V1App() {
   const [triedPlay, setTriedPlay] = useState(false);
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
 
+  useEffect(() => {
+    if (!moveActive) return undefined;
+
+    const timer = window.setInterval(() => {
+      setTodaySteps((prev) => Math.min(prev + 5, 20));
+    }, 850);
+
+    return () => window.clearInterval(timer);
+  }, [moveActive]);
+
   const displayName = useMemo(() => {
     return buildDisplayName({ authUser, user, walletAddress });
   }, [authUser, user, walletAddress]);
@@ -55,7 +68,8 @@ export default function V1App() {
   const signupRoute = `${V1_BASE}/signup`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
 
-  const shopUnlocked = zptsBalance >= 30 || (isAuthenticated && triedMove && triedPlay);
+  const shopUnlocked =
+    zptsBalance >= 30 || (isAuthenticated && triedMove && triedPlay);
 
   const taskStates = useMemo(() => {
     return [
@@ -135,11 +149,18 @@ export default function V1App() {
         path={`${V1_BASE}/about`}
         element={
           <OnboardingAboutPage
+            hasTriedMove={triedMove}
+            hasTriedPlay={triedPlay}
             onMove={() => navigate(moveRoute)}
             onPlay={() => navigate(playRoute)}
+            onSignupGate={() => {
+              markV1OnboardingSeen();
+              navigate(signupGateRoute);
+            }}
             navigate={navigate}
             moveRoute={moveRoute}
             playRoute={playRoute}
+            signupGateRoute={signupGateRoute}
           />
         }
       />
@@ -193,34 +214,25 @@ export default function V1App() {
         path={`${V1_BASE}/play`}
         element={
           <PlayOnboardingSequence
-            onTryMove={() => navigate(moveRoute)}
-            onForceMove={() => navigate(moveRoute)}
-            onStackzComplete={() => {
+            triedMove={triedMove}
+            onLearnMore={() => navigate(aboutRoute)}
+            onComplete={({ displayedZpts = 50, shouldRouteToMove = false } = {}) => {
               const nextTriedPlay = true;
 
               setTriedPlay(nextTriedPlay);
               setGamesPlayedToday((prev) => prev + 1);
-              setZptsBalance((prev) => prev + 10);
+              setZptsBalance((prev) => Math.max(prev, displayedZpts));
+
+              if (shouldRouteToMove) {
+                navigate(moveRoute);
+                return;
+              }
 
               advanceOnboarding({
                 nextTriedMove: triedMove,
                 nextTriedPlay,
               });
             }}
-            onBreakerzComplete={() => {
-              const nextTriedPlay = true;
-
-              setTriedPlay(nextTriedPlay);
-              setGamesPlayedToday((prev) => prev + 1);
-              setZptsBalance((prev) => prev + 12);
-
-              advanceOnboarding({
-                nextTriedMove: triedMove,
-                nextTriedPlay,
-              });
-            }}
-            navigate={navigate}
-            moveRoute={moveRoute}
           />
         }
       />
@@ -281,7 +293,7 @@ export default function V1App() {
             stepGoal={20}
             isMoveActive={moveActive}
             gamesPlayedToday={gamesPlayedToday}
-            playGoal={2}
+            playGoal={1}
             completedTasks={completedTasks}
             totalTasks={taskStates.length}
             taskStates={taskStates}
