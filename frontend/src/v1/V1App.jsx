@@ -10,7 +10,10 @@ import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
 import SignupGate from "@/v1/signup/SignupGate";
 import SignupOnboarding from "@/v1/signup/SignupOnboarding";
-import { markV1OnboardingSeen } from "@/v1/V1OnboardingStorage";
+import {
+  hasSeenV1Onboarding,
+  markV1OnboardingSeen,
+} from "@/v1/V1OnboardingStorage";
 
 const V1_BASE = "/v1";
 
@@ -35,6 +38,8 @@ export default function V1App() {
     move: false,
     play: false,
   });
+
+  const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
 
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
@@ -123,8 +128,8 @@ export default function V1App() {
       <Route
         path={V1_BASE}
         element={
-          isAuthenticated ? (
-            <Navigate to={dashboardRoute} replace />
+          onboardingSeen ? (
+            <Navigate to={signupRoute} replace />
           ) : (
             <LandingSequence
               onSelect={(target) => {
@@ -218,9 +223,7 @@ export default function V1App() {
       <Route
         path={`${V1_BASE}/signup-gate`}
         element={
-          isAuthenticated ? (
-            <Navigate to={dashboardRoute} replace />
-          ) : progressRef.current.move && progressRef.current.play ? (
+          progressRef.current.move && progressRef.current.play ? (
             <SignupGate
               hasTriedMove={progressRef.current.move}
               hasTriedPlay={progressRef.current.play}
@@ -239,52 +242,52 @@ export default function V1App() {
       <Route
         path={`${V1_BASE}/signup`}
         element={
-          isAuthenticated ? (
-            <Navigate to={dashboardRoute} replace />
-          ) : (
-            <SignupOnboarding
-              navigate={navigate}
-              dashboardRoute={dashboardRoute}
-              onAuthSuccess={() => navigate(dashboardRoute)}
-            />
-          )
+          <SignupOnboarding
+            navigate={navigate}
+            dashboardRoute={dashboardRoute}
+            onAuthSuccess={() => navigate(dashboardRoute)}
+          />
         }
       />
 
       <Route
         path={`${V1_BASE}/dashboard`}
         element={
-          <SimplifiedDashboard
-            displayName={displayName}
-            subtext={walletAddress || authUser?.email || "Account active"}
-            tier={tier}
-            zptsBalance={zptsBalance}
-            zwapBalance={0}
-            todaySteps={todaySteps}
-            stepGoal={20}
-            isMoveActive={moveActive}
-            gamesPlayedToday={gamesPlayedToday}
-            playGoal={1}
-            completedTasks={completedTasks}
-            totalTasks={taskStates.length}
-            taskStates={taskStates}
-            shopUnlocked={shopUnlocked}
-            walletAddress={walletAddress}
-            showUpgrade={!isAuthenticated}
-            onOpenUpgrade={() => navigate(signupGateRoute)}
-            onAdminTrigger={() => navigate("/admin")}
-            onOpenProfile={() => navigate(dashboardRoute)}
-            onOpenContact={() => navigate("/contact")}
-            onOpenPrivacy={() => navigate("/privacy")}
-            onOpenHelp={() => navigate(aboutRoute)}
-            onOpenTerms={() => navigate("/terms")}
-            onOpenZwapPanel={() => navigate(signupGateRoute)}
-            homeRoute={dashboardRoute}
-            moveRoute={moveRoute}
-            playRoute={playRoute}
-            tasksRoute={signupGateRoute}
-            shopRoute={dashboardRoute}
-          />
+          isAuthenticated ? (
+            <SimplifiedDashboard
+              displayName={displayName}
+              subtext={walletAddress || authUser?.email || "Account active"}
+              tier={tier}
+              zptsBalance={zptsBalance}
+              zwapBalance={0}
+              todaySteps={todaySteps}
+              stepGoal={20}
+              isMoveActive={moveActive}
+              gamesPlayedToday={gamesPlayedToday}
+              playGoal={1}
+              completedTasks={completedTasks}
+              totalTasks={taskStates.length}
+              taskStates={taskStates}
+              shopUnlocked={shopUnlocked}
+              walletAddress={walletAddress}
+              showUpgrade={!isAuthenticated}
+              onOpenUpgrade={() => navigate(signupGateRoute)}
+              onAdminTrigger={() => navigate("/admin")}
+              onOpenProfile={() => navigate(dashboardRoute)}
+              onOpenContact={() => navigate("/contact")}
+              onOpenPrivacy={() => navigate("/privacy")}
+              onOpenHelp={() => navigate(aboutRoute)}
+              onOpenTerms={() => navigate("/terms")}
+              onOpenZwapPanel={() => navigate(signupGateRoute)}
+              homeRoute={dashboardRoute}
+              moveRoute={moveRoute}
+              playRoute={playRoute}
+              tasksRoute={signupGateRoute}
+              shopRoute={dashboardRoute}
+            />
+          ) : (
+            <Navigate to={signupRoute} replace />
+          )
         }
       />
 
