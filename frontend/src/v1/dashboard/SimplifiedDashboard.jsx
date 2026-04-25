@@ -115,7 +115,7 @@ export default function SimplifiedDashboard({
   return (
     <div
       className={[
-        "relative min-h-screen w-full overflow-hidden bg-[linear-gradient(180deg,#050912_0%,#060b14_48%,#04070d_100%)] text-white",
+        "relative h-[100dvh] w-full overflow-hidden bg-[linear-gradient(180deg,#050912_0%,#060b14_48%,#04070d_100%)] text-white",
         className,
       ]
         .filter(Boolean)
@@ -127,7 +127,7 @@ export default function SimplifiedDashboard({
         <div className="absolute bottom-[-10%] left-[18%] h-[220px] w-[220px] rounded-full bg-cyan-400/6 blur-3xl" />
       </div>
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-[430px] overflow-y-auto py-4">
+      <main className="relative z-10 mx-auto h-[100dvh] w-full max-w-[430px] overflow-hidden">
         <DashboardV1 />
       </main>
 
