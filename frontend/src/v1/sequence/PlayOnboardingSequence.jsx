@@ -9,15 +9,16 @@ import {
   PlayVoiceView,
   PlayRewardView,
   PlayGameStage,
+  PlayMoveOfferView,
 } from "./PlayOnboardingViews";
 
 export default function PlayOnboardingSequence({
   triedMove = false,
   onComplete,
+  onLearnMore,
   stackzLevel = 1,
-  stackzRound = 1,
 }) {
-  const { phase, voice, showVoice, handleGameEnd } =
+  const { phase, voice, showVoice, handleGameEnd, handleTryMove } =
     usePlayOnboardingMachine({
       triedMove,
       onComplete,
@@ -25,29 +26,35 @@ export default function PlayOnboardingSequence({
 
   return (
     <AnimatePresence mode="wait">
-      {/* VOICE */}
       {showVoice && (
         <PlayShell key={`voice-${phase}`}>
           <PlayVoiceView text={voice} />
         </PlayShell>
       )}
 
-      {/* GAME (FULLSCREEN) */}
       {!showVoice && phase === "game" && (
         <PlayGameStage key="play-game">
           <StackzOnboardingGame
             isPlaying={true}
             level={stackzLevel}
-            round={1} // 🔒 FORCE ONE ROUND
+            round={1}
             onGameEnd={handleGameEnd}
           />
         </PlayGameStage>
       )}
 
-      {/* REWARD */}
       {!showVoice && phase === "reward" && (
         <PlayShell key="play-reward">
           <PlayRewardView amount={50} />
+        </PlayShell>
+      )}
+
+      {!showVoice && phase === "move-offer" && (
+        <PlayShell key="move-offer">
+          <PlayMoveOfferView
+            onTryMove={handleTryMove}
+            onLearnMore={onLearnMore}
+          />
         </PlayShell>
       )}
     </AnimatePresence>
