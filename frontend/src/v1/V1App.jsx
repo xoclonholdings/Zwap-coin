@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
@@ -44,16 +44,6 @@ export default function V1App() {
   const [triedMove, setTriedMove] = useState(false);
   const [triedPlay, setTriedPlay] = useState(false);
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
-
-  useEffect(() => {
-    if (!moveActive) return undefined;
-
-    const timer = window.setInterval(() => {
-      setTodaySteps((prev) => Math.min(prev + 5, 20));
-    }, 850);
-
-    return () => window.clearInterval(timer);
-  }, [moveActive]);
 
   const displayName = useMemo(() => {
     return buildDisplayName({ authUser, user, walletAddress });
@@ -153,14 +143,9 @@ export default function V1App() {
             hasTriedPlay={triedPlay}
             onMove={() => navigate(moveRoute)}
             onPlay={() => navigate(playRoute)}
-            onSignupGate={() => {
-              markV1OnboardingSeen();
-              navigate(signupGateRoute);
-            }}
             navigate={navigate}
             moveRoute={moveRoute}
             playRoute={playRoute}
-            signupGateRoute={signupGateRoute}
           />
         }
       />
