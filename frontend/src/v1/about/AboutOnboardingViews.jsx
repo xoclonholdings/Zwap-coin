@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 
 import boostItem from "../../assets/boost_item.png";
 import ebookItem from "../../assets/ebook_item.png";
+import mysteryboxItem from "../../assets/mysterybox_item.PNG";
 import ringItem from "../../assets/ring_item.png";
 
 function renderGradientLine(line) {
@@ -242,31 +243,40 @@ export function ActionProofView() {
 export function ShopProofView() {
   const items = [
     {
+      id: "mysterybox",
+      src: mysteryboxItem,
+      alt: "Mystery box item",
+      className: "left-[22px] top-[26px] h-[104px] w-[104px]",
+      initial: { opacity: 0, y: -70, scale: 0.92, rotate: -7 },
+      animate: { opacity: 1, y: 0, scale: 1, rotate: -4 },
+      delay: 0.1,
+    },
+    {
       id: "boost",
       src: boostItem,
       alt: "Boost item",
-      className: "left-1/2 top-[18px] h-[112px] w-[112px] -translate-x-1/2",
-      initial: { opacity: 0, y: -70, scale: 0.92, rotate: -4 },
-      animate: { opacity: 1, y: 0, scale: 1, rotate: 0 },
-      delay: 0.1,
+      className: "right-[22px] top-[26px] h-[104px] w-[104px]",
+      initial: { opacity: 0, x: 80, scale: 0.92, rotate: 7 },
+      animate: { opacity: 1, x: 0, scale: 1, rotate: 4 },
+      delay: 0.32,
     },
     {
       id: "ebook",
       src: ebookItem,
       alt: "eBook item",
-      className: "left-[20px] top-[122px] h-[104px] w-[104px]",
+      className: "left-[22px] top-[138px] h-[104px] w-[104px]",
       initial: { opacity: 0, x: -80, scale: 0.92, rotate: -7 },
       animate: { opacity: 1, x: 0, scale: 1, rotate: -4 },
-      delay: 0.38,
+      delay: 0.54,
     },
     {
       id: "ring",
       src: ringItem,
       alt: "Ring item",
-      className: "right-[20px] top-[122px] h-[104px] w-[104px]",
+      className: "right-[22px] top-[138px] h-[104px] w-[104px]",
       initial: { opacity: 0, y: 80, scale: 0.92, rotate: 7 },
       animate: { opacity: 1, y: 0, scale: 1, rotate: 4 },
-      delay: 0.66,
+      delay: 0.76,
     },
   ];
 
@@ -276,9 +286,9 @@ export function ShopProofView() {
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
       transition={{ duration: 0.55 }}
-      className="relative h-[330px] w-[280px]"
+      className="relative h-[350px] w-[280px]"
     >
-      <div className="absolute left-1/2 top-[8px] h-[236px] w-[260px] -translate-x-1/2 rounded-[34px] border border-cyan-300/10 bg-white/[0.035] shadow-[0_0_50px_rgba(34,211,238,0.13)] backdrop-blur-md" />
+      <div className="absolute left-1/2 top-[8px] h-[250px] w-[260px] -translate-x-1/2 rounded-[34px] border border-cyan-300/10 bg-white/[0.035] shadow-[0_0_50px_rgba(34,211,238,0.13)] backdrop-blur-md" />
 
       {items.map((item) => (
         <motion.div
@@ -303,7 +313,7 @@ export function ShopProofView() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 1.15 }}
+        transition={{ duration: 0.5, delay: 1.45 }}
         className="absolute bottom-[18px] left-0 right-0 text-center text-[1.15rem] font-black tracking-[-0.04em] text-white/85 drop-shadow-[0_0_18px_rgba(255,255,255,0.12)]"
       >
         ...and much more.
