@@ -1,5 +1,5 @@
 import React, { useMemo, useRef } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { useApp } from "@/app/AppProvider";
 
 function shortenAddress(address = "") {
   const safe = String(address || "").trim();
@@ -30,21 +30,17 @@ function resolveDisplayName({
 }) {
   if (displayName) return displayName;
   if (username) return username;
-  if (authUser?.email?.address) {
-    return authUser.email.address.split("@")[0];
-  }
-  if (user?.email) {
-    return String(user.email).split("@")[0];
-  }
-  if (walletAddress) {
-    return `Zwapper ${walletAddress.slice(2, 6)}`;
-  }
+  if (authUser?.email?.address) return authUser.email.address.split("@")[0];
+  if (authUser?.email) return String(authUser.email).split("@")[0];
+  if (user?.email) return String(user.email).split("@")[0];
+  if (walletAddress) return `Zwapper ${walletAddress.slice(2, 6)}`;
   return "Zwapper";
 }
 
 function resolveSubtext({ subtext, authUser, user, walletAddress }) {
   if (subtext) return subtext;
   if (authUser?.email?.address) return authUser.email.address;
+  if (authUser?.email) return authUser.email;
   if (user?.email) return user.email;
   if (walletAddress) return shortenAddress(walletAddress);
   return "Account active";
@@ -83,7 +79,8 @@ function ActionButton({ children, onClick, subtle = false, danger = false }) {
     "border-white/10 bg-white/[0.04] text-white/88 hover:bg-white/[0.07] active:scale-[0.99]";
 
   if (subtle) {
-    tone = "border-white/8 bg-white/[0.03] text-white/72 hover:bg-white/[0.06] active:scale-[0.99]";
+    tone =
+      "border-white/8 bg-white/[0.03] text-white/72 hover:bg-white/[0.06] active:scale-[0.99]";
   }
 
   if (danger) {
@@ -132,7 +129,8 @@ export default function AccountPanelContentV1({
   walletAddress,
   showUpgrade = false,
 }) {
-  const { authenticated, logout } = usePrivy();
+  const { isAuthenticated, logoutAll } = useApp();
+
   const adminTapCountRef = useRef(0);
   const adminTapResetRef = useRef(null);
 
@@ -168,6 +166,7 @@ export default function AccountPanelContentV1({
     if (typeof onNavigate === "function") {
       onNavigate(target);
     }
+
     if (typeof onClose === "function") {
       onClose();
     }
@@ -175,7 +174,7 @@ export default function AccountPanelContentV1({
 
   const handleSignOut = async () => {
     try {
-      await logout();
+      await logoutAll();
     } finally {
       if (typeof onClose === "function") {
         onClose();
@@ -197,6 +196,7 @@ export default function AccountPanelContentV1({
 
     if (adminTapCountRef.current >= 5) {
       adminTapCountRef.current = 0;
+
       if (adminTapResetRef.current) {
         clearTimeout(adminTapResetRef.current);
         adminTapResetRef.current = null;
@@ -315,7 +315,7 @@ export default function AccountPanelContentV1({
           ) : null}
         </div>
 
-        {authenticated ? (
+        {isAuthenticated ? (
           <div className="pt-1">
             <ActionButton danger onClick={handleSignOut}>
               Sign Out
