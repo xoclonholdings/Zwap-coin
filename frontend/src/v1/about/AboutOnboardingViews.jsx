@@ -1,6 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+import boostItem from "../../assets/boost_item.png";
+import ebookItem from "../../assets/ebook_item.png";
+import ringItem from "../../assets/ring_item.png";
+
 function renderGradientLine(line) {
   const parts = String(line).split(/(ZWAP!|zPts|SHOP|SWAP)/g);
 
@@ -225,11 +229,34 @@ export function ActionProofView() {
 }
 
 export function ShopProofView() {
-  const cards = [
-    { label: "Boosts", color: "cyan" },
-    { label: "eBooks", color: "purple" },
-    { label: "Rings", color: "white" },
-    { label: "Rewards", color: "emerald" },
+  const items = [
+    {
+      id: "boost",
+      src: boostItem,
+      alt: "Boost item",
+      className: "left-1/2 top-[18px] h-[112px] w-[112px] -translate-x-1/2",
+      initial: { opacity: 0, y: -70, scale: 0.92, rotate: -4 },
+      animate: { opacity: 1, y: 0, scale: 1, rotate: 0 },
+      delay: 0.1,
+    },
+    {
+      id: "ebook",
+      src: ebookItem,
+      alt: "eBook item",
+      className: "left-[20px] top-[122px] h-[104px] w-[104px]",
+      initial: { opacity: 0, x: -80, scale: 0.92, rotate: -7 },
+      animate: { opacity: 1, x: 0, scale: 1, rotate: -4 },
+      delay: 0.38,
+    },
+    {
+      id: "ring",
+      src: ringItem,
+      alt: "Ring item",
+      className: "right-[20px] top-[122px] h-[104px] w-[104px]",
+      initial: { opacity: 0, y: 80, scale: 0.92, rotate: 7 },
+      animate: { opacity: 1, y: 0, scale: 1, rotate: 4 },
+      delay: 0.66,
+    },
   ];
 
   return (
@@ -238,36 +265,38 @@ export function ShopProofView() {
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
       transition={{ duration: 0.55 }}
-      className="relative h-[310px] w-[260px]"
+      className="relative h-[330px] w-[280px]"
     >
-      {cards.map((card, index) => {
-        const colorMap = {
-          cyan: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100 shadow-[0_0_30px_rgba(34,211,238,0.10)]",
-          purple:
-            "border-purple-300/20 bg-purple-400/10 text-purple-100 shadow-[0_0_30px_rgba(180,134,255,0.10)]",
-          white:
-            "border-white/10 bg-white/[0.06] text-white/85 shadow-[0_0_24px_rgba(255,255,255,0.05)]",
-          emerald:
-            "border-emerald-300/20 bg-emerald-400/10 text-emerald-100 shadow-[0_0_28px_rgba(16,185,129,0.10)]",
-        };
+      <div className="absolute left-1/2 top-[8px] h-[236px] w-[260px] -translate-x-1/2 rounded-[34px] border border-cyan-300/10 bg-white/[0.035] shadow-[0_0_50px_rgba(34,211,238,0.13)] backdrop-blur-md" />
 
-        return (
-          <motion.div
-            key={card.label}
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.34, delay: 0.12 * index }}
-            className={`absolute left-1/2 flex h-[92px] w-[220px] -translate-x-1/2 items-center rounded-[24px] border px-6 text-xl font-black tracking-[-0.055em] ${colorMap[card.color]}`}
-            style={{
-              top: `${index * 48}px`,
-              rotate: `${[-6, 4, -2, 7][index]}deg`,
-              zIndex: 10 - index,
-            }}
-          >
-            {card.label}
-          </motion.div>
-        );
-      })}
+      {items.map((item) => (
+        <motion.div
+          key={item.id}
+          initial={item.initial}
+          animate={item.animate}
+          transition={{
+            duration: 0.7,
+            delay: item.delay,
+            ease: "easeOut",
+          }}
+          className={`absolute z-10 rounded-[26px] border border-white/10 bg-black/20 p-2 shadow-[0_0_36px_rgba(34,211,238,0.12)] ${item.className}`}
+        >
+          <img
+            src={item.src}
+            alt={item.alt}
+            className="h-full w-full rounded-[20px] object-cover"
+          />
+        </motion.div>
+      ))}
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 1.15 }}
+        className="absolute bottom-[18px] left-0 right-0 text-center text-[1.15rem] font-black tracking-[-0.04em] text-white/85 drop-shadow-[0_0_18px_rgba(255,255,255,0.12)]"
+      >
+        ...and much more.
+      </motion.div>
     </motion.div>
   );
 }
