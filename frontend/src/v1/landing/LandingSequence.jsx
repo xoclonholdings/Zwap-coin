@@ -100,27 +100,6 @@ export default function LandingSequence({ onSelect }) {
       <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
       <div className="relative z-10 h-[560px] w-[360px] overflow-hidden rounded-[42px] border border-cyan-300/10 bg-white/[0.025] px-10 text-center shadow-[0_0_90px_rgba(34,211,238,0.22)]">
-        <AnimatePresence>
-          {waitingForContinue && !continuing && (
-            <motion.div
-              key="tap-to-continue"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 0.78, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.5 }}
-              className="absolute bottom-7 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-4 whitespace-nowrap"
-            >
-              <div className="h-px w-12 bg-gradient-to-r from-transparent via-cyan-300/55 to-cyan-300/70 shadow-[0_0_10px_rgba(34,211,238,0.35)]" />
-
-              <div className="text-[10px] font-medium uppercase tracking-[0.34em] text-white/66 drop-shadow-[0_0_10px_rgba(34,211,238,0.22)]">
-                Tap to Continue
-              </div>
-
-              <div className="h-px w-12 bg-gradient-to-l from-transparent via-cyan-300/55 to-cyan-300/70 shadow-[0_0_10px_rgba(34,211,238,0.35)]" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className="flex h-full w-full flex-col items-center justify-center">
           <AnimatePresence mode="wait">
             {phase === 0 && (
@@ -149,7 +128,22 @@ export default function LandingSequence({ onSelect }) {
               </motion.div>
             )}
 
-            {phase === 2 && (
+            {phase === 2 && waitingForContinue && !continuing && (
+              <div
+                key="tap-to-continue"
+                className="flex items-center justify-center gap-3 whitespace-nowrap"
+              >
+                <div className="h-px w-12 bg-gradient-to-r from-transparent via-cyan-300/55 to-cyan-300/70 shadow-[0_0_10px_rgba(34,211,238,0.35)]" />
+
+                <div className="text-center text-[10px] font-medium uppercase tracking-[0.34em] text-white/66 drop-shadow-[0_0_10px_rgba(34,211,238,0.22)]">
+                  Tap to Continue
+                </div>
+
+                <div className="h-px w-12 bg-gradient-to-l from-transparent via-cyan-300/55 to-cyan-300/70 shadow-[0_0_10px_rgba(34,211,238,0.35)]" />
+              </div>
+            )}
+
+            {phase === 2 && (!waitingForContinue || continuing) && (
               <motion.div
                 key="welcome"
                 initial={{ opacity: 0, y: 16, scale: 0.96 }}
@@ -251,14 +245,7 @@ export default function LandingSequence({ onSelect }) {
                 </motion.button>
               </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 0.75, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.18 }}
-                className="text-sm font-bold text-white/55"
-              >
-                Or…
-              </motion.div>
+              <div className="text-sm font-bold text-white/55">Or…</div>
 
               <motion.button
                 initial={{ opacity: 0 }}
