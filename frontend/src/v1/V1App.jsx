@@ -173,7 +173,11 @@ export default function V1App() {
                 nextTriedPlay: triedPlay,
               });
             }}
-            onLearnMore={() => navigate(aboutRoute)}
+            onLearnMore={() => {
+              setMoveActive(false);
+              setTriedMove(true);
+              navigate(aboutRoute);
+            }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               const nextTriedMove = true;
 
@@ -200,7 +204,10 @@ export default function V1App() {
         element={
           <PlayOnboardingSequence
             triedMove={triedMove}
-            onLearnMore={() => navigate(aboutRoute)}
+            onLearnMore={() => {
+              setTriedPlay(true);
+              navigate(aboutRoute);
+            }}
             onComplete={({ displayedZpts = 50, shouldRouteToMove = false } = {}) => {
               const nextTriedPlay = true;
 
