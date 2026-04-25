@@ -1,4 +1,10 @@
-import React, { useState, useEffect, createContext, useContext, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useMemo,
+} from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import api from "@/lib/api";
 
@@ -40,7 +46,8 @@ export function AppProvider({ children }) {
   const [authUser, setAuthUser] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
 
-  const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] = useState(false);
+  const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] =
+    useState(false);
   const [isEmailAuthModalOpen, setIsEmailAuthModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
@@ -49,11 +56,13 @@ export function AppProvider({ children }) {
   const [initialized, setInitialized] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [onchainBalance, setOnchainBalance] = useState(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const privyAuthUser = useMemo(() => {
+    if (isSigningOut) return null;
     if (!privyReady || !privyAuthenticated) return null;
     return buildPrivyAuthUser(privyUser);
-  }, [privyReady, privyAuthenticated, privyUser]);
+  }, [isSigningOut, privyReady, privyAuthenticated, privyUser]);
 
   const effectiveAuthUser = authUser || privyAuthUser;
 
@@ -66,6 +75,21 @@ export function AppProvider({ children }) {
     setIsWalletModalOpen(false);
   };
 
+  const clearLocalAuthStorage = () => {
+    localStorage.removeItem("zwap_wallet");
+    localStorage.removeItem("zwap_auth_user");
+    localStorage.removeItem("zwap_email");
+  };
+
+  const clearAuthState = () => {
+    setUser(null);
+    setAuthUser(null);
+    setWalletAddress(null);
+    setOnchainBalance(null);
+    setPendingAction(null);
+    closeAllAuthModals();
+  };
+
   const openWalletUpgradeFlow = () => {
     closeAllAuthModals();
     setIsWalletModalOpen(true);
@@ -73,6 +97,7 @@ export function AppProvider({ children }) {
 
   const fetchOnchainBalance = async (address) => {
     const normalizedAddress = normalizeWallet(address);
+
     if (!normalizedAddress) {
       setOnchainBalance(null);
       return;
@@ -80,6 +105,7 @@ export function AppProvider({ children }) {
 
     try {
       const data = await api.getOnchainBalance(normalizedAddress);
+
       if (
         data?.onchain_balance !== null &&
         data?.onchain_balance !== undefined
@@ -93,6 +119,7 @@ export function AppProvider({ children }) {
 
   const loadWalletUser = async (address) => {
     const normalizedAddress = normalizeWallet(address);
+
     if (!normalizedAddress) {
       setUser(null);
       setWalletAddress(null);
@@ -106,11 +133,13 @@ export function AppProvider({ children }) {
       setWalletAddress(normalizedAddress);
 
       const userData = await api.getUser(normalizedAddress);
+
       setUser(userData);
       localStorage.setItem("zwap_wallet", normalizedAddress);
     } catch (error) {
       try {
         const newUser = await api.connectWallet(normalizedAddress);
+
         setUser(newUser);
         localStorage.setItem("zwap_wallet", normalizedAddress);
       } catch (err) {
@@ -133,7 +162,9 @@ export function AppProvider({ children }) {
         const parsedAuthUser = JSON.parse(savedAuthUser);
 
         if (parsedAuthUser?.walletAddress) {
-          parsedAuthUser.walletAddress = normalizeWallet(parsedAuthUser.walletAddress);
+          parsedAuthUser.walletAddress = normalizeWallet(
+            parsedAuthUser.walletAddress
+          );
         }
 
         setAuthUser(parsedAuthUser);
@@ -154,12 +185,13 @@ export function AppProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (isSigningOut) return;
     if (!privyAuthUser) return;
 
     setAuthUser(privyAuthUser);
     localStorage.setItem("zwap_auth_user", JSON.stringify(privyAuthUser));
     closeAllAuthModals();
-  }, [privyAuthUser]);
+  }, [isSigningOut, privyAuthUser]);
 
   useEffect(() => {
     if (walletAddress) {
@@ -171,6 +203,7 @@ export function AppProvider({ children }) {
 
   const connectWallet = async (address) => {
     const normalizedAddress = normalizeWallet(address);
+
     if (!normalizedAddress) {
       throw new Error("Invalid wallet address");
     }
@@ -189,6 +222,7 @@ export function AppProvider({ children }) {
           ...effectiveAuthUser,
           walletAddress: normalizedAddress,
         };
+
         setAuthUser(updatedAuthUser);
         localStorage.setItem("zwap_auth_user", JSON.stringify(updatedAuthUser));
       }
@@ -211,6 +245,7 @@ export function AppProvider({ children }) {
         }
       : emailUser;
 
+    setIsSigningOut(false);
     setAuthUser(normalizedEmailUser);
     localStorage.setItem("zwap_auth_user", JSON.stringify(normalizedEmailUser));
     closeAllAuthModals();
@@ -227,12 +262,14 @@ export function AppProvider({ children }) {
         ...authUser,
         walletAddress: null,
       };
+
       setAuthUser(updatedAuthUser);
       localStorage.setItem("zwap_auth_user", JSON.stringify(updatedAuthUser));
     }
   };
 
   const logoutEmailUser = async () => {
+    setIsSigningOut(true);
     setAuthUser(null);
     localStorage.removeItem("zwap_auth_user");
     localStorage.removeItem("zwap_email");
@@ -243,13 +280,26 @@ export function AppProvider({ children }) {
   };
 
   const logoutAll = async () => {
-    disconnectWallet();
-    await logoutEmailUser();
-    closeAllAuthModals();
+    try {
+      setIsSigningOut(true);
+      setIsLoading(true);
+
+      clearAuthState();
+      clearLocalAuthStorage();
+
+      if (privyAuthenticated) {
+        await privyLogout?.();
+      }
+    } finally {
+      clearAuthState();
+      clearLocalAuthStorage();
+      setIsLoading(false);
+    }
   };
 
   const refreshUser = async () => {
     const normalizedAddress = normalizeWallet(walletAddress);
+
     if (normalizedAddress) {
       await loadWalletUser(normalizedAddress);
       await fetchOnchainBalance(normalizedAddress);
@@ -263,6 +313,7 @@ export function AppProvider({ children }) {
       setIsWalletModalOpen(true);
       return false;
     }
+
     return true;
   };
 
