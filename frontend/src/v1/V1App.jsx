@@ -10,26 +10,15 @@ import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
 import SignupGate from "@/v1/signup/SignupGate";
 import SignupOnboarding from "@/v1/signup/SignupOnboarding";
-import {
-  hasSeenV1Onboarding,
-  markV1OnboardingSeen,
-} from "@/v1/V1OnboardingStorage";
+import { markV1OnboardingSeen } from "@/v1/V1OnboardingStorage";
 
 const V1_BASE = "/v1";
 
 function buildDisplayName({ authUser, user, walletAddress }) {
-  if (authUser?.email?.address) {
-    return authUser.email.address.split("@")[0];
-  }
-
-  if (user?.email) {
-    return String(user.email).split("@")[0];
-  }
-
-  if (walletAddress) {
-    return `Zwapper ${walletAddress.slice(2, 6)}`;
-  }
-
+  if (authUser?.email?.address) return authUser.email.address.split("@")[0];
+  if (authUser?.email) return String(authUser.email).split("@")[0];
+  if (user?.email) return String(user.email).split("@")[0];
+  if (walletAddress) return `Zwapper ${walletAddress.slice(2, 6)}`;
   return "Zwapper";
 }
 
@@ -43,7 +32,6 @@ export default function V1App() {
   const [zptsBalance, setZptsBalance] = useState(0);
   const [triedMove, setTriedMove] = useState(false);
   const [triedPlay, setTriedPlay] = useState(false);
-  const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
 
   const displayName = useMemo(() => {
     return buildDisplayName({ authUser, user, walletAddress });
@@ -66,10 +54,7 @@ export default function V1App() {
       { label: "Login", completed: Boolean(isAuthenticated) },
       { label: "Move", completed: triedMove },
       { label: "Play", completed: triedPlay },
-      {
-        label: shopUnlocked ? "Shop" : "Learn",
-        completed: shopUnlocked,
-      },
+      { label: shopUnlocked ? "Shop" : "Learn", completed: shopUnlocked },
     ];
   }, [isAuthenticated, triedMove, triedPlay, shopUnlocked]);
 
@@ -81,18 +66,9 @@ export default function V1App() {
     nextTriedMove = triedMove,
     nextTriedPlay = triedPlay,
   } = {}) => {
-    if (nextTriedMove && nextTriedPlay) {
-      return signupGateRoute;
-    }
-
-    if (nextTriedMove && !nextTriedPlay) {
-      return playRoute;
-    }
-
-    if (!nextTriedMove && nextTriedPlay) {
-      return moveRoute;
-    }
-
+    if (nextTriedMove && nextTriedPlay) return signupGateRoute;
+    if (nextTriedMove && !nextTriedPlay) return playRoute;
+    if (!nextTriedMove && nextTriedPlay) return moveRoute;
     return V1_BASE;
   };
 
@@ -101,17 +77,11 @@ export default function V1App() {
     nextTriedPlay = triedPlay,
   } = {}) => {
     if (nextTriedMove && nextTriedPlay) {
-      markV1OnboardingSeen();
       navigate(signupGateRoute);
       return;
     }
 
-    navigate(
-      getNextOnboardingRoute({
-        nextTriedMove,
-        nextTriedPlay,
-      })
-    );
+    navigate(getNextOnboardingRoute({ nextTriedMove, nextTriedPlay }));
   };
 
   return (
@@ -121,8 +91,6 @@ export default function V1App() {
         element={
           isAuthenticated ? (
             <Navigate to={dashboardRoute} replace />
-          ) : onboardingSeen ? (
-            <Navigate to={signupRoute} replace />
           ) : (
             <LandingSequence
               onSelect={(target) => {
@@ -156,22 +124,13 @@ export default function V1App() {
           <MoveOnboardingSequence
             totalSteps={todaySteps}
             progressPercent={Math.min((todaySteps / 20) * 100, 100)}
-            onStartTracking={() => {
-              setMoveActive(true);
-            }}
-            onStopTracking={() => {
-              setMoveActive(false);
-            }}
+            onStartTracking={() => setMoveActive(true)}
+            onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
               const nextTriedMove = true;
-
               setMoveActive(false);
               setTriedMove(nextTriedMove);
-
-              advanceOnboarding({
-                nextTriedMove,
-                nextTriedPlay: triedPlay,
-              });
+              advanceOnboarding({ nextTriedMove, nextTriedPlay: triedPlay });
             }}
             onLearnMore={() => {
               setMoveActive(false);
@@ -180,16 +139,11 @@ export default function V1App() {
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               const nextTriedMove = true;
-
               setMoveActive(false);
               setTriedMove(nextTriedMove);
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
               setZptsBalance((prev) => Math.max(prev, displayedZpts));
-
-              advanceOnboarding({
-                nextTriedMove,
-                nextTriedPlay: triedPlay,
-              });
+              advanceOnboarding({ nextTriedMove, nextTriedPlay: triedPlay });
             }}
             onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
@@ -220,10 +174,7 @@ export default function V1App() {
                 return;
               }
 
-              advanceOnboarding({
-                nextTriedMove: triedMove,
-                nextTriedPlay,
-              });
+              advanceOnboarding({ nextTriedMove: triedMove, nextTriedPlay });
             }}
           />
         }
@@ -238,11 +189,12 @@ export default function V1App() {
             <SignupGate
               hasTriedMove={triedMove}
               hasTriedPlay={triedPlay}
-              onBeginAuth={() => navigate(signupRoute)}
-              onExitOnboarding={() => navigate(dashboardRoute)}
+              onBeginAuth={() => {
+                markV1OnboardingSeen();
+                navigate(signupRoute);
+              }}
+              onExitOnboarding={() => navigate(V1_BASE)}
             />
-          ) : onboardingSeen ? (
-            <Navigate to={signupRoute} replace />
           ) : (
             <Navigate
               to={getNextOnboardingRoute({
@@ -264,9 +216,7 @@ export default function V1App() {
             <SignupOnboarding
               navigate={navigate}
               dashboardRoute={dashboardRoute}
-              onAuthSuccess={() => {
-                navigate(dashboardRoute);
-              }}
+              onAuthSuccess={() => navigate(dashboardRoute)}
             />
           )
         }
@@ -277,7 +227,7 @@ export default function V1App() {
         element={
           <SimplifiedDashboard
             displayName={displayName}
-            subtext={walletAddress || "Account active"}
+            subtext={walletAddress || authUser?.email || "Account active"}
             tier={tier}
             zptsBalance={zptsBalance}
             zwapBalance={0}
