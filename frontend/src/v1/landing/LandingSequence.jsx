@@ -109,7 +109,7 @@ export default function LandingSequence({ onSelect }) {
             animate={{ opacity: 0.58, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
             transition={{ duration: 0.45 }}
-            className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium tracking-[0.22em] text-white/45"
+            className="absolute bottom-8 left-1/2 z-20 w-[360px] -translate-x-1/2 text-center text-[10px] font-medium tracking-[0.22em] text-white/45"
           >
             TAP TO CONTINUE
           </motion.div>
@@ -184,20 +184,6 @@ export default function LandingSequence({ onSelect }) {
                 className="relative mb-8 w-48"
               >
                 <img src={zwapLogo} alt="ZWAP!" className="w-full" />
-
-                <motion.div
-                  aria-hidden="true"
-                  initial={{ x: "-80%", opacity: 0 }}
-                  animate={{ x: ["-80%", "115%"], opacity: [0, 0.8, 0] }}
-                  transition={{
-                    duration: 2.4,
-                    delay: 1,
-                    repeat: Infinity,
-                    repeatDelay: 1.8,
-                    ease: "easeInOut",
-                  }}
-                  className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/45 to-transparent mix-blend-screen"
-                />
               </motion.div>
 
               <div className="whitespace-nowrap text-3xl font-black tracking-[-0.05em] text-white">
