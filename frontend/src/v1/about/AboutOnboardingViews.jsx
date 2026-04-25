@@ -6,7 +6,7 @@ import ebookItem from "../../assets/ebook_item.png";
 import ringItem from "../../assets/ring_item.png";
 
 function renderGradientLine(line) {
-  const parts = String(line).split(/(ZWAP!|zPts|SHOP|SWAP)/g);
+  const parts = String(line).split(/(ZWAP!|zPts|SHOP|SWAP|MOVE|PLAY|EARN TODAY)/g);
 
   return parts.map((part, index) => {
     if (part === "ZWAP!") {
@@ -49,6 +49,17 @@ function renderGradientLine(line) {
           className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
         >
           SWAP
+        </span>
+      );
+    }
+
+    if (part === "MOVE" || part === "PLAY" || part === "EARN TODAY") {
+      return (
+        <span
+          key={`${part}-${index}`}
+          className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]"
+        >
+          {part}
         </span>
       );
     }
@@ -308,22 +319,39 @@ export function AnchorView() {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex flex-col items-center gap-3"
+      className="flex max-w-[330px] flex-col items-center gap-3 text-center"
     >
-      <div className="text-5xl font-black tracking-[-0.07em] text-white">
-        Move.
+      <div className="text-3xl font-black leading-[1.02] tracking-[-0.06em] text-white">
+        So{" "}
+        <span className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]">
+          MOVE
+        </span>{" "}
+        or{" "}
+        <span className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]">
+          PLAY
+        </span>
+        ...
       </div>
-      <div className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-5xl font-black tracking-[-0.07em] text-transparent">
-        Play.
-      </div>
-      <div className="text-2xl font-black tracking-[-0.055em] text-white/85">
-        Earn Today.
+
+      <div className="mt-2 text-3xl font-black leading-[1.02] tracking-[-0.06em] text-white">
+        You can{" "}
+        <span className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]">
+          EARN TODAY.
+        </span>
       </div>
     </motion.div>
   );
 }
 
-export function FinalContinueView({ targetLabel, onContinue }) {
+export function FinalContinueView({
+  hasTriedMove = false,
+  hasTriedPlay = false,
+  onMove,
+  onPlay,
+}) {
+  const showMove = !hasTriedMove;
+  const showPlay = !hasTriedPlay;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
@@ -331,13 +359,45 @@ export function FinalContinueView({ targetLabel, onContinue }) {
       transition={{ duration: 0.65 }}
       className="flex w-full max-w-[320px] flex-col items-center gap-5"
     >
-      <button
-        type="button"
-        onClick={onContinue}
-        className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
-      >
-        {targetLabel}
-      </button>
+      {showMove && showPlay && (
+        <div className="flex w-full gap-4">
+          <button
+            type="button"
+            onClick={onMove}
+            className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
+          >
+            Move
+          </button>
+
+          <button
+            type="button"
+            onClick={onPlay}
+            className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
+          >
+            Play
+          </button>
+        </div>
+      )}
+
+      {showMove && !showPlay && (
+        <button
+          type="button"
+          onClick={onMove}
+          className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
+        >
+          Move
+        </button>
+      )}
+
+      {!showMove && showPlay && (
+        <button
+          type="button"
+          onClick={onPlay}
+          className="w-full rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
+        >
+          Play
+        </button>
+      )}
     </motion.div>
   );
 }
