@@ -1,37 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-
-const VOICE_DURATION_MS = 2600;
-const RESPONSE_DURATION_MS = 1800;
-const TRANSITION_GAP_MS = 240;
-
-function renderLine(line) {
-  const parts = String(line).split(/(100 zPts)/g);
-
-  return parts.map((part, i) => {
-    if (part === "100 zPts") {
-      return (
-        <span
-          key={i}
-          className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(45,212,191,0.35)]"
-        >
-          {part}
-        </span>
-      );
-    }
-
-    return part;
-  });
-}
+import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
 
 function Shell({ children }) {
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
-      {/* background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
-      {/* frame */}
       <div className="absolute left-1/2 top-1/2 h-[560px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
 
       <div className="relative z-10 flex min-h-[560px] w-full max-w-[460px] flex-col items-center justify-center px-10 text-center">
@@ -41,152 +17,220 @@ function Shell({ children }) {
   );
 }
 
-function VoiceView({ lines }) {
+function GradientText({ children, variant = "zwap" }) {
+  const gradient =
+    variant === "zpts"
+      ? "from-lime-200 via-cyan-300 to-emerald-300"
+      : "from-cyan-300 via-purple-300 to-pink-300";
+
   return (
-    <motion.div
-      key={lines.join("-")}
-      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
-      transition={{ duration: 0.65 }}
-      className="flex flex-col items-center gap-3"
+    <span
+      className={`bg-gradient-to-r ${gradient} bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]`}
     >
-      {lines.map((line) => (
-        <div
-          key={line}
-          className="text-center text-[2.15rem] font-black leading-[1.03] tracking-[-0.065em] text-white"
-        >
-          {renderLine(line)}
-        </div>
-      ))}
-    </motion.div>
+      {children}
+    </span>
   );
 }
 
-function ChoiceView({ onYes, onNo }) {
+function Panel({ children }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
-      transition={{ duration: 0.6 }}
-      className="flex w-full flex-col items-center gap-5"
+      exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
+      transition={{ duration: 0.55 }}
+      className="flex w-full max-w-[320px] flex-col items-center gap-5"
     >
-      <div className="flex w-full gap-4">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={onYes}
-          className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
-        >
-          Keep Earning
-        </motion.button>
-
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={onNo}
-          className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-lg font-black text-white/80"
-        >
-          Not Now
-        </motion.button>
-      </div>
+      {children}
     </motion.div>
   );
 }
 
-function ExitView({ onDone }) {
+function Field({ value, onChange, placeholder, type = "text", inputMode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.65 }}
-      className="flex flex-col items-center gap-5"
-    >
-      <div className="text-3xl font-black tracking-[-0.06em] text-cyan-300">
-        ZWAP!
-      </div>
-
-      <div className="text-lg font-bold text-white/85">
-        We’ll be here when you’re ready.
-      </div>
-
-      <motion.button
-        whileTap={{ scale: 0.96 }}
-        onClick={onDone}
-        className="rounded-full border border-white/10 bg-white/5 px-6 py-2 text-sm font-bold text-white/70"
-      >
-        Done
-      </motion.button>
-    </motion.div>
+    <input
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      type={type}
+      inputMode={inputMode}
+      className="w-full rounded-[20px] border border-cyan-300/18 bg-black/30 px-5 py-4 text-center text-base font-bold tracking-[-0.02em] text-white outline-none shadow-[0_0_28px_rgba(34,211,238,0.08)] placeholder:text-white/28 focus:border-cyan-300/45 focus:bg-cyan-300/[0.06]"
+    />
   );
 }
 
-export default function SignupGate({
-  hasTriedMove,
-  hasTriedPlay,
-  onBeginAuth,
-  onExitOnboarding,
+function PrimaryButton({ children, onClick, disabled }) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={disabled ? undefined : { scale: 0.96 }}
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+export default function SignupOnboarding({
+  onAuthSuccess,
+  navigate,
+  dashboardRoute = "/v1/dashboard",
 }) {
-  // hard guard
-  if (!hasTriedMove || !hasTriedPlay) return null;
+  const { ready, authenticated } = usePrivy();
+  const { sendCode, loginWithCode } = useLoginWithEmail();
 
-  const [phase, setPhase] = useState("voice");
-  const timeoutRef = useRef(null);
+  const [phase, setPhase] = useState("email");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [statusText, setStatusText] = useState("");
+  const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (!ready || !authenticated) return;
 
-    if (phase === "voice") {
-      timeoutRef.current = setTimeout(() => {
-        setPhase("choice");
-      }, VOICE_DURATION_MS + TRANSITION_GAP_MS);
+    setPhase("success");
+
+    const timer = window.setTimeout(() => {
+      if (typeof onAuthSuccess === "function") {
+        onAuthSuccess();
+        return;
+      }
+
+      if (typeof navigate === "function") {
+        navigate(dashboardRoute);
+      }
+    }, 1100);
+
+    return () => window.clearTimeout(timer);
+  }, [ready, authenticated, onAuthSuccess, navigate, dashboardRoute]);
+
+  const handleSendCode = async () => {
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail) {
+      setStatusText("Enter your email first.");
+      return;
     }
 
-    if (phase === "response_yes") {
-      timeoutRef.current = setTimeout(() => {
-        onBeginAuth?.();
-      }, RESPONSE_DURATION_MS + TRANSITION_GAP_MS);
+    try {
+      setIsWorking(true);
+      setStatusText("");
+      await sendCode({ email: cleanEmail });
+      setPhase("code");
+    } catch (error) {
+      setStatusText(error?.message || "Could not send code. Try again.");
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    const cleanCode = code.trim();
+
+    if (!cleanCode) {
+      setStatusText("Enter the code from your email.");
+      return;
     }
 
-    if (phase === "response_no") {
-      timeoutRef.current = setTimeout(() => {
-        setPhase("exit");
-      }, RESPONSE_DURATION_MS + TRANSITION_GAP_MS);
+    try {
+      setIsWorking(true);
+      setStatusText("");
+      await loginWithCode({ code: cleanCode });
+    } catch (error) {
+      setStatusText(error?.message || "That code did not work. Try again.");
+    } finally {
+      setIsWorking(false);
     }
-
-    return () => clearTimeout(timeoutRef.current);
-  }, [phase, onBeginAuth]);
+  };
 
   return (
     <Shell>
       <AnimatePresence mode="wait">
-        {phase === "voice" && (
-          <VoiceView
-            key="voice"
-            lines={[
-              "You earned 100 zPts.",
-              "Would you like to keep earning?",
-            ]}
-          />
+        {phase === "email" && (
+          <Panel key="email">
+            <div className="text-center text-[2.15rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
+              Create your <GradientText>ZWAP!</GradientText> account.
+            </div>
+
+            <div className="max-w-[280px] text-center text-sm font-bold leading-relaxed tracking-[-0.02em] text-white/55">
+              Save your <GradientText variant="zpts">zPts</GradientText>, protect
+              your progress, and unlock your dashboard.
+            </div>
+
+            <Field
+              value={email}
+              onChange={(e) => setEmail(e.currentTarget.value)}
+              placeholder="Email address"
+              type="email"
+              inputMode="email"
+            />
+
+            <PrimaryButton onClick={handleSendCode} disabled={isWorking}>
+              {isWorking ? "Sending..." : "Send Code"}
+            </PrimaryButton>
+
+            {statusText ? (
+              <div className="text-xs font-bold leading-relaxed text-pink-200/80">
+                {statusText}
+              </div>
+            ) : null}
+          </Panel>
         )}
 
-        {phase === "choice" && (
-          <ChoiceView
-            key="choice"
-            onYes={() => setPhase("response_yes")}
-            onNo={() => setPhase("response_no")}
-          />
+        {phase === "code" && (
+          <Panel key="code">
+            <div className="text-center text-[2.15rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
+              Check your code.
+            </div>
+
+            <div className="max-w-[280px] text-center text-sm font-bold leading-relaxed tracking-[-0.02em] text-white/55">
+              We sent a sign-in code to{" "}
+              <span className="text-cyan-200">{email.trim()}</span>
+            </div>
+
+            <Field
+              value={code}
+              onChange={(e) => setCode(e.currentTarget.value)}
+              placeholder="Enter code"
+              inputMode="numeric"
+            />
+
+            <PrimaryButton onClick={handleVerifyCode} disabled={isWorking}>
+              {isWorking ? "Verifying..." : "Verify + Continue"}
+            </PrimaryButton>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCode("");
+                setPhase("email");
+                setStatusText("");
+              }}
+              className="text-xs font-black tracking-[0.12em] text-white/45"
+            >
+              CHANGE EMAIL
+            </button>
+
+            {statusText ? (
+              <div className="text-xs font-bold leading-relaxed text-pink-200/80">
+                {statusText}
+              </div>
+            ) : null}
+          </Panel>
         )}
 
-        {phase === "response_yes" && (
-          <VoiceView key="yes" lines={["Let’s keep going."]} />
-        )}
+        {phase === "success" && (
+          <Panel key="success">
+            <div className="text-center text-[2.3rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
+              You’re in.
+            </div>
 
-        {phase === "response_no" && (
-          <VoiceView key="no" lines={["No pressure."]} />
-        )}
-
-        {phase === "exit" && (
-          <ExitView key="exit" onDone={onExitOnboarding} />
+            <div className="text-center text-lg font-black tracking-[-0.04em] text-cyan-200">
+              Opening your dashboard...
+            </div>
+          </Panel>
         )}
       </AnimatePresence>
     </Shell>
