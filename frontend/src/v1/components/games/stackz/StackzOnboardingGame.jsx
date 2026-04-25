@@ -6,6 +6,7 @@ import { renderStackzFrame } from "./stackzRenderer";
 import { attachStackzInput } from "./stackzInput";
 
 const ONBOARDING_REWARD_ZPTS = 50;
+const ONBOARDING_DROP_SPEED_MULTIPLIER = 0.72;
 
 export default function StackzOnboardingGame({
   onGameEnd,
@@ -46,6 +47,7 @@ export default function StackzOnboardingGame({
     const engine = createStackzEngine({
       startingLevel: Math.max(1, Number(level) || 1),
       startingRound: Math.max(1, Number(round) || 1),
+      dropSpeedMultiplier: ONBOARDING_DROP_SPEED_MULTIPLIER,
     });
 
     engineRef.current = engine;
