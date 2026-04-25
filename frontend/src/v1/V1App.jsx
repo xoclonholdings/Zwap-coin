@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
@@ -26,6 +26,11 @@ export default function V1App() {
   const navigate = useNavigate();
   const { user, authUser, walletAddress, isAuthenticated } = useApp();
 
+  const progressRef = useRef({
+    move: false,
+    play: false,
+  });
+
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
@@ -46,6 +51,44 @@ export default function V1App() {
   const signupRoute = `${V1_BASE}/signup`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
 
+  const markMoveTried = () => {
+    progressRef.current.move = true;
+    setTriedMove(true);
+  };
+
+  const markPlayTried = () => {
+    progressRef.current.play = true;
+    setTriedPlay(true);
+  };
+
+  const getProgress = ({
+    nextTriedMove = progressRef.current.move,
+    nextTriedPlay = progressRef.current.play,
+  } = {}) => ({
+    move: Boolean(nextTriedMove),
+    play: Boolean(nextTriedPlay),
+  });
+
+  const getNextOnboardingRoute = ({
+    nextTriedMove = progressRef.current.move,
+    nextTriedPlay = progressRef.current.play,
+  } = {}) => {
+    const progress = getProgress({ nextTriedMove, nextTriedPlay });
+
+    if (progress.move && progress.play) return signupGateRoute;
+    if (progress.move && !progress.play) return playRoute;
+    if (!progress.move && progress.play) return moveRoute;
+
+    return V1_BASE;
+  };
+
+  const advanceOnboarding = ({
+    nextTriedMove = progressRef.current.move,
+    nextTriedPlay = progressRef.current.play,
+  } = {}) => {
+    navigate(getNextOnboardingRoute({ nextTriedMove, nextTriedPlay }));
+  };
+
   const shopUnlocked =
     zptsBalance >= 30 || (isAuthenticated && triedMove && triedPlay);
 
@@ -61,28 +104,6 @@ export default function V1App() {
   const completedTasks = useMemo(() => {
     return taskStates.filter((task) => task.completed).length;
   }, [taskStates]);
-
-  const getNextOnboardingRoute = ({
-    nextTriedMove = triedMove,
-    nextTriedPlay = triedPlay,
-  } = {}) => {
-    if (nextTriedMove && nextTriedPlay) return signupGateRoute;
-    if (nextTriedMove && !nextTriedPlay) return playRoute;
-    if (!nextTriedMove && nextTriedPlay) return moveRoute;
-    return V1_BASE;
-  };
-
-  const advanceOnboarding = ({
-    nextTriedMove = triedMove,
-    nextTriedPlay = triedPlay,
-  } = {}) => {
-    if (nextTriedMove && nextTriedPlay) {
-      navigate(signupGateRoute);
-      return;
-    }
-
-    navigate(getNextOnboardingRoute({ nextTriedMove, nextTriedPlay }));
-  };
 
   return (
     <Routes>
@@ -127,23 +148,30 @@ export default function V1App() {
             onStartTracking={() => setMoveActive(true)}
             onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
-              const nextTriedMove = true;
               setMoveActive(false);
-              setTriedMove(nextTriedMove);
-              advanceOnboarding({ nextTriedMove, nextTriedPlay: triedPlay });
+              markMoveTried();
+
+              advanceOnboarding({
+                nextTriedMove: true,
+                nextTriedPlay: progressRef.current.play,
+              });
             }}
             onLearnMore={() => {
               setMoveActive(false);
-              setTriedMove(true);
+              markMoveTried();
               navigate(aboutRoute);
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
-              const nextTriedMove = true;
               setMoveActive(false);
-              setTriedMove(nextTriedMove);
+              markMoveTried();
+
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
               setZptsBalance((prev) => Math.max(prev, displayedZpts));
-              advanceOnboarding({ nextTriedMove, nextTriedPlay: triedPlay });
+
+              advanceOnboarding({
+                nextTriedMove: true,
+                nextTriedPlay: progressRef.current.play,
+              });
             }}
             onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
@@ -159,22 +187,26 @@ export default function V1App() {
           <PlayOnboardingSequence
             triedMove={triedMove}
             onLearnMore={() => {
-              setTriedPlay(true);
+              markPlayTried();
               navigate(aboutRoute);
             }}
             onComplete={({ displayedZpts = 50, shouldRouteToMove = false } = {}) => {
-              const nextTriedPlay = true;
+              markPlayTried();
 
-              setTriedPlay(nextTriedPlay);
               setGamesPlayedToday((prev) => prev + 1);
               setZptsBalance((prev) => Math.max(prev, displayedZpts));
 
-              if (shouldRouteToMove) {
+              const alreadyTriedMove = progressRef.current.move;
+
+              if (shouldRouteToMove && !alreadyTriedMove) {
                 navigate(moveRoute);
                 return;
               }
 
-              advanceOnboarding({ nextTriedMove: triedMove, nextTriedPlay });
+              advanceOnboarding({
+                nextTriedMove: alreadyTriedMove,
+                nextTriedPlay: true,
+              });
             }}
           />
         }
