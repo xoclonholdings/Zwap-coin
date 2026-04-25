@@ -7,8 +7,9 @@ const STEPS = [
   { id: "voice-2", type: "voice", duration: 3100 },
   { id: "proof-1", type: "proof-actions", duration: 3500 },
   { id: "voice-3", type: "voice", duration: 3000 },
-  { id: "proof-2", type: "proof-shop", duration: 3700 },
   { id: "voice-4", type: "voice", duration: 3200 },
+  { id: "proof-2", type: "proof-shop", duration: 3700 },
+  { id: "voice-5", type: "voice", duration: 3600 },
   { id: "anchor", type: "anchor", duration: 2900 },
   { id: "final", type: "final", duration: 0 },
 ];
