@@ -31,18 +31,24 @@ export default function V1App() {
     play: false,
   });
 
+  const [onboardingProgress, setOnboardingProgress] = useState({
+    move: false,
+    play: false,
+  });
+
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
   const [zptsBalance, setZptsBalance] = useState(0);
-  const [triedMove, setTriedMove] = useState(false);
-  const [triedPlay, setTriedPlay] = useState(false);
 
   const displayName = useMemo(() => {
     return buildDisplayName({ authUser, user, walletAddress });
   }, [authUser, user, walletAddress]);
 
   const tier = user?.subscription_tier === "plus" ? "zitizen" : "zwapper";
+
+  const triedMove = onboardingProgress.move;
+  const triedPlay = onboardingProgress.play;
 
   const moveRoute = `${V1_BASE}/move`;
   const playRoute = `${V1_BASE}/play`;
@@ -51,42 +57,49 @@ export default function V1App() {
   const signupRoute = `${V1_BASE}/signup`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
 
+  const setProgress = ({ move, play }) => {
+    const nextProgress = {
+      move: Boolean(move),
+      play: Boolean(play),
+    };
+
+    progressRef.current = nextProgress;
+    setOnboardingProgress(nextProgress);
+
+    return nextProgress;
+  };
+
   const markMoveTried = () => {
-    progressRef.current.move = true;
-    setTriedMove(true);
+    return setProgress({
+      move: true,
+      play: progressRef.current.play,
+    });
   };
 
   const markPlayTried = () => {
-    progressRef.current.play = true;
-    setTriedPlay(true);
+    return setProgress({
+      move: progressRef.current.move,
+      play: true,
+    });
   };
 
-  const getProgress = ({
-    nextTriedMove = progressRef.current.move,
-    nextTriedPlay = progressRef.current.play,
-  } = {}) => ({
-    move: Boolean(nextTriedMove),
-    play: Boolean(nextTriedPlay),
-  });
-
   const getNextOnboardingRoute = ({
-    nextTriedMove = progressRef.current.move,
-    nextTriedPlay = progressRef.current.play,
+    move = progressRef.current.move,
+    play = progressRef.current.play,
   } = {}) => {
-    const progress = getProgress({ nextTriedMove, nextTriedPlay });
-
-    if (progress.move && progress.play) return signupGateRoute;
-    if (progress.move && !progress.play) return playRoute;
-    if (!progress.move && progress.play) return moveRoute;
-
+    if (move && play) return signupGateRoute;
+    if (move && !play) return playRoute;
+    if (!move && play) return moveRoute;
     return V1_BASE;
   };
 
-  const advanceOnboarding = ({
-    nextTriedMove = progressRef.current.move,
-    nextTriedPlay = progressRef.current.play,
-  } = {}) => {
-    navigate(getNextOnboardingRoute({ nextTriedMove, nextTriedPlay }));
+  const advanceOnboarding = (progress = progressRef.current) => {
+    navigate(
+      getNextOnboardingRoute({
+        move: progress.move,
+        play: progress.play,
+      })
+    );
   };
 
   const shopUnlocked =
@@ -149,12 +162,9 @@ export default function V1App() {
             onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
               setMoveActive(false);
-              markMoveTried();
 
-              advanceOnboarding({
-                nextTriedMove: true,
-                nextTriedPlay: progressRef.current.play,
-              });
+              const nextProgress = markMoveTried();
+              advanceOnboarding(nextProgress);
             }}
             onLearnMore={() => {
               setMoveActive(false);
@@ -163,15 +173,13 @@ export default function V1App() {
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setMoveActive(false);
-              markMoveTried();
+
+              const nextProgress = markMoveTried();
 
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
               setZptsBalance((prev) => Math.max(prev, displayedZpts));
 
-              advanceOnboarding({
-                nextTriedMove: true,
-                nextTriedPlay: progressRef.current.play,
-              });
+              advanceOnboarding(nextProgress);
             }}
             onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
@@ -191,22 +199,17 @@ export default function V1App() {
               navigate(aboutRoute);
             }}
             onComplete={({ displayedZpts = 50, shouldRouteToMove = false } = {}) => {
-              markPlayTried();
+              const nextProgress = markPlayTried();
 
               setGamesPlayedToday((prev) => prev + 1);
               setZptsBalance((prev) => Math.max(prev, displayedZpts));
 
-              const alreadyTriedMove = progressRef.current.move;
-
-              if (shouldRouteToMove && !alreadyTriedMove) {
+              if (shouldRouteToMove && !nextProgress.move) {
                 navigate(moveRoute);
                 return;
               }
 
-              advanceOnboarding({
-                nextTriedMove: alreadyTriedMove,
-                nextTriedPlay: true,
-              });
+              advanceOnboarding(nextProgress);
             }}
           />
         }
@@ -217,10 +220,10 @@ export default function V1App() {
         element={
           isAuthenticated ? (
             <Navigate to={dashboardRoute} replace />
-          ) : triedMove && triedPlay ? (
+          ) : progressRef.current.move && progressRef.current.play ? (
             <SignupGate
-              hasTriedMove={triedMove}
-              hasTriedPlay={triedPlay}
+              hasTriedMove={progressRef.current.move}
+              hasTriedPlay={progressRef.current.play}
               onBeginAuth={() => {
                 markV1OnboardingSeen();
                 navigate(signupRoute);
@@ -228,13 +231,7 @@ export default function V1App() {
               onExitOnboarding={() => navigate(V1_BASE)}
             />
           ) : (
-            <Navigate
-              to={getNextOnboardingRoute({
-                nextTriedMove: triedMove,
-                nextTriedPlay: triedPlay,
-              })}
-              replace
-            />
+            <Navigate to={getNextOnboardingRoute()} replace />
           )
         }
       />
