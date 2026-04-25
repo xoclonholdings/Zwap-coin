@@ -29,6 +29,7 @@ function clonePiece(piece) {
 export function createStackzEngine({
   startingLevel = 1,
   startingRound = 1,
+  dropSpeedMultiplier = 1,
 } = {}) {
   let grid = createGrid();
   let activePiece = getRandomPiece();
@@ -42,6 +43,11 @@ export function createStackzEngine({
   let phase = "intro";
   let paused = false;
   let finished = false;
+
+  const safeDropSpeedMultiplier = Math.min(
+    Math.max(Number(dropSpeedMultiplier) || 1, 0.35),
+    1.5
+  );
 
   let introUntil = nowMs() + STACKZ_FLOW.introDelayMs;
   let lineClearUntil = 0;
@@ -127,6 +133,7 @@ export function createStackzEngine({
     }
 
     lockAccumulator += 16.6667;
+
     if (lockAccumulator >= STACKZ_FLOW.lockDelayMs) {
       lockPiece();
     }
@@ -135,11 +142,7 @@ export function createStackzEngine({
   }
 
   function tick(currentTime = nowMs()) {
-    if (finished) {
-      return buildFrame();
-    }
-
-    if (paused) {
+    if (finished || paused) {
       return buildFrame();
     }
 
@@ -148,6 +151,7 @@ export function createStackzEngine({
         phase = "live";
         lastTime = currentTime;
       }
+
       return buildFrame();
     }
 
@@ -157,6 +161,7 @@ export function createStackzEngine({
         phase = "live";
         lastTime = currentTime;
       }
+
       return buildFrame();
     }
 
@@ -164,6 +169,7 @@ export function createStackzEngine({
       if (currentTime >= gameOverUntil) {
         finished = true;
       }
+
       return buildFrame();
     }
 
@@ -171,9 +177,11 @@ export function createStackzEngine({
     lastTime = currentTime;
     dropAccumulator += dt;
 
+    const baseDropInterval = getStackzDropInterval(level) * safeDropSpeedMultiplier;
+
     const dropInterval = softDropping
-      ? Math.max(25, getStackzDropInterval(level) * 0.08)
-      : getStackzDropInterval(level);
+      ? Math.max(25, baseDropInterval * 0.08)
+      : Math.max(60, baseDropInterval);
 
     while (dropAccumulator >= dropInterval && phase === "live") {
       const movedDown = stepDown();
