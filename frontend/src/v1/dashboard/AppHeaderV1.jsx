@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Sprout, BookOpen, Play, Award } from "lucide-react";
 
+import AccountDrawerV1 from "./AccountDrawerV1";
+
 function clamp(value, min = 0, max = 1) {
   return Math.min(Math.max(value, min), max);
 }
@@ -115,7 +117,6 @@ export default function AppHeaderV1({
   displayName = "",
   initials,
   isOnline = true,
-  onOpenAccount,
   isSticky = true,
   className = "",
 
@@ -135,6 +136,8 @@ export default function AppHeaderV1({
   onBadgeClick,
 }) {
   const [popup, setPopup] = useState(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+
   const popupRef = useRef(null);
 
   const safeStepGoal = Math.max(1, Number(dailyStepGoal || 1));
@@ -245,75 +248,82 @@ export default function AppHeaderV1({
   }
 
   return (
-    <div
-      className={[
-        isSticky ? "sticky top-0 z-30" : "",
-        "w-full px-3 pt-3",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="flex h-[72px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <HeaderProgress progress={dailyProgress} />
+    <>
+      <div
+        className={[
+          isSticky ? "sticky top-0 z-30" : "",
+          "w-full px-3 pt-3",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <div className="flex h-[72px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+          <HeaderProgress progress={dailyProgress} />
 
-        <div
-          ref={popupRef}
-          className="relative flex shrink-0 items-center gap-1"
-        >
-          <HeaderIconButton
-            label="Garden"
-            unlocked={gardenUnlocked}
-            onClick={handleGardenTap}
-            icon={<Sprout size={15} />}
-          />
+          <div
+            ref={popupRef}
+            className="relative flex shrink-0 items-center gap-1"
+          >
+            <HeaderIconButton
+              label="Garden"
+              unlocked={gardenUnlocked}
+              onClick={handleGardenTap}
+              icon={<Sprout size={15} />}
+            />
 
-          <HeaderIconButton
-            label="Learn"
-            unlocked={learnUnlocked}
-            onClick={handleLearnTap}
-            icon={<BookOpen size={15} />}
-          />
+            <HeaderIconButton
+              label="Learn"
+              unlocked={learnUnlocked}
+              onClick={handleLearnTap}
+              icon={<BookOpen size={15} />}
+            />
 
-          <HeaderIconButton
-            label="Stream"
-            unlocked={streamUnlocked}
-            onClick={handleStreamTap}
-            icon={<Play size={15} />}
-          />
+            <HeaderIconButton
+              label="Stream"
+              unlocked={streamUnlocked}
+              onClick={handleStreamTap}
+              icon={<Play size={15} />}
+            />
 
-          <HeaderIconButton
-            label="Badges"
-            unlocked={badgesUnlocked}
-            onClick={handleBadgeTap}
-            icon={<Award size={15} />}
-          />
+            <HeaderIconButton
+              label="Badges"
+              unlocked={badgesUnlocked}
+              onClick={handleBadgeTap}
+              icon={<Award size={15} />}
+            />
 
-          <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
-        </div>
-
-        <div className="shrink-0 whitespace-nowrap text-center">
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">
-            zPts
+            <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
           </div>
-          <div className="mt-1 text-[1rem] font-semibold tracking-[-0.04em] text-cyan-300">
-            {formatZpts(zptsBalance)}
+
+          <div className="shrink-0 whitespace-nowrap text-center">
+            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/42">
+              zPts
+            </div>
+            <div className="mt-1 text-[1rem] font-semibold tracking-[-0.04em] text-cyan-300">
+              {formatZpts(zptsBalance)}
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setAccountOpen(true)}
+            className="relative ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/18 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(8,14,20,0.98))] text-sm font-semibold tracking-[0.02em] text-white shadow-[0_0_18px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
+            aria-label="Open account"
+          >
+            {accountInitials}
+
+            {isOnline ? (
+              <span className="absolute bottom-[2px] right-[2px] h-2.5 w-2.5 rounded-full border border-[#081018] bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.55)]" />
+            ) : null}
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={onOpenAccount}
-          className="relative ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/18 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(8,14,20,0.98))] text-sm font-semibold tracking-[0.02em] text-white shadow-[0_0_18px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
-          aria-label="Open account"
-        >
-          {accountInitials}
-
-          {isOnline ? (
-            <span className="absolute bottom-[2px] right-[2px] h-2.5 w-2.5 rounded-full border border-[#081018] bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.55)]" />
-          ) : null}
-        </button>
       </div>
-    </div>
+
+      <AccountDrawerV1
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
+    </>
   );
 }
