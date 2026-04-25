@@ -1,4 +1,5 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, { useState, useEffect, createContext, useContext, useMemo } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 import api from "@/lib/api";
 
 export const AppContext = createContext();
@@ -8,7 +9,33 @@ function normalizeWallet(address) {
   return String(address || "").trim().toLowerCase();
 }
 
+function buildPrivyAuthUser(privyUser) {
+  if (!privyUser) return null;
+
+  const email =
+    privyUser?.email?.address ||
+    privyUser?.google?.email ||
+    privyUser?.apple?.email ||
+    null;
+
+  return {
+    id: privyUser.id,
+    email,
+    authProvider: "privy",
+    walletAddress: privyUser?.wallet?.address
+      ? normalizeWallet(privyUser.wallet.address)
+      : null,
+  };
+}
+
 export function AppProvider({ children }) {
+  const {
+    ready: privyReady,
+    authenticated: privyAuthenticated,
+    user: privyUser,
+    logout: privyLogout,
+  } = usePrivy();
+
   const [user, setUser] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [walletAddress, setWalletAddress] = useState(null);
@@ -23,13 +50,15 @@ export function AppProvider({ children }) {
   const [showSplash, setShowSplash] = useState(true);
   const [onchainBalance, setOnchainBalance] = useState(null);
 
-  const isPrivyOnlyAuth =
-    !!authUser &&
-    authUser?.authProvider === "privy" &&
-    !walletAddress;
+  const privyAuthUser = useMemo(() => {
+    if (!privyReady || !privyAuthenticated) return null;
+    return buildPrivyAuthUser(privyUser);
+  }, [privyReady, privyAuthenticated, privyUser]);
+
+  const effectiveAuthUser = authUser || privyAuthUser;
 
   const isAuthenticated =
-    !!walletAddress || (!!authUser && !isPrivyOnlyAuth);
+    Boolean(walletAddress) || Boolean(authUser) || Boolean(privyAuthUser);
 
   const closeAllAuthModals = () => {
     setIsReturningUserPromptOpen(false);
@@ -125,6 +154,14 @@ export function AppProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!privyAuthUser) return;
+
+    setAuthUser(privyAuthUser);
+    localStorage.setItem("zwap_auth_user", JSON.stringify(privyAuthUser));
+    closeAllAuthModals();
+  }, [privyAuthUser]);
+
+  useEffect(() => {
     if (walletAddress) {
       fetchOnchainBalance(walletAddress);
     } else {
@@ -147,9 +184,9 @@ export function AppProvider({ children }) {
       setWalletAddress(normalizedAddress);
       localStorage.setItem("zwap_wallet", normalizedAddress);
 
-      if (authUser && !authUser.walletAddress) {
+      if (effectiveAuthUser && !effectiveAuthUser.walletAddress) {
         const updatedAuthUser = {
-          ...authUser,
+          ...effectiveAuthUser,
           walletAddress: normalizedAddress,
         };
         setAuthUser(updatedAuthUser);
@@ -185,10 +222,7 @@ export function AppProvider({ children }) {
     setOnchainBalance(null);
     localStorage.removeItem("zwap_wallet");
 
-    if (authUser?.authProvider === "privy") {
-      setAuthUser(null);
-      localStorage.removeItem("zwap_auth_user");
-    } else if (authUser?.walletAddress) {
+    if (authUser?.walletAddress) {
       const updatedAuthUser = {
         ...authUser,
         walletAddress: null,
@@ -198,15 +232,19 @@ export function AppProvider({ children }) {
     }
   };
 
-  const logoutEmailUser = () => {
+  const logoutEmailUser = async () => {
     setAuthUser(null);
     localStorage.removeItem("zwap_auth_user");
     localStorage.removeItem("zwap_email");
+
+    if (privyAuthenticated) {
+      await privyLogout?.();
+    }
   };
 
-  const logoutAll = () => {
+  const logoutAll = async () => {
     disconnectWallet();
-    logoutEmailUser();
+    await logoutEmailUser();
     closeAllAuthModals();
   };
 
@@ -233,10 +271,14 @@ export function AppProvider({ children }) {
       value={{
         user,
         setUser,
-        authUser,
+        authUser: effectiveAuthUser,
         setAuthUser,
         walletAddress,
         isAuthenticated,
+
+        privyReady,
+        privyAuthenticated,
+        privyUser,
 
         isReturningUserPromptOpen,
         setIsReturningUserPromptOpen,
