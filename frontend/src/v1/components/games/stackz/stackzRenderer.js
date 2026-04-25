@@ -9,36 +9,15 @@ function drawBackground(ctx, width, height) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  const glow1 = ctx.createRadialGradient(
-    width * 0.22,
-    height * 0.16,
-    10,
-    width * 0.22,
-    height * 0.16,
-    140
-  );
+  const glow1 = ctx.createRadialGradient(width * 0.22, height * 0.16, 10, width * 0.22, height * 0.16, 150);
   glow1.addColorStop(0, "rgba(168,85,247,0.16)");
   glow1.addColorStop(1, "rgba(168,85,247,0)");
 
-  const glow2 = ctx.createRadialGradient(
-    width * 0.78,
-    height * 0.22,
-    10,
-    width * 0.78,
-    height * 0.22,
-    150
-  );
+  const glow2 = ctx.createRadialGradient(width * 0.78, height * 0.22, 10, width * 0.78, height * 0.22, 160);
   glow2.addColorStop(0, "rgba(34,211,238,0.12)");
   glow2.addColorStop(1, "rgba(34,211,238,0)");
 
-  const glow3 = ctx.createRadialGradient(
-    width * 0.5,
-    height * 0.9,
-    10,
-    width * 0.5,
-    height * 0.9,
-    150
-  );
+  const glow3 = ctx.createRadialGradient(width * 0.5, height * 0.9, 10, width * 0.5, height * 0.9, 160);
   glow3.addColorStop(0, "rgba(244,114,182,0.10)");
   glow3.addColorStop(1, "rgba(244,114,182,0)");
 
@@ -53,14 +32,9 @@ function drawBackground(ctx, width, height) {
 }
 
 function drawBoardFrame(ctx, originX, originY, boardWidth, boardHeight) {
-  const panelGradient = ctx.createLinearGradient(
-    originX,
-    originY,
-    originX,
-    originY + boardHeight
-  );
-  panelGradient.addColorStop(0, "rgba(255,255,255,0.05)");
-  panelGradient.addColorStop(1, "rgba(255,255,255,0.015)");
+  const panelGradient = ctx.createLinearGradient(originX, originY, originX, originY + boardHeight);
+  panelGradient.addColorStop(0, "rgba(255,255,255,0.055)");
+  panelGradient.addColorStop(1, "rgba(255,255,255,0.016)");
 
   ctx.fillStyle = panelGradient;
   ctx.fillRect(originX, originY, boardWidth, boardHeight);
@@ -120,13 +94,7 @@ function drawPlacedBlocks(ctx, grid, originX, originY, cell) {
       const color = grid[row][col];
       if (!color) continue;
 
-      drawCell(
-        ctx,
-        originX + col * cell,
-        originY + row * cell,
-        cell,
-        color
-      );
+      drawCell(ctx, originX + col * cell, originY + row * cell, cell, color);
     }
   }
 }
@@ -163,58 +131,48 @@ function drawGhostPiece(ctx, piece, originX, originY, cell) {
 
 function drawTopHud(ctx, frame, width) {
   ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.font = "600 13px sans-serif";
-  ctx.fillText("STACKZ", 16, 24);
+  ctx.font = "700 13px sans-serif";
+  ctx.fillText("STACKZ", 14, 24);
 
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.font = "500 11px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  ctx.font = "600 11px sans-serif";
   ctx.fillText(`Round ${frame.round}`, 92, 24);
-  ctx.fillText(`Level ${frame.level}`, 156, 24);
-  ctx.fillText(`Lines ${frame.lines}`, 220, 24);
+  ctx.fillText(`Level ${frame.level}`, 158, 24);
+  ctx.fillText(`Lines ${frame.lines}`, 224, 24);
 }
 
-function drawScoreCard(ctx, frame, width) {
-  const x = width - 118;
-  const y = 40;
-  const w = 102;
-  const h = 54;
-
+function drawBottomCard(ctx, x, y, w, h, label, value, accent = "white") {
   ctx.fillStyle = "rgba(255,255,255,0.045)";
   ctx.fillRect(x, y, w, h);
 
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.strokeStyle = "rgba(255,255,255,0.09)";
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
 
   ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.font = "500 10px sans-serif";
-  ctx.fillText("Score", x + 10, y + 16);
+  ctx.font = "600 10px sans-serif";
+  ctx.fillText(label, x + 10, y + 16);
 
-  ctx.fillStyle = "rgba(255,255,255,0.95)";
-  ctx.font = "700 18px sans-serif";
-  ctx.fillText(Number(frame.score || 0).toLocaleString(), x + 10, y + 38);
+  ctx.fillStyle = accent === "cyan" ? "rgba(103,242,255,0.95)" : "rgba(255,255,255,0.95)";
+  ctx.font = "800 18px sans-serif";
+  ctx.fillText(value, x + 10, y + 42);
 }
 
-function drawNextPieceCard(ctx, nextPiece, width, height) {
+function drawNextPieceCard(ctx, nextPiece, x, y, w, h) {
   if (!nextPiece) return;
 
-  const x = width - 118;
-  const y = 104;
-  const w = 102;
-  const h = 96;
-
   ctx.fillStyle = "rgba(255,255,255,0.045)";
   ctx.fillRect(x, y, w, h);
 
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.strokeStyle = "rgba(255,255,255,0.09)";
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
 
   ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.font = "500 10px sans-serif";
+  ctx.font = "600 10px sans-serif";
   ctx.fillText("Next", x + 10, y + 16);
 
-  const previewCell = 14;
-  const previewOriginX = x + 20;
-  const previewOriginY = y + 34;
+  const previewCell = 13;
+  const previewOriginX = x + Math.floor(w / 2) - 28;
+  const previewOriginY = y + 35;
 
   nextPiece.blocks.forEach(([bx, by]) => {
     drawCell(
@@ -225,6 +183,33 @@ function drawNextPieceCard(ctx, nextPiece, width, height) {
       nextPiece.color
     );
   });
+}
+
+function drawBottomHud(ctx, frame, width, height) {
+  const gap = 8;
+  const margin = 14;
+  const cardHeight = 70;
+  const y = height - cardHeight - 14;
+  const cardWidth = Math.floor((width - margin * 2 - gap) / 2);
+
+  drawBottomCard(
+    ctx,
+    margin,
+    y,
+    cardWidth,
+    cardHeight,
+    "Score",
+    Number(frame.score || 0).toLocaleString()
+  );
+
+  drawNextPieceCard(
+    ctx,
+    frame.nextPiece,
+    margin + cardWidth + gap,
+    y,
+    cardWidth,
+    cardHeight
+  );
 }
 
 function drawRoundIntro(ctx, width, height, round) {
@@ -273,21 +258,21 @@ export function renderStackzFrame(ctx, frame) {
   const boardWidth = STACKZ_BOARD.cols * cell;
   const boardHeight = STACKZ_BOARD.rows * cell;
 
-  const boardOriginX = 16;
+  const boardOriginX = Math.floor((width - boardWidth) / 2);
   const boardOriginY = 40;
 
   ctx.clearRect(0, 0, width, height);
 
   drawBackground(ctx, width, height);
   drawTopHud(ctx, frame, width);
-  drawScoreCard(ctx, frame, width);
-  drawNextPieceCard(ctx, frame.nextPiece, width, height);
 
   drawBoardFrame(ctx, boardOriginX, boardOriginY, boardWidth, boardHeight);
   drawGridLines(ctx, boardOriginX, boardOriginY, boardWidth, boardHeight, cell);
   drawPlacedBlocks(ctx, frame.grid, boardOriginX, boardOriginY, cell);
   drawGhostPiece(ctx, frame.ghostPiece, boardOriginX, boardOriginY, cell);
   drawPiece(ctx, frame.activePiece, boardOriginX, boardOriginY, cell);
+
+  drawBottomHud(ctx, frame, width, height);
 
   if (frame.showRoundIntro) {
     drawRoundIntro(ctx, width, height, frame.round);
