@@ -2,46 +2,55 @@ import React from "react";
 import { motion } from "framer-motion";
 
 function renderGradientLine(line) {
-  if (!line.includes("ZWAP!")) return line;
+  const parts = String(line).split(/(ZWAP!|zPts|SHOP|SWAP)/g);
 
-  const parts = line.split("ZWAP!");
+  return parts.map((part, index) => {
+    if (part === "ZWAP!") {
+      return (
+        <span
+          key={`${part}-${index}`}
+          className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+        >
+          ZWAP!
+        </span>
+      );
+    }
 
-  return (
-    <>
-      {parts[0]}
-      <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]">
-        ZWAP!
-      </span>
-      {parts[1]}
-    </>
-  );
-}
+    if (part === "zPts") {
+      return (
+        <span
+          key={`${part}-${index}`}
+          className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(45,212,191,0.35)]"
+        >
+          zPts
+        </span>
+      );
+    }
 
-function AnimatedValue({ values, className = "" }) {
-  return (
-    <motion.div
-      animate={{ opacity: [1, 0, 1] }}
-      transition={{
-        duration: 0.55,
-        repeat: values.length - 1,
-        repeatDelay: 0.55,
-        ease: "easeInOut",
-      }}
-      className={className}
-    >
-      <motion.span
-        animate={{ y: [0, -4, 0] }}
-        transition={{
-          duration: 0.55,
-          repeat: values.length - 1,
-          repeatDelay: 0.55,
-          ease: "easeInOut",
-        }}
-      >
-        {values[values.length - 1]}
-      </motion.span>
-    </motion.div>
-  );
+    if (part === "SHOP") {
+      return (
+        <span
+          key={`${part}-${index}`}
+          className="bg-gradient-to-r from-purple-200 via-pink-300 to-cyan-200 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(180,134,255,0.35)]"
+        >
+          SHOP
+        </span>
+      );
+    }
+
+    if (part === "SWAP") {
+      return (
+        <span
+          key={`${part}-${index}`}
+          className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+        >
+          SWAP
+        </span>
+      );
+    }
+
+    return part;
+  });
 }
 
 export function AboutShell({ children }) {
@@ -110,13 +119,6 @@ export function VoiceView({ lines }) {
 }
 
 export function ActionProofView() {
-  const stepFrames = [
-    { steps: "5", zpts: "+10" },
-    { steps: "10", zpts: "+20" },
-    { steps: "15", zpts: "+35" },
-    { steps: "20", zpts: "+50" },
-  ];
-
   const roundFrames = [
     { round: "Round 1", zpts: "+10" },
     { round: "Round 2", zpts: "+25" },
@@ -152,7 +154,7 @@ export function ActionProofView() {
             }}
             className="text-2xl font-black tracking-[-0.05em] text-white"
           >
-            {stepFrames[stepFrames.length - 1].steps}
+            20
           </motion.div>
           <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             STEPS
@@ -169,9 +171,9 @@ export function ActionProofView() {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="text-2xl font-black tracking-[-0.05em] text-cyan-300"
+            className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-2xl font-black tracking-[-0.05em] text-transparent"
           >
-            {stepFrames[stepFrames.length - 1].zpts}
+            +50
           </motion.div>
           <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             zPTS
@@ -202,7 +204,7 @@ export function ActionProofView() {
                 <div className="text-[12px] font-black tracking-[-0.03em] text-white">
                   {frame.round}
                 </div>
-                <div className="mt-1 text-[13px] font-black tracking-[-0.03em] text-purple-200">
+                <div className="mt-1 bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-[13px] font-black tracking-[-0.03em] text-transparent">
                   {frame.zpts}
                 </div>
               </motion.div>
