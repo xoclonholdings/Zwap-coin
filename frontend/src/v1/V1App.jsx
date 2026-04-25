@@ -32,6 +32,7 @@ export default function V1App() {
 
   const progressRef = useRef({ move: false, play: false });
 
+  const [dashboardUnlocked, setDashboardUnlocked] = useState(false);
   const [onboardingProgress, setOnboardingProgress] = useState({
     move: false,
     play: false,
@@ -59,6 +60,11 @@ export default function V1App() {
   const signupRoute = `${V1_BASE}/signup`;
   const signInRoute = `${V1_BASE}/signin`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
+
+  const openDashboard = () => {
+    setDashboardUnlocked(true);
+    navigate(dashboardRoute);
+  };
 
   const setProgress = ({ move, play }) => {
     const nextProgress = {
@@ -175,7 +181,6 @@ export default function V1App() {
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setMoveActive(false);
-
               const nextProgress = markMoveTried();
 
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
@@ -239,37 +244,28 @@ export default function V1App() {
       <Route
         path={`${V1_BASE}/signup`}
         element={
-          isAuthenticated ? (
-            <Navigate to={dashboardRoute} replace />
-          ) : (
-            <SignupOnboarding
-              navigate={navigate}
-              dashboardRoute={dashboardRoute}
-              onAuthSuccess={() => navigate(dashboardRoute)}
-            />
-          )
+          <SignupOnboarding
+            navigate={navigate}
+            dashboardRoute={dashboardRoute}
+            onAuthSuccess={openDashboard}
+          />
         }
       />
 
       <Route
         path={`${V1_BASE}/signin`}
         element={
-          isAuthenticated ? (
-            <Navigate to={dashboardRoute} replace />
-          ) : (
-            <SignIn
-              navigate={navigate}
-              dashboardRoute={dashboardRoute}
-              onSuccess={() => navigate(dashboardRoute)}
-            />
-          )
+          <SignIn
+            dashboardRoute={dashboardRoute}
+            onSuccess={openDashboard}
+          />
         }
       />
 
       <Route
         path={`${V1_BASE}/dashboard`}
         element={
-          isAuthenticated ? (
+          isAuthenticated && dashboardUnlocked ? (
             <SimplifiedDashboard
               displayName={displayName}
               subtext={walletAddress || authUser?.email || "Account active"}
