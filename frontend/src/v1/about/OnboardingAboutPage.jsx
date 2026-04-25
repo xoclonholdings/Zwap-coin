@@ -22,11 +22,15 @@ function getVoiceLines(stepId) {
   }
 
   if (stepId === "voice-3") {
-    return ["Your effort", "becomes zPts."];
+    return ["Your activity", "becomes zPts."];
   }
 
   if (stepId === "voice-4") {
-    return ["Spend them later", "when the Shop unlocks."];
+    return ["You can spend", "your zPts", "in our SHOP..."];
+  }
+
+  if (stepId === "voice-5") {
+    return ["Or save your zPts", "and SWAP them later", "for ZWAP! tokens."];
   }
 
   return [];
