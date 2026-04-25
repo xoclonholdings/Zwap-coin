@@ -5,6 +5,7 @@ import { useApp } from "@/app/AppProvider";
 
 import OnboardingAboutPage from "@/v1/about/OnboardingAboutPage";
 import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
+import SignIn from "@/v1/auth/SignIn";
 import LandingSequence from "@/v1/landing/LandingSequence";
 import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
@@ -29,10 +30,7 @@ export default function V1App() {
   const navigate = useNavigate();
   const { user, authUser, walletAddress, isAuthenticated } = useApp();
 
-  const progressRef = useRef({
-    move: false,
-    play: false,
-  });
+  const progressRef = useRef({ move: false, play: false });
 
   const [onboardingProgress, setOnboardingProgress] = useState({
     move: false,
@@ -40,7 +38,6 @@ export default function V1App() {
   });
 
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
-
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
@@ -60,6 +57,7 @@ export default function V1App() {
   const aboutRoute = `${V1_BASE}/about`;
   const signupGateRoute = `${V1_BASE}/signup-gate`;
   const signupRoute = `${V1_BASE}/signup`;
+  const signInRoute = `${V1_BASE}/signin`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
 
   const setProgress = ({ move, play }) => {
@@ -129,7 +127,7 @@ export default function V1App() {
         path={V1_BASE}
         element={
           onboardingSeen ? (
-            <Navigate to={signupRoute} replace />
+            <Navigate to={signInRoute} replace />
           ) : (
             <LandingSequence
               onSelect={(target) => {
@@ -167,7 +165,6 @@ export default function V1App() {
             onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
               setMoveActive(false);
-
               const nextProgress = markMoveTried();
               advanceOnboarding(nextProgress);
             }}
@@ -242,11 +239,30 @@ export default function V1App() {
       <Route
         path={`${V1_BASE}/signup`}
         element={
-          <SignupOnboarding
-            navigate={navigate}
-            dashboardRoute={dashboardRoute}
-            onAuthSuccess={() => navigate(dashboardRoute)}
-          />
+          isAuthenticated ? (
+            <Navigate to={dashboardRoute} replace />
+          ) : (
+            <SignupOnboarding
+              navigate={navigate}
+              dashboardRoute={dashboardRoute}
+              onAuthSuccess={() => navigate(dashboardRoute)}
+            />
+          )
+        }
+      />
+
+      <Route
+        path={`${V1_BASE}/signin`}
+        element={
+          isAuthenticated ? (
+            <Navigate to={dashboardRoute} replace />
+          ) : (
+            <SignIn
+              navigate={navigate}
+              dashboardRoute={dashboardRoute}
+              onSuccess={() => navigate(dashboardRoute)}
+            />
+          )
         }
       />
 
@@ -286,7 +302,7 @@ export default function V1App() {
               shopRoute={dashboardRoute}
             />
           ) : (
-            <Navigate to={signupRoute} replace />
+            <Navigate to={signInRoute} replace />
           )
         }
       />
