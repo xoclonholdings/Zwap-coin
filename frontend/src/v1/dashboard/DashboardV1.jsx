@@ -17,12 +17,12 @@ export default function DashboardV1() {
   } = useV1DashboardState();
 
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden px-3 py-3">
-      <div className="shrink-0">
+    <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
+      <div className="shrink-0 px-3 pt-3">
         <AppHeaderV1 />
       </div>
 
-      <div className="mt-3 grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3">
+      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3 px-3 pb-3 pt-3">
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowMove
             steps={steps}
