@@ -18,19 +18,22 @@ export default function usePlayOnboardingMachine({ triedMove = false, onComplete
     }
   };
 
-  const completePlay = useCallback(() => {
-    if (completedRef.current) return;
+  const completePlay = useCallback(
+    ({ routeToMove = false } = {}) => {
+      if (completedRef.current) return;
 
-    completedRef.current = true;
+      completedRef.current = true;
 
-    if (typeof onComplete === "function") {
-      onComplete({
-        triedPlay: true,
-        displayedZpts: 50,
-        shouldRouteToMove: !triedMove,
-      });
-    }
-  }, [onComplete, triedMove]);
+      if (typeof onComplete === "function") {
+        onComplete({
+          triedPlay: true,
+          displayedZpts: 50,
+          shouldRouteToMove: routeToMove,
+        });
+      }
+    },
+    [onComplete]
+  );
 
   useEffect(() => {
     clearTimer();
@@ -57,7 +60,13 @@ export default function usePlayOnboardingMachine({ triedMove = false, onComplete
 
     if (phase === "voice-complete") {
       timerRef.current = setTimeout(() => {
-        completePlay();
+        setShowVoice(false);
+
+        if (triedMove) {
+          completePlay({ routeToMove: false });
+        } else {
+          setPhase("move-offer");
+        }
       }, VOICE_HOLD_MS);
     }
 
@@ -71,10 +80,15 @@ export default function usePlayOnboardingMachine({ triedMove = false, onComplete
     setPhase("reward");
   }, []);
 
+  const handleTryMove = useCallback(() => {
+    completePlay({ routeToMove: true });
+  }, [completePlay]);
+
   return {
     phase,
     voice,
     showVoice,
     handleGameEnd,
+    handleTryMove,
   };
 }
