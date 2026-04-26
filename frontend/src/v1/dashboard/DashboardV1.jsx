@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import useV1DashboardState from "./useV1DashboardState";
 import AppHeaderV1 from "./AppHeaderV1";
 import DashboardWindowMove from "./windows/DashboardWindowMove";
@@ -6,8 +6,16 @@ import DashboardWindowPlay from "./windows/DashboardWindowPlay";
 import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
+function estimateCaloriesFromSteps(steps) {
+  const safeSteps = Math.max(0, Number(steps || 0));
+
+  // Conservative estimate: roughly 0.04 calories per step.
+  return Math.round(safeSteps * 0.04);
+}
+
 export default function DashboardV1({ onOpenAccount }) {
   const {
+    steps,
     gamesPlayedToday,
     playPercent,
     zptsBalance,
@@ -16,30 +24,44 @@ export default function DashboardV1({ onOpenAccount }) {
 
   const [moveIsActive, setMoveIsActive] = useState(false);
   const [sessionSteps, setSessionSteps] = useState(0);
-  const [calories, setCalories] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
 
+  const sessionStartStepsRef = useRef(0);
+
   const handleToggleMove = () => {
-    setMoveIsActive((current) => !current);
+    setMoveIsActive((current) => {
+      const nextState = !current;
+
+      if (nextState) {
+        sessionStartStepsRef.current = Number(steps || 0);
+        setSessionSteps(0);
+        setTimerSeconds(0);
+      }
+
+      return nextState;
+    });
   };
 
-  // 🔥 THIS IS THE MISSING PIECE
   useEffect(() => {
     if (!moveIsActive) return;
 
-    const interval = setInterval(() => {
-      // timer
-      setTimerSeconds((prev) => prev + 1);
+    const currentSteps = Number(steps || 0);
+    const startSteps = Number(sessionStartStepsRef.current || 0);
 
-      // simulated step increase (replace later with real sensor)
-      setSessionSteps((prev) => prev + Math.floor(Math.random() * 3));
+    setSessionSteps(Math.max(0, currentSteps - startSteps));
+  }, [steps, moveIsActive]);
 
-      // simple calorie estimate
-      setCalories((prev) => prev + 0.04);
+  useEffect(() => {
+    if (!moveIsActive) return;
+
+    const interval = window.setInterval(() => {
+      setTimerSeconds((current) => current + 1);
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, [moveIsActive]);
+
+  const calories = estimateCaloriesFromSteps(sessionSteps);
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
