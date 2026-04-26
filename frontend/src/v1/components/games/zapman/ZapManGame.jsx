@@ -1,39 +1,28 @@
-import React, { useEffect, useMemo, useState } from "react";
-import zapManLogo from "@/assets/games/zap_man_logo.PNG";
+import React, { useEffect, useState } from "react";
+
+import ZapManBoard from "./ZapManBoard";
+import ZapManHud from "./ZapManHud";
+import ZapManControls from "./ZapManControls";
 import {
-  GRID_WIDTH,
-  GRID_HEIGHT,
-  GAME_TICK_MS,
-  WALLS,
-} from "./ZapManConstants";
+  ZapManSplashOverlay,
+  ZapManPauseOverlay,
+  ZapManExitOverlay,
+  ZapManGameOverOverlay,
+} from "./ZapManOverlays";
+
 import {
   createInitialState,
   setQueuedDirection,
   advancePlayer,
   advanceEnemies,
   checkCollision,
+  resolveCollision,
   maybeAdvanceRound,
-  applyGameOver,
   restartGame,
+  getResult,
 } from "./ZapManEngine";
 
-const WALL_SET = new Set(WALLS);
-
-function key(x, y) {
-  return `${x},${y}`;
-}
-
-function buildResult(state) {
-  return {
-    score: state.score,
-    round: state.round,
-    lives: state.lives,
-    cleared: false,
-    pelletsCollected: state.pelletsCollected,
-    pelletsRemaining: state.pellets.length,
-    gameId: "zap-man",
-  };
-}
+import { GAME_TICK_MS } from "./ZapManConstants";
 
 export default function ZapManGame({
   onGameEnd,
@@ -42,148 +31,100 @@ export default function ZapManGame({
   round = 1,
 }) {
   const [gameState, setGameState] = useState("idle");
+  const [state, setState] = useState(createInitialState());
   const [exitOpen, setExitOpen] = useState(false);
-  const [state, setState] = useState(() => createInitialState());
+
+  /* ---------------- INIT ---------------- */
 
   useEffect(() => {
     if (!isPlaying) return;
 
-    setState(() => {
-      const initial = createInitialState();
-
-      return {
-        ...initial,
-        round: Math.max(1, Number(round) || 1),
-      };
-    });
-
+    setState(createInitialState());
     setGameState("splash");
     setExitOpen(false);
-  }, [isPlaying, round]);
+  }, [isPlaying]);
+
+  /* ---------------- INPUT ---------------- */
 
   useEffect(() => {
-    if (gameState !== "live") return undefined;
+    if (gameState !== "live") return;
 
     function handleKeyDown(event) {
-      const directionMap = {
+      const map = {
         ArrowUp: "up",
         ArrowDown: "down",
         ArrowLeft: "left",
         ArrowRight: "right",
         w: "up",
-        s: "down",
         a: "left",
+        s: "down",
         d: "right",
-        W: "up",
-        S: "down",
-        A: "left",
-        D: "right",
       };
 
       if (event.key === "Escape") {
-        event.preventDefault();
         setGameState("paused");
         return;
       }
 
-      const direction = directionMap[event.key];
-
-      if (!direction) return;
+      const dir = map[event.key];
+      if (!dir) return;
 
       event.preventDefault();
-      setState((prev) => setQueuedDirection(prev, direction));
+      setState((prev) => setQueuedDirection(prev, dir));
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [gameState]);
 
+  /* ---------------- GAME LOOP ---------------- */
+
   useEffect(() => {
-    if (gameState !== "live") return undefined;
+    if (gameState !== "live") return;
 
-    const interval = window.setInterval(() => {
+    const interval = setInterval(() => {
       setState((prev) => {
-        if (prev.isGameOver) return prev;
-
+        let next = advancePlayer(prev);
         const now = Date.now();
 
-        let next = advancePlayer(prev);
-
-        if (checkCollision(next.player, next.enemies)) {
-          return applyGameOver(next);
-        }
+        const hit1 = checkCollision(next.player, next.enemies);
+        if (hit1) next = resolveCollision(next, hit1, now);
 
         next = advanceEnemies(next, now);
 
-        if (checkCollision(next.player, next.enemies)) {
-          return applyGameOver(next);
+        const hit2 = checkCollision(next.player, next.enemies);
+        if (hit2) next = resolveCollision(next, hit2, now);
+
+        next = maybeAdvanceRound(next);
+
+        if (next.isGameOver) {
+          setGameState("ended");
         }
 
-        return maybeAdvanceRound(next);
+        return next;
       });
     }, GAME_TICK_MS);
 
-    return () => window.clearInterval(interval);
+    return () => clearInterval(interval);
   }, [gameState]);
 
-  useEffect(() => {
-    if (!state.isGameOver) return;
-    if (gameState === "ended") return;
-
-    setGameState("ended");
-  }, [state.isGameOver, gameState]);
-
-  const cells = useMemo(() => {
-    const pelletSet = new Set(
-      state.pellets.map((pellet) => key(pellet.x, pellet.y))
-    );
-    const enemySet = new Set(
-      state.enemies.map((enemy) => key(enemy.x, enemy.y))
-    );
-    const playerKey = key(state.player.x, state.player.y);
-
-    const output = [];
-
-    for (let y = 0; y < GRID_HEIGHT; y += 1) {
-      for (let x = 0; x < GRID_WIDTH; x += 1) {
-        const cellKey = key(x, y);
-
-        let type = "empty";
-
-        if (WALL_SET.has(cellKey)) type = "wall";
-        if (pelletSet.has(cellKey)) type = "pellet";
-        if (enemySet.has(cellKey)) type = "enemy";
-        if (playerKey === cellKey) type = "player";
-
-        output.push({ x, y, key: cellKey, type });
-      }
-    }
-
-    return output;
-  }, [state]);
+  /* ---------------- HANDLERS ---------------- */
 
   function handleStart() {
-    setState(() => {
-      const initial = restartGame();
-
-      return {
-        ...initial,
-        round: Math.max(1, Number(round) || 1),
-      };
-    });
-
-    setExitOpen(false);
+    setState(createInitialState());
     setGameState("live");
   }
 
   function handlePause() {
-    setExitOpen(false);
     setGameState("paused");
   }
 
   function handleResume() {
-    setExitOpen(false);
     setGameState("live");
+  }
+
+  function handleDirection(dir) {
+    setState((prev) => setQueuedDirection(prev, dir));
   }
 
   function handleRequestExit() {
@@ -196,25 +137,70 @@ export default function ZapManGame({
   }
 
   function handleConfirmExit() {
-    const result = buildResult(state);
-
-    setExitOpen(false);
     setGameState("exit");
-
-    onGameEnd?.({
-      ...result,
-      level: Math.max(1, Number(level) || 1),
-    });
+    setExitOpen(false);
+    onGameEnd?.(getResult(state));
   }
 
   function handleRestart() {
-    setState(() => {
-      const initial = restartGame();
+    setState(restartGame());
+    setGameState("live");
+  }
 
-      return {
-        ...initial,
-        round: Math.max(1, Number(round) || 1),
-      };
-    });
+  /* ---------------- RENDER ---------------- */
 
-    setExitOpen(false
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816] text-white">
+      <ZapManHud
+        state={state}
+        onPause={handlePause}
+        gameState={gameState}
+      />
+
+      <div className="flex flex-1 flex-col items-center justify-center px-3 py-3">
+        <ZapManBoard state={state} />
+
+        <ZapManControls
+          open={gameState === "live"}
+          onDirection={handleDirection}
+        />
+      </div>
+
+      {/* SPLASH */}
+      <ZapManSplashOverlay
+        open={gameState === "splash"}
+        onStart={handleStart}
+        onBackToArcade={handleConfirmExit}
+      />
+
+      {/* PAUSE */}
+      <ZapManPauseOverlay
+        open={gameState === "paused" && !exitOpen}
+        round={state.round}
+        score={state.score}
+        lives={state.lives}
+        pellets={state.pellets.length}
+        onResume={handleResume}
+        onExit={handleRequestExit}
+      />
+
+      {/* EXIT */}
+      <ZapManExitOverlay
+        open={exitOpen}
+        round={state.round}
+        score={state.score}
+        onCancel={handleCancelExit}
+        onConfirmExit={handleConfirmExit}
+      />
+
+      {/* GAME OVER */}
+      <ZapManGameOverOverlay
+        open={gameState === "ended"}
+        round={state.round}
+        score={state.score}
+        onRestart={handleRestart}
+        onBackToArcade={handleConfirmExit}
+      />
+    </div>
+  );
+}
