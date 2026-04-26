@@ -130,27 +130,28 @@ export default function DashboardWindowPlay({
           onTouchEnd={handleTouchEnd}
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center">
-            <img
-              src={activeGame.logo}
-              alt={activeGame.name}
-              className={[
-                "w-full max-w-[220px] object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
-                "max-h-[82px]",
-                isSwitching
-                  ? "scale-95 opacity-40 blur-[1px]"
-                  : "scale-100 opacity-100",
-                activeGame.locked ? "opacity-30" : "",
-              ].join(" ")}
-            />
+            <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center">
+              <img
+                src={activeGame.logo}
+                alt={activeGame.name}
+                className={[
+                  "block h-full w-full object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
+                  isSwitching
+                    ? "scale-95 opacity-40 blur-[1px]"
+                    : "scale-100 opacity-100",
+                  activeGame.locked ? "opacity-30" : "",
+                ].join(" ")}
+              />
 
-            {activeGame.locked && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Lock className="h-6 w-6 text-white/70" strokeWidth={2.2} />
-                <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
-                  Locked
-                </span>
-              </div>
-            )}
+              {activeGame.locked && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Lock className="h-6 w-6 text-white/70" strokeWidth={2.2} />
+                  <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
+                    Locked
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           <button
