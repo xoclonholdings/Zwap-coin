@@ -6,13 +6,12 @@ import "@/App.css";
 import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
 import { AppProvider } from "@/app/AppProvider";
 import AppContent from "@/app/AppContent";
-import MobileAppFrame from "@/components/ui/layout/MobileAppFrame";
 
 // Re-exports
 export { useApp, AppContext } from "@/app/AppProvider";
 export { default as api } from "@/lib/api";
 
-// ZWAP Core Config
+// ZWAP! Core Config
 export const ZWAP_CONTRACT = {
   address: "0xe8898453af13b9496a6e8ada92c6efdaf4967a81",
   network: "polygon",
@@ -73,9 +72,7 @@ function App() {
     <BrowserRouter>
       <PrivyProviderWrapper>
         <AppProvider>
-          <MobileAppFrame>
-            <AppContent />
-          </MobileAppFrame>
+          <AppContent />
         </AppProvider>
       </PrivyProviderWrapper>
     </BrowserRouter>
