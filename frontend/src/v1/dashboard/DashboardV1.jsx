@@ -5,6 +5,12 @@ import DashboardWindowMove from "./windows/DashboardWindowMove";
 import DashboardWindowPlay from "./windows/DashboardWindowPlay";
 import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
+
+import StackzGame from "@/v1/components/games/stackz/StackzGame";
+import BreakerzGame from "@/v1/components/games/breakerz/BreakerzGame";
+import PulzeGame from "@/v1/components/games/pulze/PulzeGame";
+import ZapManGame from "@/v1/components/games/zapman/ZapManGame";
+
 import { getDeviceSteps, subscribeToDeviceSteps } from "@/services/stepService";
 
 function estimateCaloriesFromSteps(steps) {
@@ -21,7 +27,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   const [moveIsActive, setMoveIsActive] = useState(false);
   const [sessionSteps, setSessionSteps] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
-  const [activeGame, setActiveGame] = useState(null);
+  const [activeGameId, setActiveGameId] = useState(null);
 
   const sessionStartStepsRef = useRef(0);
 
@@ -40,8 +46,13 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   };
 
   const handleStartGame = (game) => {
-    setActiveGame(game);
-    console.log("Starting game:", game);
+    if (!game || game.locked) return;
+    setActiveGameId(game.id);
+  };
+
+  const handleGameEnd = (result) => {
+    console.log("Game ended:", result);
+    setActiveGameId(null);
   };
 
   useEffect(() => {
@@ -67,6 +78,42 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
 
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
+  if (activeGameId === "stackz") {
+    return (
+      <StackzGame
+        isPlaying={true}
+        onGameEnd={handleGameEnd}
+      />
+    );
+  }
+
+  if (activeGameId === "breakerz") {
+    return (
+      <BreakerzGame
+        isPlaying={true}
+        onGameEnd={handleGameEnd}
+      />
+    );
+  }
+
+  if (activeGameId === "pulze") {
+    return (
+      <PulzeGame
+        isPlaying={true}
+        onGameEnd={handleGameEnd}
+      />
+    );
+  }
+
+  if (activeGameId === "zap-man") {
+    return (
+      <ZapManGame
+        isPlaying={true}
+        onGameEnd={handleGameEnd}
+      />
+    );
+  }
+
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
       <div className="shrink-0 px-2.5 pt-2.5">
@@ -86,8 +133,6 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowPlay
-            gamesPlayedToday={play.gamesPlayedToday}
-            playPercent={play.playProgressPercent}
             onStartGame={handleStartGame}
             onOpenPlay={handleStartGame}
           />
@@ -103,7 +148,6 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
             zwapMode={zwap.zwapMode}
             zwapMessage={zwap.zwapMessage}
             zwapHint={zwap.zwapHint}
-            activeGame={activeGame}
           />
         </div>
       </div>
