@@ -17,7 +17,8 @@ function buildGuidance({
   learnUnlocked,
   swapUnlocked,
 }) {
-  const loopComplete = completedTaskCount >= totalTaskCount && totalTaskCount > 0;
+  const loopComplete =
+    completedTaskCount >= totalTaskCount && totalTaskCount > 0;
 
   if (systemMessage) return systemMessage;
   if (nextStep) return nextStep;
@@ -59,6 +60,14 @@ function buildTaskItems({
   }));
 }
 
+function ZwapVoiceIcon() {
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/28 bg-violet-400/12 text-[18px] shadow-[0_0_18px_rgba(168,85,247,0.16)]">
+      <span className="translate-y-[1px]">🗣️</span>
+    </div>
+  );
+}
+
 export default function DashboardWindowZwap({
   isAltView = false,
 
@@ -94,6 +103,7 @@ export default function DashboardWindowZwap({
   nextRareUnlock = null,
   streakGraceDaysRemaining = 3,
 
+  onToggleAltView,
   className = "",
 }) {
   const taskLabel = buildTaskLabel(completedTaskCount, totalTaskCount);
@@ -131,61 +141,73 @@ export default function DashboardWindowZwap({
     });
   }, [completedTaskCount, learnUnlocked, shopUnlocked, assistUnlocked]);
 
+  const handleToggle = () => {
+    if (typeof onToggleAltView === "function") {
+      onToggleAltView();
+    }
+  };
+
   if (isAltView && gardenUnlocked) {
     return (
-      <GardenWindow
-        streakDays={streakDays}
-        dailySteps={dailySteps}
-        gamesPlayedToday={gamesPlayedToday}
-        lessonsCompletedToday={lessonsCompletedToday}
-        lastActiveAt={lastActiveAt}
-        fullLoopCompleted={fullLoopCompleted}
-        healthPercent={healthPercent}
-        growthStage={growthStage}
-        plantName={plantName}
-        rarePlantUnlocked={rarePlantUnlocked}
-        longestStreak={longestStreak}
-        totalBlooms={totalBlooms}
-        activeDays={activeDays}
-        missedDays={missedDays}
-        daysUntilNextBloom={daysUntilNextBloom}
-        nextRareUnlock={nextRareUnlock}
-        streakGraceDaysRemaining={streakGraceDaysRemaining}
-      />
+      <div onClick={handleToggle} role="presentation">
+        <GardenWindow
+          streakDays={streakDays}
+          dailySteps={dailySteps}
+          gamesPlayedToday={gamesPlayedToday}
+          lessonsCompletedToday={lessonsCompletedToday}
+          lastActiveAt={lastActiveAt}
+          fullLoopCompleted={fullLoopCompleted}
+          healthPercent={healthPercent}
+          growthStage={growthStage}
+          plantName={plantName}
+          rarePlantUnlocked={rarePlantUnlocked}
+          longestStreak={longestStreak}
+          totalBlooms={totalBlooms}
+          activeDays={activeDays}
+          missedDays={missedDays}
+          daysUntilNextBloom={daysUntilNextBloom}
+          nextRareUnlock={nextRareUnlock}
+          streakGraceDaysRemaining={streakGraceDaysRemaining}
+        />
+      </div>
     );
   }
 
   if (isAltView && !gardenUnlocked) {
     return (
       <section
+        onClick={handleToggle}
         className={[
-          "w-full rounded-[26px] border border-white/10 bg-[#0b1220] p-4 text-left shadow-[0_14px_34px_rgba(0,0,0,0.28)]",
+          "relative flex min-h-[214px] w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
+          "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.09),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
+          "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.08)]",
           className,
         ]
           .filter(Boolean)
           .join(" ")}
       >
-        <div className="flex items-center gap-2">
-          <div className="text-lg leading-none">🗣️</div>
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/14 blur-3xl" />
+          <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
+          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/28 to-transparent" />
+        </div>
 
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+        <div className="relative z-10 flex items-center gap-2">
+          <ZwapVoiceIcon />
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/78">
             ZWAP!
           </div>
         </div>
 
-        <div className="mt-3 text-[1.05rem] font-semibold tracking-[-0.03em] text-white">
-          Tasks
+        <div className="relative z-10 mt-5 text-[1.25rem] font-black leading-tight tracking-[-0.05em] text-white">
+          Daily Tasks
         </div>
 
-        <div className="mt-2 text-[11px] uppercase tracking-[0.16em] text-white/50">
-          {taskLabel}
-        </div>
-
-        <div className="mt-4 space-y-3">
+        <div className="relative z-10 mt-4 space-y-2">
           {taskItems.map((task) => (
             <div
               key={task.id}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2.5"
             >
               <div className="flex items-center gap-2">
                 {task.completed ? (
@@ -196,7 +218,7 @@ export default function DashboardWindowZwap({
 
                 <span
                   className={[
-                    "text-sm font-medium",
+                    "text-sm font-bold tracking-[-0.02em]",
                     task.completed ? "text-white" : "text-white/60",
                   ].join(" ")}
                 >
@@ -206,7 +228,7 @@ export default function DashboardWindowZwap({
 
               <span
                 className={[
-                  "text-[10px] uppercase tracking-[0.12em]",
+                  "text-[10px] font-black uppercase tracking-[0.12em]",
                   task.completed ? "text-cyan-300" : "text-white/35",
                 ].join(" ")}
               >
@@ -215,32 +237,48 @@ export default function DashboardWindowZwap({
             </div>
           ))}
         </div>
+
+        <div className="relative z-10 mt-auto pt-4 text-[11px] font-black uppercase tracking-[0.16em] text-white/50">
+          {taskLabel}
+        </div>
       </section>
     );
   }
 
   return (
     <section
+      onClick={handleToggle}
       className={[
-        "w-full rounded-[26px] border border-white/10 bg-[#0b1220] p-4 text-left shadow-[0_14px_34px_rgba(0,0,0,0.28)]",
+        "relative flex min-h-[214px] w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
+        "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.2),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.1),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
+        "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.1)]",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
+      role="button"
+      tabIndex={0}
     >
-      <div className="flex items-center gap-2">
-        <div className="text-lg leading-none">🗣️</div>
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/16 blur-3xl" />
+        <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
+        <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/30 to-transparent" />
+      </div>
 
-        <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+      <div className="relative z-10 flex items-center gap-2">
+        <ZwapVoiceIcon />
+        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/78">
           ZWAP!
         </div>
       </div>
 
-      <div className="mt-3 text-[1.15rem] font-semibold leading-tight tracking-[-0.03em] text-white">
-        {guidance}
+      <div className="relative z-10 flex flex-1 items-center py-5">
+        <div className="max-w-[220px] text-[1.5rem] font-black leading-[1.03] tracking-[-0.065em] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.08)]">
+          {guidance}
+        </div>
       </div>
 
-      <div className="mt-3 text-[11px] uppercase tracking-[0.16em] text-white/50">
+      <div className="relative z-10 mt-auto text-[11px] font-black uppercase tracking-[0.16em] text-white/50">
         {taskLabel}
       </div>
     </section>
