@@ -56,6 +56,11 @@ export default function DashboardWindowPlay({
     setTouchStartX(null);
   }
 
+  function handleDesktopCycle(event) {
+    event.stopPropagation();
+    showNextGame();
+  }
+
   function handleStart(event) {
     event.stopPropagation();
 
@@ -65,6 +70,14 @@ export default function DashboardWindowPlay({
       onStartGame(activeGame);
       return;
     }
+
+    if (onOpenPlay) {
+      onOpenPlay(activeGame);
+    }
+  }
+
+  function handleOpenPlay(event) {
+    event.stopPropagation();
 
     if (onOpenPlay) {
       onOpenPlay(activeGame);
@@ -99,18 +112,28 @@ export default function DashboardWindowPlay({
 
           <button
             type="button"
-            onClick={onOpenPlay}
+            onClick={handleOpenPlay}
             className="shrink-0 text-white/32 transition hover:text-white/56"
-            aria-label="Open Play"
+            aria-label={`Open ${activeGame.name}`}
           >
             <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.1} />
           </button>
         </div>
 
         <div
-          className="mt-5 flex flex-1 touch-pan-y flex-col items-center justify-center rounded-[24px] border border-white/10 bg-black/18 px-4 py-6 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
+          role="button"
+          tabIndex={0}
+          className="mt-5 flex flex-1 cursor-pointer touch-pan-y flex-col items-center justify-center rounded-[24px] border border-white/10 bg-black/18 px-4 py-6 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
+          onClick={handleDesktopCycle}
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
           onTouchEnd={handleTouchEnd}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              showNextGame();
+            }
+          }}
+          aria-label="Change selected game"
         >
           <div className="relative flex min-h-[96px] w-full items-center justify-center">
             <img
