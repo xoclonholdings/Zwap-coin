@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronLeft, Award, Trophy, Lock, Sparkles } from "lucide-react";
-import { getNextBadge } from "@/lib/badges/getNextBadges";
+import { getNextBadge } from "@/lib/badges/getNextBadge";
 
 function clampPercent(value = 0) {
   const safe = Number(value || 0);
