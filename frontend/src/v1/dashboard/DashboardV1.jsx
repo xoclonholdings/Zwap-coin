@@ -19,7 +19,53 @@ function estimateCaloriesFromSteps(steps) {
 }
 
 export default function DashboardV1({ onOpenAccount, user, authUser }) {
-  const { zpts, zwap } = useV1DashboardState({
+  const {
+    zptsBalance,
+
+    isZwapAltView,
+    setIsZwapAltView,
+
+    shopUnlocked,
+    gardenUnlocked,
+    rarePlantUnlocked,
+    isSwapUnlocked,
+
+    badgeVisibilityUnlocked,
+    learnUnlocked,
+    streamUnlocked,
+    assistUnlocked,
+
+    profileNeedsSetup,
+    hasNewHighScore,
+    canSpendZpts,
+    shouldSaveZpts,
+
+    completedTaskCount,
+    totalTaskCount,
+
+    streakDays,
+    dailySteps,
+    gamesPlayedToday,
+    lessonsCompletedToday,
+    lastActiveAt,
+    fullLoopCompleted,
+
+    healthPercent,
+    growthStage,
+    plantName,
+
+    longestStreak,
+    totalBlooms,
+    activeDays,
+    missedDays,
+    daysUntilNextBloom,
+    nextRareUnlock,
+    streakGraceDaysRemaining,
+
+    zwapMode,
+    zwapMessage,
+    zwapHint,
+  } = useV1DashboardState({
     user,
     authUser,
   });
@@ -43,6 +89,10 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
 
       return nextState;
     });
+  };
+
+  const handleToggleZwapAltView = () => {
+    setIsZwapAltView((current) => !current);
   };
 
   const handleStartGame = (game) => {
@@ -119,15 +169,46 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop zptsBalance={zpts.zptsBalance} />
+          <DashboardWindowShop zptsBalance={zptsBalance} />
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowZwap
-            zptsBalance={zpts.zptsBalance}
-            zwapMode={zwap.zwapMode}
-            zwapMessage={zwap.zwapMessage}
-            zwapHint={zwap.zwapHint}
+            isAltView={isZwapAltView}
+            onToggleAltView={handleToggleZwapAltView}
+            systemMessage={zwapMessage}
+            eventType={zwapMode}
+            nextStep={zwapHint}
+            completedTaskCount={completedTaskCount}
+            totalTaskCount={totalTaskCount}
+            shopUnlocked={shopUnlocked}
+            gardenUnlocked={gardenUnlocked}
+            learnUnlocked={learnUnlocked}
+            assistUnlocked={assistUnlocked}
+            swapUnlocked={isSwapUnlocked}
+            badgeVisibilityUnlocked={badgeVisibilityUnlocked}
+            streamUnlocked={streamUnlocked}
+            profileNeedsSetup={profileNeedsSetup}
+            hasNewHighScore={hasNewHighScore}
+            canSpendZpts={canSpendZpts}
+            shouldSaveZpts={shouldSaveZpts}
+            streakDays={streakDays}
+            dailySteps={dailySteps}
+            gamesPlayedToday={gamesPlayedToday}
+            lessonsCompletedToday={lessonsCompletedToday}
+            lastActiveAt={lastActiveAt}
+            fullLoopCompleted={fullLoopCompleted}
+            healthPercent={healthPercent}
+            growthStage={growthStage}
+            plantName={plantName}
+            rarePlantUnlocked={rarePlantUnlocked}
+            longestStreak={longestStreak}
+            totalBlooms={totalBlooms}
+            activeDays={activeDays}
+            missedDays={missedDays}
+            daysUntilNextBloom={daysUntilNextBloom}
+            nextRareUnlock={nextRareUnlock}
+            streakGraceDaysRemaining={streakGraceDaysRemaining}
           />
         </div>
       </div>
