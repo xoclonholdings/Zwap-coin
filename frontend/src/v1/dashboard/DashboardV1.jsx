@@ -5,6 +5,7 @@ import DashboardWindowMove from "./windows/DashboardWindowMove";
 import DashboardWindowPlay from "./windows/DashboardWindowPlay";
 import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
+import { getDeviceSteps, subscribeToDeviceSteps } from "@/services/stepService";
 
 function estimateCaloriesFromSteps(steps) {
   const safeSteps = Math.max(0, Number(steps || 0));
@@ -12,7 +13,7 @@ function estimateCaloriesFromSteps(steps) {
 }
 
 export default function DashboardV1({ onOpenAccount, user, authUser }) {
-  const { move, play, zpts, zwap } = useV1DashboardState({
+  const { play, zpts, zwap } = useV1DashboardState({
     user,
     authUser,
   });
@@ -28,7 +29,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
       const nextState = !current;
 
       if (nextState) {
-        sessionStartStepsRef.current = Number(move.todaySteps || 0);
+        sessionStartStepsRef.current = getDeviceSteps();
         setSessionSteps(0);
         setTimerSeconds(0);
       }
@@ -40,11 +41,13 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   useEffect(() => {
     if (!moveIsActive) return;
 
-    const currentSteps = Number(move.todaySteps || 0);
-    const startSteps = Number(sessionStartStepsRef.current || 0);
+    const unsubscribe = subscribeToDeviceSteps((deviceSteps) => {
+      const startSteps = Number(sessionStartStepsRef.current || 0);
+      setSessionSteps(Math.max(0, Number(deviceSteps || 0) - startSteps));
+    });
 
-    setSessionSteps(Math.max(0, currentSteps - startSteps));
-  }, [move.todaySteps, moveIsActive]);
+    return () => unsubscribe();
+  }, [moveIsActive]);
 
   useEffect(() => {
     if (!moveIsActive) return;
@@ -89,7 +92,6 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowZwap
             zptsBalance={zpts.zptsBalance}
-            zptsPercent={zwap.zptsPercent}
             zwapMode={zwap.zwapMode}
             zwapMessage={zwap.zwapMessage}
             zwapHint={zwap.zwapHint}
