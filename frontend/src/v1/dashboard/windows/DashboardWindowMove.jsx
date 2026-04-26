@@ -34,6 +34,12 @@ export default function DashboardWindowMove({
   const [panelIndex, setPanelIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(null);
 
+  const showStats = panelIndex === 1;
+
+  const handleCardClick = () => {
+    setPanelIndex((current) => (current === 0 ? 1 : 0));
+  };
+
   const handleTouchStart = (event) => {
     const touch = event.touches?.[0];
     if (!touch) return;
@@ -67,13 +73,19 @@ export default function DashboardWindowMove({
         "relative w-full overflow-hidden rounded-[28px] border p-4 text-left",
         "border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.15),transparent_42%),linear-gradient(180deg,rgba(12,18,30,0.98),rgba(5,9,16,0.98))]",
         "shadow-[0_18px_42px_rgba(0,0,0,0.34)]",
-        isActive ? "border-cyan-300/28 shadow-[0_0_34px_rgba(34,211,238,0.18)]" : "",
+        isActive
+          ? "border-cyan-300/28 shadow-[0_0_34px_rgba(34,211,238,0.18)]"
+          : "",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
+      onClick={handleCardClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      role="button"
+      tabIndex={0}
+      aria-label={showStats ? "Show Move action" : "Show Move stats"}
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-x-6 top-0 h-20 rounded-full bg-cyan-300/10 blur-2xl" />
@@ -114,7 +126,7 @@ export default function DashboardWindowMove({
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                aria-label={isActive ? "Stop Move" : "Start Move"}
+                aria-label={isActive ? "Stop Move session" : "Start Move session"}
               >
                 <span
                   className={[
@@ -141,20 +153,15 @@ export default function DashboardWindowMove({
 
                 <span
                   className={[
-                    "relative z-10 flex h-[52px] w-[52px] items-center justify-center rounded-full border",
+                    "relative z-10 flex h-[58px] w-[58px] items-center justify-center rounded-full border",
                     isActive
                       ? "border-cyan-100/70 bg-cyan-200/24 shadow-[0_0_34px_rgba(34,211,238,0.72)]"
                       : "border-cyan-100/24 bg-cyan-200/10 shadow-[0_0_20px_rgba(34,211,238,0.24)]",
                   ].join(" ")}
                 >
-                  <span
-                    className={[
-                      "h-[24px] w-[24px] rounded-full",
-                      isActive
-                        ? "bg-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.9)]"
-                        : "bg-cyan-200/42 shadow-[0_0_18px_rgba(34,211,238,0.35)]",
-                    ].join(" ")}
-                  />
+                  <span className="text-[9px] font-black uppercase tracking-[0.16em] text-cyan-50">
+                    {isActive ? "Stop" : "Start"}
+                  </span>
                 </span>
               </button>
             </div>
@@ -204,6 +211,21 @@ export default function DashboardWindowMove({
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="pointer-events-none mt-3 flex items-center justify-center gap-1.5">
+          <span
+            className={[
+              "h-1.5 rounded-full transition-all",
+              !showStats ? "w-5 bg-cyan-200" : "w-1.5 bg-white/24",
+            ].join(" ")}
+          />
+          <span
+            className={[
+              "h-1.5 rounded-full transition-all",
+              showStats ? "w-5 bg-cyan-200" : "w-1.5 bg-white/24",
+            ].join(" ")}
+          />
         </div>
       </div>
     </section>
