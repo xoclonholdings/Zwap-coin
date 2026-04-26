@@ -8,19 +8,14 @@ import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 function estimateCaloriesFromSteps(steps) {
   const safeSteps = Math.max(0, Number(steps || 0));
-
-  // Conservative estimate: roughly 0.04 calories per step.
   return Math.round(safeSteps * 0.04);
 }
 
-export default function DashboardV1({ onOpenAccount }) {
-  const {
-    steps,
-    gamesPlayedToday,
-    playPercent,
-    zptsBalance,
-    zptsPercent,
-  } = useV1DashboardState();
+export default function DashboardV1({ onOpenAccount, user, authUser }) {
+  const { move, play, zpts, zwap } = useV1DashboardState({
+    user,
+    authUser,
+  });
 
   const [moveIsActive, setMoveIsActive] = useState(false);
   const [sessionSteps, setSessionSteps] = useState(0);
@@ -33,7 +28,7 @@ export default function DashboardV1({ onOpenAccount }) {
       const nextState = !current;
 
       if (nextState) {
-        sessionStartStepsRef.current = Number(steps || 0);
+        sessionStartStepsRef.current = Number(move.todaySteps || 0);
         setSessionSteps(0);
         setTimerSeconds(0);
       }
@@ -45,11 +40,11 @@ export default function DashboardV1({ onOpenAccount }) {
   useEffect(() => {
     if (!moveIsActive) return;
 
-    const currentSteps = Number(steps || 0);
+    const currentSteps = Number(move.todaySteps || 0);
     const startSteps = Number(sessionStartStepsRef.current || 0);
 
     setSessionSteps(Math.max(0, currentSteps - startSteps));
-  }, [steps, moveIsActive]);
+  }, [move.todaySteps, moveIsActive]);
 
   useEffect(() => {
     if (!moveIsActive) return;
@@ -82,19 +77,22 @@ export default function DashboardV1({ onOpenAccount }) {
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowPlay
-            gamesPlayedToday={gamesPlayedToday}
-            playPercent={playPercent}
+            gamesPlayedToday={play.gamesPlayedToday}
+            playPercent={play.playProgressPercent}
           />
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop zptsBalance={zptsBalance} />
+          <DashboardWindowShop zptsBalance={zpts.zptsBalance} />
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowZwap
-            zptsBalance={zptsBalance}
-            zptsPercent={zptsPercent}
+            zptsBalance={zpts.zptsBalance}
+            zptsPercent={zwap.zptsPercent}
+            zwapMode={zwap.zwapMode}
+            zwapMessage={zwap.zwapMessage}
+            zwapHint={zwap.zwapHint}
           />
         </div>
       </div>
