@@ -20,21 +20,55 @@ function buildGuidance({
   const loopComplete =
     completedTaskCount >= totalTaskCount && totalTaskCount > 0;
 
-  if (systemMessage) return systemMessage;
-  if (nextStep) return nextStep;
+  if (systemMessage) {
+    return systemMessage;
+  }
 
-  if (swapUnlocked) return "Swap is ready when you are.";
-  if (eventType === "move_progress") return "You’re moving.";
-  if (eventType === "play_complete") return "You just earned.";
-  if (eventType === "task_complete") return "Task complete.";
-  if (eventType === "milestone") return "Milestone reached.";
-  if (loopComplete) return "You completed the loop.";
-  if (gardenUnlocked) return "Your effort is growing.";
-  if (shopUnlocked) return "Shop is ready.";
-  if (learnUnlocked) return "There’s more to explore.";
-  if (completedTaskCount > 0) return "Keep the loop going.";
+  if (nextStep) {
+    return nextStep;
+  }
 
-  return "Start with one action.";
+  if (swapUnlocked) {
+    return "Swap is ready when you are.\nYour progress can now turn into value.";
+  }
+
+  if (loopComplete) {
+    return "You completed the loop.\nFull cycle done. That day counts.";
+  }
+
+  if (eventType === "milestone") {
+    return "Milestone reached.\nThis is stacking. Keep building.";
+  }
+
+  if (shopUnlocked && completedTaskCount > 0) {
+    return "Shop is ready.\nYou’ve earned enough to unlock value.";
+  }
+
+  if (eventType === "play_complete") {
+    return "You just earned.\nThat action added to your progress.";
+  }
+
+  if (eventType === "move_progress") {
+    return "You’re moving.\nSteps are being counted. Stay in motion.";
+  }
+
+  if (eventType === "task_complete") {
+    return "Task complete.\nOne step closer. Don’t break the flow.";
+  }
+
+  if (gardenUnlocked) {
+    return "Your effort is growing.\nConsistency is unlocking new layers.";
+  }
+
+  if (learnUnlocked) {
+    return "There’s more to explore.\nLearning opens new paths forward.";
+  }
+
+  if (completedTaskCount > 0) {
+    return "Keep the loop going.\nOne more action completes your cycle.";
+  }
+
+  return "Start with one action.\nMove, play, or learn to begin your loop.";
 }
 
 function buildTaskItems({
@@ -64,6 +98,30 @@ function ZwapVoiceIcon() {
   return (
     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/28 bg-violet-400/12 text-[18px] shadow-[0_0_18px_rgba(168,85,247,0.16)]">
       <span className="translate-y-[1px]">🗣️</span>
+    </div>
+  );
+}
+
+function GuidanceText({ guidance }) {
+  const lines = String(guidance || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return (
+    <div>
+      {lines.map((line, index) => (
+        <div
+          key={`${line}-${index}`}
+          className={
+            index === 0
+              ? "text-[1.45rem] font-black leading-[1.04] tracking-[-0.06em] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.08)]"
+              : "mt-2 text-[0.82rem] font-bold leading-snug tracking-[-0.03em] text-white/62"
+          }
+        >
+          {line}
+        </div>
+      ))}
     </div>
   );
 }
@@ -194,6 +252,7 @@ export default function DashboardWindowZwap({
 
         <div className="relative z-10 flex items-center gap-2">
           <ZwapVoiceIcon />
+
           <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/78">
             ZWAP!
           </div>
@@ -267,14 +326,15 @@ export default function DashboardWindowZwap({
 
       <div className="relative z-10 flex items-center gap-2">
         <ZwapVoiceIcon />
+
         <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/78">
           ZWAP!
         </div>
       </div>
 
       <div className="relative z-10 flex flex-1 items-center py-5">
-        <div className="max-w-[220px] text-[1.5rem] font-black leading-[1.03] tracking-[-0.065em] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.08)]">
-          {guidance}
+        <div className="max-w-[220px]">
+          <GuidanceText guidance={guidance} />
         </div>
       </div>
 
