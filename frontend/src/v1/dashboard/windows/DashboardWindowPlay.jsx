@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Gamepad2, ChevronRight } from "lucide-react";
+import React, { useState } from "react";
+import { Gamepad2, ChevronRight, Lock } from "lucide-react";
 
 import brainzLogo from "@/assets/games/brainz_game_logo.PNG";
 import breakerzLogo from "@/assets/games/breakerz_game_logo.PNG";
@@ -9,36 +9,18 @@ import triplezLogo from "@/assets/games/triplez_game_logo.PNG";
 import werdzLogo from "@/assets/games/werdz_game_logo.PNG";
 import zapManLogo from "@/assets/games/zap_man_logo.PNG";
 
-function clamp(value, min = 0, max = 1) {
-  return Math.min(Math.max(value, min), max);
-}
-
 const DEFAULT_GAMES = [
-  { id: "stackz", name: "STACKZ", logo: stackzLogo },
-  { id: "breakerz", name: "BREAKERZ", logo: breakerzLogo },
-  { id: "pulze", name: "PULZE", logo: pulzeLogo },
-  { id: "zap-man", name: "ZAP-MAN", logo: zapManLogo },
-  { id: "brainz", name: "BRAINZ", logo: brainzLogo },
-  { id: "triplez", name: "TRIPLEZ", logo: triplezLogo },
-  { id: "werdz", name: "WERDZ", logo: werdzLogo },
+  { id: "stackz", name: "STACKZ", logo: stackzLogo, locked: false },
+  { id: "breakerz", name: "BREAKERZ", logo: breakerzLogo, locked: false },
+  { id: "pulze", name: "PULZE", logo: pulzeLogo, locked: false },
+  { id: "zap-man", name: "ZAP-MAN", logo: zapManLogo, locked: false },
+
+  { id: "brainz", name: "BRAINZ", logo: brainzLogo, locked: true },
+  { id: "triplez", name: "TRIPLEZ", logo: triplezLogo, locked: true },
+  { id: "werdz", name: "WERDZ", logo: werdzLogo, locked: true },
 ];
 
-function buildStatusLine({ isActive, gamesPlayedToday, playGoal, progress }) {
-  if (isActive) return "In session";
-  if (progress >= 1) return "Goal reached";
-
-  if (Number(gamesPlayedToday || 0) > 0) {
-    return `${gamesPlayedToday} of ${playGoal} today`;
-  }
-
-  return "Ready";
-}
-
 export default function DashboardWindowPlay({
-  gamesPlayedToday = 0,
-  playGoal = 3,
-  isActive = false,
-  progressPercent,
   games = DEFAULT_GAMES,
   onOpenPlay,
   onStartGame,
@@ -51,24 +33,6 @@ export default function DashboardWindowPlay({
     Array.isArray(games) && games.length > 0 ? games : DEFAULT_GAMES;
 
   const activeGame = safeGames[activeIndex] || safeGames[0];
-  const safeGoal = Math.max(1, Number(playGoal || 1));
-
-  const progress = useMemo(() => {
-    if (typeof progressPercent === "number") {
-      return clamp(progressPercent / 100);
-    }
-
-    return clamp(Number(gamesPlayedToday || 0) / safeGoal);
-  }, [progressPercent, gamesPlayedToday, safeGoal]);
-
-  const statusLine = useMemo(() => {
-    return buildStatusLine({
-      isActive,
-      gamesPlayedToday,
-      playGoal: safeGoal,
-      progress,
-    });
-  }, [isActive, gamesPlayedToday, safeGoal, progress]);
 
   function showNextGame() {
     setActiveIndex((current) => (current + 1) % safeGames.length);
@@ -95,6 +59,8 @@ export default function DashboardWindowPlay({
   function handleStart(event) {
     event.stopPropagation();
 
+    if (activeGame.locked) return;
+
     if (onStartGame) {
       onStartGame(activeGame);
       return;
@@ -120,9 +86,9 @@ export default function DashboardWindowPlay({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.12),transparent_42%,rgba(34,211,238,0.08))]" />
 
       <div className="relative z-10 flex min-h-[250px] flex-col">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-violet-400/18 bg-violet-400/10 text-violet-200">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-violet-400/20 bg-violet-400/10 text-violet-200">
               <Gamepad2 className="h-[17px] w-[17px]" strokeWidth={2.1} />
             </div>
 
@@ -134,73 +100,69 @@ export default function DashboardWindowPlay({
           <button
             type="button"
             onClick={onOpenPlay}
-            className="mt-0.5 shrink-0 text-white/32 transition hover:text-white/56"
+            className="shrink-0 text-white/32 transition hover:text-white/56"
             aria-label="Open Play"
           >
             <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.1} />
           </button>
         </div>
 
-        <div className="mt-4 text-sm font-medium tracking-[-0.02em] text-white/72">
-          {statusLine}
-        </div>
-
         <div
-          className="mt-5 flex flex-1 touch-pan-y flex-col items-center justify-center rounded-[24px] border border-white/10 bg-black/18 px-4 py-5 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
+          className="mt-5 flex flex-1 touch-pan-y flex-col items-center justify-center rounded-[24px] border border-white/10 bg-black/18 px-4 py-6 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="flex min-h-[92px] w-full items-center justify-center">
+          <div className="relative flex min-h-[96px] w-full items-center justify-center">
             <img
               src={activeGame.logo}
               alt={activeGame.name}
-              className="max-h-[82px] w-auto max-w-full object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)]"
+              className={[
+                "max-h-[86px] w-auto max-w-full object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition",
+                activeGame.locked ? "opacity-30 blur-[1px]" : "",
+              ].join(" ")}
             />
-          </div>
 
-          <div className="mt-4 text-[11px] font-black uppercase tracking-[0.36em] text-cyan-200/80">
-            READY
+            {activeGame.locked && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <Lock className="h-6 w-6 text-white/70" strokeWidth={2.2} />
+                <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
+                  Locked
+                </span>
+              </div>
+            )}
           </div>
 
           <button
             type="button"
             onClick={handleStart}
-            className="mt-5 w-full rounded-[22px] border border-white/50 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-300 px-5 py-3 text-center text-lg font-black text-white shadow-[0_0_24px_rgba(34,211,238,0.20)] transition active:scale-[0.98]"
-            aria-label={`Start ${activeGame.name}`}
+            disabled={activeGame.locked}
+            className={[
+              "mt-6 w-full rounded-[22px] border px-5 py-3 text-center text-lg font-black transition",
+              activeGame.locked
+                ? "cursor-not-allowed border-white/10 bg-white/10 text-white/30"
+                : "border-white/50 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-300 text-white shadow-[0_0_24px_rgba(34,211,238,0.20)] active:scale-[0.98]",
+            ].join(" ")}
+            aria-label={
+              activeGame.locked
+                ? `${activeGame.name} locked`
+                : `Start ${activeGame.name}`
+            }
           >
-            Start
+            {activeGame.locked ? "Locked" : "Start"}
           </button>
 
-          <div className="mt-4 flex justify-center gap-1.5">
-            {safeGames.map((game, index) => (
+          <div className="mt-4 flex justify-center gap-1.5" aria-hidden="true">
+            {safeGames.map((_, index) => (
               <span
-                key={game.id || game.name || index}
-                className={`h-1.5 rounded-full transition ${
+                key={index}
+                className={[
+                  "h-1.5 rounded-full transition-all duration-300",
                   index === activeIndex
-                    ? "w-5 bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.45)]"
-                    : "w-1.5 bg-white/20"
-                }`}
+                    ? "w-4 bg-cyan-200/65 shadow-[0_0_8px_rgba(103,242,255,0.22)]"
+                    : "w-1.5 bg-white/22",
+                ].join(" ")}
               />
             ))}
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-white/46">
-              Today
-            </span>
-
-            <span className="text-[11px] font-medium text-white/62">
-              {gamesPlayedToday} / {safeGoal}
-            </span>
-          </div>
-
-          <div className="h-2 overflow-hidden rounded-full bg-white/8">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 shadow-[0_0_12px_rgba(168,85,247,0.14)] transition-all duration-300"
-              style={{ width: `${progress * 100}%` }}
-            />
           </div>
         </div>
       </div>
