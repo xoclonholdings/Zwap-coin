@@ -15,7 +15,7 @@ function clampPercent(value) {
 }
 
 function buildTaskLabel(completedTaskCount = 0, totalTaskCount = 4) {
-  return `${completedTaskCount} of ${totalTaskCount} tasks complete`;
+  return `${completedTaskCount} / ${totalTaskCount} complete`;
 }
 
 function buildAltTaskItems({
@@ -32,9 +32,7 @@ function buildAltTaskItems({
     ? "Shop"
     : "Complete Loop";
 
-  const labels = ["Login", "Move", "Play", fourthLabel];
-
-  return labels.map((label, index) => ({
+  return ["Login", "Move", "Play", fourthLabel].map((label, index) => ({
     id: `${label.toLowerCase().replace(/\s+/g, "-")}-${index}`,
     label,
     completed: index < completedTaskCount,
@@ -56,50 +54,26 @@ function pickGuidancePills({
 }) {
   const pills = [];
 
-  if (profileNeedsSetup) {
-    pills.push({ label: "Update Profile", tone: "active" });
-  }
-
-  if (hasNewHighScore) {
-    pills.push({ label: "New High Score", tone: "active" });
-  }
+  if (profileNeedsSetup) pills.push({ label: "Profile", tone: "active" });
+  if (hasNewHighScore) pills.push({ label: "High Score", tone: "active" });
 
   if (shopUnlocked) {
     pills.push({
-      label: canSpendZpts ? "Check Shop" : shouldSaveZpts ? "Save zPts" : "Shop Open",
+      label: canSpendZpts ? "Shop" : shouldSaveZpts ? "Save" : "Open",
       tone: "active",
     });
   } else {
-    pills.push({ label: "Shop Locked", tone: "locked" });
+    pills.push({ label: "Shop", tone: "locked" });
   }
 
-  if (gardenUnlocked) {
-    pills.push({ label: "Garden Active", tone: "active" });
-  }
-
-  if (badgeVisibilityUnlocked) {
-    pills.push({ label: "View Badges", tone: "active" });
-  }
-
-  if (learnUnlocked) {
-    pills.push({ label: "Learn Open", tone: "active" });
-  } else {
-    pills.push({ label: "Learn Locked", tone: "locked" });
-  }
-
-  if (streamUnlocked) {
-    pills.push({ label: "Stream Open", tone: "active" });
-  }
-
-  if (assistUnlocked) {
-    pills.push({ label: "Assist Ready", tone: "active" });
-  }
-
-  if (swapUnlocked) {
-    pills.push({ label: "Swap Ready", tone: "active" });
-  } else {
-    pills.push({ label: "Swap Locked", tone: "locked" });
-  }
+  if (gardenUnlocked) pills.push({ label: "Garden", tone: "active" });
+  if (badgeVisibilityUnlocked) pills.push({ label: "Badges", tone: "active" });
+  if (learnUnlocked) pills.push({ label: "Learn", tone: "active" });
+  else pills.push({ label: "Learn", tone: "locked" });
+  if (streamUnlocked) pills.push({ label: "Stream", tone: "active" });
+  if (assistUnlocked) pills.push({ label: "Assist", tone: "active" });
+  if (swapUnlocked) pills.push({ label: "Swap", tone: "active" });
+  else pills.push({ label: "Swap", tone: "locked" });
 
   return pills.slice(0, 3);
 }
@@ -110,15 +84,15 @@ function GuidancePill({ label, tone = "locked" }) {
   return (
     <div
       className={[
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1",
-        "text-[10px] font-black uppercase tracking-[0.1em]",
+        "inline-flex min-w-0 items-center gap-1 rounded-full border px-2 py-1",
+        "text-[9px] font-black uppercase tracking-[0.08em]",
         isActive
           ? "border-cyan-300/25 bg-cyan-300/10 text-cyan-100"
-          : "border-white/10 bg-white/[0.04] text-white/48",
+          : "border-white/10 bg-white/[0.04] text-white/46",
       ].join(" ")}
     >
-      {!isActive ? <Lock className="h-3 w-3" strokeWidth={2.2} /> : null}
-      <span>{label}</span>
+      {!isActive ? <Lock className="h-3 w-3 shrink-0" strokeWidth={2.2} /> : null}
+      <span className="truncate">{label}</span>
     </div>
   );
 }
@@ -145,7 +119,7 @@ function buildVoiceMessage({
 
   if (systemMessage) {
     return {
-      eyebrow: "SYSTEM GUIDANCE",
+      eyebrow: "SYSTEM",
       primary: systemMessage,
       secondary: nextStep || "",
     };
@@ -187,9 +161,7 @@ function buildVoiceMessage({
     return {
       eyebrow: "DAILY LOOP",
       primary: gardenUnlocked ? "Your effort has taken form." : "Daily loop complete.",
-      secondary: gardenUnlocked
-        ? "Your garden is responding."
-        : "That day counts.",
+      secondary: gardenUnlocked ? "Your garden is responding." : "That day counts.",
     };
   }
 
@@ -414,9 +386,7 @@ export default function DashboardWindowZwap({
   }, [completedTaskCount, learnUnlocked, shopUnlocked, assistUnlocked]);
 
   const handleClick = () => {
-    if (typeof onOpenZwap === "function") {
-      onOpenZwap();
-    }
+    onOpenZwap?.();
   };
 
   if (isAltView && gardenUnlocked) {
@@ -447,9 +417,9 @@ export default function DashboardWindowZwap({
     return (
       <section
         className={[
-          "relative w-full overflow-hidden rounded-[26px] border border-white/10 p-4",
-          "bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_34%),linear-gradient(180deg,rgba(12,19,30,0.98),rgba(6,10,17,1))]",
-          "shadow-[0_14px_34px_rgba(0,0,0,0.28)]",
+          "relative h-full w-full overflow-hidden rounded-[28px] border border-white/10",
+          "bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.13),transparent_36%),linear-gradient(180deg,rgba(12,19,30,0.98),rgba(6,10,17,1))]",
+          "shadow-[0_16px_38px_rgba(0,0,0,0.30)]",
           className,
         ]
           .filter(Boolean)
@@ -460,41 +430,35 @@ export default function DashboardWindowZwap({
           <div className="absolute bottom-0 right-4 h-16 w-20 rounded-full bg-violet-400/10 blur-2xl" />
         </div>
 
-        <div className="relative z-10">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200/75">
-                ZWAP! TASKS
-              </div>
-              <div className="mt-2 text-[1.35rem] font-black leading-none tracking-[-0.05em] text-white">
-                Daily Loop
-              </div>
-              <div className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/52">
-                {taskLine}
-              </div>
+        <div className="relative z-10 flex h-full flex-col p-3">
+          <div className="shrink-0">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200/75">
+              ZWAP! Tasks
             </div>
-
-            <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/52">
-              Swipe State
+            <div className="mt-1 text-[clamp(18px,5vw,24px)] font-black leading-none tracking-[-0.05em] text-white">
+              Daily Loop
+            </div>
+            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.13em] text-white/46">
+              {taskLine}
             </div>
           </div>
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-3 grid min-h-0 flex-1 grid-rows-4 gap-2">
             {altTaskItems.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3"
+                className="flex min-h-0 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] px-3"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-2">
                   {task.completed ? (
-                    <CheckCircle2 className="h-5 w-5 text-cyan-300" strokeWidth={2.2} />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-300" strokeWidth={2.2} />
                   ) : (
-                    <Circle className="h-5 w-5 text-white/30" strokeWidth={2.2} />
+                    <Circle className="h-4 w-4 shrink-0 text-white/30" strokeWidth={2.2} />
                   )}
 
                   <span
                     className={[
-                      "text-sm font-extrabold tracking-[-0.02em]",
+                      "truncate text-[12px] font-black tracking-[-0.02em]",
                       task.completed ? "text-white" : "text-white/58",
                     ].join(" ")}
                   >
@@ -504,7 +468,7 @@ export default function DashboardWindowZwap({
 
                 <span
                   className={[
-                    "text-[10px] font-black uppercase tracking-[0.14em]",
+                    "shrink-0 text-[9px] font-black uppercase tracking-[0.12em]",
                     task.completed ? "text-cyan-300" : "text-white/35",
                   ].join(" ")}
                 >
@@ -523,8 +487,8 @@ export default function DashboardWindowZwap({
       type="button"
       onClick={handleClick}
       className={[
-        "group relative w-full overflow-hidden rounded-[26px] border p-4 text-left transition active:scale-[0.99]",
-        "border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.17),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.16),transparent_38%),linear-gradient(180deg,rgba(12,20,34,0.98),rgba(6,10,18,1))]",
+        "group relative h-full w-full overflow-hidden rounded-[28px] border text-left active:scale-[0.99]",
+        "border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.16),transparent_40%),linear-gradient(180deg,rgba(12,20,34,0.98),rgba(6,10,18,1))]",
         "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(34,211,238,0.08)]",
         className,
       ]
@@ -538,48 +502,46 @@ export default function DashboardWindowZwap({
         <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/30 to-transparent" />
       </div>
 
-      <div className="relative z-10 flex h-full min-h-[188px] flex-col justify-between">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-300/24 bg-cyan-300/12 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.14)]">
-                <Sparkles className="h-[18px] w-[18px]" strokeWidth={2.2} />
-              </div>
-
-              <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.26em] text-cyan-100/76">
-                  ZWAP!
-                </div>
-                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/35">
-                  {voiceContent.eyebrow}
-                </div>
-              </div>
+      <div className="relative z-10 flex h-full flex-col p-3">
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-300/22 bg-cyan-300/11 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
+              <Sparkles className="h-4 w-4" strokeWidth={2.2} />
             </div>
 
-            <div className="mt-4">
-              <div className="max-w-[190px] text-[1.35rem] font-black leading-[1.02] tracking-[-0.06em] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.08)]">
-                {voiceContent.primary}
+            <div className="min-w-0">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/88">
+                ZWAP!
               </div>
-
-              {voiceContent.secondary ? (
-                <div className="mt-2 max-w-[190px] text-[0.78rem] font-bold leading-snug tracking-[-0.03em] text-white/62">
-                  {voiceContent.secondary}
-                </div>
-              ) : null}
-
-              <div className="mt-3 inline-flex rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100/72">
-                {taskLine}
+              <div className="mt-0.5 truncate text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100/48">
+                {voiceContent.eyebrow}
               </div>
             </div>
           </div>
 
-          <div className="mt-1 shrink-0 text-white/36 transition group-hover:text-white/70">
-            <ChevronRight className="h-[19px] w-[19px]" strokeWidth={2.3} />
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.035] text-white/34">
+            <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
           </div>
         </div>
 
-        <div className="mt-5">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="flex min-h-0 flex-1 flex-col justify-center py-3">
+          <div className="max-w-full text-[clamp(20px,5.7vw,30px)] font-black leading-[1.02] tracking-[-0.07em] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.08)]">
+            {voiceContent.primary}
+          </div>
+
+          {voiceContent.secondary ? (
+            <div className="mt-2 max-w-full text-[clamp(11px,3.1vw,13px)] font-bold leading-snug tracking-[-0.03em] text-white/62">
+              {voiceContent.secondary}
+            </div>
+          ) : null}
+
+          <div className="mt-3 inline-flex w-fit max-w-full rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100/72">
+            {taskLine}
+          </div>
+        </div>
+
+        <div className="shrink-0">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
             {guidancePills.map((pill) => (
               <GuidancePill
                 key={`${pill.label}-${pill.tone}`}
@@ -589,7 +551,7 @@ export default function DashboardWindowZwap({
             ))}
           </div>
 
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
+          <div className="h-2 overflow-hidden rounded-full bg-white/8">
             <div
               className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-teal-300 to-violet-300 shadow-[0_0_12px_rgba(34,211,238,0.18)]"
               style={{ width: `${Math.max(8, safeZptsPercent || 8)}%` }}
