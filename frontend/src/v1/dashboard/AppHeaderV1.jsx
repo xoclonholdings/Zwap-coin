@@ -32,9 +32,9 @@ function HeaderIconButton({ label, icon, unlocked = false, onClick }) {
       onClick={onClick}
       aria-label={label}
       className={[
-        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border",
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition active:scale-[0.96]",
         unlocked
-          ? "border-cyan-300/40 bg-cyan-400/12 text-cyan-200 shadow-[0_0_16px_rgba(34,211,238,0.16)]"
+          ? "border-cyan-300/40 bg-cyan-400/12 text-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.16)]"
           : "border-white/10 bg-white/[0.035] text-white/34",
       ].join(" ")}
     >
@@ -212,15 +212,15 @@ export default function AppHeaderV1({
   return (
     <header
       className={[
-        "relative w-full rounded-[24px] border border-cyan-200/12 bg-[linear-gradient(180deg,rgba(12,22,32,0.94),rgba(5,10,18,0.98))] px-3 py-2 shadow-[0_16px_44px_rgba(0,0,0,0.32),0_0_34px_rgba(34,211,238,0.055)] backdrop-blur-xl",
+        "relative w-full overflow-visible rounded-[24px] border border-cyan-200/12 bg-[linear-gradient(180deg,rgba(12,22,32,0.95),rgba(5,10,18,0.98))] px-2.5 py-2 shadow-[0_14px_38px_rgba(0,0,0,0.32),0_0_34px_rgba(34,211,238,0.055)] backdrop-blur-xl",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="flex h-[52px] items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+      <div className="flex h-[48px] items-center gap-1.5">
+        <div className="min-w-[34px] flex-1">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 shadow-[inset_0_0_10px_rgba(255,255,255,0.03)]">
             <div
               className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-teal-300 to-violet-300 shadow-[0_0_18px_rgba(34,211,238,0.24)]"
               style={{ width: `${dailyProgress * 100}%` }}
@@ -228,43 +228,43 @@ export default function AppHeaderV1({
           </div>
         </div>
 
-        <div className="relative flex shrink-0 items-center gap-1.5">
+        <div className="relative flex shrink-0 items-center gap-1">
           <HeaderIconButton
             label="Garden"
             unlocked={gardenUnlocked}
             onClick={handleGardenTap}
-            icon={<Sprout size={16} />}
+            icon={<Sprout size={15} />}
           />
 
           <HeaderIconButton
             label="Learn"
             unlocked={learnUnlocked}
             onClick={handleLearnTap}
-            icon={<BookOpen size={16} />}
+            icon={<BookOpen size={15} />}
           />
 
           <HeaderIconButton
             label="Stream"
             unlocked={streamUnlocked}
             onClick={handleStreamTap}
-            icon={<Play size={16} />}
+            icon={<Play size={15} />}
           />
 
           <HeaderIconButton
             label="Badges"
             unlocked={badgesUnlocked}
             onClick={handleBadgeTap}
-            icon={<Award size={16} />}
+            icon={<Award size={15} />}
           />
 
           <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
         </div>
 
-        <div className="shrink-0 text-center">
-          <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/45">
+        <div className="w-[48px] shrink-0 text-center">
+          <div className="text-[8px] font-black uppercase tracking-[0.12em] text-white/42">
             zPts
           </div>
-          <div className="mt-0.5 text-[1.05rem] font-black leading-none tracking-[-0.04em] text-cyan-200">
+          <div className="mt-0.5 truncate text-[0.94rem] font-black leading-none tracking-[-0.05em] text-cyan-200">
             {formatZpts(zptsBalance)}
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function AppHeaderV1({
         <button
           type="button"
           onClick={onOpenAccount}
-          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-300/20 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.22),transparent_44%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(7,13,20,0.98))] text-[12px] font-black tracking-[0.02em] text-white shadow-[0_0_22px_rgba(34,211,238,0.12)] active:scale-[0.97]"
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-300/20 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.22),transparent_44%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(7,13,20,0.98))] text-[11px] font-black tracking-[0.02em] text-white shadow-[0_0_22px_rgba(34,211,238,0.12)] active:scale-[0.97]"
           aria-label="Open account"
         >
           {accountInitials}
