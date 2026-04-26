@@ -10,7 +10,7 @@ from services.daily_task_service import (
     maybe_process_full_daily_loop,
 )
 from services.reward_service import enforce_daily_caps, get_tier_multipliers
-from services.zlearn_service import (
+from services.learn_service import (
     check_trivia_answer,
     create_trivia_session,
     get_module,
