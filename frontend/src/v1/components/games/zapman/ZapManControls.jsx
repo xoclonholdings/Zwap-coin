@@ -1,7 +1,7 @@
 import React from "react";
 
-export default function ZapManControls({ visible, onDirection }) {
-  if (!visible) return null;
+export default function ZapManControls({ open, onDirection }) {
+  if (!open) return null;
 
   return (
     <div className="mt-4 grid w-full max-w-[220px] grid-cols-3 gap-2">
