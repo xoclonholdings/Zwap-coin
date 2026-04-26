@@ -1,21 +1,79 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BookOpen, PlayCircle, X } from "lucide-react";
+
 import { useApp } from "@/app/AppProvider";
 
-import AccountHeaderV1 from "./AccountHeaderV1";
 import AccountProfileCardV1 from "./AccountProfileCardV1";
 import AccountBalanceCardV1 from "./AccountBalanceCardV1";
 import AccountActionRowV1 from "./AccountActionRowV1";
 import AccountShieldCardV1 from "./AccountShieldCardV1";
 import AccountFooterLinksV1 from "./AccountFooterLinksV1";
 
-import ProfileViewV1 from "./ProfileViewV1";
-import InventoryViewV1 from "./InventoryViewV1";
-import AchievementsViewV1 from "./AchievementsViewV1";
-import SettingsViewV1 from "./SettingsViewV1";
-import HelpViewV1 from "./HelpViewV1";
-import PrivacyViewV1 from "./PrivacyViewV1";
-import TermsViewV1 from "./TermsViewV1";
+import ProfileViewV1 from "./drawer/ProfileViewV1";
+import InventoryViewV1 from "./drawer/InventoryViewV1";
+import AchievementsViewV1 from "./drawer/AchievementsViewV1";
+import SettingsViewV1 from "./drawer/SettingsViewV1";
+import HelpViewV1 from "./drawer/HelpViewV1";
+import PrivacyViewV1 from "./drawer/PrivacyViewV1";
+import TermsViewV1 from "./drawer/TermsViewV1";
+
+function HeaderIconButton({ onClick, children, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="
+        flex h-9 w-9 items-center justify-center rounded-full
+        border border-white/10 bg-white/[0.04] text-white/70
+        transition active:scale-[0.98]
+      "
+    >
+      {children}
+    </button>
+  );
+}
+
+function AccountDrawerHeaderV1({
+  title = "Account",
+  onClose,
+  onAdminTap,
+  learnUnlocked = false,
+  streamUnlocked = false,
+  onLearnOpen,
+  onStreamOpen,
+}) {
+  return (
+    <div className="flex items-center justify-between border-b border-white/8 px-4 py-4">
+      <button
+        type="button"
+        onClick={onAdminTap}
+        className="text-left text-sm font-semibold tracking-[-0.02em] text-white/88"
+      >
+        {title}
+      </button>
+
+      <div className="flex items-center gap-2">
+        {learnUnlocked ? (
+          <HeaderIconButton onClick={onLearnOpen} label="Open Learn">
+            <BookOpen size={16} strokeWidth={2} />
+          </HeaderIconButton>
+        ) : null}
+
+        {streamUnlocked ? (
+          <HeaderIconButton onClick={onStreamOpen} label="Open Stream">
+            <PlayCircle size={16} strokeWidth={2} />
+          </HeaderIconButton>
+        ) : null}
+
+        <HeaderIconButton onClick={onClose} label="Close account drawer">
+          <X size={16} strokeWidth={2} />
+        </HeaderIconButton>
+      </div>
+    </div>
+  );
+}
 
 export default function AccountPanelContentV1({
   onClose,
@@ -94,10 +152,7 @@ export default function AccountPanelContentV1({
     try {
       await logoutAll?.();
     } finally {
-      if (typeof onClose === "function") {
-        onClose();
-      }
-
+      onClose?.();
       navigate("/v1/signout", { replace: true });
     }
   };
@@ -163,7 +218,7 @@ export default function AccountPanelContentV1({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(8,14,20,0.98),rgba(4,8,14,1))] text-white">
-      <AccountHeaderV1
+      <AccountDrawerHeaderV1
         title="Account"
         onClose={onClose}
         onAdminTap={handleAdminTap}
