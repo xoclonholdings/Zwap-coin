@@ -1,58 +1,65 @@
-from fastapi import APIRouter, Request, HTTPException
-import stripe
+from datetime import datetime, timezone
 import json
 import os
-from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException, Request
+import stripe
 
 router = APIRouter()
 
-# Make sure your Stripe secret key is set in env
 stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
 
-# ===========================
-# CREATE SHOP CHECKOUT SESSION
-# ===========================
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def get_origin_url(body: dict) -> str:
+    return body.get("origin_url") or "http://localhost:3000"
+
+
 @router.post("/stripe/create-checkout")
 async def create_checkout_session(request: Request):
     body = await request.json()
 
-    wallet_address = (body.get("wallet_address") or "").lower()
-    item_id = body.get("item_id")
-    purchase_type = body.get("purchase_type", "shop_item")
-    origin_url = body.get("origin_url") or "http://localhost:3000"
+    db = request.app.state.db
+    wallet_address = (body.get("wallet_address") or "").lower().strip()
+    item_id = str(body.get("item_id") or "").strip()
+    origin_url = get_origin_url(body)
+
+    if not wallet_address:
+        raise HTTPException(status_code=400, detail="wallet_address is required")
 
     if not item_id:
         raise HTTPException(status_code=400, detail="item_id is required")
 
-    db = request.app.state.db
-    item = await db.shop_items.find_one({
-        "$or": [
-            {"id": item_id},
-            {"_id": item_id},
-        ]
-    })
+    item = await db.shop_items.find_one(
+        {
+            "id": item_id,
+            "active": {"$ne": False},
+            "in_stock": {"$ne": False},
+        },
+        {"_id": 0},
+    )
 
     if not item:
         raise HTTPException(status_code=404, detail="Shop item not found")
 
-    resolved_item_id = item.get("id") or str(item.get("_id"))
-
-    payment_method = item.get("payment_method")
-    if payment_method and payment_method != "stripe":
-        raise HTTPException(
-            status_code=400,
-            detail=f"Item is not purchasable with Stripe (payment_method={payment_method})"
-        )
+    if item.get("payment_method") != "stripe":
+        raise HTTPException(status_code=400, detail="Item is not available through Stripe")
 
     price = item.get("price_stripe")
+
     if price is None:
         raise HTTPException(status_code=400, detail="Item Stripe price is missing")
 
     try:
-        unit_amount = int(float(price) * 100)
+        unit_amount = int(round(float(price) * 100))
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid Stripe price")
+
+    if unit_amount <= 0:
+        raise HTTPException(status_code=400, detail="Stripe price must be greater than zero")
 
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -61,7 +68,7 @@ async def create_checkout_session(request: Request):
                 "price_data": {
                     "currency": "usd",
                     "product_data": {
-                        "name": item.get("name", "ZWAP Purchase"),
+                        "name": item.get("name", "ZWAP! Shop Item"),
                     },
                     "unit_amount": unit_amount,
                 },
@@ -69,97 +76,92 @@ async def create_checkout_session(request: Request):
             }
         ],
         mode="payment",
-        success_url=f"{origin_url}/success?payment=success&item={resolved_item_id}",
+        success_url=f"{origin_url}/success?payment=success&item={item_id}",
         cancel_url=f"{origin_url}/cancel?payment=cancel",
         metadata={
             "wallet_address": wallet_address,
-            "item_id": resolved_item_id,
-            "purchase_type": purchase_type,
+            "item_id": item_id,
+            "purchase_type": "shop_item",
         },
+    )
+
+    await db.payment_transactions.insert_one(
+        {
+            "id": session.id,
+            "session_id": session.id,
+            "wallet_address": wallet_address,
+            "item_id": item_id,
+            "amount": unit_amount / 100,
+            "currency": "usd",
+            "payment_status": "pending",
+            "type": "shop_item",
+            "created_at": utc_now_iso(),
+        }
     )
 
     return {"url": session.url}
 
 
-# ===========================
-# CREATE PLUS SUBSCRIPTION CHECKOUT SESSION
-# ===========================
 @router.post("/stripe/create-subscription-checkout")
 async def create_subscription_checkout(request: Request):
-    print("HIT create-subscription-checkout")
     body = await request.json()
 
-    wallet_address = (body.get("wallet_address") or "").lower()
-    origin_url = body.get("origin_url") or "http://localhost:3000"
+    db = request.app.state.db
+    wallet_address = (body.get("wallet_address") or "").lower().strip()
+    origin_url = get_origin_url(body)
 
     if not wallet_address:
         raise HTTPException(status_code=400, detail="wallet_address is required")
 
-    plus_price_id = os.environ.get("STRIPE_PLUS_PRICE_ID")
+    zitizen_price_id = os.environ.get("STRIPE_ZITIZEN_PRICE_ID") or os.environ.get(
+        "STRIPE_PLUS_PRICE_ID"
+    )
 
-    if plus_price_id:
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            mode="subscription",
-            line_items=[
-                {
-                    "price": plus_price_id,
-                    "quantity": 1,
-                }
-            ],
-            success_url=f"{origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{origin_url}/subscription/cancel",
-            metadata={
-                "wallet_address": wallet_address,
-                "purchase_type": "subscription_plus",
-            },
-        )
+    if zitizen_price_id:
+        line_items = [{"price": zitizen_price_id, "quantity": 1}]
     else:
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            mode="subscription",
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": "usd",
-                        "product_data": {
-                            "name": "ZWAP Plus Subscription",
-                        },
-                        "unit_amount": 999,
-                        "recurring": {"interval": "month"},
+        line_items = [
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": "ZWAP! Zitizen Subscription",
                     },
-                    "quantity": 1,
-                }
-            ],
-            success_url=f"{origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{origin_url}/subscription/cancel",
-            metadata={
-                "wallet_address": wallet_address,
-                "purchase_type": "subscription_plus",
-            },
-        )
+                    "unit_amount": 999,
+                    "recurring": {"interval": "month"},
+                },
+                "quantity": 1,
+            }
+        ]
 
-    db = request.app.state.db
-    
-    print("WRITING payment_transactions", session.id)
-    
-    await db.payment_transactions.insert_one({
-        "id": session.id,
-        "session_id": session.id,
-        "wallet_address": wallet_address,
-        "amount": 9.99,
-        "currency": "usd",
-        "payment_status": "pending",
-        "type": "subscription_plus",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        mode="subscription",
+        line_items=line_items,
+        success_url=f"{origin_url}/subscription/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{origin_url}/subscription/cancel",
+        metadata={
+            "wallet_address": wallet_address,
+            "purchase_type": "subscription_zitizen",
+        },
+    )
+
+    await db.payment_transactions.insert_one(
+        {
+            "id": session.id,
+            "session_id": session.id,
+            "wallet_address": wallet_address,
+            "amount": 9.99,
+            "currency": "usd",
+            "payment_status": "pending",
+            "type": "subscription_zitizen",
+            "created_at": utc_now_iso(),
+        }
+    )
 
     return {"url": session.url}
 
 
-# ===========================
-# STRIPE WEBHOOK
-# ===========================
 @router.post("/stripe/webhook")
 async def stripe_webhook(request: Request):
     payload = await request.body()
@@ -167,117 +169,137 @@ async def stripe_webhook(request: Request):
 
     try:
         event = json.loads(payload.decode("utf-8"))
-    except Exception as e:
-        return {"status": "error", "message": f"Invalid payload: {str(e)}"}
+    except Exception as error:
+        return {"status": "error", "message": f"Invalid payload: {str(error)}"}
 
-    try:
-        event_type = event.get("type")
-        event_data = event.get("data", {}).get("object", {})
-    except Exception as e:
-        return {"status": "error", "message": f"Malformed event: {str(e)}"}
+    event_type = event.get("type")
+    event_data = event.get("data", {}).get("object", {})
 
-    if event_type == "checkout.session.completed":
-        session = event_data
+    if event_type != "checkout.session.completed":
+        return {"status": "received"}
 
-        metadata = session.get("metadata", {}) or {}
-        wallet_address = (metadata.get("wallet_address") or "").lower()
-        item_id = metadata.get("item_id")
-        purchase_type = metadata.get("purchase_type")
+    session = event_data
+    metadata = session.get("metadata", {}) or {}
 
-        session_id = session.get("id")
-        amount_paid = (session.get("amount_total") or 0) / 100
-        currency = session.get("currency", "usd")
+    wallet_address = (metadata.get("wallet_address") or "").lower().strip()
+    item_id = metadata.get("item_id")
+    purchase_type = metadata.get("purchase_type")
+    session_id = session.get("id")
 
-        print("Payment completed:", session_id)
-        print("Wallet:", wallet_address)
-        print("Item ID:", item_id)
-        print("Purchase Type:", purchase_type)
+    amount_paid = (session.get("amount_total") or 0) / 100
+    currency = session.get("currency", "usd")
+    now_iso = utc_now_iso()
 
-        if purchase_type == "shop_item" and wallet_address and item_id:
-            item = await db.shop_items.find_one({
-                "$or": [
-                    {"id": item_id},
-                    {"_id": item_id},
-                ]
-            })
+    if not wallet_address or not session_id:
+        return {"status": "received"}
 
-            if item:
-                resolved_item_id = item.get("id") or str(item.get("_id"))
+    if purchase_type == "shop_item" and item_id:
+        item = await db.shop_items.find_one(
+            {"id": item_id},
+            {"_id": 0},
+        )
 
-                existing_purchase = await db.purchases.find_one({
-                    "stripe_session_id": session_id
-                })
+        if item:
+            existing_purchase = await db.purchases.find_one(
+                {"stripe_session_id": session_id}
+            )
 
-                if not existing_purchase:
-                    await db.purchases.insert_one({
+            if not existing_purchase:
+                await db.purchases.insert_one(
+                    {
                         "id": session_id,
                         "user_wallet": wallet_address,
-                        "item_id": resolved_item_id,
+                        "item_id": item_id,
                         "item_name": item.get("name", "Item"),
                         "price": amount_paid,
                         "currency": currency,
                         "payment_provider": "stripe",
-                        "purchased_at": datetime.now(timezone.utc).isoformat(),
+                        "purchased_at": now_iso,
                         "stripe_session_id": session_id,
                         "payment_status": "paid",
-                    })
+                    }
+                )
 
-                existing_inventory = await db.user_inventory.find_one({
+            existing_inventory = await db.user_inventory.find_one(
+                {
                     "user_wallet": wallet_address,
-                    "item_id": resolved_item_id,
+                    "item_id": item_id,
                     "stripe_session_id": session_id,
-                })
+                }
+            )
 
-                if not existing_inventory:
-                    await db.user_inventory.insert_one({
+            if not existing_inventory:
+                await db.user_inventory.insert_one(
+                    {
+                        "id": session_id,
                         "user_wallet": wallet_address,
-                        "item_id": resolved_item_id,
+                        "item_id": item_id,
                         "item_name": item.get("name", "Item"),
-                        "granted_at": datetime.now(timezone.utc).isoformat(),
+                        "category": item.get("category", "general"),
+                        "fulfillment_type": item.get("fulfillment_type", "none"),
+                        "download_url": item.get("download_url"),
+                        "external_url": item.get("external_url"),
+                        "granted_at": now_iso,
                         "source": "stripe",
                         "stripe_session_id": session_id,
                         "active": True,
-                    })
-
-        if purchase_type == "subscription_plus" and wallet_address:
-            await db.payment_transactions.update_one(
-                {"session_id": session_id},
-                {
-                    "$set": {
-                        "payment_status": "paid",
-                        "wallet_address": wallet_address,
-                        "updated_at": datetime.now(timezone.utc).isoformat(),
                     }
-                }
-            )
+                )
 
-            await db.users.update_one(
-                {"wallet_address": wallet_address},
-                {
-                    "$set": {
-                        "tier": "plus",
-                        "subscription_status": "active",
-                        "tier_updated_at": datetime.now(timezone.utc).isoformat(),
-                        "stripe_session_id": session_id,
-                    }
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {
+                "$set": {
+                    "payment_status": "paid",
+                    "updated_at": now_iso,
                 }
-            )
+            },
+        )
 
-            existing_plus = await db.user_inventory.find_one({
+    if purchase_type in {"subscription_zitizen", "subscription_plus"}:
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {
+                "$set": {
+                    "payment_status": "paid",
+                    "wallet_address": wallet_address,
+                    "updated_at": now_iso,
+                }
+            },
+        )
+
+        await db.users.update_one(
+            {"wallet_address": wallet_address},
+            {
+                "$set": {
+                    "tier": "plus",
+                    "subscription_status": "active",
+                    "tier_updated_at": now_iso,
+                    "stripe_session_id": session_id,
+                }
+            },
+        )
+
+        existing_zitizen = await db.user_inventory.find_one(
+            {
                 "user_wallet": wallet_address,
-                "item_id": "plus_subscription",
+                "item_id": "zitizen_subscription",
                 "active": True,
-            })
+            }
+        )
 
-            if not existing_plus:
-                await db.user_inventory.insert_one({
+        if not existing_zitizen:
+            await db.user_inventory.insert_one(
+                {
+                    "id": session_id,
                     "user_wallet": wallet_address,
-                    "item_id": "plus_subscription",
-                    "item_name": "Plus",
-                    "granted_at": datetime.now(timezone.utc).isoformat(),
+                    "item_id": "zitizen_subscription",
+                    "item_name": "Zitizen",
+                    "granted_at": now_iso,
                     "source": "stripe",
                     "stripe_session_id": session_id,
                     "active": True,
-                })
+                }
+            )
 
     return {"status": "received"}
