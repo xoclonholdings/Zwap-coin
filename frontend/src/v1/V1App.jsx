@@ -18,6 +18,8 @@ import {
 } from "@/v1/V1OnboardingStorage";
 
 const V1_BASE = "/v1";
+const STARTING_ONBOARDING_ZPTS = 100;
+const SHOP_UNLOCK_ZPTS = 1000;
 
 function buildDisplayName({ authUser, user, walletAddress }) {
   if (authUser?.email?.address) return authUser.email.address.split("@")[0];
@@ -43,7 +45,7 @@ export default function V1App() {
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
-  const [zptsBalance, setZptsBalance] = useState(0);
+  const [zptsBalance, setZptsBalance] = useState(STARTING_ONBOARDING_ZPTS);
 
   const displayName = useMemo(() => {
     return buildDisplayName({ authUser, user, walletAddress });
@@ -65,6 +67,7 @@ export default function V1App() {
 
   const openDashboard = () => {
     setDashboardUnlocked(true);
+    setZptsBalance((current) => Math.max(current, STARTING_ONBOARDING_ZPTS));
     navigate(dashboardRoute);
   };
 
@@ -113,8 +116,7 @@ export default function V1App() {
     );
   };
 
-  const shopUnlocked =
-    zptsBalance >= 30 || (isAuthenticated && triedMove && triedPlay);
+  const shopUnlocked = zptsBalance >= SHOP_UNLOCK_ZPTS;
 
   const taskStates = useMemo(() => {
     return [
@@ -132,10 +134,10 @@ export default function V1App() {
   return (
     <Routes>
       <Route
-        path={V1_BASE}
+        path=""
         element={
           onboardingSeen ? (
-            <Navigate to={signInRoute} replace />
+            <Navigate to="signin" replace />
           ) : (
             <LandingSequence
               onSelect={(target) => {
@@ -149,7 +151,7 @@ export default function V1App() {
       />
 
       <Route
-        path={`${V1_BASE}/about`}
+        path="about"
         element={
           <OnboardingAboutPage
             hasTriedMove={triedMove}
@@ -164,7 +166,7 @@ export default function V1App() {
       />
 
       <Route
-        path={`${V1_BASE}/move`}
+        path="move"
         element={
           <MoveOnboardingSequence
             totalSteps={todaySteps}
@@ -186,20 +188,24 @@ export default function V1App() {
               const nextProgress = markMoveTried();
 
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
-              setZptsBalance((prev) => Math.max(prev, displayedZpts));
+              setZptsBalance((prev) =>
+                Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
+              );
 
               advanceOnboarding(nextProgress);
             }}
             onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setTodaySteps((prev) => Math.max(prev, displayedSteps));
-              setZptsBalance((prev) => Math.max(prev, displayedZpts));
+              setZptsBalance((prev) =>
+                Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
+              );
             }}
           />
         }
       />
 
       <Route
-        path={`${V1_BASE}/play`}
+        path="play"
         element={
           <PlayOnboardingSequence
             triedMove={triedMove}
@@ -211,7 +217,9 @@ export default function V1App() {
               const nextProgress = markPlayTried();
 
               setGamesPlayedToday((prev) => prev + 1);
-              setZptsBalance((prev) => Math.max(prev, displayedZpts));
+              setZptsBalance((prev) =>
+                Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
+              );
 
               if (shouldRouteToMove && !nextProgress.move) {
                 navigate(moveRoute);
@@ -225,7 +233,7 @@ export default function V1App() {
       />
 
       <Route
-        path={`${V1_BASE}/signup-gate`}
+        path="signup-gate"
         element={
           progressRef.current.move && progressRef.current.play ? (
             <SignupGate
@@ -244,7 +252,7 @@ export default function V1App() {
       />
 
       <Route
-        path={`${V1_BASE}/signup`}
+        path="signup"
         element={
           <SignupOnboarding
             navigate={navigate}
@@ -255,22 +263,16 @@ export default function V1App() {
       />
 
       <Route
-        path={`${V1_BASE}/signin`}
+        path="signin"
         element={
-          <SignIn
-            dashboardRoute={dashboardRoute}
-            onSuccess={openDashboard}
-          />
+          <SignIn dashboardRoute={dashboardRoute} onSuccess={openDashboard} />
         }
       />
 
-      <Route
-        path={`${V1_BASE}/signout`}
-        element={<SignOut nextRoute={signInRoute} />}
-      />
+      <Route path="signout" element={<SignOut nextRoute={signInRoute} />} />
 
       <Route
-        path={`${V1_BASE}/dashboard`}
+        path="dashboard"
         element={
           isAuthenticated && dashboardUnlocked ? (
             <SimplifiedDashboard
@@ -305,12 +307,12 @@ export default function V1App() {
               shopRoute={dashboardRoute}
             />
           ) : (
-            <Navigate to={signInRoute} replace />
+            <Navigate to="signin" replace />
           )
         }
       />
 
-      <Route path="*" element={<Navigate to={V1_BASE} replace />} />
+      <Route path="*" element={<Navigate to="" replace />} />
     </Routes>
   );
 }
