@@ -1,18 +1,45 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import AccountPanelContentV1 from "./AccountPanelContentV1";
 
+function buildInitials(name = "") {
+  const safe = String(name || "").trim();
+  if (!safe) return "U";
+
+  const parts = safe.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
+}
+
+function buildUsername({ user, authUser, username }) {
+  return (
+    username ||
+    user?.username ||
+    user?.displayName ||
+    user?.display_name ||
+    user?.name ||
+    authUser?.username ||
+    authUser?.displayName ||
+    authUser?.display_name ||
+    authUser?.email?.address?.split("@")[0] ||
+    authUser?.email?.split("@")[0] ||
+    ""
+  );
+}
+
 export default function AccountDrawerV1({
   open = false,
   onOpenChange,
+  onClose,
 
   user,
   authUser,
   username,
   subtext,
   initials,
-  tier = "zwapper",
+  tier = "Starter",
   zptsBalance = 0,
   zwapBalance = 0,
   walletAddress = "",
@@ -34,8 +61,23 @@ export default function AccountDrawerV1({
   onOpenAbout,
   onOpenSupportChat,
 }) {
+  const resolvedUsername = useMemo(() => {
+    return buildUsername({ user, authUser, username });
+  }, [user, authUser, username]);
+
+  const resolvedInitials = useMemo(() => {
+    return initials || buildInitials(resolvedUsername);
+  }, [initials, resolvedUsername]);
+
   const handleClose = () => {
-    onOpenChange?.(false);
+    if (typeof onOpenChange === "function") {
+      onOpenChange(false);
+      return;
+    }
+
+    if (typeof onClose === "function") {
+      onClose();
+    }
   };
 
   return (
@@ -54,18 +96,7 @@ export default function AccountDrawerV1({
           />
 
           <motion.aside
-            className="
-              fixed right-0 top-0 z-[90]
-              h-screen
-              w-[calc(100vw-18px)]
-              max-w-[410px]
-              overflow-hidden
-              border-l border-white/10
-              bg-[linear-gradient(180deg,rgba(8,10,22,0.98)_0%,rgba(10,12,28,0.985)_28%,rgba(7,9,20,1)_100%)]
-              text-white
-              shadow-[-24px_0_60px_rgba(0,0,0,0.45)]
-              backdrop-blur-xl
-            "
+            className="fixed right-0 top-0 z-[90] h-screen w-[calc(100vw-18px)] max-w-[410px] overflow-hidden border-l border-white/10 bg-[linear-gradient(180deg,rgba(8,10,22,0.98)_0%,rgba(10,12,28,0.985)_28%,rgba(7,9,20,1)_100%)] text-white shadow-[-24px_0_60px_rgba(0,0,0,0.45)] backdrop-blur-xl"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -95,9 +126,9 @@ export default function AccountDrawerV1({
                   streamUnlocked={streamUnlocked}
                   user={user}
                   authUser={authUser}
-                  username={username}
+                  username={resolvedUsername}
                   subtext={subtext}
-                  initials={initials}
+                  initials={resolvedInitials}
                   tier={tier}
                   zptsBalance={zptsBalance}
                   zwapBalance={zwapBalance}
