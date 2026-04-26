@@ -106,7 +106,10 @@ export default function AppHeaderV1({
 
   function handleGardenTap() {
     if (!gardenUnlocked) {
-      showLockedPopup("Garden Locked", "Complete more daily activity to unlock Garden.");
+      showLockedPopup(
+        "Garden Locked",
+        "Complete more daily activity to unlock Garden."
+      );
       return;
     }
 
@@ -116,7 +119,10 @@ export default function AppHeaderV1({
 
   function handleLearnTap() {
     if (!learnUnlocked) {
-      showLockedPopup("Learn Locked", "Complete more progress to unlock Learn.");
+      showLockedPopup(
+        "Learn Locked",
+        "Complete more progress to unlock Learn."
+      );
       return;
     }
 
@@ -126,7 +132,10 @@ export default function AppHeaderV1({
 
   function handleStreamTap() {
     if (!streamUnlocked) {
-      showLockedPopup("Stream Locked", "Complete more progress to unlock Stream.");
+      showLockedPopup(
+        "Stream Locked",
+        "Complete more progress to unlock Stream."
+      );
       return;
     }
 
@@ -136,7 +145,10 @@ export default function AppHeaderV1({
 
   function handleBadgeTap() {
     if (!badgesUnlocked) {
-      showLockedPopup("Badges Locked", "Complete more progress to unlock Badges.");
+      showLockedPopup(
+        "Badges Locked",
+        "Complete more progress to unlock Badges."
+      );
       return;
     }
 
@@ -219,6 +231,9 @@ export default function AppHeaderV1({
       <AccountDrawerV1
         open={accountOpen}
         onClose={() => setAccountOpen(false)}
+        username={displayName}
+        initials={accountInitials}
+        zptsBalance={zptsBalance}
       />
     </>
   );
