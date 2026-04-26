@@ -165,11 +165,6 @@ export default function DashboardWindowPlay({
                 ? "cursor-not-allowed border-white/10 bg-white/10 text-white/30"
                 : "border-white/50 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-300 text-white shadow-[0_0_24px_rgba(34,211,238,0.20)] active:scale-[0.98]",
             ].join(" ")}
-            aria-label={
-              activeGame.locked
-                ? `${activeGame.name} locked`
-                : `Start ${activeGame.name}`
-            }
           >
             {activeGame.locked ? "Locked" : "Start"}
           </button>
