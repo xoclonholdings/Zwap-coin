@@ -10,26 +10,32 @@ import {
   INITIAL_ENEMY_COUNT,
   MAX_ENEMIES,
   ROUND_PELLET_COUNT,
+  ROUND_POWER_PELLET_COUNT,
+  POWER_MODE_MS,
+  POWER_ENEMY_SCORE,
   DIRECTIONS,
-  WALLS,
+  ZAPMAN_CHARACTERS,
+  getWallsForRound,
 } from "./ZapManConstants";
-
-const WALL_SET = new Set(WALLS);
 
 function key(x, y) {
   return `${x},${y}`;
 }
 
-export function isWall(x, y) {
-  return WALL_SET.has(key(x, y));
+function getWallSet(round = 1) {
+  return new Set(getWallsForRound(round));
+}
+
+export function isWall(x, y, round = 1) {
+  return getWallSet(round).has(key(x, y));
 }
 
 export function isInsideGrid(x, y) {
   return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
 }
 
-export function isWalkable(x, y) {
-  return isInsideGrid(x, y) && !isWall(x, y);
+export function isWalkable(x, y, round = 1) {
+  return isInsideGrid(x, y) && !isWall(x, y, round);
 }
 
 function positionsEqual(a, b) {
@@ -40,12 +46,12 @@ function randomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-function getAllWalkableTiles() {
+function getAllWalkableTiles(round = 1) {
   const tiles = [];
 
   for (let y = 0; y < GRID_HEIGHT; y += 1) {
     for (let x = 0; x < GRID_WIDTH; x += 1) {
-      if (isWalkable(x, y)) {
+      if (isWalkable(x, y, round)) {
         tiles.push({ x, y });
       }
     }
@@ -54,10 +60,10 @@ function getAllWalkableTiles() {
   return tiles;
 }
 
-function getRandomWalkableTile(excluded = []) {
+function getRandomWalkableTile(round = 1, excluded = []) {
   const excludedKeys = new Set(excluded.map((tile) => key(tile.x, tile.y)));
 
-  const candidates = getAllWalkableTiles().filter(
+  const candidates = getAllWalkableTiles(round).filter(
     (tile) => !excludedKeys.has(key(tile.x, tile.y))
   );
 
@@ -68,22 +74,22 @@ function getRandomWalkableTile(excluded = []) {
   return candidates[randomInt(candidates.length)];
 }
 
-function getAvailableMoves(position) {
+function getAvailableMoves(position, round = 1) {
   return Object.entries(DIRECTIONS)
     .map(([name, vector]) => ({
       name,
       x: position.x + vector.x,
       y: position.y + vector.y,
     }))
-    .filter((move) => isWalkable(move.x, move.y));
+    .filter((move) => isWalkable(move.x, move.y, round));
 }
 
-function movePlayer(player, direction) {
+function movePlayer(player, direction, round = 1) {
   const vector = DIRECTIONS[direction] || DIRECTIONS.right;
   const nextX = player.x + vector.x;
   const nextY = player.y + vector.y;
 
-  if (!isWalkable(nextX, nextY)) {
+  if (!isWalkable(nextX, nextY, round)) {
     return {
       ...player,
       direction,
@@ -97,36 +103,45 @@ function movePlayer(player, direction) {
   };
 }
 
-function moveEnemyTowardPlayer(enemy, player) {
-  const options = getAvailableMoves(enemy);
+function moveEnemyTowardPlayer(enemy, player, round = 1, powered = false) {
+  const options = getAvailableMoves(enemy, round);
 
   if (options.length === 0) {
     return enemy;
   }
 
   const ranked = options
-    .map((option) => ({
-      ...option,
-      score:
-        Math.abs(option.x - player.x) +
-        Math.abs(option.y - player.y) +
-        Math.random() * 0.25,
-    }))
+    .map((option) => {
+      const distance =
+        Math.abs(option.x - player.x) + Math.abs(option.y - player.y);
+
+      return {
+        ...option,
+        score: powered ? -distance + Math.random() * 0.25 : distance + Math.random() * 0.25,
+      };
+    })
     .sort((a, b) => a.score - b.score);
 
   const best = ranked[0];
 
   return {
+    ...enemy,
     x: best.x,
     y: best.y,
   };
 }
 
-function generatePellets(player, enemies, count = ROUND_PELLET_COUNT) {
-  const excluded = [player, ...enemies];
+function generatePellets({
+  round = 1,
+  player,
+  enemies,
+  powerPellets,
+  count = ROUND_PELLET_COUNT,
+}) {
+  const excluded = [player, ...enemies, ...powerPellets];
   const excludedKeys = new Set(excluded.map((tile) => key(tile.x, tile.y)));
 
-  const walkableTiles = getAllWalkableTiles().filter(
+  const walkableTiles = getAllWalkableTiles(round).filter(
     (tile) => !excludedKeys.has(key(tile.x, tile.y))
   );
 
@@ -146,30 +161,92 @@ function generatePellets(player, enemies, count = ROUND_PELLET_COUNT) {
   return pellets;
 }
 
-function generateEnemies(count, player) {
+function generatePowerPellets({
+  round = 1,
+  player,
+  enemies,
+  count = ROUND_POWER_PELLET_COUNT,
+}) {
+  const preferred = [
+    { x: 1, y: 1 },
+    { x: GRID_WIDTH - 2, y: 1 },
+    { x: 1, y: GRID_HEIGHT - 2 },
+    { x: GRID_WIDTH - 2, y: GRID_HEIGHT - 2 },
+  ];
+
+  const excluded = [player, ...enemies];
+  const excludedKeys = new Set(excluded.map((tile) => key(tile.x, tile.y)));
+
+  const powerPellets = [];
+  const used = new Set();
+
+  preferred.forEach((tile) => {
+    if (
+      powerPellets.length < count &&
+      isWalkable(tile.x, tile.y, round) &&
+      !excludedKeys.has(key(tile.x, tile.y))
+    ) {
+      powerPellets.push(tile);
+      used.add(key(tile.x, tile.y));
+    }
+  });
+
+  while (powerPellets.length < count) {
+    const tile = getRandomWalkableTile(round, [
+      ...excluded,
+      ...powerPellets,
+    ]);
+
+    const tileKey = key(tile.x, tile.y);
+
+    if (!used.has(tileKey)) {
+      used.add(tileKey);
+      powerPellets.push(tile);
+    } else {
+      break;
+    }
+  }
+
+  return powerPellets;
+}
+
+function generateEnemies(count, player, round = 1) {
   const enemies = [];
 
   while (enemies.length < count) {
-    const spawn = getRandomWalkableTile([player, ...enemies]);
+    const spawn = getRandomWalkableTile(round, [player, ...enemies]);
 
     if (
       Math.abs(spawn.x - player.x) + Math.abs(spawn.y - player.y) >= 4 &&
       !enemies.some((enemy) => positionsEqual(enemy, spawn))
     ) {
-      enemies.push(spawn);
+      const enemyIndex = enemies.length;
+
+      enemies.push({
+        ...spawn,
+        id: `${round}-${enemyIndex}-${Date.now()}-${Math.random()}`,
+        character:
+          ZAPMAN_CHARACTERS.enemies[
+            enemyIndex % ZAPMAN_CHARACTERS.enemies.length
+          ],
+      });
     }
   }
 
   return enemies;
 }
 
-function resetPositionsAfterHit(state) {
-  const player = {
+function createPlayer() {
+  return {
     ...INITIAL_PLAYER_POSITION,
     direction: INITIAL_PLAYER_DIRECTION,
+    character: ZAPMAN_CHARACTERS.player,
   };
+}
 
-  const enemies = generateEnemies(state.enemies.length, player);
+function resetPositionsAfterHit(state) {
+  const player = createPlayer();
+  const enemies = generateEnemies(state.enemies.length, player, state.round);
 
   return {
     ...state,
@@ -180,28 +257,61 @@ function resetPositionsAfterHit(state) {
   };
 }
 
-export function createInitialState() {
-  const player = {
-    ...INITIAL_PLAYER_POSITION,
-    direction: INITIAL_PLAYER_DIRECTION,
-  };
+function buildRoundState({
+  round = 1,
+  score = 0,
+  lives = INITIAL_LIVES,
+  pelletsCollected = 0,
+  poweredUntil = 0,
+} = {}) {
+  const safeRound = Math.max(1, Number(round) || 1);
+  const player = createPlayer();
 
-  const enemies = generateEnemies(INITIAL_ENEMY_COUNT, player);
-  const pellets = generatePellets(player, enemies);
+  const enemyCount = Math.min(
+    INITIAL_ENEMY_COUNT + (safeRound - 1),
+    MAX_ENEMIES
+  );
+
+  const enemyMoveInterval = Math.max(
+    INITIAL_ENEMY_SPEED - (safeRound - 1) * ENEMY_SPEED_STEP,
+    MIN_ENEMY_SPEED
+  );
+
+  const enemies = generateEnemies(enemyCount, player, safeRound);
+  const powerPellets = generatePowerPellets({
+    round: safeRound,
+    player,
+    enemies,
+  });
+
+  const pellets = generatePellets({
+    round: safeRound,
+    player,
+    enemies,
+    powerPellets,
+  });
 
   return {
-    round: 1,
-    score: 0,
-    lives: INITIAL_LIVES,
-    pelletsCollected: 0,
+    round: safeRound,
+    score,
+    lives,
+    pelletsCollected,
+    powerPelletsCollected: 0,
+    enemiesZapped: 0,
     isGameOver: false,
     player,
     queuedDirection: INITIAL_PLAYER_DIRECTION,
     enemies,
     pellets,
-    enemyMoveInterval: INITIAL_ENEMY_SPEED,
+    powerPellets,
+    poweredUntil,
+    enemyMoveInterval,
     lastEnemyMoveAt: 0,
   };
+}
+
+export function createInitialState() {
+  return buildRoundState();
 }
 
 export function setQueuedDirection(state, direction) {
@@ -215,34 +325,57 @@ export function setQueuedDirection(state, direction) {
   };
 }
 
-export function advancePlayer(state) {
+export function isPowered(state, now = Date.now()) {
+  return Number(state.poweredUntil || 0) > now;
+}
+
+export function advancePlayer(state, now = Date.now()) {
   if (state.isGameOver) {
     return state;
   }
 
-  const preferredMove = movePlayer(state.player, state.queuedDirection);
+  const preferredMove = movePlayer(
+    state.player,
+    state.queuedDirection,
+    state.round
+  );
 
   const nextPlayer =
     preferredMove.x !== state.player.x || preferredMove.y !== state.player.y
       ? preferredMove
-      : movePlayer(state.player, state.player.direction);
+      : movePlayer(state.player, state.player.direction, state.round);
 
   const remainingPellets = state.pellets.filter(
     (pellet) => !positionsEqual(pellet, nextPlayer)
   );
 
-  const collectedThisStep = state.pellets.length - remainingPellets.length;
+  const remainingPowerPellets = state.powerPellets.filter(
+    (pellet) => !positionsEqual(pellet, nextPlayer)
+  );
+
+  const collectedPellets = state.pellets.length - remainingPellets.length;
+  const collectedPowerPellets =
+    state.powerPellets.length - remainingPowerPellets.length;
+
+  const poweredUntil =
+    collectedPowerPellets > 0
+      ? now + POWER_MODE_MS
+      : state.poweredUntil;
 
   return {
     ...state,
     player: nextPlayer,
     pellets: remainingPellets,
-    score: state.score + collectedThisStep * 10,
-    pelletsCollected: state.pelletsCollected + collectedThisStep,
+    powerPellets: remainingPowerPellets,
+    score: state.score + collectedPellets * 10 + collectedPowerPellets * 25,
+    pelletsCollected: state.pelletsCollected + collectedPellets,
+    powerPelletsCollected:
+      state.powerPelletsCollected + collectedPowerPellets,
+    poweredUntil,
   };
 }
 
-export function advanceEnemies(state, now) {
+export function advanceEnemies(state, now = Date.now()) {
   if (state.isGameOver) {
     return state;
   }
@@ -251,8 +384,10 @@ export function advanceEnemies(state, now) {
     return state;
   }
 
+  const powered = isPowered(state, now);
+
   const enemies = state.enemies.map((enemy) =>
-    moveEnemyTowardPlayer(enemy, state.player)
+    moveEnemyTowardPlayer(enemy, state.player, state.round, powered)
   );
 
   return {
@@ -263,44 +398,42 @@ export function advanceEnemies(state, now) {
 }
 
 export function checkCollision(player, enemies) {
-  return enemies.some((enemy) => positionsEqual(player, enemy));
+  return enemies.find((enemy) => positionsEqual(player, enemy)) || null;
+}
+
+export function resolveCollision(state, enemy, now = Date.now()) {
+  if (!enemy) return state;
+
+  if (isPowered(state, now)) {
+    const enemies = state.enemies.filter((item) => item.id !== enemy.id);
+
+    return {
+      ...state,
+      enemies,
+      score: state.score + POWER_ENEMY_SCORE,
+      enemiesZapped: state.enemiesZapped + 1,
+    };
+  }
+
+  return applyGameOver(state);
 }
 
 export function maybeAdvanceRound(state) {
-  if (state.pellets.length > 0 || state.isGameOver) {
+  if (
+    state.pellets.length > 0 ||
+    state.powerPellets.length > 0 ||
+    state.isGameOver
+  ) {
     return state;
   }
 
-  const nextRound = state.round + 1;
-
-  const enemyCount = Math.min(
-    INITIAL_ENEMY_COUNT + (nextRound - 1),
-    MAX_ENEMIES
-  );
-
-  const enemyMoveInterval = Math.max(
-    INITIAL_ENEMY_SPEED - (nextRound - 1) * ENEMY_SPEED_STEP,
-    MIN_ENEMY_SPEED
-  );
-
-  const player = {
-    ...INITIAL_PLAYER_POSITION,
-    direction: INITIAL_PLAYER_DIRECTION,
-  };
-
-  const enemies = generateEnemies(enemyCount, player);
-  const pellets = generatePellets(player, enemies);
-
-  return {
-    ...state,
-    round: nextRound,
-    player,
-    queuedDirection: INITIAL_PLAYER_DIRECTION,
-    enemies,
-    pellets,
-    enemyMoveInterval,
-    lastEnemyMoveAt: 0,
-  };
+  return buildRoundState({
+    round: state.round + 1,
+    score: state.score,
+    lives: state.lives,
+    pelletsCollected: state.pelletsCollected,
+    poweredUntil: 0,
+  });
 }
 
 export function applyGameOver(state) {
@@ -317,9 +450,23 @@ export function applyGameOver(state) {
   return resetPositionsAfterHit({
     ...state,
     lives: nextLives,
+    poweredUntil: 0,
   });
 }
 
 export function restartGame() {
   return createInitialState();
+}
+
+export function getResult(state) {
+  return {
+    score: state.score,
+    round: state.round,
+    lives: state.lives,
+    cleared: false,
+    pelletsCollected: state.pelletsCollected,
+    powerPelletsCollected: state.powerPelletsCollected,
+    enemiesZapped: state.enemiesZapped,
+    gameId: "zap-man",
+  };
 }
