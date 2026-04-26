@@ -12,15 +12,18 @@ function buildInitials(name = "") {
   if (!safe) return "U";
 
   const parts = safe.split(/\s+/).filter(Boolean);
-
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
 
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
 
-function HeaderIconButton({ label, icon, unlocked = false, hasAlert = false, onClick }) {
+function HeaderIconButton({
+  label,
+  icon,
+  unlocked = false,
+  hasAlert = false,
+  onClick,
+}) {
   return (
     <button
       type="button"
