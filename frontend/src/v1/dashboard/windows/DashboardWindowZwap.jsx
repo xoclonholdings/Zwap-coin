@@ -252,27 +252,27 @@ export default function DashboardWindowZwap({
 
         <ZwapHeader />
 
-        <div className="relative z-10 mt-4 text-[1.15rem] font-black leading-tight tracking-[-0.05em] text-white">
+        <div className="relative z-10 mt-2 text-[0.96rem] font-black leading-tight tracking-[-0.045em] text-white">
           Daily Tasks
         </div>
 
-        <div className="relative z-10 mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+        <div className="relative z-10 mt-2 grid min-h-0 flex-1 grid-rows-4 gap-1.5 overflow-hidden">
           {taskItems.map((task) => (
             <div
               key={task.id}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2"
+              className="flex min-h-0 items-center justify-between rounded-[1.1rem] border border-white/10 bg-white/[0.045] px-2.5 py-1"
             >
               <div className="flex min-w-0 items-center gap-2">
                 {task.completed ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-300" />
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
                 ) : (
-                  <Circle className="h-4 w-4 shrink-0 text-white/30" />
+                  <Circle className="h-3.5 w-3.5 shrink-0 text-white/30" />
                 )}
 
                 <span
                   className={[
-                    "truncate text-sm font-bold tracking-[-0.02em]",
-                    task.completed ? "text-white" : "text-white/60",
+                    "whitespace-nowrap text-[0.72rem] font-bold tracking-[-0.025em]",
+                    task.completed ? "text-white" : "text-white/66",
                   ].join(" ")}
                 >
                   {task.label}
@@ -281,8 +281,8 @@ export default function DashboardWindowZwap({
 
               <span
                 className={[
-                  "ml-2 shrink-0 text-[10px] font-black uppercase tracking-[0.12em]",
-                  task.completed ? "text-cyan-300" : "text-white/35",
+                  "ml-2 shrink-0 text-[8px] font-black uppercase tracking-[0.12em]",
+                  task.completed ? "text-cyan-300" : "text-white/38",
                 ].join(" ")}
               >
                 {task.completed ? "Done" : "Open"}
@@ -291,7 +291,7 @@ export default function DashboardWindowZwap({
           ))}
         </div>
 
-        <div className="relative z-10 mt-3 shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-white/50">
+        <div className="relative z-10 mt-2 shrink-0 whitespace-nowrap text-[8px] font-black uppercase tracking-[0.12em] text-white/50">
           {taskLabel}
         </div>
       </section>
