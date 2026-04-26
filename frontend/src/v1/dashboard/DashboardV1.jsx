@@ -21,6 +21,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   const [moveIsActive, setMoveIsActive] = useState(false);
   const [sessionSteps, setSessionSteps] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
+  const [activeGame, setActiveGame] = useState(null);
 
   const sessionStartStepsRef = useRef(0);
 
@@ -36,6 +37,11 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
 
       return nextState;
     });
+  };
+
+  const handleStartGame = (game) => {
+    setActiveGame(game);
+    console.log("Starting game:", game);
   };
 
   useEffect(() => {
@@ -82,6 +88,8 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
           <DashboardWindowPlay
             gamesPlayedToday={play.gamesPlayedToday}
             playPercent={play.playProgressPercent}
+            onStartGame={handleStartGame}
+            onOpenPlay={handleStartGame}
           />
         </div>
 
@@ -95,6 +103,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
             zwapMode={zwap.zwapMode}
             zwapMessage={zwap.zwapMessage}
             zwapHint={zwap.zwapHint}
+            activeGame={activeGame}
           />
         </div>
       </div>
