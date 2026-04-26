@@ -56,11 +56,6 @@ export default function DashboardWindowPlay({
     setTouchStartX(null);
   }
 
-  function handleDesktopCycle(event) {
-    event.stopPropagation();
-    showNextGame();
-  }
-
   function handleStart(event) {
     event.stopPropagation();
 
@@ -87,7 +82,7 @@ export default function DashboardWindowPlay({
   return (
     <section
       className={[
-        "relative w-full overflow-hidden rounded-[26px] border border-white/10 p-4 text-left",
+        "relative flex h-full w-full overflow-hidden rounded-[26px] border border-white/10 p-4 text-left",
         "bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.16),transparent_38%),linear-gradient(180deg,rgba(16,18,30,0.96),rgba(8,10,18,0.98))]",
         "shadow-[0_14px_34px_rgba(0,0,0,0.26)]",
         className,
@@ -98,8 +93,8 @@ export default function DashboardWindowPlay({
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.12),transparent_42%,rgba(34,211,238,0.08))]" />
 
-      <div className="relative z-10 flex min-h-[250px] flex-col">
-        <div className="flex items-center justify-between gap-3">
+      <div className="relative z-10 flex min-h-0 w-full flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-violet-400/20 bg-violet-400/10 text-violet-200">
               <Gamepad2 className="h-[17px] w-[17px]" strokeWidth={2.1} />
@@ -120,27 +115,20 @@ export default function DashboardWindowPlay({
           </button>
         </div>
 
-        <div
-          role="button"
-          tabIndex={0}
-          className="mt-5 flex flex-1 cursor-pointer touch-pan-y flex-col items-center justify-center rounded-[24px] border border-white/10 bg-black/18 px-4 py-6 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
-          onClick={handleDesktopCycle}
-          onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
-          onTouchEnd={handleTouchEnd}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              showNextGame();
-            }
-          }}
-          aria-label="Change selected game"
-        >
-          <div className="relative flex min-h-[96px] w-full items-center justify-center">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-[24px] border border-white/10 bg-black/18 px-4 py-4 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]">
+          <button
+            type="button"
+            onClick={showNextGame}
+            onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
+            onTouchEnd={handleTouchEnd}
+            className="relative flex min-h-0 flex-1 cursor-pointer touch-pan-y items-center justify-center rounded-[18px] outline-none"
+            aria-label="Change selected game"
+          >
             <img
               src={activeGame.logo}
               alt={activeGame.name}
               className={[
-                "max-h-[86px] w-auto max-w-full object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition",
+                "max-h-[72px] w-auto max-w-full object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition",
                 activeGame.locked ? "opacity-30 blur-[1px]" : "",
               ].join(" ")}
             />
@@ -153,14 +141,14 @@ export default function DashboardWindowPlay({
                 </span>
               </div>
             )}
-          </div>
+          </button>
 
           <button
             type="button"
             onClick={handleStart}
             disabled={activeGame.locked}
             className={[
-              "mt-6 w-full rounded-[22px] border px-5 py-3 text-center text-lg font-black transition",
+              "mt-3 shrink-0 rounded-[22px] border px-5 py-2.5 text-center text-base font-black transition",
               activeGame.locked
                 ? "cursor-not-allowed border-white/10 bg-white/10 text-white/30"
                 : "border-white/50 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-300 text-white shadow-[0_0_24px_rgba(34,211,238,0.20)] active:scale-[0.98]",
@@ -169,7 +157,7 @@ export default function DashboardWindowPlay({
             {activeGame.locked ? "Locked" : "Start"}
           </button>
 
-          <div className="mt-4 flex justify-center gap-1.5" aria-hidden="true">
+          <div className="mt-3 flex shrink-0 justify-center gap-1.5" aria-hidden="true">
             {safeGames.map((_, index) => (
               <span
                 key={index}
