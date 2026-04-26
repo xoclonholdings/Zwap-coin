@@ -3,6 +3,7 @@ import {
   GRID_HEIGHT,
   INITIAL_PLAYER_POSITION,
   INITIAL_PLAYER_DIRECTION,
+  INITIAL_LIVES,
   INITIAL_ENEMY_SPEED,
   MIN_ENEMY_SPEED,
   ENEMY_SPEED_STEP,
@@ -55,6 +56,7 @@ function getAllWalkableTiles() {
 
 function getRandomWalkableTile(excluded = []) {
   const excludedKeys = new Set(excluded.map((tile) => key(tile.x, tile.y)));
+
   const candidates = getAllWalkableTiles().filter(
     (tile) => !excludedKeys.has(key(tile.x, tile.y))
   );
@@ -106,7 +108,9 @@ function moveEnemyTowardPlayer(enemy, player) {
     .map((option) => ({
       ...option,
       score:
-        Math.abs(option.x - player.x) + Math.abs(option.y - player.y) + Math.random() * 0.25,
+        Math.abs(option.x - player.x) +
+        Math.abs(option.y - player.y) +
+        Math.random() * 0.25,
     }))
     .sort((a, b) => a.score - b.score);
 
@@ -121,6 +125,7 @@ function moveEnemyTowardPlayer(enemy, player) {
 function generatePellets(player, enemies, count = ROUND_PELLET_COUNT) {
   const excluded = [player, ...enemies];
   const excludedKeys = new Set(excluded.map((tile) => key(tile.x, tile.y)));
+
   const walkableTiles = getAllWalkableTiles().filter(
     (tile) => !excludedKeys.has(key(tile.x, tile.y))
   );
@@ -158,6 +163,23 @@ function generateEnemies(count, player) {
   return enemies;
 }
 
+function resetPositionsAfterHit(state) {
+  const player = {
+    ...INITIAL_PLAYER_POSITION,
+    direction: INITIAL_PLAYER_DIRECTION,
+  };
+
+  const enemies = generateEnemies(state.enemies.length, player);
+
+  return {
+    ...state,
+    player,
+    queuedDirection: INITIAL_PLAYER_DIRECTION,
+    enemies,
+    lastEnemyMoveAt: 0,
+  };
+}
+
 export function createInitialState() {
   const player = {
     ...INITIAL_PLAYER_POSITION,
@@ -170,6 +192,7 @@ export function createInitialState() {
   return {
     round: 1,
     score: 0,
+    lives: INITIAL_LIVES,
     pelletsCollected: 0,
     isGameOver: false,
     player,
@@ -198,6 +221,7 @@ export function advancePlayer(state) {
   }
 
   const preferredMove = movePlayer(state.player, state.queuedDirection);
+
   const nextPlayer =
     preferredMove.x !== state.player.x || preferredMove.y !== state.player.y
       ? preferredMove
@@ -227,7 +251,9 @@ export function advanceEnemies(state, now) {
     return state;
   }
 
-  const enemies = state.enemies.map((enemy) => moveEnemyTowardPlayer(enemy, state.player));
+  const enemies = state.enemies.map((enemy) =>
+    moveEnemyTowardPlayer(enemy, state.player)
+  );
 
   return {
     ...state,
@@ -246,7 +272,12 @@ export function maybeAdvanceRound(state) {
   }
 
   const nextRound = state.round + 1;
-  const enemyCount = Math.min(INITIAL_ENEMY_COUNT + (nextRound - 1), MAX_ENEMIES);
+
+  const enemyCount = Math.min(
+    INITIAL_ENEMY_COUNT + (nextRound - 1),
+    MAX_ENEMIES
+  );
+
   const enemyMoveInterval = Math.max(
     INITIAL_ENEMY_SPEED - (nextRound - 1) * ENEMY_SPEED_STEP,
     MIN_ENEMY_SPEED
@@ -273,10 +304,20 @@ export function maybeAdvanceRound(state) {
 }
 
 export function applyGameOver(state) {
-  return {
+  const nextLives = Math.max(0, Number(state.lives || 0) - 1);
+
+  if (nextLives <= 0) {
+    return {
+      ...state,
+      lives: 0,
+      isGameOver: true,
+    };
+  }
+
+  return resetPositionsAfterHit({
     ...state,
-    isGameOver: true,
-  };
+    lives: nextLives,
+  });
 }
 
 export function restartGame() {
