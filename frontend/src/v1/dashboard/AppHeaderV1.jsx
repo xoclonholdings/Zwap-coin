@@ -19,7 +19,7 @@ function formatZpts(value) {
 
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
-  if (!safe) return "U";
+  if (!safe) return "";
 
   const parts = safe.split(/\s+/).filter(Boolean);
   if (parts.length === 1) {
@@ -110,12 +110,26 @@ function HeaderPopup({ popup, onClose }) {
 
 export default function AppHeaderV1({
   zptsBalance = 0,
+  zwapBalance = 0,
+
   todaySteps = 0,
   dailyStepGoal = 10000,
   completedTasks = 0,
   totalTasks = 4,
-  displayName = "",
-  initials,
+
+  user,
+  authUser,
+  username = "",
+  subtext = "",
+  initials = "",
+  tier = "zwapper",
+  walletAddress = "",
+
+  inventoryItems = [],
+  achievements = [],
+  trophyCount = 0,
+  trophyBonusPercent = 0,
+
   isOnline = true,
   isSticky = true,
   className = "",
@@ -134,11 +148,19 @@ export default function AppHeaderV1({
   onLearnClick,
   onStreamClick,
   onBadgeClick,
+
+  onAdminTrigger,
+  onOpenFAQ,
+  onOpenContact,
+  onOpenAbout,
+  onOpenSupportChat,
 }) {
   const [popup, setPopup] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
 
   const popupRef = useRef(null);
+
+  const resolvedUsername = user?.username || username || "";
 
   const safeStepGoal = Math.max(1, Number(dailyStepGoal || 1));
   const safeCompletedTasks = Math.max(0, Number(completedTasks || 0));
@@ -157,8 +179,8 @@ export default function AppHeaderV1({
   }, [moveProgress, taskProgress]);
 
   const accountInitials = useMemo(() => {
-    return initials || buildInitials(displayName);
-  }, [initials, displayName]);
+    return initials || buildInitials(resolvedUsername);
+  }, [initials, resolvedUsername]);
 
   useEffect(() => {
     function handlePointerDown(event) {
@@ -322,7 +344,29 @@ export default function AppHeaderV1({
 
       <AccountDrawerV1
         open={accountOpen}
-        onClose={() => setAccountOpen(false)}
+        onOpenChange={setAccountOpen}
+        user={user}
+        authUser={authUser}
+        username={resolvedUsername}
+        subtext={subtext}
+        initials={initials}
+        tier={tier}
+        zptsBalance={zptsBalance}
+        zwapBalance={zwapBalance}
+        walletAddress={walletAddress}
+        inventoryItems={inventoryItems}
+        achievements={achievements}
+        trophyCount={trophyCount}
+        trophyBonusPercent={trophyBonusPercent}
+        learnUnlocked={learnUnlocked}
+        streamUnlocked={streamUnlocked}
+        onAdminTrigger={onAdminTrigger}
+        onLearnOpen={onLearnClick}
+        onStreamOpen={onStreamClick}
+        onOpenFAQ={onOpenFAQ}
+        onOpenContact={onOpenContact}
+        onOpenAbout={onOpenAbout}
+        onOpenSupportChat={onOpenSupportChat}
       />
     </>
   );
