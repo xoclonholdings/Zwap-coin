@@ -1,101 +1,126 @@
-import React, { useEffect, useRef, useState } from "react";
-import useV1DashboardState from "./useV1DashboardState";
-import AppHeaderV1 from "./AppHeaderV1";
-import DashboardWindowMove from "./windows/DashboardWindowMove";
-import DashboardWindowPlay from "./windows/DashboardWindowPlay";
-import DashboardWindowShop from "./windows/DashboardWindowShop";
-import DashboardWindowZwap from "./windows/DashboardWindowZwap";
+import { useMemo } from "react";
 
-function estimateCaloriesFromSteps(steps) {
-  const safeSteps = Math.max(0, Number(steps || 0));
-  return Math.round(safeSteps * 0.04);
+function clampPercent(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.min(100, num));
 }
 
-export default function DashboardV1({ onOpenAccount, user, authUser }) {
-  const { move, play, zpts, zwap } = useV1DashboardState({
-    user,
-    authUser,
-  });
+function clampRatio(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.min(1, num));
+}
 
-  const [moveIsActive, setMoveIsActive] = useState(false);
-  const [sessionSteps, setSessionSteps] = useState(0);
-  const [timerSeconds, setTimerSeconds] = useState(0);
+function getUserNumber(user, keys, fallback = 0) {
+  for (const key of keys) {
+    const value = user?.[key];
+    if (value !== undefined && value !== null && value !== "") {
+      const num = Number(value);
+      if (Number.isFinite(num)) return num;
+    }
+  }
 
-  const sessionStartStepsRef = useRef(0);
+  return fallback;
+}
 
-  const handleToggleMove = () => {
-    setMoveIsActive((current) => {
-      const nextState = !current;
-
-      if (nextState) {
-        sessionStartStepsRef.current = Number(move.todaySteps || 0);
-        setSessionSteps(0);
-        setTimerSeconds(0);
-      }
-
-      return nextState;
-    });
-  };
-
-  useEffect(() => {
-    if (!moveIsActive) return;
-
-    const currentSteps = Number(move.todaySteps || 0);
-    const startSteps = Number(sessionStartStepsRef.current || 0);
-
-    setSessionSteps(Math.max(0, currentSteps - startSteps));
-  }, [move.todaySteps, moveIsActive]);
-
-  useEffect(() => {
-    if (!moveIsActive) return;
-
-    const interval = window.setInterval(() => {
-      setTimerSeconds((current) => current + 1);
-    }, 1000);
-
-    return () => window.clearInterval(interval);
-  }, [moveIsActive]);
-
-  const calories = estimateCaloriesFromSteps(sessionSteps);
-
+function buildDisplayName({ user, authUser }) {
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
-      <div className="shrink-0 px-2.5 pt-2.5">
-        <AppHeaderV1 onOpenAccount={onOpenAccount} />
-      </div>
-
-      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowMove
-            isActive={moveIsActive}
-            sessionSteps={sessionSteps}
-            calories={calories}
-            timerSeconds={timerSeconds}
-            onToggleMove={handleToggleMove}
-          />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowPlay
-            gamesPlayedToday={play.gamesPlayedToday}
-            playPercent={play.playProgressPercent}
-          />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop zptsBalance={zpts.zptsBalance} />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowZwap
-            zptsBalance={zpts.zptsBalance}
-            zptsPercent={zwap.zptsPercent}
-            zwapMode={zwap.zwapMode}
-            zwapMessage={zwap.zwapMessage}
-            zwapHint={zwap.zwapHint}
-          />
-        </div>
-      </div>
-    </div>
+    user?.username ||
+    user?.displayName ||
+    user?.name ||
+    authUser?.username ||
+    authUser?.displayName ||
+    authUser?.email?.address?.split("@")[0] ||
+    authUser?.email?.split("@")[0] ||
+    ""
   );
+}
+
+export default function useV1DashboardState({ user, authUser } = {}) {
+  return useMemo(() => {
+    const todaySteps = getUserNumber(
+      user,
+      ["todaySteps", "daily_steps", "stepsToday", "steps"],
+      0
+    );
+
+    const dailyStepGoal = getUserNumber(
+      user,
+      ["dailyStepGoal", "step_goal", "stepGoal"],
+      10000
+    );
+
+    const gamesPlayedToday = getUserNumber(
+      user,
+      ["gamesPlayedToday", "games_played_today", "gamesPlayed"],
+      0
+    );
+
+    const playGoal = getUserNumber(
+      user,
+      ["playGoal", "dailyPlayGoal", "daily_game_goal"],
+      4
+    );
+
+    const zptsBalance = getUserNumber(
+      user,
+      ["zptsBalance", "zpts_balance", "zPts", "zpts"],
+      0
+    );
+
+    const zptsDailyEarned = getUserNumber(
+      user,
+      ["dailyZptsEarned", "daily_zpts_earned", "zptsToday"],
+      0
+    );
+
+    const zptsDailyCap = getUserNumber(
+      user,
+      ["dailyZptsCap", "daily_zpts_cap", "zptsCap"],
+      300
+    );
+
+    const stepsPercent = clampPercent((todaySteps / Math.max(1, dailyStepGoal)) * 100);
+    const playProgressPercent = clampPercent((gamesPlayedToday / Math.max(1, playGoal)) * 100);
+    const zptsPercent = clampPercent((zptsDailyEarned / Math.max(1, zptsDailyCap)) * 100);
+
+    return {
+      user,
+      authUser,
+
+      identity: {
+        displayName: buildDisplayName({ user, authUser }),
+        tier: user?.tier || "Starter",
+      },
+
+      move: {
+        todaySteps,
+        dailyStepGoal,
+        stepsPercent,
+        stepsRatio: clampRatio(todaySteps / Math.max(1, dailyStepGoal)),
+      },
+
+      play: {
+        gamesPlayedToday,
+        playGoal,
+        playProgressPercent,
+        playRatio: clampRatio(gamesPlayedToday / Math.max(1, playGoal)),
+      },
+
+      zpts: {
+        zptsBalance,
+        zptsDailyEarned,
+        zptsDailyCap,
+        zptsPercent,
+      },
+
+      zwap: {
+        zptsPercent,
+        zwapMode: user?.zwapMode || "voice",
+        zwapMessage: user?.zwapMessage || "Ready when you are.",
+        zwapHint: user?.zwapHint || "Complete actions to build today’s progress.",
+      },
+    };
+  }, [user, authUser]);
 }
