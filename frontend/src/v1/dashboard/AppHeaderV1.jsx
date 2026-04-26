@@ -1,15 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Sprout, BookOpen, Play, Award } from "lucide-react";
 
-function clamp(value, min = 0, max = 1) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function clampPercent(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return 0;
-  return Math.max(0, Math.min(100, num));
-}
+import AccountDrawerV1 from "./account/AccountDrawerV1";
 
 function formatZpts(value) {
   return Number(value || 0).toLocaleString();
@@ -17,28 +9,36 @@ function formatZpts(value) {
 
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
-  if (!safe) return "ZW";
+  if (!safe) return "U";
 
   const parts = safe.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
 
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
 
-function HeaderIconButton({ label, icon, unlocked = false, onClick }) {
+function HeaderIconButton({ label, icon, unlocked = false, hasAlert = false, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
       className={[
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition active:scale-[0.96]",
+        "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition active:scale-[0.96]",
         unlocked
-          ? "border-cyan-300/40 bg-cyan-400/12 text-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.16)]"
-          : "border-white/10 bg-white/[0.035] text-white/34",
+          ? "border-cyan-400/45 bg-cyan-500/15 text-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.20)]"
+          : "border-white/10 bg-white/[0.03] text-white/25",
+        hasAlert ? "animate-pulse" : "",
       ].join(" ")}
     >
       {icon}
+
+      {hasAlert ? (
+        <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.8)]" />
+      ) : null}
     </button>
   );
 }
@@ -46,42 +46,20 @@ function HeaderIconButton({ label, icon, unlocked = false, onClick }) {
 function HeaderPopup({ popup, onClose }) {
   if (!popup) return null;
 
-  const safePercent = clampPercent(popup.progressPercent ?? 0);
-
   return (
-    <div className="absolute left-0 top-[calc(100%+10px)] z-40 w-[220px] rounded-2xl border border-white/10 bg-[#08111d]/95 p-3 shadow-[0_18px_44px_rgba(0,0,0,0.48)] backdrop-blur-xl">
-      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">
+    <div className="fixed left-1/2 top-[86px] z-[9999] w-[240px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#0c1220]/95 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/80">
         {popup.title}
       </div>
 
-      <div className="mt-1 text-[12px] leading-5 text-white/75">
+      <div className="mt-1 text-[12px] leading-5 text-white/80">
         {popup.message}
       </div>
-
-      <div className="mt-3">
-        <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-white/45">
-          <span>Progress</span>
-          <span>{safePercent}%</span>
-        </div>
-
-        <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-sky-300 to-violet-300"
-            style={{ width: `${safePercent}%` }}
-          />
-        </div>
-      </div>
-
-      {popup.helperText ? (
-        <div className="mt-2 text-[10px] leading-4 text-white/45">
-          {popup.helperText}
-        </div>
-      ) : null}
 
       <button
         type="button"
         onClick={onClose}
-        className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200/80"
+        className="mt-3 text-[10px] font-medium uppercase tracking-[0.14em] text-cyan-300/80"
       >
         Close
       </button>
@@ -91,72 +69,41 @@ function HeaderPopup({ popup, onClose }) {
 
 export default function AppHeaderV1({
   zptsBalance = 0,
-  todaySteps = 0,
-  dailyStepGoal = 10000,
-  completedTasks = 0,
-  totalTasks = 4,
-
-  user,
-  username = "",
-  initials = "",
+  displayName = "",
+  initials,
   isOnline = true,
+  isSticky = true,
+  className = "",
 
   gardenUnlocked = false,
   learnUnlocked = false,
   streamUnlocked = false,
   badgesUnlocked = false,
 
-  gardenProgressPercent = 0,
-  learnProgressPercent = 0,
-  streamProgressPercent = 0,
-  badgesProgressPercent = 0,
+  gardenHasAlert = false,
+  learnHasAlert = false,
+  streamHasAlert = false,
+  badgesHasAlert = false,
 
   onGardenClick,
   onLearnClick,
   onStreamClick,
   onBadgeClick,
-  onOpenAccount,
-
-  className = "",
 }) {
   const [popup, setPopup] = useState(null);
+  const [accountOpen, setAccountOpen] = useState(false);
 
-  const resolvedUsername = user?.username || username || "";
-  const accountInitials = initials || buildInitials(resolvedUsername);
+  const accountInitials = useMemo(() => {
+    return initials || buildInitials(displayName);
+  }, [initials, displayName]);
 
-  const safeStepGoal = Math.max(1, Number(dailyStepGoal || 1));
-  const safeCompletedTasks = Math.max(0, Number(completedTasks || 0));
-  const safeTotalTasks = Math.max(1, Number(totalTasks || 1));
-
-  const moveProgress = useMemo(() => {
-    return clamp(Number(todaySteps || 0) / safeStepGoal);
-  }, [todaySteps, safeStepGoal]);
-
-  const taskProgress = useMemo(() => {
-    return clamp(safeCompletedTasks / safeTotalTasks);
-  }, [safeCompletedTasks, safeTotalTasks]);
-
-  const dailyProgress = useMemo(() => {
-    return clamp((moveProgress + taskProgress) / 2);
-  }, [moveProgress, taskProgress]);
-
-  function openLockedPopup({ title, message, progressPercent, helperText }) {
-    setPopup({
-      title,
-      message,
-      progressPercent,
-      helperText,
-    });
+  function showLockedPopup(title, message) {
+    setPopup({ title, message });
   }
 
   function handleGardenTap() {
     if (!gardenUnlocked) {
-      openLockedPopup({
-        title: "Garden Locked",
-        message: "Complete more daily activity to unlock Garden.",
-        progressPercent: gardenProgressPercent,
-        helperText: "Consistency opens this layer.",
-      });
+      showLockedPopup("Garden Locked", "Complete more daily activity to unlock Garden.");
       return;
     }
 
@@ -166,12 +113,7 @@ export default function AppHeaderV1({
 
   function handleLearnTap() {
     if (!learnUnlocked) {
-      openLockedPopup({
-        title: "Learn Locked",
-        message: "Build more progress to unlock Learn.",
-        progressPercent: learnProgressPercent,
-        helperText: "Modules will appear here.",
-      });
+      showLockedPopup("Learn Locked", "Complete more progress to unlock Learn.");
       return;
     }
 
@@ -181,12 +123,7 @@ export default function AppHeaderV1({
 
   function handleStreamTap() {
     if (!streamUnlocked) {
-      openLockedPopup({
-        title: "Stream Locked",
-        message: "Keep progressing to unlock Stream.",
-        progressPercent: streamProgressPercent,
-        helperText: "Audio and playlists will appear here.",
-      });
+      showLockedPopup("Stream Locked", "Complete more progress to unlock Stream.");
       return;
     }
 
@@ -196,12 +133,7 @@ export default function AppHeaderV1({
 
   function handleBadgeTap() {
     if (!badgesUnlocked) {
-      openLockedPopup({
-        title: "Badges Locked",
-        message: "Complete more loops to unlock Badges.",
-        progressPercent: badgesProgressPercent,
-        helperText: "Identity unlocks through action.",
-      });
+      showLockedPopup("Badges Locked", "Complete more progress to unlock Badges.");
       return;
     }
 
@@ -210,78 +142,81 @@ export default function AppHeaderV1({
   }
 
   return (
-    <header
-      className={[
-        "relative w-full overflow-visible rounded-[24px] border border-cyan-200/12 bg-[linear-gradient(180deg,rgba(12,22,32,0.95),rgba(5,10,18,0.98))] px-2.5 py-2 shadow-[0_14px_38px_rgba(0,0,0,0.32),0_0_34px_rgba(34,211,238,0.055)] backdrop-blur-xl",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="flex h-[48px] items-center gap-1.5">
-        <div className="min-w-[34px] flex-1">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 shadow-[inset_0_0_10px_rgba(255,255,255,0.03)]">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-teal-300 to-violet-300 shadow-[0_0_18px_rgba(34,211,238,0.24)]"
-              style={{ width: `${dailyProgress * 100}%` }}
+    <>
+      <div
+        className={[
+          isSticky ? "sticky top-0 z-40" : "",
+          "w-full px-3 pt-3",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <div className="flex h-[64px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <HeaderIconButton
+              label="Garden"
+              unlocked={gardenUnlocked}
+              hasAlert={gardenHasAlert}
+              onClick={handleGardenTap}
+              icon={<Sprout size={15} />}
+            />
+
+            <HeaderIconButton
+              label="Learn"
+              unlocked={learnUnlocked}
+              hasAlert={learnHasAlert}
+              onClick={handleLearnTap}
+              icon={<BookOpen size={15} />}
+            />
+
+            <HeaderIconButton
+              label="Stream"
+              unlocked={streamUnlocked}
+              hasAlert={streamHasAlert}
+              onClick={handleStreamTap}
+              icon={<Play size={15} />}
+            />
+
+            <HeaderIconButton
+              label="Badges"
+              unlocked={badgesUnlocked}
+              hasAlert={badgesHasAlert}
+              onClick={handleBadgeTap}
+              icon={<Award size={15} />}
             />
           </div>
-        </div>
 
-        <div className="relative flex shrink-0 items-center gap-1">
-          <HeaderIconButton
-            label="Garden"
-            unlocked={gardenUnlocked}
-            onClick={handleGardenTap}
-            icon={<Sprout size={15} />}
-          />
-
-          <HeaderIconButton
-            label="Learn"
-            unlocked={learnUnlocked}
-            onClick={handleLearnTap}
-            icon={<BookOpen size={15} />}
-          />
-
-          <HeaderIconButton
-            label="Stream"
-            unlocked={streamUnlocked}
-            onClick={handleStreamTap}
-            icon={<Play size={15} />}
-          />
-
-          <HeaderIconButton
-            label="Badges"
-            unlocked={badgesUnlocked}
-            onClick={handleBadgeTap}
-            icon={<Award size={15} />}
-          />
-
-          <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
-        </div>
-
-        <div className="w-[48px] shrink-0 text-center">
-          <div className="text-[8px] font-black uppercase tracking-[0.12em] text-white/42">
-            zPts
+          <div className="shrink-0 rounded-2xl border border-cyan-400/14 bg-cyan-400/[0.06] px-3 py-1.5 text-center shadow-[0_0_16px_rgba(34,211,238,0.08)]">
+            <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/42">
+              Balance
+            </div>
+            <div className="mt-0.5 whitespace-nowrap text-[14px] font-bold leading-none tracking-[-0.03em] text-cyan-300">
+              {formatZpts(zptsBalance)} zPts
+            </div>
           </div>
-          <div className="mt-0.5 truncate text-[0.94rem] font-black leading-none tracking-[-0.05em] text-cyan-200">
-            {formatZpts(zptsBalance)}
-          </div>
+
+          <button
+            type="button"
+            onClick={() => setAccountOpen(true)}
+            className="relative ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/18 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(8,14,20,0.98))] text-sm font-semibold tracking-[0.02em] text-white shadow-[0_0_18px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
+            aria-label="Open account"
+          >
+            {accountInitials}
+
+            {isOnline ? (
+              <span className="absolute bottom-[2px] right-[2px] h-2.5 w-2.5 rounded-full border border-[#081018] bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.55)]" />
+            ) : null}
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={onOpenAccount}
-          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-300/20 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.22),transparent_44%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(7,13,20,0.98))] text-[11px] font-black tracking-[0.02em] text-white shadow-[0_0_22px_rgba(34,211,238,0.12)] active:scale-[0.97]"
-          aria-label="Open account"
-        >
-          {accountInitials}
-
-          {isOnline ? (
-            <span className="absolute bottom-[2px] right-[2px] h-2.5 w-2.5 rounded-full border border-[#081018] bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.55)]" />
-          ) : null}
-        </button>
       </div>
-    </header>
+
+      <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
+
+      <AccountDrawerV1
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
+    </>
   );
 }
