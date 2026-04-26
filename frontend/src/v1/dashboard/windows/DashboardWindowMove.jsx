@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Footprints, Activity, Flame, Timer } from "lucide-react";
+import { Activity, Flame, Footprints, Timer } from "lucide-react";
 
 function formatCompactSteps(value) {
   const safe = Number(value || 0);
@@ -46,9 +46,8 @@ export default function DashboardWindowMove({
 
     const diff = touch.clientX - touchStartX;
 
-    if (Math.abs(diff) >= 35) {
-      if (diff < 0) setPanelIndex(1);
-      if (diff > 0) setPanelIndex(0);
+    if (Math.abs(diff) >= 36) {
+      setPanelIndex(diff < 0 ? 1 : 0);
     }
 
     setTouchStartX(null);
@@ -65,10 +64,10 @@ export default function DashboardWindowMove({
   return (
     <section
       className={[
-        "relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.11),transparent_38%),linear-gradient(180deg,rgba(12,18,26,0.96),rgba(6,10,16,0.98))] p-4 text-left shadow-[0_14px_34px_rgba(0,0,0,0.26)]",
-        isActive
-          ? "border-cyan-300/30 shadow-[0_0_30px_rgba(34,211,238,0.16)]"
-          : "",
+        "relative w-full overflow-hidden rounded-[28px] border p-4 text-left",
+        "border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.15),transparent_42%),linear-gradient(180deg,rgba(12,18,30,0.98),rgba(5,9,16,0.98))]",
+        "shadow-[0_18px_42px_rgba(0,0,0,0.34)]",
+        isActive ? "border-cyan-300/28 shadow-[0_0_34px_rgba(34,211,238,0.18)]" : "",
         className,
       ]
         .filter(Boolean)
@@ -77,7 +76,9 @@ export default function DashboardWindowMove({
       onTouchEnd={handleTouchEnd}
     >
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-x-8 top-0 h-16 rounded-full bg-cyan-400/10 blur-2xl" />
+        <div className="absolute inset-x-6 top-0 h-20 rounded-full bg-cyan-300/10 blur-2xl" />
+        <div className="absolute bottom-0 left-6 h-24 w-24 rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="absolute bottom-8 right-3 h-20 w-20 rounded-full bg-cyan-400/8 blur-2xl" />
       </div>
 
       <div className="relative z-10 flex h-full flex-col">
@@ -86,14 +87,14 @@ export default function DashboardWindowMove({
             className={[
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border",
               isActive
-                ? "border-cyan-300/30 bg-cyan-300/12 text-cyan-200"
+                ? "border-cyan-300/36 bg-cyan-300/14 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]"
                 : "border-cyan-300/18 bg-cyan-300/8 text-cyan-200/80",
             ].join(" ")}
           >
             <Footprints className="h-[17px] w-[17px]" strokeWidth={2.1} />
           </div>
 
-          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/82">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/84">
             MOVE
           </div>
         </div>
@@ -108,72 +109,97 @@ export default function DashboardWindowMove({
                 type="button"
                 onClick={handleToggleMove}
                 className={[
-                  "relative flex h-[132px] w-[132px] items-center justify-center rounded-full transition active:scale-[0.98]",
-                  "before:absolute before:inset-0 before:rounded-full before:bg-[conic-gradient(from_0deg,rgba(34,211,238,0.08),rgba(34,211,238,0.7),rgba(168,85,247,0.45),rgba(34,211,238,0.08))]",
-                  "after:absolute after:inset-[8px] after:rounded-full after:bg-[linear-gradient(180deg,rgba(8,18,28,0.98),rgba(3,8,14,0.98))]",
-                  isActive
-                    ? "shadow-[0_0_36px_rgba(34,211,238,0.34)] animate-pulse"
-                    : "shadow-[0_0_22px_rgba(34,211,238,0.13)]",
-                ].join(" ")}
+                  "relative flex h-[136px] w-[136px] items-center justify-center rounded-full transition active:scale-[0.98]",
+                  isActive ? "animate-pulse" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 aria-label={isActive ? "Stop Move" : "Start Move"}
               >
                 <span
                   className={[
-                    "absolute inset-[18px] rounded-full border",
+                    "absolute inset-0 rounded-full",
+                    "bg-[conic-gradient(from_220deg,rgba(34,211,238,0.08),rgba(34,211,238,0.95),rgba(168,85,247,0.62),rgba(34,211,238,0.08))]",
                     isActive
-                      ? "border-cyan-200/55 shadow-[inset_0_0_22px_rgba(34,211,238,0.22),0_0_24px_rgba(34,211,238,0.24)]"
+                      ? "shadow-[0_0_42px_rgba(34,211,238,0.42)]"
+                      : "shadow-[0_0_26px_rgba(34,211,238,0.18)]",
+                  ].join(" ")}
+                />
+
+                <span className="absolute inset-[5px] rounded-full bg-[linear-gradient(180deg,rgba(15,26,38,0.98),rgba(4,9,16,0.99))]" />
+
+                <span
+                  className={[
+                    "absolute inset-[13px] rounded-full border",
+                    isActive
+                      ? "border-cyan-200/58 shadow-[inset_0_0_26px_rgba(34,211,238,0.22),0_0_24px_rgba(34,211,238,0.24)]"
                       : "border-cyan-200/24 shadow-[inset_0_0_18px_rgba(34,211,238,0.10)]",
                   ].join(" ")}
                 />
 
+                <span className="absolute inset-[25px] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.16),rgba(34,211,238,0.04)_46%,transparent_70%)]" />
+
                 <span
                   className={[
-                    "relative z-10 h-[42px] w-[42px] rounded-full",
+                    "relative z-10 flex h-[52px] w-[52px] items-center justify-center rounded-full border",
                     isActive
-                      ? "bg-cyan-200 shadow-[0_0_28px_rgba(34,211,238,0.72)]"
-                      : "bg-cyan-200/18 shadow-[0_0_18px_rgba(34,211,238,0.22)]",
+                      ? "border-cyan-100/70 bg-cyan-200/24 shadow-[0_0_34px_rgba(34,211,238,0.72)]"
+                      : "border-cyan-100/24 bg-cyan-200/10 shadow-[0_0_20px_rgba(34,211,238,0.24)]",
                   ].join(" ")}
-                />
+                >
+                  <span
+                    className={[
+                      "h-[24px] w-[24px] rounded-full",
+                      isActive
+                        ? "bg-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.9)]"
+                        : "bg-cyan-200/42 shadow-[0_0_18px_rgba(34,211,238,0.35)]",
+                    ].join(" ")}
+                  />
+                </span>
               </button>
             </div>
 
-            <div className="flex min-w-full flex-col justify-center space-y-3">
-              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
-                <div className="flex items-center gap-2 text-white/52">
-                  <Activity className="h-4 w-4 text-cyan-200/70" />
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                    Session
-                  </span>
-                </div>
+            <div className="flex min-w-full items-center justify-center">
+              <div className="w-full rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_36px_rgba(0,0,0,0.22)] backdrop-blur-md">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between rounded-[18px] border border-cyan-200/10 bg-black/18 px-3 py-2.5">
+                    <div className="flex items-center gap-2 text-white/58">
+                      <Activity className="h-4 w-4 text-cyan-200/76" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
+                        Session
+                      </span>
+                    </div>
 
-                <div className="text-sm font-bold text-white">
-                  {formatCompactSteps(sessionSteps)}
-                </div>
-              </div>
+                    <div className="text-sm font-black tracking-[-0.03em] text-white">
+                      {formatCompactSteps(sessionSteps)}
+                    </div>
+                  </div>
 
-              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
-                <div className="flex items-center gap-2 text-white/52">
-                  <Flame className="h-4 w-4 text-cyan-200/70" />
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                    Calories
-                  </span>
-                </div>
+                  <div className="flex items-center justify-between rounded-[18px] border border-cyan-200/10 bg-black/18 px-3 py-2.5">
+                    <div className="flex items-center gap-2 text-white/58">
+                      <Flame className="h-4 w-4 text-cyan-200/76" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
+                        Calories
+                      </span>
+                    </div>
 
-                <div className="text-sm font-bold text-white">
-                  {Number(calories || 0)}
-                </div>
-              </div>
+                    <div className="text-sm font-black tracking-[-0.03em] text-white">
+                      {Number(calories || 0)}
+                    </div>
+                  </div>
 
-              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
-                <div className="flex items-center gap-2 text-white/52">
-                  <Timer className="h-4 w-4 text-cyan-200/70" />
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                    Timer
-                  </span>
-                </div>
+                  <div className="flex items-center justify-between rounded-[18px] border border-cyan-200/10 bg-black/18 px-3 py-2.5">
+                    <div className="flex items-center gap-2 text-white/58">
+                      <Timer className="h-4 w-4 text-cyan-200/76" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
+                        Timer
+                      </span>
+                    </div>
 
-                <div className="text-sm font-bold text-white">
-                  {formatTime(timerSeconds)}
+                    <div className="text-sm font-black tracking-[-0.03em] text-white">
+                      {formatTime(timerSeconds)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
