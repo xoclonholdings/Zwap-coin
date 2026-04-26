@@ -1,14 +1,14 @@
 """
-Move-to-Earn Router
+ZWAP! V1 Move Router
 ====================
-Routes for step submission, session tracking, and anti-cheat.
-Reward calculations are delegated to reward_service.
+Routes for step submission, session status, and anti-cheat placeholders.
 
-Updated economy:
+V1 behavior:
 - MOVE earns zPts
-- daily zPts caps enforced
+- daily zPts caps are enforced
 - Shaker = successful movement claims
 - Mover = unique active movement days
+- Activity Stream dependency removed
 """
 
 from collections import defaultdict
@@ -23,7 +23,6 @@ from services.reward_service import (
     get_tier_multipliers,
     enforce_daily_caps,
 )
-from services.activity_service import emit_activity_event
 from services.badge_service import evaluate_badges, persist_badge_updates
 from services.daily_task_service import maybe_process_full_daily_loop
 
@@ -42,22 +41,23 @@ MIN_STEPS_PER_CLAIM = 10
 
 
 def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
-    """Returns True if rate-limited (too soon). False if OK."""
     now = _time.time()
     last = _rate_limits[wallet].get(action, 0)
+
     if now - last < cooldown_seconds:
         return True
+
     _rate_limits[wallet][action] = now
     return False
 
 
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
-    """Reset daily zPts earned at midnight UTC."""
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zpts_reset")
 
     if last_reset:
         last_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+
         if last_dt.date() < now.date():
             await db.users.update_one(
                 {"wallet_address": user["wallet_address"]},
@@ -68,6 +68,7 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
                     }
                 },
             )
+
             user["daily_zpts_earned"] = 0
             user["last_zpts_reset"] = now.isoformat()
     else:
@@ -80,6 +81,7 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
                 }
             },
         )
+
         user["daily_zpts_earned"] = 0
         user["last_zpts_reset"] = now.isoformat()
 
@@ -92,9 +94,11 @@ async def claim_step_rewards(
     steps_data: StepsUpdate,
     request: Request,
 ):
-    """Claim zPts rewards for steps."""
     db = request.app.state.db
-    wallet = wallet_address.lower()
+    wallet = wallet_address.lower().strip()
+
+    if not wallet:
+        raise HTTPException(status_code=400, detail="Wallet address is required")
 
     if check_rate_limit(wallet, "steps", STEP_CLAIM_COOLDOWN):
         raise HTTPException(
@@ -119,8 +123,8 @@ async def claim_step_rewards(
         raise HTTPException(status_code=404, detail="User not found")
 
     tier = user.get("tier", "starter")
-
     user = await check_and_reset_daily_zpts(db, user)
+
     daily_zpts = int(user.get("daily_zpts_earned", 0) or 0)
 
     tier_config = await get_tier_multipliers(tier)
@@ -143,8 +147,8 @@ async def claim_step_rewards(
             tier=tier,
             daily_steps_so_far=user.get("daily_steps", 0),
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
     rewards = min(int(reward_result["zpts"]), int(cap_check["remaining"]))
     zpts_cap = int(tier_config["daily_zpts_cap"])
@@ -171,12 +175,11 @@ async def claim_step_rewards(
         update_doc["$inc"]["badge_sustained_move_days"] = 1
         update_doc["$set"]["badge_last_move_day"] = today_key
 
-    await db.users.update_one(
-        {"wallet_address": wallet},
-        update_doc,
-    )
+    await db.users.update_one({"wallet_address": wallet}, update_doc)
 
     updated_user = await db.users.find_one({"wallet_address": wallet})
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="User missing after movement update")
 
     badge_result = evaluate_badges(updated_user)
     await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
@@ -189,23 +192,8 @@ async def claim_step_rewards(
         if refreshed_user:
             updated_user = refreshed_user
 
-    await emit_activity_event(
-        db=db,
-        event_type="MOVEMENT_ACTIVITY",
-        message=f"{steps_data.steps} steps were just logged nearby",
-        actor_user_id=str(user.get("_id")) if user.get("_id") else None,
-        actor_display=user.get("display_name") or user.get("username") or "A Zwapper nearby",
-        region_key=user.get("region_key"),
-        local_key=user.get("local_key"),
-        metadata={
-            "source": "move_steps_claim",
-            "steps": steps_data.steps,
-            "reward_zpts": rewards,
-            "tier": tier,
-        },
-    )
-
     return {
+        "success": True,
         "steps_counted": steps_data.steps,
         "rewards_earned": rewards,
         "full_loop_awarded": full_loop_result.get("awarded", False),
@@ -235,19 +223,17 @@ async def claim_step_rewards(
 
 @router.get("/session/{wallet_address}")
 async def get_move_session(wallet_address: str):
-    """
-    Get the active step-tracking session for a user.
-    Currently: stub.
-    Future: return active session with step count, start time, anti-cheat flags.
-    """
-    return {"active": False, "steps": 0, "wallet": wallet_address}
+    return {
+        "active": False,
+        "steps": 0,
+        "wallet": wallet_address.lower().strip(),
+    }
 
 
 @router.post("/anti-cheat")
 async def submit_anti_cheat_flags(wallet_address: str):
-    """
-    Submit client-side anti-cheat telemetry.
-    Currently: stub.
-    Future: flag suspicious patterns (GPS speed, step variance, device motion).
-    """
-    return {"received": True, "flagged": False, "wallet": wallet_address}
+    return {
+        "received": True,
+        "flagged": False,
+        "wallet": wallet_address.lower().strip(),
+    }
