@@ -1,21 +1,36 @@
 import React, { useMemo, useState } from "react";
 import { Gamepad2, ChevronRight } from "lucide-react";
 
+import brainzLogo from "@/assets/games/brainz_game_logo.PNG";
+import breakerzLogo from "@/assets/games/breakerz_game_logo.PNG";
+import pulzeLogo from "@/assets/games/pulze_game_logo.PNG";
+import stackzLogo from "@/assets/games/stackz_game_logo.PNG";
+import triplezLogo from "@/assets/games/triplez_game_logo.PNG";
+import werdzLogo from "@/assets/games/werdz_game_logo.PNG";
+import zapManLogo from "@/assets/games/zap_man_logo.PNG";
+
 function clamp(value, min = 0, max = 1) {
   return Math.min(Math.max(value, min), max);
 }
 
 const DEFAULT_GAMES = [
-  { id: "stackz", name: "STACKZ" },
-  { id: "breakerz", name: "BREAKERZ" },
-  { id: "pulze", name: "PULZE" },
-  { id: "zap-man", name: "ZAP-MAN" },
+  { id: "stackz", name: "STACKZ", logo: stackzLogo },
+  { id: "breakerz", name: "BREAKERZ", logo: breakerzLogo },
+  { id: "pulze", name: "PULZE", logo: pulzeLogo },
+  { id: "zap-man", name: "ZAP-MAN", logo: zapManLogo },
+  { id: "brainz", name: "BRAINZ", logo: brainzLogo },
+  { id: "triplez", name: "TRIPLEZ", logo: triplezLogo },
+  { id: "werdz", name: "WERDZ", logo: werdzLogo },
 ];
 
 function buildStatusLine({ isActive, gamesPlayedToday, playGoal, progress }) {
   if (isActive) return "In session";
   if (progress >= 1) return "Goal reached";
-  if (Number(gamesPlayedToday || 0) > 0) return `${gamesPlayedToday} of ${playGoal} today`;
+
+  if (Number(gamesPlayedToday || 0) > 0) {
+    return `${gamesPlayedToday} of ${playGoal} today`;
+  }
+
   return "Ready";
 }
 
@@ -32,12 +47,17 @@ export default function DashboardWindowPlay({
   const [activeIndex, setActiveIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(null);
 
-  const safeGames = Array.isArray(games) && games.length > 0 ? games : DEFAULT_GAMES;
+  const safeGames =
+    Array.isArray(games) && games.length > 0 ? games : DEFAULT_GAMES;
+
   const activeGame = safeGames[activeIndex] || safeGames[0];
   const safeGoal = Math.max(1, Number(playGoal || 1));
 
   const progress = useMemo(() => {
-    if (typeof progressPercent === "number") return clamp(progressPercent / 100);
+    if (typeof progressPercent === "number") {
+      return clamp(progressPercent / 100);
+    }
+
     return clamp(Number(gamesPlayedToday || 0) / safeGoal);
   }, [progressPercent, gamesPlayedToday, safeGoal]);
 
@@ -107,7 +127,7 @@ export default function DashboardWindowPlay({
             </div>
 
             <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
-              Play
+              PLAY
             </div>
           </div>
 
@@ -130,14 +150,16 @@ export default function DashboardWindowPlay({
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="flex min-h-[78px] items-center justify-center text-center">
-            <div className="bg-gradient-to-r from-cyan-200 via-violet-200 to-fuchsia-300 bg-clip-text text-[28px] font-black uppercase italic tracking-[-0.08em] text-transparent drop-shadow-[0_0_16px_rgba(34,211,238,0.22)]">
-              {activeGame.name}
-            </div>
+          <div className="flex min-h-[92px] w-full items-center justify-center">
+            <img
+              src={activeGame.logo}
+              alt={activeGame.name}
+              className="max-h-[82px] w-auto max-w-full object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)]"
+            />
           </div>
 
           <div className="mt-4 text-[11px] font-black uppercase tracking-[0.36em] text-cyan-200/80">
-            Ready
+            READY
           </div>
 
           <button
@@ -165,7 +187,10 @@ export default function DashboardWindowPlay({
 
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-white/46">Today</span>
+            <span className="text-[11px] font-medium text-white/46">
+              Today
+            </span>
+
             <span className="text-[11px] font-medium text-white/62">
               {gamesPlayedToday} / {safeGoal}
             </span>
