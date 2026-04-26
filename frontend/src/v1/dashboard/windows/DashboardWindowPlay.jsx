@@ -130,12 +130,12 @@ export default function DashboardWindowPlay({
           onTouchEnd={handleTouchEnd}
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center">
-            <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center">
+            <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center overflow-visible">
               <img
                 src={activeGame.logo}
                 alt={activeGame.name}
                 className={[
-                  "block h-full w-full object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
+                  "block h-full max-h-full w-auto max-w-none object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
                   isSwitching
                     ? "scale-95 opacity-40 blur-[1px]"
                     : "scale-100 opacity-100",
