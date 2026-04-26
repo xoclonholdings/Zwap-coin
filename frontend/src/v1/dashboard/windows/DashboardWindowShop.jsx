@@ -1,7 +1,14 @@
 import React from "react";
-import { Lock, ChevronRight } from "lucide-react";
+import { Lock, ChevronRight, ShoppingBag } from "lucide-react";
 
 const SHOP_UNLOCK_THRESHOLD = 1000;
+
+const FEATURED_TEST_ITEM = {
+  id: "bronze-ring",
+  name: "Bronze Profile Ring",
+  description: "A starter cosmetic ring for your ZWAP! profile.",
+  type: "cosmetic",
+};
 
 function clamp(value, min = 0, max = 100) {
   return Math.min(Math.max(value, min), max);
@@ -16,6 +23,7 @@ export default function DashboardWindowShop({
   zptsBalance = 0,
   shopUnlocked,
   onOpenShop,
+  onPurchase,
 }) {
   const unlockProgressSource = Math.max(
     Number(lifetimeZpts || 0),
@@ -33,8 +41,19 @@ export default function DashboardWindowShop({
 
   const handleClick = () => {
     if (!isUnlocked) return;
+
     if (typeof onOpenShop === "function") {
       onOpenShop();
+    }
+  };
+
+  const handlePurchase = (event) => {
+    event.stopPropagation();
+
+    if (!isUnlocked) return;
+
+    if (typeof onPurchase === "function") {
+      onPurchase(FEATURED_TEST_ITEM);
     }
   };
 
@@ -74,19 +93,47 @@ export default function DashboardWindowShop({
         ].join(" ")}
       >
         {isUnlocked ? (
-          <div className="flex w-full items-center justify-between rounded-[1rem] text-left">
-            <div>
-              <p className="text-base font-semibold text-white">
-                Use what you earned
-              </p>
+          <div className="space-y-4">
+            <div className="flex w-full items-center justify-between rounded-[1rem] text-left">
+              <div>
+                <p className="text-base font-semibold text-white">
+                  Use what you earned
+                </p>
 
-              <p className="mt-1 text-sm text-white/60">
-                Your first value interaction is ready.
-              </p>
+                <p className="mt-1 text-sm text-white/60">
+                  Your first value interaction is ready.
+                </p>
+              </div>
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                <ChevronRight className="h-5 w-5" />
+              </div>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
-              <ChevronRight className="h-5 w-5" />
+            <div className="rounded-[1rem] border border-cyan-400/15 bg-cyan-400/[0.06] p-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 text-cyan-200">
+                  <ShoppingBag className="h-4 w-4" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-white">
+                    {FEATURED_TEST_ITEM.name}
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-white/55">
+                    {FEATURED_TEST_ITEM.description}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handlePurchase}
+                    className="mt-3 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-200 active:scale-[0.98]"
+                  >
+                    Add to Inventory
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
