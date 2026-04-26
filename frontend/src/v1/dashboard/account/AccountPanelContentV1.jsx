@@ -29,8 +29,9 @@ function HeaderIconButton({ onClick, children, label }) {
       aria-label={label}
       className="
         flex h-9 w-9 items-center justify-center rounded-full
-        border border-white/10 bg-white/[0.04] text-white/70
-        transition active:scale-[0.98]
+        border border-white/10 bg-white/[0.05] text-white/75
+        shadow-[0_0_10px_rgba(255,255,255,0.06)]
+        transition active:scale-[0.97]
       "
     >
       {children}
@@ -52,7 +53,7 @@ function AccountDrawerHeaderV1({
       <button
         type="button"
         onClick={onAdminTap}
-        className="text-left text-sm font-semibold tracking-[-0.02em] text-white/88"
+        className="text-left text-sm font-semibold tracking-[-0.02em] text-white/90"
       >
         {title}
       </button>
@@ -223,7 +224,7 @@ export default function AccountPanelContentV1({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(8,14,20,0.98),rgba(4,8,14,1))] text-white">
+    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
       <AccountDrawerHeaderV1
         title="Account"
         onClose={onClose}
@@ -234,8 +235,13 @@ export default function AccountPanelContentV1({
         onStreamOpen={onStreamOpen}
       />
 
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="space-y-4">
+      <div className="relative min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-0 left-1/2 h-28 w-44 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-28 w-28 rounded-full bg-violet-400/10 blur-2xl" />
+        </div>
+
+        <div className="relative z-10 space-y-3.5">
           <AccountProfileCardV1
             user={user}
             authUser={authUser}
@@ -252,7 +258,7 @@ export default function AccountPanelContentV1({
             onAdminTap={handleAdminTap}
           />
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <AccountActionRowV1
               label="Profile"
               onClick={() => setActiveView("profile")}
@@ -286,11 +292,13 @@ export default function AccountPanelContentV1({
         </div>
       </div>
 
-      <AccountFooterLinksV1
-        onHelp={() => setActiveView("help")}
-        onPrivacy={() => setActiveView("privacy")}
-        onTerms={() => setActiveView("terms")}
-      />
+      <div className="border-t border-white/6 bg-black/20 backdrop-blur-md">
+        <AccountFooterLinksV1
+          onHelp={() => setActiveView("help")}
+          onPrivacy={() => setActiveView("privacy")}
+          onTerms={() => setActiveView("terms")}
+        />
+      </div>
     </div>
   );
 }
