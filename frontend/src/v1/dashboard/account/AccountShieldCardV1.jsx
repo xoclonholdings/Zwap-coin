@@ -6,25 +6,18 @@ export default function AccountShieldCardV1({ onClick }) {
     <button
       type="button"
       onClick={onClick}
+      aria-label="System Access"
       className="
-        group w-full rounded-[18px] border border-white/8
-        bg-[linear-gradient(180deg,rgba(18,22,30,0.85),rgba(8,12,18,0.95))]
-        px-4 py-3.5 text-left
-        transition active:scale-[0.99]
+        relative flex w-full items-center justify-center
+        rounded-[22px] border border-white/10
+        bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_40%),linear-gradient(180deg,rgba(10,16,26,0.96),rgba(5,8,14,0.98))]
+        py-5
+        shadow-[0_14px_32px_rgba(0,0,0,0.28)]
+        transition active:scale-[0.98]
       "
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/50 transition group-hover:text-white/80">
-            <Shield size={16} strokeWidth={2} />
-          </div>
-
-          <div className="text-sm font-medium tracking-[-0.02em] text-white/55 group-hover:text-white/80 transition">
-            System Access
-          </div>
-        </div>
-
-        <div className="h-1.5 w-1.5 rounded-full bg-white/20 group-hover:bg-white/40 transition" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-400/10 text-cyan-200 shadow-[0_0_20px_rgba(34,211,238,0.18)]">
+        <Shield size={22} strokeWidth={2.2} />
       </div>
     </button>
   );
