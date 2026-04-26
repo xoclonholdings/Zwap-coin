@@ -1,12 +1,5 @@
 import React from "react";
 
-function shortenAddress(address = "") {
-  const safe = String(address || "").trim();
-  if (!safe) return "";
-  if (safe.length <= 12) return safe;
-  return `${safe.slice(0, 6)}...${safe.slice(-4)}`;
-}
-
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
   if (!safe) return "";
@@ -20,19 +13,6 @@ function buildInitials(name = "") {
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
 
-function resolveUsername({ user, username }) {
-  return user?.username || username || "";
-}
-
-function resolveSubtext({ subtext, authUser, user, walletAddress }) {
-  if (subtext) return subtext;
-  if (authUser?.email?.address) return authUser.email.address;
-  if (authUser?.email) return authUser.email;
-  if (user?.email) return user.email;
-  if (walletAddress) return shortenAddress(walletAddress);
-  return "";
-}
-
 function TierPill({ tier = "zwapper" }) {
   const isPlus = String(tier || "").toLowerCase() === "zitizen";
 
@@ -40,10 +20,10 @@ function TierPill({ tier = "zwapper" }) {
     <div
       className={[
         "inline-flex items-center rounded-full border px-3 py-1",
-        "text-[10px] font-semibold uppercase tracking-[0.18em]",
+        "text-[10px] font-black uppercase tracking-[0.18em]",
         isPlus
-          ? "border-violet-400/25 bg-violet-400/10 text-violet-200"
-          : "border-cyan-400/20 bg-cyan-400/10 text-cyan-200",
+          ? "border-violet-300/30 bg-violet-400/10 text-violet-100"
+          : "border-cyan-300/30 bg-cyan-400/10 text-cyan-100",
       ].join(" ")}
     >
       {isPlus ? "Zitizen" : "Zwapper"}
@@ -53,53 +33,33 @@ function TierPill({ tier = "zwapper" }) {
 
 export default function AccountProfileCardV1({
   user,
-  authUser,
-  username,
-  subtext,
-  initials,
+  username = "",
+  initials = "",
   tier = "zwapper",
-  walletAddress = "",
 }) {
-  const resolvedUsername = resolveUsername({ user, username });
-  const resolvedSubtext = resolveSubtext({
-    subtext,
-    authUser,
-    user,
-    walletAddress,
-  });
-
+  const resolvedUsername = user?.username || username || "";
   const resolvedInitials = initials || buildInitials(resolvedUsername);
 
   return (
-    <div className="rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),transparent_42%),linear-gradient(180deg,rgba(14,24,34,0.96),rgba(8,14,20,0.98))] p-4 shadow-[0_14px_36px_rgba(0,0,0,0.32)]">
-      <div className="flex items-center gap-3">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-400/20 bg-[linear-gradient(180deg,rgba(34,211,238,0.18),rgba(14,24,34,0.9))] text-base font-semibold text-white shadow-[0_0_18px_rgba(34,211,238,0.10)]">
-          {resolvedInitials || "?"}
+    <div className="relative overflow-hidden rounded-[26px] border border-cyan-300/15 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.16),transparent_38%),radial-gradient(circle_at_88%_12%,rgba(168,85,247,0.12),transparent_34%),linear-gradient(180deg,rgba(12,20,32,0.96),rgba(5,9,18,0.98))] px-4 py-4 shadow-[0_16px_42px_rgba(0,0,0,0.38)]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.07),transparent_34%,rgba(34,211,238,0.06))]" />
+
+      <div className="relative flex items-center gap-3">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.24),rgba(8,14,24,0.96))] text-[17px] font-black tracking-[-0.04em] text-white shadow-[0_0_24px_rgba(34,211,238,0.16)]">
+          {resolvedInitials}
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[16px] font-semibold tracking-[-0.03em] text-white">
+          <div className="truncate text-[18px] font-black tracking-[-0.05em] text-white">
             {resolvedUsername}
           </div>
 
-          {resolvedSubtext ? (
-            <div className="mt-1 truncate text-sm text-white/56">
-              {resolvedSubtext}
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <TierPill tier={tier} />
-
-        {walletAddress ? (
-          <div className="truncate text-[11px] font-medium tracking-[0.04em] text-white/40">
-            {shortenAddress(walletAddress)}
+          <div className="mt-2">
+            <TierPill tier={tier} />
           </div>
-        ) : (
-          <div className="h-2 w-2 rounded-full bg-cyan-300/40" />
-        )}
+        </div>
+
+        <div className="h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.8)]" />
       </div>
     </div>
   );
