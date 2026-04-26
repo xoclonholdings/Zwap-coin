@@ -1,43 +1,52 @@
 import React, { useMemo } from "react";
-import { GRID_WIDTH, GRID_HEIGHT, WALLS } from "./ZapManConstants";
-import { ZapManEnemy, ZapManPlayer } from "./ZapManCharacters";
-
-const WALL_SET = new Set(WALLS);
+import { GRID_WIDTH, GRID_HEIGHT, getWallsForRound } from "./ZapManConstants";
+import {
+  ZapManEnemy,
+  ZapManPellet,
+  ZapManPlayer,
+  ZapManPowerPellet,
+} from "./ZapManCharacters";
+import { isPowered } from "./ZapManEngine";
 
 function key(x, y) {
   return `${x},${y}`;
 }
 
 export default function ZapManBoard({ state }) {
+  const powered = isPowered(state);
+
   const cells = useMemo(() => {
+    const wallSet = new Set(getWallsForRound(state.round));
     const pelletSet = new Set(
       state.pellets.map((pellet) => key(pellet.x, pellet.y))
     );
-
-    const enemyMap = new Map(
-      state.enemies.map((enemy, index) => [key(enemy.x, enemy.y), index])
+    const powerPelletSet = new Set(
+      state.powerPellets.map((pellet) => key(pellet.x, pellet.y))
     );
-
+    const enemyMap = new Map(
+      state.enemies.map((enemy) => [key(enemy.x, enemy.y), enemy])
+    );
     const playerKey = key(state.player.x, state.player.y);
+
     const output = [];
 
     for (let y = 0; y < GRID_HEIGHT; y += 1) {
       for (let x = 0; x < GRID_WIDTH; x += 1) {
         const cellKey = key(x, y);
-        let type = "empty";
 
-        if (WALL_SET.has(cellKey)) type = "wall";
+        let type = "empty";
+        let enemy = null;
+
+        if (wallSet.has(cellKey)) type = "wall";
         if (pelletSet.has(cellKey)) type = "pellet";
-        if (enemyMap.has(cellKey)) type = "enemy";
+        if (powerPelletSet.has(cellKey)) type = "powerPellet";
+        if (enemyMap.has(cellKey)) {
+          type = "enemy";
+          enemy = enemyMap.get(cellKey);
+        }
         if (playerKey === cellKey) type = "player";
 
-        output.push({
-          x,
-          y,
-          key: cellKey,
-          type,
-          enemyIndex: enemyMap.get(cellKey) ?? 0,
-        });
+        output.push({ x, y, key: cellKey, type, enemy });
       }
     }
 
@@ -52,26 +61,29 @@ export default function ZapManBoard({ state }) {
       return `${base} bg-cyan-400/20 shadow-[0_0_8px_rgba(34,211,238,0.18)]`;
     }
 
-    if (type === "player" || type === "enemy") {
-      return `${base} bg-white/[0.025]`;
-    }
-
     return `${base} bg-white/[0.03]`;
   }
 
   function renderInner(cell) {
-    if (cell.type === "pellet") {
+    if (cell.type === "pellet") return <ZapManPellet />;
+    if (cell.type === "powerPellet") return <ZapManPowerPellet />;
+
+    if (cell.type === "player") {
       return (
-        <div className="h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_8px_rgba(165,243,252,0.8)]" />
+        <ZapManPlayer
+          direction={state.player.direction}
+          powered={powered}
+        />
       );
     }
 
-    if (cell.type === "player") {
-      return <ZapManPlayer direction={state.player.direction} />;
-    }
-
     if (cell.type === "enemy") {
-      return <ZapManEnemy index={cell.enemyIndex} />;
+      return (
+        <ZapManEnemy
+          character={cell.enemy?.character}
+          vulnerable={powered}
+        />
+      );
     }
 
     return null;
