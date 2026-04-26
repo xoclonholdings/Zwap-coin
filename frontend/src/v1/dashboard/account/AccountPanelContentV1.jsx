@@ -91,7 +91,6 @@ export default function AccountPanelContentV1({
   user,
   authUser,
   username = "",
-  subtext = "",
   initials = "",
   tier = "zwapper",
   zptsBalance = 0,
@@ -234,18 +233,21 @@ export default function AccountPanelContentV1({
         </div>
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5">
-          <AccountProfileCardV1
-            user={user}
-            username={resolvedUsername}
-            initials={initials}
-            tier={tier}
-          />
+          <div className="grid shrink-0 grid-cols-[1.12fr_0.88fr] gap-2.5">
+            <AccountProfileCardV1
+              user={user}
+              username={resolvedUsername}
+              initials={initials}
+              tier={tier}
+            />
 
-          <AccountBalanceCardV1
-            zptsBalance={zptsBalance}
-            zwapBalance={zwapBalance}
-            onAdminTap={handleAdminTap}
-          />
+            <AccountBalanceCardV1
+              zptsBalance={zptsBalance}
+              zwapBalance={zwapBalance}
+              onAdminTap={handleAdminTap}
+              compact
+            />
+          </div>
 
           <div className="flex shrink-0 flex-col gap-2">
             <AccountActionRowV1
