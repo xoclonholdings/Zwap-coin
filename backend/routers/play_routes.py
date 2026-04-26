@@ -1,17 +1,11 @@
 """
-Play (Games) Router
+ZWAP! V1 Play Router
 ====================
-Routes for trivia, game results, and future game types.
-Reward calculations are delegated to reward_service.
+Submits V1 game results and awards controlled zPts.
 
-Spec-aligned behavior:
-- PLAY earns zPts only
-- Leaderboard score is competitive and not hard-capped here
-- Rewards are normalized, diminished, and capped economically
-- Movement dependency reduces PLAY farming
-- Achievement bonuses support standout performance
-- Public API uses canonical game IDs only
-- Legacy IDs resolve internally only
+V1 game registry:
+- available now: stackz, breakerz, pulze, zap-man
+- locked future games: brainz, triplez, werdz
 """
 
 import logging
@@ -22,8 +16,8 @@ from pydantic import BaseModel
 
 from services.reward_service import (
     calculate_play_reward,
-    get_tier_multipliers,
     enforce_daily_caps,
+    get_tier_multipliers,
 )
 from services.badge_service import evaluate_badges, persist_badge_updates
 from services.daily_task_service import maybe_process_full_daily_loop
@@ -31,15 +25,18 @@ from services.daily_task_service import maybe_process_full_daily_loop
 router = APIRouter(prefix="/games", tags=["Play"])
 
 
-class TriviaAnswerRequest(BaseModel):
-    question_id: str
-    answer: str
-    time_taken: float
+GAME_REGISTRY = {
+    "stackz": {"locked": False},
+    "breakerz": {"locked": False},
+    "pulze": {"locked": False},
+    "zap-man": {"locked": False},
+    "brainz": {"locked": True},
+    "triplez": {"locked": True},
+    "werdz": {"locked": True},
+}
 
 
 class GameResultRequest(BaseModel):
-    # Canonical public IDs only:
-    # brainz | breakerz | pulze | stackz | triplez | werdz
     game_type: str
     score: int
     level: int = 1
@@ -48,59 +45,38 @@ class GameResultRequest(BaseModel):
     completed: bool = True
 
 
-TIERS = {
-    "starter": {
-        "name": "Zwapper",
-        "games": ["brainz", "breakerz", "pulze", "stackz"],
-    },
-    "plus": {
-        "name": "Zitizen",
-        "games": ["brainz", "breakerz", "pulze", "stackz", "triplez", "werdz"],
-    },
-}
-
-LEGACY_GAME_ID_MAP = {
-    "ztrivia": "brainz",
-    "zbrickles": "breakerz",
-    "zslots": "pulze",
-    "ztetris": "stackz",
-}
-
-
 def normalize_tier_key(tier: str) -> str:
-    safe = str(tier or "").lower()
+    safe = str(tier or "").lower().strip()
+
     if safe in ("plus", "zitizen"):
         return "plus"
+
     return "starter"
 
 
 def normalize_game_id(game_type: str) -> str:
-    safe = str(game_type or "").lower()
-    return LEGACY_GAME_ID_MAP.get(safe, safe)
-
-
-def get_user_tier_config(tier: str) -> dict:
-    return TIERS.get(normalize_tier_key(tier), TIERS["starter"])
+    return str(game_type or "").lower().strip()
 
 
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
-    """Check if daily zPts should be reset."""
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zpts_reset")
 
     if last_reset:
         last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+
         if last_reset_dt.date() < now.date():
             await db.users.update_one(
                 {"wallet_address": user["wallet_address"]},
                 {
                     "$set": {
                         "daily_zpts_earned": 0,
-                        "last_zpts_reset": now.isoformat(),
                         "games_played_today": 0,
+                        "last_zpts_reset": now.isoformat(),
                     }
                 },
             )
+
             user["daily_zpts_earned"] = 0
             user["games_played_today"] = 0
             user["last_zpts_reset"] = now.isoformat()
@@ -110,11 +86,12 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
             {
                 "$set": {
                     "daily_zpts_earned": 0,
-                    "last_zpts_reset": now.isoformat(),
                     "games_played_today": 0,
+                    "last_zpts_reset": now.isoformat(),
                 }
             },
         )
+
         user["daily_zpts_earned"] = 0
         user["games_played_today"] = 0
         user["last_zpts_reset"] = now.isoformat()
@@ -127,8 +104,10 @@ def get_session_diminishing_multiplier(games_played_today: int) -> float:
 
     if next_session_number <= 3:
         return 1.0
+
     if next_session_number <= 6:
         return 0.5
+
     return 0.1
 
 
@@ -137,79 +116,41 @@ def get_move_dependency_multiplier(today_steps: int) -> float:
 
     if safe_steps < 1000:
         return 0.2
+
     if safe_steps < 2000:
         return 0.5
+
     return 1.0
 
 
+def safe_game_field(game_type: str) -> str:
+    return game_type.replace("-", "_")
+
+
 def get_personal_best_field(game_type: str) -> str:
-    canonical = normalize_game_id(game_type)
-    mapping = {
-        "brainz": "personal_best_ztrivia",
-        "breakerz": "personal_best_zbrickles",
-        "pulze": "personal_best_zslots",
-        "stackz": "personal_best_ztetris",
-        "triplez": "personal_best_triplez",
-        "werdz": "personal_best_werdz",
-    }
-    return mapping[canonical]
+    return f"personal_best_{safe_game_field(game_type)}"
 
 
 def get_daily_best_field(game_type: str) -> str:
-    canonical = normalize_game_id(game_type)
-    mapping = {
-        "brainz": "daily_best_ztrivia",
-        "breakerz": "daily_best_zbrickles",
-        "pulze": "daily_best_zslots",
-        "stackz": "daily_best_ztetris",
-        "triplez": "daily_best_triplez",
-        "werdz": "daily_best_werdz",
-    }
-    return mapping[canonical]
+    return f"daily_best_{safe_game_field(game_type)}"
 
 
 def get_daily_best_count_field(game_type: str) -> str:
-    canonical = normalize_game_id(game_type)
-    mapping = {
-        "brainz": "daily_best_count_ztrivia",
-        "breakerz": "daily_best_count_zbrickles",
-        "pulze": "daily_best_count_zslots",
-        "stackz": "daily_best_count_ztetris",
-        "triplez": "daily_best_count_triplez",
-        "werdz": "daily_best_count_werdz",
-    }
-    return mapping[canonical]
+    return f"daily_best_count_{safe_game_field(game_type)}"
 
 
 def get_personal_best_rewarded_day_field(game_type: str) -> str:
-    canonical = normalize_game_id(game_type)
-    mapping = {
-        "brainz": "personal_best_rewarded_day_ztrivia",
-        "breakerz": "personal_best_rewarded_day_zbrickles",
-        "pulze": "personal_best_rewarded_day_zslots",
-        "stackz": "personal_best_rewarded_day_ztetris",
-        "triplez": "personal_best_rewarded_day_triplez",
-        "werdz": "personal_best_rewarded_day_werdz",
+    return f"personal_best_rewarded_day_{safe_game_field(game_type)}"
+
+
+@router.get("/registry")
+async def get_game_registry():
+    return {
+        "games": [
+            {"id": game_id, "locked": config["locked"]}
+            for game_id, config in GAME_REGISTRY.items()
+        ]
     }
-    return mapping[canonical]
-
-
-@router.get("/trivia/questions")
-async def get_trivia_questions(count: int = 5, difficulty: str = "medium"):
-    """
-    Returns trivia questions.
-    Currently: stub — frontend or future learn routes can source these.
-    """
-    return {"questions": [], "count": count, "difficulty": difficulty}
-
-
-@router.post("/trivia/answer")
-async def check_trivia_answer(payload: TriviaAnswerRequest):
-    """
-    Validates a trivia answer.
-    Currently: stub — future server-side validation.
-    """
-    return {"correct": False, "explanation": None}
 
 
 @router.post("/result/{wallet_address}")
@@ -218,31 +159,39 @@ async def submit_game_result(
     game_data: GameResultRequest,
     request: Request,
 ):
-    """Submit game result and claim zPts rewards."""
     db = request.app.state.db
-    wallet = wallet_address.lower()
+    wallet = wallet_address.lower().strip()
     canonical_game_type = normalize_game_id(game_data.game_type)
 
-    if game_data.score < 0 or game_data.level < 1:
-        raise HTTPException(status_code=400, detail="Invalid game data")
+    if not wallet:
+        raise HTTPException(status_code=400, detail="Wallet address is required")
+
+    game_config = GAME_REGISTRY.get(canonical_game_type)
+
+    if not game_config:
+        raise HTTPException(status_code=400, detail="Unknown game type")
+
+    if game_config["locked"]:
+        raise HTTPException(status_code=403, detail="Game is locked")
+
+    if game_data.score < 0:
+        raise HTTPException(status_code=400, detail="Invalid score")
+
+    if game_data.level < 1:
+        raise HTTPException(status_code=400, detail="Invalid level")
 
     if game_data.session_duration_seconds < 0:
         raise HTTPException(status_code=400, detail="Invalid session duration")
 
     user = await db.users.find_one({"wallet_address": wallet})
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     tier = normalize_tier_key(user.get("tier", "starter"))
-    tier_ui_config = get_user_tier_config(tier)
-
-    if canonical_game_type not in tier_ui_config["games"]:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Game not available in {tier_ui_config['name']} tier",
-        )
 
     user = await check_and_reset_daily_zpts(db, user)
+
     daily_zpts = int(user.get("daily_zpts_earned", 0) or 0)
     games_played_today = int(user.get("games_played_today", 0) or 0)
     today_steps = int(user.get("daily_steps", 0) or 0)
@@ -271,11 +220,14 @@ async def submit_game_result(
             tier=tier,
             blocks_destroyed=game_data.blocks_destroyed,
         )
-    except ValueError as e:
+    except ValueError as error:
         logging.warning(
-            f"Game reward validation failed for {wallet} / {canonical_game_type}: {str(e)}"
+            "Game reward validation failed for %s / %s: %s",
+            wallet,
+            canonical_game_type,
+            str(error),
         )
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(error))
 
     base_zpts = int(rewards["zpts"])
 
@@ -301,11 +253,13 @@ async def submit_game_result(
 
     personal_best_achieved = game_data.score > previous_personal_best
     personal_best_bonus = 0
+
     if personal_best_achieved and previous_personal_best_rewarded_day != today_key:
         personal_best_bonus = 10
 
     daily_best_achieved = game_data.score > previous_daily_best
     daily_best_bonus = 0
+
     if daily_best_achieved and previous_daily_best_count < 3:
         daily_best_bonus = 5
 
@@ -314,8 +268,10 @@ async def submit_game_result(
 
     achievement_bonus_requested = personal_best_bonus + daily_best_bonus
     achievement_bonus_awarded = max(0, zpts_to_add - adjusted_base_zpts)
-    if achievement_bonus_awarded > achievement_bonus_requested:
-        achievement_bonus_awarded = achievement_bonus_requested
+    achievement_bonus_awarded = min(
+        achievement_bonus_awarded,
+        achievement_bonus_requested,
+    )
 
     set_updates = {
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -323,11 +279,13 @@ async def submit_game_result(
 
     if personal_best_achieved:
         set_updates[personal_best_field] = game_data.score
+
         if personal_best_bonus > 0:
             set_updates[personal_best_rewarded_day_field] = today_key
 
     if daily_best_achieved:
         set_updates[daily_best_field] = game_data.score
+
         if daily_best_bonus > 0:
             set_updates[daily_best_count_field] = previous_daily_best_count + 1
 
@@ -347,6 +305,9 @@ async def submit_game_result(
 
     updated_user = await db.users.find_one({"wallet_address": wallet})
 
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="User missing after play update")
+
     badge_result = evaluate_badges(updated_user)
     await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
     updated_user.update(badge_result["updates"])
@@ -358,10 +319,12 @@ async def submit_game_result(
         or full_loop_result.get("reason") == "daily_cap_reached_loop_counted"
     ):
         refreshed_user = await db.users.find_one({"wallet_address": wallet})
+
         if refreshed_user:
             updated_user = refreshed_user
 
     return {
+        "success": True,
         "game": canonical_game_type,
         "score": game_data.score,
         "level": game_data.level,
@@ -386,8 +349,6 @@ async def submit_game_result(
         "badge_finisher_level": updated_user.get("badge_finisher_level", 0),
         "badge_finisher_mastered": updated_user.get("badge_finisher_mastered", False),
         "badge_trophies": updated_user.get("badge_trophies", 0),
-        "badge_trophy_bonus_percent": updated_user.get(
-            "badge_trophy_bonus_percent", 0
-        ),
+        "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
         "message": f"Earned {zpts_to_add} zPts!",
     }
