@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
 
+const REVIEW_EMAIL = "review@zwap.app";
+const REVIEW_PASSWORD = "ZwapReview2026!";
+const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
+
 function Shell({ children }) {
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
@@ -65,6 +69,75 @@ function PrimaryButton({ children, onClick, disabled }) {
   );
 }
 
+function ReviewerModal({
+  reviewEmail,
+  reviewPassword,
+  setReviewEmail,
+  setReviewPassword,
+  onClose,
+  onSubmit,
+  statusText,
+}) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-md"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.28 }}
+        className="w-full max-w-[340px] rounded-[30px] border border-cyan-300/20 bg-[#050814]/95 p-6 shadow-[0_0_60px_rgba(34,211,238,0.22)]"
+      >
+        <div className="mb-5 text-center">
+          <div className="text-2xl font-black tracking-[-0.055em] text-white">
+            Reviewer Login
+          </div>
+          <div className="mt-2 text-xs font-bold leading-relaxed text-white/45">
+            App review access only.
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <Field
+            value={reviewEmail}
+            onChange={(e) => setReviewEmail(e.currentTarget.value)}
+            placeholder="Reviewer email"
+            type="email"
+            inputMode="email"
+          />
+
+          <Field
+            value={reviewPassword}
+            onChange={(e) => setReviewPassword(e.currentTarget.value)}
+            placeholder="Reviewer password"
+            type="password"
+          />
+
+          <PrimaryButton onClick={onSubmit}>Enter Review Mode</PrimaryButton>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xs font-black uppercase tracking-[0.14em] text-white/40"
+          >
+            Cancel
+          </button>
+
+          {statusText ? (
+            <div className="text-center text-xs font-bold leading-relaxed text-pink-200/80">
+              {statusText}
+            </div>
+          ) : null}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function SignIn({ onSuccess }) {
   const { ready, authenticated } = usePrivy();
   const { sendCode, loginWithCode } = useLoginWithEmail();
@@ -73,7 +146,11 @@ export default function SignIn({ onSuccess }) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [statusText, setStatusText] = useState("");
+  const [reviewStatusText, setReviewStatusText] = useState("");
   const [isWorking, setIsWorking] = useState(false);
+  const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
+  const [reviewEmail, setReviewEmail] = useState("");
+  const [reviewPassword, setReviewPassword] = useState("");
 
   useEffect(() => {
     if (!ready) return;
@@ -127,6 +204,37 @@ export default function SignIn({ onSuccess }) {
     }
   };
 
+  const handleReviewerLogin = () => {
+    const cleanEmail = reviewEmail.trim().toLowerCase();
+    const cleanPassword = reviewPassword.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      setReviewStatusText("Enter reviewer email and password.");
+      return;
+    }
+
+    if (cleanEmail !== REVIEW_EMAIL || cleanPassword !== REVIEW_PASSWORD) {
+      setReviewStatusText("Reviewer credentials did not match.");
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(REVIEW_ACCESS_STORAGE_KEY, "true");
+      window.localStorage.setItem("zwap_review_email", REVIEW_EMAIL);
+    } catch {
+      // Local storage can fail in rare private/browser states.
+      // Access still continues for this session.
+    }
+
+    setReviewStatusText("");
+    setIsReviewerModalOpen(false);
+    setPhase("success");
+
+    window.setTimeout(() => {
+      onSuccess?.();
+    }, 700);
+  };
+
   return (
     <Shell>
       <AnimatePresence mode="wait">
@@ -165,6 +273,19 @@ export default function SignIn({ onSuccess }) {
             <PrimaryButton onClick={handleSendCode} disabled={isWorking}>
               {isWorking ? "Sending..." : "Send Sign In Code"}
             </PrimaryButton>
+
+            <button
+              type="button"
+              onClick={() => {
+                setReviewEmail("");
+                setReviewPassword("");
+                setReviewStatusText("");
+                setIsReviewerModalOpen(true);
+              }}
+              className="text-xs font-black uppercase tracking-[0.16em] text-white/38 underline decoration-cyan-300/25 underline-offset-4 transition hover:text-cyan-100"
+            >
+              Reviewer Login
+            </button>
 
             {statusText ? (
               <div className="text-xs font-bold leading-relaxed text-pink-200/80">
@@ -227,6 +348,23 @@ export default function SignIn({ onSuccess }) {
             </div>
           </Panel>
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isReviewerModalOpen ? (
+          <ReviewerModal
+            reviewEmail={reviewEmail}
+            reviewPassword={reviewPassword}
+            setReviewEmail={setReviewEmail}
+            setReviewPassword={setReviewPassword}
+            onClose={() => {
+              setIsReviewerModalOpen(false);
+              setReviewStatusText("");
+            }}
+            onSubmit={handleReviewerLogin}
+            statusText={reviewStatusText}
+          />
+        ) : null}
       </AnimatePresence>
     </Shell>
   );
