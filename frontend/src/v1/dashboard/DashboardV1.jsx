@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import useV1DashboardState from "./useV1DashboardState";
 import AppHeaderV1 from "./AppHeaderV1";
 import DashboardWindowMove from "./windows/DashboardWindowMove";
@@ -8,13 +8,20 @@ import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 export default function DashboardV1({ onOpenAccount }) {
   const {
-    steps,
-    stepsPercent,
     gamesPlayedToday,
     playPercent,
     zptsBalance,
     zptsPercent,
   } = useV1DashboardState();
+
+  const [moveIsActive, setMoveIsActive] = useState(false);
+  const [sessionSteps, setSessionSteps] = useState(0);
+  const [calories, setCalories] = useState(0);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+
+  const handleToggleMove = () => {
+    setMoveIsActive((current) => !current);
+  };
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
@@ -25,8 +32,11 @@ export default function DashboardV1({ onOpenAccount }) {
       <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowMove
-            steps={steps}
-            stepsPercent={stepsPercent}
+            isActive={moveIsActive}
+            sessionSteps={sessionSteps}
+            calories={calories}
+            timerSeconds={timerSeconds}
+            onToggleMove={handleToggleMove}
           />
         </div>
 
