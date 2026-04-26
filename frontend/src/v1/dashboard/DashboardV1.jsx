@@ -18,22 +18,12 @@ function estimateCaloriesFromSteps(steps) {
   return Math.round(safeSteps * 0.04);
 }
 
-function buildHeaderDisplayName({ user, authUser }) {
-  return (
-    user?.username ||
-    user?.displayName ||
-    user?.name ||
-    authUser?.username ||
-    authUser?.displayName ||
-    authUser?.email?.address?.split("@")[0] ||
-    authUser?.email?.split("@")[0] ||
-    ""
-  );
-}
-
 export default function DashboardV1({ user, authUser }) {
+  const state = useV1DashboardState({ user, authUser });
+
   const {
     zptsBalance,
+    displayName,
 
     isZwapAltView,
     setIsZwapAltView,
@@ -78,10 +68,7 @@ export default function DashboardV1({ user, authUser }) {
     zwapMode,
     zwapMessage,
     zwapHint,
-  } = useV1DashboardState({
-    user,
-    authUser,
-  });
+  } = state;
 
   const [moveIsActive, setMoveIsActive] = useState(false);
   const [sessionSteps, setSessionSteps] = useState(0);
@@ -89,9 +76,6 @@ export default function DashboardV1({ user, authUser }) {
   const [activeGameId, setActiveGameId] = useState(null);
 
   const sessionStartStepsRef = useRef(0);
-
-  const displayName = buildHeaderDisplayName({ user, authUser });
-  const calories = estimateCaloriesFromSteps(sessionSteps);
 
   const handleToggleMove = () => {
     setMoveIsActive((current) => {
@@ -141,6 +125,8 @@ export default function DashboardV1({ user, authUser }) {
 
     return () => window.clearInterval(interval);
   }, [moveIsActive]);
+
+  const calories = estimateCaloriesFromSteps(sessionSteps);
 
   if (activeGameId === "stackz") {
     return <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />;
