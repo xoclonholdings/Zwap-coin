@@ -18,7 +18,20 @@ function estimateCaloriesFromSteps(steps) {
   return Math.round(safeSteps * 0.04);
 }
 
-export default function DashboardV1({ onOpenAccount, user, authUser }) {
+function buildHeaderDisplayName({ user, authUser }) {
+  return (
+    user?.username ||
+    user?.displayName ||
+    user?.name ||
+    authUser?.username ||
+    authUser?.displayName ||
+    authUser?.email?.address?.split("@")[0] ||
+    authUser?.email?.split("@")[0] ||
+    ""
+  );
+}
+
+export default function DashboardV1({ user, authUser }) {
   const {
     zptsBalance,
 
@@ -77,6 +90,9 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
 
   const sessionStartStepsRef = useRef(0);
 
+  const displayName = buildHeaderDisplayName({ user, authUser });
+  const calories = estimateCaloriesFromSteps(sessionSteps);
+
   const handleToggleMove = () => {
     setMoveIsActive((current) => {
       const nextState = !current;
@@ -106,7 +122,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   };
 
   useEffect(() => {
-    if (!moveIsActive) return;
+    if (!moveIsActive) return undefined;
 
     const unsubscribe = subscribeToSteps((deviceSteps) => {
       const startSteps = Number(sessionStartStepsRef.current || 0);
@@ -117,7 +133,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   }, [moveIsActive]);
 
   useEffect(() => {
-    if (!moveIsActive) return;
+    if (!moveIsActive) return undefined;
 
     const interval = window.setInterval(() => {
       setTimerSeconds((current) => current + 1);
@@ -125,8 +141,6 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
 
     return () => window.clearInterval(interval);
   }, [moveIsActive]);
-
-  const calories = estimateCaloriesFromSteps(sessionSteps);
 
   if (activeGameId === "stackz") {
     return <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />;
@@ -146,8 +160,15 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
-      <div className="shrink-0 px-2.5 pt-2.5">
-        <AppHeaderV1 onOpenAccount={onOpenAccount} />
+      <div className="shrink-0">
+        <AppHeaderV1
+          zptsBalance={zptsBalance}
+          displayName={displayName}
+          gardenUnlocked={gardenUnlocked}
+          learnUnlocked={learnUnlocked}
+          streamUnlocked={streamUnlocked}
+          badgesUnlocked={badgeVisibilityUnlocked}
+        />
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
