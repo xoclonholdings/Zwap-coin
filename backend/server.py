@@ -11,14 +11,12 @@ import routers.wallet_routes as wallet_routes
 from routers import auth_routes
 from routers import blockchain_routes
 from routers import stripe_routes
-from routers import subscription_routes
 from routers import move_routes
 from routers import play_routes
 from routers import shop_routes
 from routers import learn_routes
 from routers import user_routes
 from routers import rewards_routes
-from routers import news_routes
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,18 +26,14 @@ logging.basicConfig(
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
-# MongoDB connection
 mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
 
 print("CONNECTED DB:", db.name)
-print("MONGO URL:", mongo_url)
 
-# Stripe
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 
-# Create the main app
 app = FastAPI(title="ZWAP! V1 API")
 api_router = APIRouter(prefix="/api")
 
@@ -55,11 +49,7 @@ async def app_root():
     }
 
 
-# ============ ZWAP! CONTRACT CONFIG ============
-
 ZWAP_CONTRACT_ADDRESS = "0xe8898453af13b9496a6e8ada92c6efdaf4967a81"
-ZWAP_CHAIN_ID = 137
-ZWAP_DECIMALS = 18
 
 POLYGON_RPC_URL = os.environ.get("POLYGON_RPC_URL", "https://polygon-rpc.com")
 w3 = Web3(Web3.HTTPProvider(POLYGON_RPC_URL))
@@ -96,31 +86,21 @@ ERC20_ABI = [
 ]
 
 zwap_contract = None
+
 if w3.is_connected():
     zwap_contract = w3.eth.contract(
         address=Web3.to_checksum_address(ZWAP_CONTRACT_ADDRESS),
         abi=ERC20_ABI,
     )
-    logging.info(
-        "Connected to Polygon. ZWAP! contract loaded at %s",
-        ZWAP_CONTRACT_ADDRESS,
-    )
+    logging.info("Connected to Polygon. ZWAP! contract loaded.")
 else:
     logging.warning("Polygon RPC not connected. ZWAP! contract not loaded.")
 
-# Shared state for routers/services
 app.state.db = db
 app.state.w3 = w3
 app.state.zwap_contract = zwap_contract
-app.state.treasury_wallet = os.environ.get(
-    "TREASURY_WALLET",
-    "0x102a5301c56cFCf4F02bEA3184Bdb44b731375E0",
-)
-app.state.treasury_private_key = os.environ.get("TREASURY_PRIVATE_KEY", "")
 app.state.stripe_api_key = STRIPE_API_KEY
 
-
-# ============ HEALTH & ROOT ============
 
 @api_router.get("/")
 async def root():
@@ -137,8 +117,6 @@ async def health():
     }
 
 
-# ============ ROUTERS ============
-
 api_router.include_router(wallet_routes.router)
 api_router.include_router(auth_routes.router)
 api_router.include_router(blockchain_routes.router)
@@ -149,13 +127,8 @@ api_router.include_router(learn_routes.router)
 api_router.include_router(user_routes.router)
 api_router.include_router(rewards_routes.router)
 api_router.include_router(stripe_routes.router)
-api_router.include_router(subscription_routes.router)
-api_router.include_router(news_routes.router)
 
 app.include_router(api_router)
-
-
-# ============ MIDDLEWARE ============
 
 app.add_middleware(
     CORSMiddleware,
@@ -165,8 +138,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ============ LIFECYCLE ============
 
 @app.on_event("shutdown")
 async def shutdown_app():
