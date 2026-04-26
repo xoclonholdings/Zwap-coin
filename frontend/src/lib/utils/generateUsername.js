@@ -26,36 +26,60 @@ const NOUNS = [
 
 function hashString(value = "") {
   let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
+  const safeValue = String(value || "").toLowerCase().trim();
+
+  for (let i = 0; i < safeValue.length; i += 1) {
+    hash = (hash << 5) - hash + safeValue.charCodeAt(i);
     hash |= 0;
   }
+
   return Math.abs(hash);
 }
 
+function normalizeEmail(email = "") {
+  if (!email) return "";
+  return String(email).toLowerCase().trim();
+}
+
+function normalizeWallet(walletAddress = "") {
+  if (!walletAddress) return "";
+  return String(walletAddress).trim();
+}
+
 export function generateUsername({
-  walletAddress,
-  email,
-  username,
+  walletAddress = "",
+  email = "",
+  username = "",
 } = {}) {
-  // saved/backend username always wins
-  if (username) return username;
+  const savedUsername = String(username || "").trim();
 
-  const seedSource = walletAddress || email || "";
-  if (!seedSource) return "";
+  if (savedUsername) {
+    return savedUsername;
+  }
 
-  let seed;
+  const safeWalletAddress = normalizeWallet(walletAddress);
+  const safeEmail = normalizeEmail(email);
 
-  if (walletAddress && walletAddress.startsWith("0x")) {
-    seed = parseInt(walletAddress.slice(2, 10), 16);
+  const seedSource = safeWalletAddress || safeEmail;
+
+  if (!seedSource) {
+    return "";
+  }
+
+  let seed = 0;
+
+  if (safeWalletAddress.startsWith("0x") && safeWalletAddress.length >= 10) {
+    seed = parseInt(safeWalletAddress.slice(2, 10), 16);
   } else {
-    seed = hashString(String(seedSource).toLowerCase().trim());
+    seed = hashString(seedSource);
   }
 
   const safeSeed = Math.abs(seed);
-  const adjIndex = safeSeed % ADJECTIVES.length;
-  const nounIndex = Math.floor(safeSeed / 7) % NOUNS.length;
-  const num = safeSeed % 999;
+  const adjective = ADJECTIVES[safeSeed % ADJECTIVES.length];
+  const noun = NOUNS[Math.floor(safeSeed / 7) % NOUNS.length];
+  const number = safeSeed % 999;
 
-  return `${ADJECTIVES[adjIndex]}${NOUNS[nounIndex]}${num}`;
+  return `${adjective}${noun}${number}`;
 }
+
+export default generateUsername;
