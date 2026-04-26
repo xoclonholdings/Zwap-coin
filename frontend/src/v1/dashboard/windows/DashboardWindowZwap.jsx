@@ -20,13 +20,8 @@ function buildGuidance({
   const loopComplete =
     completedTaskCount >= totalTaskCount && totalTaskCount > 0;
 
-  if (systemMessage) {
-    return systemMessage;
-  }
-
-  if (nextStep) {
-    return nextStep;
-  }
+  if (systemMessage) return systemMessage;
+  if (nextStep) return nextStep;
 
   if (swapUnlocked) {
     return "Swap is ready when you are.\nYour progress can now turn into value.";
@@ -38,10 +33,6 @@ function buildGuidance({
 
   if (eventType === "milestone") {
     return "Milestone reached.\nThis is stacking. Keep building.";
-  }
-
-  if (shopUnlocked && completedTaskCount > 0) {
-    return "Shop is ready.\nYou’ve earned enough to unlock value.";
   }
 
   if (eventType === "play_complete") {
@@ -58,6 +49,10 @@ function buildGuidance({
 
   if (gardenUnlocked) {
     return "Your effort is growing.\nConsistency is unlocking new layers.";
+  }
+
+  if (shopUnlocked) {
+    return "Shop is ready.\nYou’ve earned enough to unlock value.";
   }
 
   if (learnUnlocked) {
@@ -94,10 +89,16 @@ function buildTaskItems({
   }));
 }
 
-function ZwapVoiceIcon() {
+function ZwapHeader() {
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/28 bg-violet-400/12 text-[18px] shadow-[0_0_18px_rgba(168,85,247,0.16)]">
-      <span className="translate-y-[1px]">🗣️</span>
+    <div className="relative z-10 flex items-center gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/35 bg-violet-400/14 text-[18px] shadow-[0_0_18px_rgba(168,85,247,0.18)]">
+        <span className="translate-y-[1px]">🗣️</span>
+      </div>
+
+      <div className="bg-gradient-to-r from-cyan-200 via-violet-200 to-fuchsia-200 bg-clip-text text-[13px] font-black uppercase tracking-[0.22em] text-transparent">
+        ZWAP!
+      </div>
     </div>
   );
 }
@@ -205,9 +206,18 @@ export default function DashboardWindowZwap({
     }
   };
 
+  const shellClassName = [
+    "relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
+    "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.2),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.1),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
+    "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.1)]",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   if (isAltView && gardenUnlocked) {
     return (
-      <div onClick={handleToggle} role="presentation">
+      <div onClick={handleToggle} role="presentation" className="h-full min-h-0">
         <GardenWindow
           streakDays={streakDays}
           dailySteps={dailySteps}
@@ -233,51 +243,35 @@ export default function DashboardWindowZwap({
 
   if (isAltView && !gardenUnlocked) {
     return (
-      <section
-        onClick={handleToggle}
-        className={[
-          "relative flex min-h-[214px] w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
-          "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.09),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
-          "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.08)]",
-          className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
-      >
+      <section onClick={handleToggle} className={shellClassName}>
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/14 blur-3xl" />
           <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
           <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/28 to-transparent" />
         </div>
 
-        <div className="relative z-10 flex items-center gap-2">
-          <ZwapVoiceIcon />
+        <ZwapHeader />
 
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/78">
-            ZWAP!
-          </div>
-        </div>
-
-        <div className="relative z-10 mt-5 text-[1.25rem] font-black leading-tight tracking-[-0.05em] text-white">
+        <div className="relative z-10 mt-4 text-[1.15rem] font-black leading-tight tracking-[-0.05em] text-white">
           Daily Tasks
         </div>
 
-        <div className="relative z-10 mt-4 space-y-2">
+        <div className="relative z-10 mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {taskItems.map((task) => (
             <div
               key={task.id}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2.5"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 {task.completed ? (
-                  <CheckCircle2 className="h-4 w-4 text-cyan-300" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-300" />
                 ) : (
-                  <Circle className="h-4 w-4 text-white/30" />
+                  <Circle className="h-4 w-4 shrink-0 text-white/30" />
                 )}
 
                 <span
                   className={[
-                    "text-sm font-bold tracking-[-0.02em]",
+                    "truncate text-sm font-bold tracking-[-0.02em]",
                     task.completed ? "text-white" : "text-white/60",
                   ].join(" ")}
                 >
@@ -287,7 +281,7 @@ export default function DashboardWindowZwap({
 
               <span
                 className={[
-                  "text-[10px] font-black uppercase tracking-[0.12em]",
+                  "ml-2 shrink-0 text-[10px] font-black uppercase tracking-[0.12em]",
                   task.completed ? "text-cyan-300" : "text-white/35",
                 ].join(" ")}
               >
@@ -297,7 +291,7 @@ export default function DashboardWindowZwap({
           ))}
         </div>
 
-        <div className="relative z-10 mt-auto pt-4 text-[11px] font-black uppercase tracking-[0.16em] text-white/50">
+        <div className="relative z-10 mt-3 shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-white/50">
           {taskLabel}
         </div>
       </section>
@@ -307,14 +301,7 @@ export default function DashboardWindowZwap({
   return (
     <section
       onClick={handleToggle}
-      className={[
-        "relative flex min-h-[214px] w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
-        "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.2),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.1),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
-        "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.1)]",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={shellClassName}
       role="button"
       tabIndex={0}
     >
@@ -324,21 +311,15 @@ export default function DashboardWindowZwap({
         <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/30 to-transparent" />
       </div>
 
-      <div className="relative z-10 flex items-center gap-2">
-        <ZwapVoiceIcon />
+      <ZwapHeader />
 
-        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/78">
-          ZWAP!
-        </div>
-      </div>
-
-      <div className="relative z-10 flex flex-1 items-center py-5">
+      <div className="relative z-10 flex flex-1 items-center py-4">
         <div className="max-w-[220px]">
           <GuidanceText guidance={guidance} />
         </div>
       </div>
 
-      <div className="relative z-10 mt-auto text-[11px] font-black uppercase tracking-[0.16em] text-white/50">
+      <div className="relative z-10 mt-auto shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-white/50">
         {taskLabel}
       </div>
     </section>
