@@ -18,6 +18,9 @@ import HelpViewV1 from "./drawer/HelpViewV1";
 import PrivacyViewV1 from "./drawer/PrivacyViewV1";
 import TermsViewV1 from "./drawer/TermsViewV1";
 
+const ADMIN_TAP_THRESHOLD = 3;
+const ADMIN_TAP_RESET_MS = 1200;
+
 function HeaderIconButton({ onClick, children, label }) {
   return (
     <button
@@ -122,6 +125,15 @@ export default function AccountPanelContentV1({
     };
   }, []);
 
+  const resetAdminTapCounter = () => {
+    adminTapCountRef.current = 0;
+
+    if (adminTapResetRef.current) {
+      clearTimeout(adminTapResetRef.current);
+      adminTapResetRef.current = null;
+    }
+  };
+
   const handleAdminTap = () => {
     adminTapCountRef.current += 1;
 
@@ -130,17 +142,11 @@ export default function AccountPanelContentV1({
     }
 
     adminTapResetRef.current = setTimeout(() => {
-      adminTapCountRef.current = 0;
-      adminTapResetRef.current = null;
-    }, 1200);
+      resetAdminTapCounter();
+    }, ADMIN_TAP_RESET_MS);
 
-    if (adminTapCountRef.current >= 5) {
-      adminTapCountRef.current = 0;
-
-      if (adminTapResetRef.current) {
-        clearTimeout(adminTapResetRef.current);
-        adminTapResetRef.current = null;
-      }
+    if (adminTapCountRef.current >= ADMIN_TAP_THRESHOLD) {
+      resetAdminTapCounter();
 
       if (typeof onAdminTrigger === "function") {
         onAdminTrigger();
