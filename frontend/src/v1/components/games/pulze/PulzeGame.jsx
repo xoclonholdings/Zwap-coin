@@ -14,6 +14,7 @@ export default function PulzeGame({
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const engineRef = useRef(null);
+  const finalResultRef = useRef(null);
 
   const [gameState, setGameState] = useState("idle");
   const [uiState, setUiState] = useState({
@@ -50,6 +51,7 @@ export default function PulzeGame({
     });
 
     engineRef.current = engine;
+    finalResultRef.current = null;
 
     const detachInput = attachPulzeInput({
       canvas,
@@ -89,7 +91,7 @@ export default function PulzeGame({
       if (activeEngine.isFinished()) {
         const result = activeEngine.getResult();
 
-        onGameEnd?.({
+        finalResultRef.current = {
           score: result.score,
           round: result.round,
           level: result.level,
@@ -98,8 +100,9 @@ export default function PulzeGame({
           hits: result.hits,
           attempts: result.attempts,
           gameId: "pulze",
-        });
+        };
 
+        setGameState("ended");
         return;
       }
 
@@ -118,15 +121,23 @@ export default function PulzeGame({
 
       engineRef.current = null;
     };
-  }, [gameState, level, round, onGameEnd]);
+  }, [gameState, level, round]);
 
   const handleStart = () => {
+    finalResultRef.current = null;
+
     setGameState("live");
     setUiState((prev) => ({
       ...prev,
+      score: 0,
+      lives: 5,
+      streak: 0,
+      hits: 0,
+      attempts: 0,
       paused: false,
       exitOpen: false,
       finished: false,
+      feedback: "TAP ON THE PULZE",
     }));
   };
 
@@ -182,17 +193,9 @@ export default function PulzeGame({
 
   const handleConfirmExit = () => {
     const engine = engineRef.current;
-    const result = engine?.getResult?.() || {};
+    const result = engine?.getResult?.() || finalResultRef.current || {};
 
     engine?.confirmExit?.();
-
-    setGameState("exit");
-    setUiState((prev) => ({
-      ...prev,
-      finished: true,
-      paused: false,
-      exitOpen: false,
-    }));
 
     onGameEnd?.({
       score: result.score ?? uiState.score,
@@ -204,6 +207,24 @@ export default function PulzeGame({
       attempts: result.attempts ?? uiState.attempts,
       gameId: "pulze",
     });
+  };
+
+  const handleRestart = () => {
+    finalResultRef.current = null;
+    setGameState("live");
+
+    setUiState((prev) => ({
+      ...prev,
+      score: 0,
+      lives: 5,
+      streak: 0,
+      hits: 0,
+      attempts: 0,
+      paused: false,
+      exitOpen: false,
+      finished: false,
+      feedback: "TAP ON THE PULZE",
+    }));
   };
 
   return (
@@ -409,6 +430,43 @@ export default function PulzeGame({
                   className="flex w-full items-center justify-center rounded-[20px] bg-[linear-gradient(90deg,rgba(244,114,182,0.95),rgba(239,68,68,0.95))] px-5 py-3.5 text-base font-semibold text-white transition active:scale-[0.98]"
                 >
                   Confirm Exit
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {gameState === "ended" ? (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 px-4 backdrop-blur-md">
+            <div className="w-full max-w-[320px] rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(236,72,153,0.12),transparent_35%),linear-gradient(180deg,rgba(11,18,28,0.96),rgba(7,11,18,0.98))] p-5 text-center text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-fuchsia-300/70">
+                Session Complete
+              </p>
+
+              <h3 className="mt-2 text-lg font-semibold text-white">
+                Pulze Finished
+              </h3>
+
+              <p className="mt-2 text-sm text-white/60">
+                Score: {Number(uiState.score || 0).toLocaleString()} • Hits{" "}
+                {uiState.hits} / {uiState.attempts}
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <button
+                  type="button"
+                  onClick={handleRestart}
+                  className="flex w-full items-center justify-center rounded-[20px] bg-[linear-gradient(90deg,rgba(236,72,153,1),rgba(168,85,247,0.95),rgba(34,211,238,1))] px-5 py-3.5 text-base font-semibold text-white transition active:scale-[0.98]"
+                >
+                  Restart
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmExit}
+                  className="flex w-full items-center justify-center rounded-[20px] border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-medium text-white/75 transition hover:bg-white/[0.08]"
+                >
+                  Back to Arcade
                 </button>
               </div>
             </div>
