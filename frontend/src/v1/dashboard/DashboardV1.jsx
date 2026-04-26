@@ -6,7 +6,7 @@ import DashboardWindowPlay from "./windows/DashboardWindowPlay";
 import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
-export default function DashboardV1() {
+export default function DashboardV1({ onOpenAccount }) {
   const {
     steps,
     stepsPercent,
@@ -19,7 +19,7 @@ export default function DashboardV1() {
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
       <div className="shrink-0 px-3 pt-3">
-        <AppHeaderV1 />
+        <AppHeaderV1 onOpenAccount={onOpenAccount} />
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3 px-3 pb-3 pt-3">
@@ -38,9 +38,7 @@ export default function DashboardV1() {
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop
-            zptsBalance={zptsBalance}
-          />
+          <DashboardWindowShop zptsBalance={zptsBalance} />
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
