@@ -11,7 +11,7 @@ import BreakerzGame from "@/v1/components/games/breakerz/BreakerzGame";
 import PulzeGame from "@/v1/components/games/pulze/PulzeGame";
 import ZapManGame from "@/v1/components/games/zapman/ZapManGame";
 
-import { getDeviceSteps, subscribeToDeviceSteps } from "@/services/stepService";
+import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
 
 function estimateCaloriesFromSteps(steps) {
   const safeSteps = Math.max(0, Number(steps || 0));
@@ -19,7 +19,7 @@ function estimateCaloriesFromSteps(steps) {
 }
 
 export default function DashboardV1({ onOpenAccount, user, authUser }) {
-  const { play, zpts, zwap } = useV1DashboardState({
+  const { zpts, zwap } = useV1DashboardState({
     user,
     authUser,
   });
@@ -36,7 +36,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
       const nextState = !current;
 
       if (nextState) {
-        sessionStartStepsRef.current = getDeviceSteps();
+        sessionStartStepsRef.current = getCurrentSteps();
         setSessionSteps(0);
         setTimerSeconds(0);
       }
@@ -58,7 +58,7 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   useEffect(() => {
     if (!moveIsActive) return;
 
-    const unsubscribe = subscribeToDeviceSteps((deviceSteps) => {
+    const unsubscribe = subscribeToSteps((deviceSteps) => {
       const startSteps = Number(sessionStartStepsRef.current || 0);
       setSessionSteps(Math.max(0, Number(deviceSteps || 0) - startSteps));
     });
@@ -79,39 +79,19 @@ export default function DashboardV1({ onOpenAccount, user, authUser }) {
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
   if (activeGameId === "stackz") {
-    return (
-      <StackzGame
-        isPlaying={true}
-        onGameEnd={handleGameEnd}
-      />
-    );
+    return <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />;
   }
 
   if (activeGameId === "breakerz") {
-    return (
-      <BreakerzGame
-        isPlaying={true}
-        onGameEnd={handleGameEnd}
-      />
-    );
+    return <BreakerzGame isPlaying={true} onGameEnd={handleGameEnd} />;
   }
 
   if (activeGameId === "pulze") {
-    return (
-      <PulzeGame
-        isPlaying={true}
-        onGameEnd={handleGameEnd}
-      />
-    );
+    return <PulzeGame isPlaying={true} onGameEnd={handleGameEnd} />;
   }
 
   if (activeGameId === "zap-man") {
-    return (
-      <ZapManGame
-        isPlaying={true}
-        onGameEnd={handleGameEnd}
-      />
-    );
+    return <ZapManGame isPlaying={true} onGameEnd={handleGameEnd} />;
   }
 
   return (
