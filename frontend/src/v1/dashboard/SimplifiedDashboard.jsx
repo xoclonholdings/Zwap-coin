@@ -30,7 +30,7 @@ function DrawerShellV1({ open, onClose, children }) {
             type="button"
             aria-label="Close account drawer"
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-black/65 backdrop-blur-[3px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -38,7 +38,7 @@ function DrawerShellV1({ open, onClose, children }) {
           />
 
           <motion.aside
-            className="fixed right-0 top-0 z-50 h-screen w-full max-w-[380px] overflow-hidden border-l border-white/10 bg-[linear-gradient(180deg,rgba(8,14,20,0.98),rgba(4,8,14,1))] shadow-[-18px_0_48px_rgba(0,0,0,0.36)]"
+            className="fixed right-0 top-0 z-50 h-[100dvh] w-full max-w-[390px] overflow-hidden border-l border-white/10 bg-[linear-gradient(180deg,rgba(8,14,20,0.98),rgba(4,8,14,1))] shadow-[-18px_0_48px_rgba(0,0,0,0.42)]"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -115,20 +115,18 @@ export default function SimplifiedDashboard({
   return (
     <div
       className={[
-        "relative h-[100dvh] w-full overflow-hidden bg-[linear-gradient(180deg,#050912_0%,#060b14_48%,#04070d_100%)] text-white",
+        "fixed inset-0 h-[100dvh] w-full overflow-hidden bg-[#030711] text-white",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-12%] top-[-6%] h-[240px] w-[240px] rounded-full bg-cyan-500/8 blur-3xl" />
-        <div className="absolute right-[-10%] top-[12%] h-[220px] w-[220px] rounded-full bg-violet-500/8 blur-3xl" />
-        <div className="absolute bottom-[-10%] left-[18%] h-[220px] w-[220px] rounded-full bg-cyan-400/6 blur-3xl" />
-      </div>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(84,214,255,0.10),transparent_32%),radial-gradient(circle_at_88%_28%,rgba(158,99,255,0.10),transparent_34%),linear-gradient(180deg,#050912_0%,#060b14_48%,#04070d_100%)]" />
+
+      <div className="pointer-events-none absolute inset-y-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 border-x border-cyan-300/10 bg-white/[0.015] shadow-[0_0_80px_rgba(0,255,255,0.045)]" />
 
       <main className="relative z-10 mx-auto h-[100dvh] w-full max-w-[430px] overflow-hidden">
-        <DashboardV1 />
+        <DashboardV1 onOpenAccount={() => setAccountOpen(true)} />
       </main>
 
       <DrawerShellV1 open={accountOpen} onClose={() => setAccountOpen(false)}>
