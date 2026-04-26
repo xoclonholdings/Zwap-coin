@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Footprints, ChevronRight, Timer, Flame, Activity } from "lucide-react";
+import { Footprints, Timer, Flame, Activity } from "lucide-react";
 
 function clamp(value, min = 0, max = 1) {
   return Math.min(Math.max(Number(value || 0), min), max);
@@ -39,26 +39,30 @@ function buildStatusLine({ isActive, todaySteps, stepGoal, progress }) {
 
 export default function DashboardWindowMove({
   todaySteps = 0,
+  steps,
   stepGoal = 10000,
   sessionSteps = 0,
   calories = 0,
   timerSeconds = 0,
   isActive = false,
   progressPercent,
+  stepsPercent,
   onOpenMove,
   className = "",
 }) {
   const [panelIndex, setPanelIndex] = useState(0);
 
+  const resolvedSteps = Number(steps ?? todaySteps ?? 0);
+  const resolvedPercent = progressPercent ?? stepsPercent;
   const safeGoal = Math.max(1, Number(stepGoal || 1));
 
   const progress = useMemo(() => {
-    if (typeof progressPercent === "number") {
-      return clamp(progressPercent / 100);
+    if (typeof resolvedPercent === "number") {
+      return clamp(resolvedPercent / 100);
     }
 
-    return clamp(Number(todaySteps || 0) / safeGoal);
-  }, [progressPercent, todaySteps, safeGoal]);
+    return clamp(resolvedSteps / safeGoal);
+  }, [resolvedPercent, resolvedSteps, safeGoal]);
 
   const progressDegrees = Math.round(progress * 360);
   const progressText = Math.round(progress * 100);
@@ -66,11 +70,11 @@ export default function DashboardWindowMove({
   const statusLine = useMemo(() => {
     return buildStatusLine({
       isActive,
-      todaySteps,
+      todaySteps: resolvedSteps,
       stepGoal: safeGoal,
       progress,
     });
-  }, [isActive, todaySteps, safeGoal, progress]);
+  }, [isActive, resolvedSteps, safeGoal, progress]);
 
   const handleClick = () => {
     if (typeof onOpenMove === "function") {
@@ -109,137 +113,130 @@ export default function DashboardWindowMove({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className={[
-        "group relative w-full overflow-hidden rounded-[26px] border p-4 text-left transition active:scale-[0.99]",
+        "group relative h-full w-full overflow-hidden rounded-[28px] border text-left active:scale-[0.99]",
         isActive
-          ? "border-cyan-400/24 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(10,25,35,0.96),rgba(5,15,20,0.98))] shadow-[0_0_30px_rgba(34,211,238,0.14)]"
-          : "border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.11),transparent_38%),linear-gradient(180deg,rgba(12,18,26,0.96),rgba(6,10,16,0.98))] shadow-[0_14px_34px_rgba(0,0,0,0.26)]",
+          ? "border-cyan-300/28 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.22),transparent_44%),linear-gradient(180deg,rgba(10,25,35,0.97),rgba(4,12,18,0.99))] shadow-[0_0_34px_rgba(34,211,238,0.16)]"
+          : "border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.13),transparent_42%),linear-gradient(180deg,rgba(12,18,26,0.97),rgba(5,9,15,0.99))] shadow-[0_16px_38px_rgba(0,0,0,0.30)]",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
       aria-label="Open Move"
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100">
-        <div className="absolute inset-x-8 top-0 h-16 rounded-full bg-cyan-400/10 blur-2xl" />
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-x-5 top-0 h-16 rounded-full bg-cyan-300/10 blur-2xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.075),transparent_34%,rgba(34,211,238,0.045))]" />
       </div>
 
-      <div className="relative z-10 flex h-full flex-col">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${
-                isActive
-                  ? "border-cyan-400/24 bg-cyan-400/12 text-cyan-300"
-                  : "border-cyan-400/16 bg-cyan-400/8 text-cyan-200"
-              }`}
-            >
-              <Footprints className="h-[17px] w-[17px]" strokeWidth={2.1} />
+      <div className="relative z-10 flex h-full flex-col p-3">
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+              <Footprints className="h-4 w-4" strokeWidth={2.2} />
             </div>
 
-            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
-              Move
+            <div className="min-w-0">
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/88">
+                Move
+              </div>
+              <div className="mt-0.5 truncate text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-100/46">
+                {showStats ? "Stats" : statusLine}
+              </div>
             </div>
           </div>
 
-          <div className="mt-0.5 shrink-0 text-white/32 transition group-hover:text-white/56">
-            <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.1} />
+          <div className="flex shrink-0 gap-1">
+            <span
+              className={`h-1.5 rounded-full transition-all ${
+                !showStats ? "w-4 bg-cyan-300" : "w-1.5 bg-white/24"
+              }`}
+            />
+            <span
+              className={`h-1.5 rounded-full transition-all ${
+                showStats ? "w-4 bg-cyan-300" : "w-1.5 bg-white/24"
+              }`}
+            />
           </div>
         </div>
 
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative min-h-0 flex-1 overflow-hidden">
           <div
             className="flex h-full transition-transform duration-300 ease-out"
             style={{ transform: `translateX(-${panelIndex * 100}%)` }}
           >
-            <div className="flex min-w-full flex-col items-center justify-center">
+            <div className="flex min-w-full flex-col items-center justify-center px-1 py-2">
               <div
-                className="relative flex h-[116px] w-[116px] items-center justify-center rounded-full"
+                className="relative flex aspect-square w-[min(78%,142px)] max-w-[142px] items-center justify-center rounded-full"
                 style={{
-                  background: `conic-gradient(rgba(34,211,238,0.95) ${progressDegrees}deg, rgba(255,255,255,0.08) 0deg)`,
+                  background: `conic-gradient(rgba(34,211,238,0.98) ${progressDegrees}deg, rgba(255,255,255,0.08) 0deg)`,
                   boxShadow: isActive
-                    ? "0 0 26px rgba(34,211,238,0.22)"
-                    : "0 0 18px rgba(34,211,238,0.12)",
+                    ? "0 0 30px rgba(34,211,238,0.24)"
+                    : "0 0 22px rgba(34,211,238,0.14)",
                 }}
               >
-                <div className="absolute inset-[7px] rounded-full bg-[linear-gradient(180deg,rgba(10,18,27,0.98),rgba(4,9,15,0.98))]" />
+                <div className="absolute inset-[7px] rounded-full bg-[linear-gradient(180deg,rgba(10,18,27,0.99),rgba(4,9,15,0.99))]" />
 
                 <div className="relative z-10 text-center">
-                  <div className="text-[24px] font-black tracking-[-0.06em] text-white">
-                    {formatCompactSteps(todaySteps)}
+                  <div className="text-[clamp(24px,7vw,34px)] font-black leading-none tracking-[-0.07em] text-white">
+                    {formatCompactSteps(resolvedSteps)}
                   </div>
-                  <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-200/70">
+
+                  <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200/72">
                     Steps
                   </div>
-                  <div className="mt-1 text-[10px] font-medium text-white/42">
+
+                  <div className="mt-1 text-[10px] font-semibold text-white/42">
                     {progressText}%
                   </div>
                 </div>
               </div>
-
-              <div className="mt-4 text-center text-sm font-medium tracking-[-0.02em] text-white/72">
-                {statusLine}
-              </div>
             </div>
 
-            <div className="flex min-w-full flex-col justify-center">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
-                  <div className="flex items-center gap-2 text-white/52">
-                    <Activity className="h-4 w-4 text-cyan-200/70" />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                      Session
-                    </span>
-                  </div>
-                  <div className="text-sm font-bold text-white">
-                    {formatCompactSteps(sessionSteps)}
-                  </div>
+            <div className="flex min-w-full flex-col justify-center gap-2 px-1 py-2">
+              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
+                <div className="flex items-center gap-2 text-white/52">
+                  <Activity className="h-4 w-4 text-cyan-200/70" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.13em]">
+                    Session
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
-                  <div className="flex items-center gap-2 text-white/52">
-                    <Flame className="h-4 w-4 text-cyan-200/70" />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                      Calories
-                    </span>
-                  </div>
-                  <div className="text-sm font-bold text-white">
-                    {Number(calories || 0)}
-                  </div>
+                <div className="text-sm font-black text-white">
+                  {formatCompactSteps(sessionSteps)}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
+                <div className="flex items-center gap-2 text-white/52">
+                  <Flame className="h-4 w-4 text-cyan-200/70" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.13em]">
+                    Calories
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
-                  <div className="flex items-center gap-2 text-white/52">
-                    <Timer className="h-4 w-4 text-cyan-200/70" />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                      Timer
-                    </span>
-                  </div>
-                  <div className="text-sm font-bold text-white">
-                    {formatTime(timerSeconds)}
-                  </div>
+                <div className="text-sm font-black text-white">
+                  {Number(calories || 0)}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-3 py-2.5">
+                <div className="flex items-center gap-2 text-white/52">
+                  <Timer className="h-4 w-4 text-cyan-200/70" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.13em]">
+                    Timer
+                  </span>
+                </div>
+
+                <div className="text-sm font-black text-white">
+                  {formatTime(timerSeconds)}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex gap-1.5">
-            <span
-              className={`h-1.5 rounded-full transition-all ${
-                !showStats ? "w-5 bg-cyan-300" : "w-1.5 bg-white/24"
-              }`}
-            />
-            <span
-              className={`h-1.5 rounded-full transition-all ${
-                showStats ? "w-5 bg-cyan-300" : "w-1.5 bg-white/24"
-              }`}
-            />
-          </div>
-
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/34">
-            {showStats ? "Stats" : "Today"}
-          </div>
+        <div className="shrink-0 text-center text-[10px] font-black uppercase tracking-[0.16em] text-white/34">
+          {showStats ? "Swipe for Today" : "Swipe for Stats"}
         </div>
       </div>
     </button>
