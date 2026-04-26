@@ -4,6 +4,8 @@ export const GRID_HEIGHT = 15;
 export const INITIAL_PLAYER_POSITION = { x: 7, y: 11 };
 export const INITIAL_PLAYER_DIRECTION = "right";
 
+export const INITIAL_LIVES = 5;
+
 export const INITIAL_ENEMY_SPEED = 420;
 export const MIN_ENEMY_SPEED = 140;
 export const ENEMY_SPEED_STEP = 28;
