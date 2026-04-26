@@ -27,12 +27,7 @@ function HeaderIconButton({ onClick, children, label }) {
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="
-        flex h-9 w-9 items-center justify-center rounded-full
-        border border-white/10 bg-white/[0.05] text-white/75
-        shadow-[0_0_10px_rgba(255,255,255,0.06)]
-        transition active:scale-[0.97]
-      "
+      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/75 shadow-[0_0_10px_rgba(255,255,255,0.06)] transition active:scale-[0.97]"
     >
       {children}
     </button>
@@ -49,11 +44,11 @@ function AccountDrawerHeaderV1({
   onStreamOpen,
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-white/8 px-4 py-4">
+    <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-white/8 px-4">
       <button
         type="button"
         onClick={onAdminTap}
-        className="text-left text-sm font-semibold tracking-[-0.02em] text-white/90"
+        className="text-left text-[15px] font-black tracking-[-0.04em] text-white/92"
       >
         {title}
       </button>
@@ -61,18 +56,18 @@ function AccountDrawerHeaderV1({
       <div className="flex items-center gap-2">
         {learnUnlocked ? (
           <HeaderIconButton onClick={onLearnOpen} label="Open Learn">
-            <BookOpen size={16} strokeWidth={2} />
+            <BookOpen size={15} strokeWidth={2.2} />
           </HeaderIconButton>
         ) : null}
 
         {streamUnlocked ? (
           <HeaderIconButton onClick={onStreamOpen} label="Open Stream">
-            <PlayCircle size={16} strokeWidth={2} />
+            <PlayCircle size={15} strokeWidth={2.2} />
           </HeaderIconButton>
         ) : null}
 
         <HeaderIconButton onClick={onClose} label="Close account drawer">
-          <X size={16} strokeWidth={2} />
+          <X size={15} strokeWidth={2.4} />
         </HeaderIconButton>
       </div>
     </div>
@@ -148,10 +143,7 @@ export default function AccountPanelContentV1({
 
     if (adminTapCountRef.current >= ADMIN_TAP_THRESHOLD) {
       resetAdminTapCounter();
-
-      if (typeof onAdminTrigger === "function") {
-        onAdminTrigger();
-      }
+      onAdminTrigger?.();
     }
   };
 
@@ -235,21 +227,18 @@ export default function AccountPanelContentV1({
         onStreamOpen={onStreamOpen}
       />
 
-      <div className="relative min-h-0 flex-1 overflow-y-auto px-3.5 py-3.5">
+      <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-3">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 left-1/2 h-28 w-44 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-28 w-28 rounded-full bg-violet-400/10 blur-2xl" />
+          <div className="absolute left-1/2 top-0 h-24 w-44 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-violet-400/10 blur-2xl" />
         </div>
 
-        <div className="relative z-10 space-y-3.5">
+        <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5">
           <AccountProfileCardV1
             user={user}
-            authUser={authUser}
             username={resolvedUsername}
-            subtext={subtext}
             initials={initials}
             tier={tier}
-            walletAddress={walletAddress}
           />
 
           <AccountBalanceCardV1
@@ -258,7 +247,7 @@ export default function AccountPanelContentV1({
             onAdminTap={handleAdminTap}
           />
 
-          <div className="space-y-2.5">
+          <div className="flex shrink-0 flex-col gap-2">
             <AccountActionRowV1
               label="Profile"
               onClick={() => setActiveView("profile")}
@@ -292,7 +281,7 @@ export default function AccountPanelContentV1({
         </div>
       </div>
 
-      <div className="border-t border-white/6 bg-black/20 backdrop-blur-md">
+      <div className="shrink-0 border-t border-white/6 bg-black/20 backdrop-blur-md">
         <AccountFooterLinksV1
           onHelp={() => setActiveView("help")}
           onPrivacy={() => setActiveView("privacy")}
