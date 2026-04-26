@@ -6,22 +6,22 @@ export function ZapManSplashOverlay({ open, onStart, onBackToArcade }) {
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
-      <div className="w-full max-w-[320px] rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.01))] p-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+      <div className="flex w-full max-w-[320px] flex-col items-center rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.08),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.012))] px-5 py-7 text-center shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
         <img
           src={zapManLogo}
           alt="Zap-Man"
-          className="mx-auto mb-8 h-24 object-contain drop-shadow-[0_0_32px_rgba(34,211,238,0.18)]"
+          className="mx-auto mb-8 block w-full max-w-[260px] object-contain drop-shadow-[0_0_34px_rgba(34,211,238,0.28)]"
         />
 
         <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
           Ready
         </p>
 
-        <div className="mt-7 flex flex-col items-center gap-3">
+        <div className="mt-7 flex w-full flex-col items-center gap-3">
           <button
             type="button"
             onClick={onStart}
-            className="min-w-[170px] rounded-[18px] bg-[linear-gradient(90deg,rgba(168,85,247,1),rgba(236,72,153,0.95),rgba(34,211,238,1))] px-6 py-2.5 text-base font-semibold tracking-[0.02em] text-white transition active:scale-[0.98]"
+            className="w-full max-w-[260px] rounded-full border border-white/45 bg-[linear-gradient(90deg,rgba(168,85,247,1),rgba(236,72,153,0.95),rgba(34,211,238,1))] px-6 py-4 text-lg font-bold tracking-[0.02em] text-white shadow-[0_0_28px_rgba(34,211,238,0.24)] transition active:scale-[0.98]"
           >
             Start
           </button>
@@ -29,7 +29,7 @@ export function ZapManSplashOverlay({ open, onStart, onBackToArcade }) {
           <button
             type="button"
             onClick={onBackToArcade}
-            className="min-w-[170px] rounded-[18px] border border-white/10 bg-white/[0.05] px-6 py-2.5 text-sm font-medium text-white/72 transition hover:bg-white/[0.08]"
+            className="w-full max-w-[260px] rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/72 transition hover:bg-white/[0.08]"
           >
             Back to Arcade
           </button>
