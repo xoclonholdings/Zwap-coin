@@ -183,6 +183,7 @@ export default function AccountPanelContentV1({
     return (
       <AchievementsViewV1
         onBack={() => setActiveView("home")}
+        user={user}
         trophyCount={trophyCount}
         trophyBonusPercent={trophyBonusPercent}
         achievements={achievements}
