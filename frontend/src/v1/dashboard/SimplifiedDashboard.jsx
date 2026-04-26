@@ -1,24 +1,39 @@
 import React from "react";
 
 import DashboardV1 from "./DashboardV1";
+import { generateUsername } from "@/lib/utils/generateUsername";
 
 export default function SimplifiedDashboard({
   user,
   authUser,
   displayName = "",
-  tier = "Starter",
+  tier = "zwapper",
   zptsBalance = 0,
   zwapBalance = 0,
   walletAddress = "",
   className = "",
 }) {
+  const resolvedWalletAddress =
+    user?.walletAddress || user?.wallet_address || walletAddress || "";
+
+  const resolvedEmail =
+    authUser?.email?.address || authUser?.email || user?.email || "";
+
+  const resolvedUsername = generateUsername({
+    username: user?.username,
+    walletAddress: resolvedWalletAddress,
+    email: resolvedEmail,
+  });
+
   const mergedUser = {
     ...(user || {}),
-    displayName: user?.displayName || displayName || "",
-    tier: user?.tier || tier || "Starter",
+    username: resolvedUsername,
+    displayName: resolvedUsername,
+    tier: user?.tier || tier || "zwapper",
     zptsBalance: user?.zptsBalance ?? user?.zpts_balance ?? zptsBalance,
     zwapBalance: user?.zwapBalance ?? user?.zwap_balance ?? zwapBalance,
-    walletAddress: user?.walletAddress || user?.wallet_address || walletAddress,
+    walletAddress: resolvedWalletAddress,
+    wallet_address: resolvedWalletAddress,
   };
 
   return (
