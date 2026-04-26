@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Activity, Flame, Footprints, Timer } from "lucide-react";
+import { Activity, ChevronRight, Flame, Footprints, Timer } from "lucide-react";
 
 function formatCompactSteps(value) {
   const safe = Number(value || 0);
@@ -94,21 +94,28 @@ export default function DashboardWindowMove({
       </div>
 
       <div className="relative z-10 flex h-full flex-col">
-        <div className="mb-4 flex items-center gap-2">
-          <div
-            className={[
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border",
-              isActive
-                ? "border-cyan-300/36 bg-cyan-300/14 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]"
-                : "border-cyan-300/18 bg-cyan-300/8 text-cyan-200/80",
-            ].join(" ")}
-          >
-            <Footprints className="h-[17px] w-[17px]" strokeWidth={2.1} />
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <div
+              className={[
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border",
+                isActive
+                  ? "border-cyan-300/36 bg-cyan-300/14 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]"
+                  : "border-cyan-300/18 bg-cyan-300/8 text-cyan-200/80",
+              ].join(" ")}
+            >
+              <Footprints className="h-[17px] w-[17px]" strokeWidth={2.1} />
+            </div>
+
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/84">
+              MOVE
+            </div>
           </div>
 
-          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/84">
-            MOVE
-          </div>
+          <ChevronRight
+            className="h-[18px] w-[18px] shrink-0 text-white/70"
+            strokeWidth={2.4}
+          />
         </div>
 
         <div className="relative flex flex-1 overflow-hidden">
@@ -167,43 +174,43 @@ export default function DashboardWindowMove({
             </div>
 
             <div className="flex min-w-full items-center justify-center">
-              <div className="w-full rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_36px_rgba(0,0,0,0.22)] backdrop-blur-md">
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between rounded-[18px] border border-cyan-200/10 bg-black/18 px-3 py-2.5">
-                    <div className="flex items-center gap-2 text-white/58">
-                      <Activity className="h-4 w-4 text-cyan-200/76" />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
-                        Session
+              <div className="w-full rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025))] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_36px_rgba(0,0,0,0.22)] backdrop-blur-md">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2 rounded-[16px] border border-cyan-200/10 bg-black/18 px-2.5 py-2">
+                    <div className="flex min-w-0 items-center gap-1.5 text-white/58">
+                      <Activity className="h-3.5 w-3.5 shrink-0 text-cyan-200/76" />
+                      <span className="truncate text-[9px] font-bold uppercase tracking-[0.12em]">
+                        Steps
                       </span>
                     </div>
 
-                    <div className="text-sm font-black tracking-[-0.03em] text-white">
+                    <div className="shrink-0 text-[12px] font-black tracking-[-0.03em] text-white">
                       {formatCompactSteps(sessionSteps)}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-[18px] border border-cyan-200/10 bg-black/18 px-3 py-2.5">
-                    <div className="flex items-center gap-2 text-white/58">
-                      <Flame className="h-4 w-4 text-cyan-200/76" />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
+                  <div className="flex items-center justify-between gap-2 rounded-[16px] border border-cyan-200/10 bg-black/18 px-2.5 py-2">
+                    <div className="flex min-w-0 items-center gap-1.5 text-white/58">
+                      <Flame className="h-3.5 w-3.5 shrink-0 text-cyan-200/76" />
+                      <span className="truncate text-[9px] font-bold uppercase tracking-[0.12em]">
                         Calories
                       </span>
                     </div>
 
-                    <div className="text-sm font-black tracking-[-0.03em] text-white">
+                    <div className="shrink-0 text-[12px] font-black tracking-[-0.03em] text-white">
                       {Number(calories || 0)}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-[18px] border border-cyan-200/10 bg-black/18 px-3 py-2.5">
-                    <div className="flex items-center gap-2 text-white/58">
-                      <Timer className="h-4 w-4 text-cyan-200/76" />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.16em]">
+                  <div className="flex items-center justify-between gap-2 rounded-[16px] border border-cyan-200/10 bg-black/18 px-2.5 py-2">
+                    <div className="flex min-w-0 items-center gap-1.5 text-white/58">
+                      <Timer className="h-3.5 w-3.5 shrink-0 text-cyan-200/76" />
+                      <span className="truncate text-[9px] font-bold uppercase tracking-[0.12em]">
                         Timer
                       </span>
                     </div>
 
-                    <div className="text-sm font-black tracking-[-0.03em] text-white">
+                    <div className="shrink-0 text-[12px] font-black tracking-[-0.03em] text-white">
                       {formatTime(timerSeconds)}
                     </div>
                   </div>
