@@ -18,11 +18,11 @@ export default function DashboardV1({ onOpenAccount }) {
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
-      <div className="shrink-0 px-3 pt-3">
+      <div className="shrink-0 px-2.5 pt-2.5">
         <AppHeaderV1 onOpenAccount={onOpenAccount} />
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-3 px-3 pb-3 pt-3">
+      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowMove
             steps={steps}
