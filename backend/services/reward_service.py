@@ -1,22 +1,21 @@
 """
-ZWAP! Reward Service
-====================
-Central reward logic for MOVE, PLAY, conversions, tier multipliers,
-daily cap helpers, daily reset helpers, and anti-cheat/rate-limit helpers.
+ZWAP! V1 Reward Service
+=======================
+Central reward logic for MOVE, PLAY, tier multipliers, conversion math,
+daily caps, and reward validation.
 
-Spec-aligned economy:
+V1 rules:
 - MOVE earns zPts
 - PLAY earns zPts
-- zPts convert to ZWAP at 1000:1
-- direct gameplay/movement ZWAP emissions removed
-- reward_service is final authority for cap enforcement
+- zPts convert internally at 1000:1
+- no direct on-chain claim logic here
+- no legacy game IDs
 """
 
 from collections import defaultdict
 from datetime import datetime, timezone
 import time as _time
 from typing import Dict
-
 
 TIERS = {
     "starter": {
@@ -28,8 +27,8 @@ TIERS = {
         "daily_zpts_cap": 300,
         "daily_zwap_cap": 5.0,
         "monthly_zwap_cap": 150.0,
-        "games": ["brainz", "breakerz", "pulze", "stackz"],
-        "features": ["zWALK", "ads"],
+        "games": ["stackz", "breakerz", "pulze", "zap-man"],
+        "features": ["move", "play", "shop"],
     },
     "plus": {
         "name": "Zitizen",
@@ -40,8 +39,8 @@ TIERS = {
         "daily_zpts_cap": 600,
         "daily_zwap_cap": 10.0,
         "monthly_zwap_cap": 300.0,
-        "games": ["brainz", "breakerz", "pulze", "stackz", "triplez", "werdz"],
-        "features": ["zWALK", "no_ads", "zDance", "zWorkout"],
+        "games": ["stackz", "breakerz", "pulze", "zap-man", "brainz", "triplez", "werdz"],
+        "features": ["move", "play", "shop", "zitizen"],
     },
 }
 
@@ -52,7 +51,7 @@ DAILY_REWARD_TABLE = {
     4: 25,
     5: 30,
     6: 35,
-    7: 50,
+    7: 100,
 }
 
 ZPTS_TO_ZWAP_RATE = 1000
@@ -63,28 +62,24 @@ MIN_STEPS_PER_CLAIM = 10
 MAX_STEPS_PER_CLAIM = 50000
 
 MAX_GAME_SCORES = {
-    "breakerz": 5000,
-    "brainz": 50,
     "stackz": 10000,
+    "breakerz": 5000,
     "pulze": 8000,
+    "zap-man": 10000,
+    "brainz": 50,
     "triplez": 10000,
     "werdz": 200,
-}
-
-GAME_ID_ALIASES = {
-    "zbrickles": "breakerz",
-    "ztrivia": "brainz",
-    "ztetris": "stackz",
-    "zslots": "pulze",
 }
 
 _rate_limits = defaultdict(dict)
 
 
 def _normalize_tier_key(tier: str) -> str:
-    safe = str(tier or "").lower()
+    safe = str(tier or "").lower().strip()
+
     if safe in ("zitizen", "plus"):
         return "plus"
+
     return "starter"
 
 
@@ -93,8 +88,7 @@ def _get_tier_config(tier: str) -> Dict:
 
 
 def _normalize_game_id(game_type: str) -> str:
-    safe = str(game_type or "").lower()
-    return GAME_ID_ALIASES.get(safe, safe)
+    return str(game_type or "").lower().strip()
 
 
 def get_user_tier_config(tier: str) -> Dict:
@@ -103,30 +97,27 @@ def get_user_tier_config(tier: str) -> Dict:
 
 def get_daily_reward(streak: int) -> int:
     safe_streak = max(1, min(int(streak or 1), 7))
-    return DAILY_REWARD_TABLE.get(safe_streak, 10)
+    return DAILY_REWARD_TABLE.get(safe_streak, DAILY_REWARD_TABLE[7])
 
 
 def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
-    """
-    Returns True if rate-limited, False if allowed.
-    """
     now = _time.time()
     last = _rate_limits[wallet].get(action, 0)
+
     if now - last < cooldown_seconds:
         return True
+
     _rate_limits[wallet][action] = now
     return False
 
 
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
-    """
-    Reset daily zPts tracking at UTC day boundary.
-    """
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zpts_reset")
 
     if last_reset:
         last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+
         if last_reset_dt.date() < now.date():
             await db.users.update_one(
                 {"id": user["id"]},
@@ -137,6 +128,7 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
                     }
                 },
             )
+
             user["daily_zpts_earned"] = 0
             user["last_zpts_reset"] = now.isoformat()
     else:
@@ -149,45 +141,9 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
                 }
             },
         )
+
         user["daily_zpts_earned"] = 0
         user["last_zpts_reset"] = now.isoformat()
-
-    return user
-
-
-async def check_and_reset_daily_zwap(db, user: dict) -> dict:
-    """
-    Reset daily converted ZWAP tracking at UTC day boundary.
-    """
-    now = datetime.now(timezone.utc)
-    last_reset = user.get("last_zwap_reset")
-
-    if last_reset:
-        last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
-        if last_reset_dt.date() < now.date():
-            await db.users.update_one(
-                {"id": user["id"]},
-                {
-                    "$set": {
-                        "daily_zwap_earned": 0.0,
-                        "last_zwap_reset": now.isoformat(),
-                    }
-                },
-            )
-            user["daily_zwap_earned"] = 0.0
-            user["last_zwap_reset"] = now.isoformat()
-    else:
-        await db.users.update_one(
-            {"id": user["id"]},
-            {
-                "$set": {
-                    "daily_zwap_earned": 0.0,
-                    "last_zwap_reset": now.isoformat(),
-                }
-            },
-        )
-        user["daily_zwap_earned"] = 0.0
-        user["last_zwap_reset"] = now.isoformat()
 
     return user
 
@@ -199,15 +155,16 @@ async def calculate_play_reward(
     tier: str,
     blocks_destroyed: int = 0,
 ) -> Dict:
-    """
-    Compute zPts rewards for a completed game session.
-    Returns: { "zpts": int }
-    """
     if score < 0 or level < 1:
         raise ValueError("Invalid game data")
 
     normalized_game = _normalize_game_id(game_type)
-    max_score = MAX_GAME_SCORES.get(normalized_game, 5000)
+
+    if normalized_game not in MAX_GAME_SCORES:
+        raise ValueError("Unknown game type")
+
+    max_score = MAX_GAME_SCORES[normalized_game]
+
     if score > max_score:
         raise ValueError("Invalid score")
 
@@ -217,12 +174,14 @@ async def calculate_play_reward(
 
     if normalized_game == "breakerz":
         base_zpts = min(blocks_destroyed + (score // 40), 40)
-    elif normalized_game == "brainz":
-        base_zpts = min((score * 2) + level, 30)
     elif normalized_game == "stackz":
         base_zpts = min((score // 80) + (level * 2), 50)
     elif normalized_game == "pulze":
         base_zpts = min((score // 12) + level, 35)
+    elif normalized_game == "zap-man":
+        base_zpts = min((score // 80) + (level * 2), 50)
+    elif normalized_game == "brainz":
+        base_zpts = min((score * 2) + level, 30)
     elif normalized_game == "triplez":
         base_zpts = min((score // 60) + (level * 2), 45)
     elif normalized_game == "werdz":
@@ -243,12 +202,9 @@ async def calculate_move_reward(
     tier: str,
     daily_steps_so_far: int = 0,
 ) -> Dict:
-    """
-    Compute zPts earned from a step-tracking session.
-    Returns: { "zpts": int }
-    """
     if steps < MIN_STEPS_PER_CLAIM:
         raise ValueError(f"Minimum {MIN_STEPS_PER_CLAIM} steps required")
+
     if steps > MAX_STEPS_PER_CLAIM:
         raise ValueError(f"Step count exceeds maximum ({MAX_STEPS_PER_CLAIM})")
 
@@ -271,14 +227,7 @@ async def calculate_move_reward(
     }
 
 
-async def convert_zpts_to_zwap(
-    zpts_amount: int,
-    tier: str,
-) -> Dict:
-    """
-    Calculate ZWAP output for a zPts conversion.
-    Returns: { "zwap": float, "rate": float }
-    """
+async def convert_zpts_to_zwap(zpts_amount: int, tier: str = "starter") -> Dict:
     if zpts_amount < ZPTS_TO_ZWAP_RATE:
         raise ValueError(f"Minimum {ZPTS_TO_ZWAP_RATE} zPts required")
 
@@ -291,10 +240,8 @@ async def convert_zpts_to_zwap(
 
 
 async def get_tier_multipliers(tier: str) -> Dict:
-    """
-    Return all reward multipliers and caps for a given tier.
-    """
     tier_config = _get_tier_config(tier)
+
     return {
         "name": tier_config["name"],
         "move": tier_config["move"],
@@ -314,10 +261,6 @@ async def enforce_daily_caps(
     earned_today: float,
     cap_type: str = "zpts",
 ) -> Dict:
-    """
-    Check whether a user has hit their daily earning limit.
-    Returns: { "capped": bool, "remaining": float }
-    """
     tier_config = _get_tier_config(tier)
 
     if cap_type == "zwap":
