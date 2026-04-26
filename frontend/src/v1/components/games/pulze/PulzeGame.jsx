@@ -20,11 +20,14 @@ export default function PulzeGame({
     round: Math.max(1, Number(round) || 1),
     level: Math.max(1, Number(level) || 1),
     score: 0,
-    pulses: 0,
-    lives: 3,
+    lives: 5,
+    streak: 0,
+    hits: 0,
+    attempts: 0,
     paused: false,
     exitOpen: false,
     finished: false,
+    feedback: "TAP ON THE PULZE",
   });
 
   useEffect(() => {
@@ -42,8 +45,6 @@ export default function PulzeGame({
     if (!ctx) return undefined;
 
     const engine = createPulzeEngine({
-      width: PULZE_CANVAS.width,
-      height: PULZE_CANVAS.height,
       startingLevel: Math.max(1, Number(level) || 1),
       startingRound: Math.max(1, Number(round) || 1),
     });
@@ -52,21 +53,16 @@ export default function PulzeGame({
 
     const detachInput = attachPulzeInput({
       canvas,
-      getState: () => engine.getPublicState?.(),
-      onTap: (position) => engine.tap?.(position),
-      onPress: (position) => engine.press?.(position),
-      onRelease: () => engine.release?.(),
-      onMove: (position) => engine.move?.(position),
+      onTrigger: () => engine.trigger(),
       onTogglePause: () => {
-        engine.togglePause?.();
+        engine.togglePause();
 
-        const publicState = engine.getPublicState?.() || {};
-        const paused = Boolean(publicState.paused);
+        const publicState = engine.getPublicState();
 
-        setGameState(paused ? "paused" : "live");
+        setGameState(publicState.paused ? "paused" : "live");
         setUiState((prev) => ({
           ...prev,
-          paused,
+          ...publicState,
           exitOpen: false,
         }));
       },
@@ -83,37 +79,24 @@ export default function PulzeGame({
       const frame = activeEngine.tick(time);
       renderPulzeFrame(ctx, frame);
 
-      const publicState =
-        activeEngine.getPublicState?.() ||
-        frame ||
-        {};
+      const publicState = activeEngine.getPublicState();
 
       setUiState((prev) => ({
         ...prev,
-        round: publicState.round ?? frame.round ?? prev.round,
-        level: publicState.level ?? frame.level ?? prev.level,
-        score: publicState.score ?? frame.score ?? prev.score,
-        pulses: publicState.pulses ?? frame.pulses ?? prev.pulses,
-        lives: publicState.lives ?? frame.lives ?? prev.lives,
-        paused: Boolean(publicState.paused ?? frame.paused ?? false),
-        finished: Boolean(
-          activeEngine.isFinished?.() ??
-            publicState.finished ??
-            frame.finished ??
-            false
-        ),
+        ...publicState,
       }));
 
-      if (activeEngine.isFinished?.()) {
-        const result = activeEngine.getResult?.() || {};
+      if (activeEngine.isFinished()) {
+        const result = activeEngine.getResult();
 
         onGameEnd?.({
-          score: result.score ?? publicState.score ?? 0,
-          round: result.round ?? publicState.round ?? uiState.round,
-          level: result.level ?? publicState.level ?? Math.max(1, Number(level) || 1),
+          score: result.score,
+          round: result.round,
+          level: result.level,
           cleared: Boolean(result.cleared),
-          pulses: result.pulses ?? publicState.pulses ?? 0,
-          lives: result.lives ?? publicState.lives ?? 0,
+          lives: result.lives,
+          hits: result.hits,
+          attempts: result.attempts,
           gameId: "pulze",
         });
 
@@ -151,15 +134,14 @@ export default function PulzeGame({
     const engine = engineRef.current;
     if (!engine) return;
 
-    engine.togglePause?.();
+    engine.togglePause();
 
-    const publicState = engine.getPublicState?.() || {};
-    const paused = Boolean(publicState.paused);
+    const publicState = engine.getPublicState();
 
-    setGameState(paused ? "paused" : "live");
+    setGameState(publicState.paused ? "paused" : "live");
     setUiState((prev) => ({
       ...prev,
-      paused,
+      ...publicState,
       exitOpen: false,
     }));
   };
@@ -168,8 +150,7 @@ export default function PulzeGame({
     const engine = engineRef.current;
     if (!engine) return;
 
-    engine.resume?.();
-    engine.resumeFromPause?.();
+    engine.resumeFromPause();
 
     setGameState("live");
     setUiState((prev) => ({
@@ -182,7 +163,6 @@ export default function PulzeGame({
   const handleRequestExit = () => {
     const engine = engineRef.current;
 
-    engine?.togglePause?.();
     engine?.openExitOverlay?.();
 
     setGameState("paused");
@@ -219,8 +199,9 @@ export default function PulzeGame({
       round: result.round ?? uiState.round,
       level: result.level ?? uiState.level,
       cleared: false,
-      pulses: result.pulses ?? uiState.pulses,
       lives: result.lives ?? uiState.lives,
+      hits: result.hits ?? uiState.hits,
+      attempts: result.attempts ?? uiState.attempts,
       gameId: "pulze",
     });
   };
@@ -288,11 +269,16 @@ export default function PulzeGame({
               <img
                 src={pulzeLogo}
                 alt="Pulze"
-                className="mx-auto mb-8 h-24 object-contain drop-shadow-[0_0_32px_rgba(236,72,153,0.20)]"
+                className="mx-auto mb-6 h-24 object-contain drop-shadow-[0_0_32px_rgba(236,72,153,0.20)]"
               />
 
               <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
-                Ready
+                How to Play
+              </p>
+
+              <p className="mx-auto mt-3 max-w-[240px] text-sm leading-relaxed text-white/68">
+                Tap the screen, Space, or Enter when the moving Pulze lands
+                inside the glowing core.
               </p>
 
               <div className="mt-7 flex flex-col items-center gap-3">
