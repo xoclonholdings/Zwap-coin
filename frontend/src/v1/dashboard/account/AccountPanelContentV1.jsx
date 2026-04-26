@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, PlayCircle, X } from "lucide-react";
 
 import { useApp } from "@/app/AppProvider";
+import { generateUsername } from "@/lib/utils/generateUsername";
 
 import AccountProfileCardV1 from "./AccountProfileCardV1";
 import AccountBalanceCardV1 from "./AccountBalanceCardV1";
@@ -110,7 +111,17 @@ export default function AccountPanelContentV1({
   const adminTapCountRef = useRef(0);
   const adminTapResetRef = useRef(null);
 
-  const resolvedUsername = user?.username || username || "";
+  const resolvedWalletAddress =
+    walletAddress || user?.walletAddress || user?.wallet_address || "";
+
+  const resolvedEmail =
+    authUser?.email?.address || authUser?.email || user?.email || "";
+
+  const resolvedUsername = generateUsername({
+    username: user?.username || username,
+    walletAddress: resolvedWalletAddress,
+    email: resolvedEmail,
+  });
 
   useEffect(() => {
     return () => {
@@ -159,10 +170,13 @@ export default function AccountPanelContentV1({
     return (
       <ProfileViewV1
         onBack={() => setActiveView("home")}
-        user={user}
+        user={{
+          ...(user || {}),
+          username: resolvedUsername,
+        }}
         username={resolvedUsername}
-        email={authUser?.email?.address || authUser?.email || user?.email || ""}
-        walletAddress={walletAddress}
+        email={resolvedEmail}
+        walletAddress={resolvedWalletAddress}
         tier={tier}
         memberSince={user?.created_at || ""}
         trophyCount={trophyCount}
@@ -183,7 +197,10 @@ export default function AccountPanelContentV1({
     return (
       <AchievementsViewV1
         onBack={() => setActiveView("home")}
-        user={user}
+        user={{
+          ...(user || {}),
+          username: resolvedUsername,
+        }}
         trophyCount={trophyCount}
         trophyBonusPercent={trophyBonusPercent}
         achievements={achievements}
@@ -236,7 +253,6 @@ export default function AccountPanelContentV1({
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5">
           <div className="grid shrink-0 grid-cols-[1.12fr_0.88fr] gap-2.5">
             <AccountProfileCardV1
-              user={user}
               username={resolvedUsername}
               initials={initials}
               tier={tier}
