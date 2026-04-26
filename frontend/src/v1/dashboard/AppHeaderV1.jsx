@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Sprout, BookOpen, Play, Award } from "lucide-react";
 
 import AccountDrawerV1 from "./account/AccountDrawerV1";
+import AdminPanelV1 from "./admin/AdminPanelV1";
 
 function clamp(value, min = 0, max = 1) {
   return Math.min(Math.max(value, min), max);
@@ -22,9 +23,7 @@ function buildInitials(name = "") {
   if (!safe) return "";
 
   const parts = safe.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
 
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
@@ -157,6 +156,7 @@ export default function AppHeaderV1({
 }) {
   const [popup, setPopup] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   const popupRef = useRef(null);
 
@@ -207,6 +207,15 @@ export default function AppHeaderV1({
       progressPercent,
       helperText,
     });
+  }
+
+  function handleAdminOpen() {
+    setAccountOpen(false);
+    setAdminOpen(true);
+
+    if (typeof onAdminTrigger === "function") {
+      onAdminTrigger();
+    }
   }
 
   function handleGardenTap() {
@@ -360,13 +369,18 @@ export default function AppHeaderV1({
         trophyBonusPercent={trophyBonusPercent}
         learnUnlocked={learnUnlocked}
         streamUnlocked={streamUnlocked}
-        onAdminTrigger={onAdminTrigger}
+        onAdminTrigger={handleAdminOpen}
         onLearnOpen={onLearnClick}
         onStreamOpen={onStreamClick}
         onOpenFAQ={onOpenFAQ}
         onOpenContact={onOpenContact}
         onOpenAbout={onOpenAbout}
         onOpenSupportChat={onOpenSupportChat}
+      />
+
+      <AdminPanelV1
+        isOpen={adminOpen}
+        onClose={() => setAdminOpen(false)}
       />
     </>
   );
