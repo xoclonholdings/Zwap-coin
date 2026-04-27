@@ -12,6 +12,8 @@ export default function AdminLogin({ onLogin }) {
   const safeKey = key.trim();
 
   const handleLogin = async () => {
+    if (loading) return;
+
     if (!safeKey) {
       setError("Enter admin key");
       return;
@@ -23,10 +25,10 @@ export default function AdminLogin({ onLogin }) {
     localStorage.setItem("zwap_admin_key", safeKey);
 
     try {
-      await adminApi.get("/dashboard", safeKey);
+      const data = await adminApi.get("/dashboard", safeKey);
 
       if (typeof onLogin === "function") {
-        onLogin();
+        onLogin(data);
       }
     } catch {
       setError("Invalid admin key");
@@ -68,6 +70,8 @@ export default function AdminLogin({ onLogin }) {
               type="password"
               value={key}
               placeholder="Enter admin key"
+              autoComplete="off"
+              disabled={loading}
               onChange={(event) => {
                 setKey(event.target.value);
                 if (error) setError("");
@@ -77,7 +81,7 @@ export default function AdminLogin({ onLogin }) {
                   handleLogin();
                 }
               }}
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/40 focus:bg-cyan-500/[0.06]"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-cyan-400/40 focus:bg-cyan-500/[0.06] disabled:opacity-60"
             />
           </label>
 
@@ -95,7 +99,7 @@ export default function AdminLogin({ onLogin }) {
               "flex h-12 w-full items-center justify-center gap-2 rounded-2xl",
               "border border-cyan-400/25 bg-cyan-500/15 text-sm font-semibold text-cyan-100",
               "shadow-[0_0_22px_rgba(34,211,238,0.12)] transition active:scale-[0.98]",
-              loading ? "opacity-60" : "hover:bg-cyan-500/20",
+              loading ? "cursor-not-allowed opacity-60" : "hover:bg-cyan-500/20",
             ].join(" ")}
           >
             <ShieldCheck className="h-4 w-4" />
