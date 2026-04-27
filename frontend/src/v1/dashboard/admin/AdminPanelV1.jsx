@@ -125,7 +125,13 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
         return <AdminDashboardSectionV1 data={dashboardData} />;
 
       case "progression":
-        return <AdminProgressionSectionV1 />;
+        return (
+          <AdminProgressionSectionV1
+            currentPhase={dashboardData?.current_phase || "Phase A"}
+            phaseLabel={dashboardData?.phase_label || "Activation"}
+            progression={dashboardData?.progression || undefined}
+          />
+        );
 
       case "users":
         return <AdminUsersSectionV1 />;
@@ -220,7 +226,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
                         type="button"
                         onClick={() => setActiveSection(section.id)}
                         className={[
-                          "flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs whitespace-nowrap transition active:scale-[0.98]",
+                          "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 text-xs transition active:scale-[0.98]",
                           isActive
                             ? "border-cyan-400/30 bg-cyan-500/20 text-white shadow-[0_0_14px_rgba(34,211,238,0.10)]"
                             : "border-white/10 bg-white/5 text-white/40",
