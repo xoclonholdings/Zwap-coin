@@ -1,0 +1,400 @@
+src/app/AppContent.jsx:import React from "react";
+src/app/AppContent.jsx:import { Navigate, Route, Routes } from "react-router-dom";
+src/app/AppContent.jsx:import V1App from "@/v1/V1App";
+src/app/AppContent.jsx:import LearnPage from "@/v1/learn/LearnPage";
+src/app/AppContent.jsx:import AdminPanelV1 from "@/v1/dashboard/admin/AdminPanelV1";
+src/app/AppProvider.jsx:import React, {
+src/app/AppProvider.jsx:} from "react";
+src/app/AppProvider.jsx:import { usePrivy } from "@privy-io/react-auth";
+src/app/AppProvider.jsx:import api from "@/lib/api";
+src/app/PrivyProviderWrapper.jsx:import React from "react";
+src/app/PrivyProviderWrapper.jsx:import { PrivyProvider } from "@privy-io/react-auth";
+src/app/useZwapAuthState.js:import { useMemo } from "react";
+src/app/useZwapAuthState.js:import { usePrivy } from "@privy-io/react-auth";
+src/app/useZwapAuthState.js:import { useApp } from "@/App";
+src/App.css:  from {
+src/App.js:import React from "react";
+src/App.js:import { BrowserRouter } from "react-router-dom";
+src/App.js:import "@/App.css";
+src/App.js:import PrivyProviderWrapper from "@/app/PrivyProviderWrapper";
+src/App.js:import { AppProvider } from "@/app/AppProvider";
+src/App.js:import AppContent from "@/app/AppContent";
+src/App.js:export { useApp, AppContext } from "@/app/AppProvider";
+src/App.js:export { default as api } from "@/lib/api";
+src/constants/compliance.js:  claimDisclaimer: "Claiming requires wallet signature. Rewards will be sent from the ZWAP treasury to your linked wallet address.",
+src/constants/compliance.js:  tooltipZPoints: "Loyalty credits earned from games. Not transferable, use in-app only.",
+src/data/learnModules.js:        "Understand the shift from platform-controlled accounts to user-controlled access and ownership.",
+src/data/learnModules.js:        "Learn what a utility token is and how it differs from points.",
+src/data/learnModules.js:          "Utility tokens gain value from what they allow you to do.",
+src/index.css:@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&display=swap');
+src/index.js:import React from "react";
+src/index.js:import ReactDOM from "react-dom/client";
+src/index.js:import "@/index.css";
+src/index.js:import App from "@/App";
+src/lib/utils.js:import { clsx } from "clsx";
+src/lib/utils.js:import { twMerge } from "tailwind-merge"
+src/v1/about/AboutOnboardingViews.jsx:import React from "react";
+src/v1/about/AboutOnboardingViews.jsx:import { motion } from "framer-motion";
+src/v1/about/AboutOnboardingViews.jsx:import boostItem from "../../assets/boost_item.png";
+src/v1/about/AboutOnboardingViews.jsx:import ebookItem from "../../assets/ebook_item.png";
+src/v1/about/AboutOnboardingViews.jsx:import mysteryboxItem from "../../assets/mysterybox_item.PNG";
+src/v1/about/AboutOnboardingViews.jsx:import ringItem from "../../assets/ring_item.png";
+src/v1/about/OnboardingAboutPage.jsx:import React from "react";
+src/v1/about/OnboardingAboutPage.jsx:import { AnimatePresence } from "framer-motion";
+src/v1/about/OnboardingAboutPage.jsx:import useAboutOnboardingMachine from "./useAboutOnboardingMachine";
+src/v1/about/OnboardingAboutPage.jsx:import {
+src/v1/about/OnboardingAboutPage.jsx:} from "./AboutOnboardingViews";
+src/v1/about/useAboutOnboardingMachine.js:import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+src/v1/ads/CoinzillaAd.jsx:import React, { useEffect, useRef } from "react";
+src/v1/ads/CoinzillaAd.jsx: * Configure zone IDs from your Coinzilla dashboard: https://coinzilla.com
+src/v1/auth/SignIn.jsx:import React, { useEffect, useState } from "react";
+src/v1/auth/SignIn.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/auth/SignIn.jsx:import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
+src/v1/auth/SignIn.jsx:      setStatusText("Enter the code from your email.");
+src/v1/auth/SignOut.jsx:import React, { useEffect } from "react";
+src/v1/auth/SignOut.jsx:import { motion } from "framer-motion";
+src/v1/auth/SignOut.jsx:import { useNavigate } from "react-router-dom";
+src/v1/components/games/breakerz/breakerzEngine.js:import {
+src/v1/components/games/breakerz/breakerzEngine.js:} from "./breakerzConfig";
+src/v1/components/games/breakerz/breakerzEngine.js:import {
+src/v1/components/games/breakerz/breakerzEngine.js:} from "./breakerzRoundGenerator";
+src/v1/components/games/breakerz/breakerzEngine.js:import {
+src/v1/components/games/breakerz/breakerzEngine.js:} from "./breakerzUtils";
+src/v1/components/games/breakerz/breakerzExitOverlay.jsx:import React from "react";
+src/v1/components/games/breakerz/breakerzExitOverlay.jsx:import { AlertTriangle, ArrowLeft, LogOut } from "lucide-react";
+src/v1/components/games/breakerz/BreakerzGame.jsx:import React, { useEffect, useRef, useState } from "react";
+src/v1/components/games/breakerz/BreakerzGame.jsx:import { BREAKERZ_CANVAS } from "./breakerzConfig";
+src/v1/components/games/breakerz/BreakerzGame.jsx:import { attachBreakerzInput } from "./breakerzInput";
+src/v1/components/games/breakerz/BreakerzGame.jsx:import { createBreakerzEngine } from "./breakerzEngine";
+src/v1/components/games/breakerz/BreakerzGame.jsx:import { renderBreakerzFrame } from "./breakerzRenderer";
+src/v1/components/games/breakerz/BreakerzGame.jsx:import BreakerzPauseOverlay from "./breakerzPauseOverlay";
+src/v1/components/games/breakerz/BreakerzGame.jsx:import BreakerzExitOverlay from "./breakerzExitOverlay";
+src/v1/components/games/breakerz/breakerzInput.js:import { clamp } from "./breakerzUtils";
+src/v1/components/games/breakerz/breakerzPauseOverlay.jsx:import React from "react";
+src/v1/components/games/breakerz/breakerzPauseOverlay.jsx:import { Pause, Play, X } from "lucide-react";
+src/v1/components/games/breakerz/breakerzRenderer.js:import { formatScore } from "./breakerzUtils";
+src/v1/components/games/breakerz/breakerzRenderer.js:  ctx.fillText("Resume or exit from the overlay", width / 2, height / 2 + 22);
+src/v1/components/games/pulze/pulzeEngine.js:import { PULZE_CANVAS } from "./pulzeConfig";
+src/v1/components/games/pulze/pulzeEngine.js:import { calculatePulzeScore, clamp } from "./pulzeUtils";
+src/v1/components/games/pulze/PulzeGame.jsx:import React, { useEffect, useRef, useState } from "react";
+src/v1/components/games/pulze/PulzeGame.jsx:import pulzeLogo from "@/assets/games/pulze_game_logo.PNG";
+src/v1/components/games/pulze/PulzeGame.jsx:import { PULZE_CANVAS } from "./pulzeConfig";
+src/v1/components/games/pulze/PulzeGame.jsx:import { createPulzeEngine } from "./pulzeEngine";
+src/v1/components/games/pulze/PulzeGame.jsx:import { renderPulzeFrame } from "./pulzeRenderer";
+src/v1/components/games/pulze/PulzeGame.jsx:import { attachPulzeInput } from "./pulzeInput";
+src/v1/components/games/pulze/pulzeRenderer.js:import { PULZE_COLORS } from "./pulzeConfig";
+src/v1/components/games/stackz/StackzEngine.js:import {
+src/v1/components/games/stackz/StackzEngine.js:} from "./stackzConfig";
+src/v1/components/games/stackz/StackzEngine.js:import {
+src/v1/components/games/stackz/StackzEngine.js:} from "./stackzUtils";
+src/v1/components/games/stackz/StackzGame.jsx:import React, { useEffect, useRef, useState } from "react";
+src/v1/components/games/stackz/StackzGame.jsx:import stackzLogo from "@/assets/games/stackz_game_logo.PNG";
+src/v1/components/games/stackz/StackzGame.jsx:import { STACKZ_CANVAS } from "./stackzConfig";
+src/v1/components/games/stackz/StackzGame.jsx:import { createStackzEngine } from "./StackzEngine";
+src/v1/components/games/stackz/StackzGame.jsx:import { renderStackzFrame } from "./stackzRenderer";
+src/v1/components/games/stackz/StackzGame.jsx:import { attachStackzInput } from "./stackzInput";
+src/v1/components/games/stackz/StackzOnboardingGame.jsx:import React, { useEffect, useRef, useState } from "react";
+src/v1/components/games/stackz/StackzOnboardingGame.jsx:import stackzLogo from "@/assets/games/stackz_game_logo.PNG";
+src/v1/components/games/stackz/StackzOnboardingGame.jsx:import { STACKZ_CANVAS } from "./stackzConfig";
+src/v1/components/games/stackz/StackzOnboardingGame.jsx:import { createStackzEngine } from "./StackzEngine";
+src/v1/components/games/stackz/StackzOnboardingGame.jsx:import { renderStackzFrame } from "./stackzRenderer";
+src/v1/components/games/stackz/StackzOnboardingGame.jsx:import { attachStackzInput } from "./stackzInput";
+src/v1/components/games/stackz/stackzRenderer.js:import { STACKZ_BOARD, STACKZ_CANVAS, STACKZ_COLORS } from "./stackzConfig";
+src/v1/components/games/stackz/stackzUtils.js:import {
+src/v1/components/games/stackz/stackzUtils.js:} from "./stackzConfig";
+src/v1/components/games/zapman/ZapManBoard.jsx:import React, { useMemo } from "react";
+src/v1/components/games/zapman/ZapManBoard.jsx:import { GRID_WIDTH, GRID_HEIGHT, getWallsForRound } from "./ZapManConstants";
+src/v1/components/games/zapman/ZapManBoard.jsx:import {
+src/v1/components/games/zapman/ZapManBoard.jsx:} from "./ZapManCharacters";
+src/v1/components/games/zapman/ZapManBoard.jsx:import { isPowered } from "./ZapManEngine";
+src/v1/components/games/zapman/ZapManCharacters.jsx:import React from "react";
+src/v1/components/games/zapman/ZapManControls.jsx:import React from "react";
+src/v1/components/games/zapman/ZapManEngine.js:import {
+src/v1/components/games/zapman/ZapManEngine.js:} from "./ZapManConstants";
+src/v1/components/games/zapman/ZapManGame.jsx:import React, { useEffect, useState } from "react";
+src/v1/components/games/zapman/ZapManGame.jsx:import ZapManBoard from "./ZapManBoard";
+src/v1/components/games/zapman/ZapManGame.jsx:import ZapManHud from "./ZapManHud";
+src/v1/components/games/zapman/ZapManGame.jsx:import ZapManControls from "./ZapManControls";
+src/v1/components/games/zapman/ZapManGame.jsx:import {
+src/v1/components/games/zapman/ZapManGame.jsx:} from "./ZapManOverlays";
+src/v1/components/games/zapman/ZapManGame.jsx:import {
+src/v1/components/games/zapman/ZapManGame.jsx:} from "./ZapManEngine";
+src/v1/components/games/zapman/ZapManGame.jsx:import { GAME_TICK_MS } from "./ZapManConstants";
+src/v1/components/games/zapman/ZapManHud.jsx:import React from "react";
+src/v1/components/games/zapman/ZapManHud.jsx:import { isPowered } from "./ZapManEngine";
+src/v1/components/games/zapman/ZapManOverlays.jsx:import React from "react";
+src/v1/components/games/zapman/ZapManOverlays.jsx:import zapManLogo from "@/assets/games/zap_man_logo.PNG";
+src/v1/dashboard/account/AccountActionRowV1.jsx:import React from "react";
+src/v1/dashboard/account/AccountActionRowV1.jsx:import { ChevronRight } from "lucide-react";
+src/v1/dashboard/account/AccountBalanceCardV1.jsx:import React from "react";
+src/v1/dashboard/account/AccountDrawerV1.jsx:import React from "react";
+src/v1/dashboard/account/AccountDrawerV1.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/dashboard/account/AccountDrawerV1.jsx:import AccountPanelContentV1 from "./AccountPanelContentV1";
+src/v1/dashboard/account/AccountFooterLinksV1.jsx:import React from "react";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import React, { useEffect, useRef, useState } from "react";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import { useNavigate } from "react-router-dom";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import { BookOpen, PlayCircle, X } from "lucide-react";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import { useApp } from "@/app/AppProvider";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import { generateUsername } from "@/lib/utils/generateUsername";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import AccountProfileCardV1 from "./AccountProfileCardV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import AccountBalanceCardV1 from "./AccountBalanceCardV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import AccountActionRowV1 from "./AccountActionRowV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import AccountShieldCardV1 from "./AccountShieldCardV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import AccountFooterLinksV1 from "./AccountFooterLinksV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import ProfileViewV1 from "./drawer/ProfileViewV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import InventoryViewV1 from "./drawer/InventoryViewV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import AchievementsViewV1 from "./drawer/AchievementsViewV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import SettingsViewV1 from "./drawer/SettingsViewV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import HelpViewV1 from "./drawer/HelpViewV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import PrivacyViewV1 from "./drawer/PrivacyViewV1";
+src/v1/dashboard/account/AccountPanelContentV1.jsx:import TermsViewV1 from "./drawer/TermsViewV1";
+src/v1/dashboard/account/AccountProfileCardV1.jsx:import React from "react";
+src/v1/dashboard/account/AccountShieldCardV1.jsx:import React from "react";
+src/v1/dashboard/account/AccountShieldCardV1.jsx:import { Shield } from "lucide-react";
+src/v1/dashboard/account/drawer/AboutPage.jsx:import React from "react";
+src/v1/dashboard/account/drawer/AboutPage.jsx:import {
+src/v1/dashboard/account/drawer/AboutPage.jsx:} from "lucide-react";
+src/v1/dashboard/account/drawer/AboutPage.jsx:              description="Earn progress from real activity and daily movement."
+src/v1/dashboard/account/drawer/AchievementsViewV1.jsx:import React from "react";
+src/v1/dashboard/account/drawer/AchievementsViewV1.jsx:import { ChevronLeft, Award, Trophy, Lock, Sparkles } from "lucide-react";
+src/v1/dashboard/account/drawer/AchievementsViewV1.jsx:import { getNextBadge } from "@/lib/badges/getNextBadge";
+src/v1/dashboard/account/drawer/ContactPage.jsx:import React from "react";
+src/v1/dashboard/account/drawer/ContactPage.jsx:import {
+src/v1/dashboard/account/drawer/ContactPage.jsx:} from "lucide-react";
+src/v1/dashboard/account/drawer/FAQPageV1.jsx:import React from "react";
+src/v1/dashboard/account/drawer/FAQPageV1.jsx:import {
+src/v1/dashboard/account/drawer/FAQPageV1.jsx:} from "lucide-react";
+src/v1/dashboard/account/drawer/FAQPageV1.jsx:            answer="zPts are off-chain progression points earned from daily activity, games, learning, tasks, and other approved actions. They track effort and unlock access."
+src/v1/dashboard/account/drawer/FAQPageV1.jsx:            answer="Rewards come from meaningful actions like moving, playing, learning, completing daily loops, maintaining streaks, and reaching milestones. ZWAP! rewards action, not passive presence."
+src/v1/dashboard/account/drawer/FAQPageV1.jsx:            answer="Badges are identity markers earned through consistent behavior. They are separate from tier status and can represent movement, learning, assists, streaks, and other progress."
+src/v1/dashboard/account/drawer/HelpViewV1.jsx:import React, { useState } from "react";
+src/v1/dashboard/account/drawer/HelpViewV1.jsx:import {
+src/v1/dashboard/account/drawer/HelpViewV1.jsx:} from "lucide-react";
+src/v1/dashboard/account/drawer/HelpViewV1.jsx:import FAQPageV1 from "./FAQPageV1";
+src/v1/dashboard/account/drawer/HelpViewV1.jsx:import AboutPage from "./AboutPage";
+src/v1/dashboard/account/drawer/HelpViewV1.jsx:import ContactPage from "./ContactPage";
+src/v1/dashboard/account/drawer/InventoryViewV1.jsx:import React from "react";
+src/v1/dashboard/account/drawer/InventoryViewV1.jsx:import {
+src/v1/dashboard/account/drawer/InventoryViewV1.jsx:} from "lucide-react";
+src/v1/dashboard/account/drawer/PrivacyViewV1.jsx:import React from "react";
+src/v1/dashboard/account/drawer/PrivacyViewV1.jsx:import {
+src/v1/dashboard/account/drawer/PrivacyViewV1.jsx:} from "lucide-react";
+src/v1/dashboard/account/drawer/ProfileViewV1.jsx:import React from "react";
+src/v1/dashboard/account/drawer/ProfileViewV1.jsx:import { ChevronLeft, Copy, Pencil, Shield, Trophy, Wallet } from "lucide-react";
+src/v1/dashboard/account/drawer/ProfileViewV1.jsx:import { generateUsername } from "@/lib/utils/generateUsername";
+src/v1/dashboard/account/drawer/SettingsViewV1.jsx:import React from "react";
+src/v1/dashboard/account/drawer/SettingsViewV1.jsx:import {
+src/v1/dashboard/account/drawer/SettingsViewV1.jsx:} from "lucide-react";
+src/v1/dashboard/account/drawer/TermsViewV1.jsx:import React from "react";
+src/v1/dashboard/account/drawer/TermsViewV1.jsx:import {
+src/v1/dashboard/account/drawer/TermsViewV1.jsx:} from "lucide-react";
+src/v1/dashboard/admin/AdminLogin.jsx:import React, { useState } from "react";
+src/v1/dashboard/admin/AdminLogin.jsx:import { motion } from "framer-motion";
+src/v1/dashboard/admin/AdminLogin.jsx:import { Lock } from "lucide-react";
+src/v1/dashboard/admin/AdminLogin.jsx:import { Button } from "@/components/ui/button";
+src/v1/dashboard/admin/AdminLogin.jsx:import { Input } from "@/components/ui/input";
+src/v1/dashboard/admin/AdminLogin.jsx:import adminApi from "@/lib/adminApi";
+src/v1/dashboard/admin/AdminPanelV1.jsx:import React, { useEffect, useState } from "react";
+src/v1/dashboard/admin/AdminPanelV1.jsx:import { motion, AnimatePresence } from "framer-motion";
+src/v1/dashboard/admin/AdminPanelV1.jsx:import {
+src/v1/dashboard/admin/AdminPanelV1.jsx:} from "lucide-react";
+src/v1/dashboard/AppHeaderV1.jsx:import React, { useMemo, useState } from "react";
+src/v1/dashboard/AppHeaderV1.jsx:import { Sprout, BookOpen, Play, Award } from "lucide-react";
+src/v1/dashboard/AppHeaderV1.jsx:import AccountDrawerV1 from "./account/AccountDrawerV1";
+src/v1/dashboard/DashboardV1.jsx:import React, { useEffect, useRef, useState } from "react";
+src/v1/dashboard/DashboardV1.jsx:import useV1DashboardState from "./useV1DashboardState";
+src/v1/dashboard/DashboardV1.jsx:import AppHeaderV1 from "./AppHeaderV1";
+src/v1/dashboard/DashboardV1.jsx:import DashboardWindowMove from "./windows/DashboardWindowMove";
+src/v1/dashboard/DashboardV1.jsx:import DashboardWindowPlay from "./windows/DashboardWindowPlay";
+src/v1/dashboard/DashboardV1.jsx:import DashboardWindowShop from "./windows/DashboardWindowShop";
+src/v1/dashboard/DashboardV1.jsx:import DashboardWindowZwap from "./windows/DashboardWindowZwap";
+src/v1/dashboard/DashboardV1.jsx:import StackzGame from "@/v1/components/games/stackz/StackzGame";
+src/v1/dashboard/DashboardV1.jsx:import BreakerzGame from "@/v1/components/games/breakerz/BreakerzGame";
+src/v1/dashboard/DashboardV1.jsx:import PulzeGame from "@/v1/components/games/pulze/PulzeGame";
+src/v1/dashboard/DashboardV1.jsx:import ZapManGame from "@/v1/components/games/zapman/ZapManGame";
+src/v1/dashboard/DashboardV1.jsx:import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
+src/v1/dashboard/SimplifiedDashboard.jsx:import React from "react";
+src/v1/dashboard/SimplifiedDashboard.jsx:import DashboardV1 from "./DashboardV1";
+src/v1/dashboard/SimplifiedDashboard.jsx:import { generateUsername } from "@/lib/utils/generateUsername";
+src/v1/dashboard/useV1DashboardState.js:import { useMemo, useState } from "react";
+src/v1/dashboard/windows/DashboardWindowMove.jsx:import React, { useState } from "react";
+src/v1/dashboard/windows/DashboardWindowMove.jsx:import { Activity, ChevronRight, Flame, Footprints, Timer } from "lucide-react";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import React, { useState } from "react";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import { Gamepad2, ChevronRight, Lock } from "lucide-react";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import brainzLogo from "@/assets/games/brainz_game_logo.PNG";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import breakerzLogo from "@/assets/games/breakerz_game_logo.PNG";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import pulzeLogo from "@/assets/games/pulze_game_logo.PNG";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import stackzLogo from "@/assets/games/stackz_game_logo.PNG";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import triplezLogo from "@/assets/games/triplez_game_logo.PNG";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import werdzLogo from "@/assets/games/werdz_game_logo.PNG";
+src/v1/dashboard/windows/DashboardWindowPlay.jsx:import zapManLogo from "@/assets/games/zap_man_logo.PNG";
+src/v1/dashboard/windows/DashboardWindowShop.jsx:import React from "react";
+src/v1/dashboard/windows/DashboardWindowShop.jsx:import { Lock, ShoppingBag } from "lucide-react";
+src/v1/dashboard/windows/DashboardWindowZwap.jsx:import React, { useMemo } from "react";
+src/v1/dashboard/windows/DashboardWindowZwap.jsx:import { CheckCircle2, Circle } from "lucide-react";
+src/v1/dashboard/windows/DashboardWindowZwap.jsx:import GardenWindow from "./garden/GardenWindow";
+src/v1/dashboard/windows/garden/GardenWindow.jsx:import React, { useMemo, useState } from "react";
+src/v1/dashboard/windows/garden/GardenWindow.jsx:import { motion, AnimatePresence } from "framer-motion";
+src/v1/dashboard/windows/garden/GardenWindow.jsx:import { ChevronLeft, ChevronRight, Heart, Leaf, Sparkles } from "lucide-react";
+src/v1/landing/LandingSequence.jsx:import React, { useEffect, useState } from "react";
+src/v1/landing/LandingSequence.jsx:import { motion, AnimatePresence } from "framer-motion";
+src/v1/landing/LandingSequence.jsx:import zwapLogo from "../../assets/Zwap_logo_full.png";
+src/v1/landing/useLandingSequence.js:import { useEffect, useState } from "react";
+src/v1/learn/LearnPage.jsx:import React, { useMemo } from "react";
+src/v1/learn/LearnPage.jsx:import { motion } from "framer-motion";
+src/v1/learn/LearnPage.jsx:import { useNavigate } from "react-router-dom";
+src/v1/learn/LearnPage.jsx:import {
+src/v1/learn/LearnPage.jsx:} from "lucide-react";
+src/v1/learn/LearnPage.jsx:import { useApp } from "@/app/AppProvider";
+src/v1/learn/LearnPage.jsx:import { learnModules } from "@/data/learnModules";
+src/v1/learn/ModuleCard.jsx:import React, { useEffect, useState } from "react";
+src/v1/learn/ModuleCard.jsx:import { motion, AnimatePresence } from "framer-motion";
+src/v1/learn/ModuleCard.jsx:import {
+src/v1/learn/ModuleCard.jsx:} from "lucide-react";
+src/v1/learn/ModuleCard.jsx:import api from "@/lib/api";
+src/v1/learn/ModuleCard.jsx:import useNetworkStatus from "@/hooks/useNetworkStatus";
+src/v1/learn/ModuleCard.jsx:import { queuePendingReward } from "@/hooks/pendingRewards";
+src/v1/learn/SectionHeader.jsx:import React from "react";
+src/v1/sequence/MoveOnboardingSequence.jsx:import React, { useMemo } from "react";
+src/v1/sequence/MoveOnboardingSequence.jsx:import { AnimatePresence } from "framer-motion";
+src/v1/sequence/MoveOnboardingSequence.jsx:import useMoveOnboardingMachine from "./useMoveOnboardingMachine";
+src/v1/sequence/MoveOnboardingSequence.jsx:import {
+src/v1/sequence/MoveOnboardingSequence.jsx:} from "./MoveOnboardingViews";
+src/v1/sequence/MoveOnboardingViews.jsx:import { motion } from "framer-motion";
+src/v1/sequence/MoveOnboardingViews.jsx:      from 180deg,
+src/v1/sequence/PlayOnboardingSequence.jsx:import React from "react";
+src/v1/sequence/PlayOnboardingSequence.jsx:import { AnimatePresence } from "framer-motion";
+src/v1/sequence/PlayOnboardingSequence.jsx:import StackzOnboardingGame from "@/v1/components/games/stackz/StackzOnboardingGame";
+src/v1/sequence/PlayOnboardingSequence.jsx:import usePlayOnboardingMachine from "./usePlayOnboardingMachine";
+src/v1/sequence/PlayOnboardingSequence.jsx:import {
+src/v1/sequence/PlayOnboardingSequence.jsx:} from "./PlayOnboardingViews";
+src/v1/sequence/PlayOnboardingViews.jsx:import { motion } from "framer-motion";
+src/v1/sequence/useMoveOnboardingMachine.js:import { useCallback, useEffect, useRef, useState } from "react";
+src/v1/sequence/usePlayOnboardingMachine.js:import { useCallback, useEffect, useRef, useState } from "react";
+src/v1/shop/ShopCategoryCarousel.jsx:import React from "react";
+src/v1/shop/ShopCategoryCarousel.jsx:import { motion } from "framer-motion";
+src/v1/shop/ShopCategoryCarousel.jsx:import ShopItemCard from "@/components/shop/ShopItemCard";
+src/v1/shop/ShopHome.jsx:import React from "react";
+src/v1/shop/ShopHome.jsx:import { ShoppingBag } from "lucide-react";
+src/v1/shop/ShopInventoryCard.jsx:import React from "react";
+src/v1/shop/ShopInventoryCard.jsx:import {
+src/v1/shop/ShopInventoryCard.jsx:} from "lucide-react";
+src/v1/shop/ShopInventoryCard.jsx:import { Button } from "@/components/ui/button";
+src/v1/shop/ShopItemCard.jsx:import React from "react";
+src/v1/shop/ShopItemCard.jsx:import { motion } from "framer-motion";
+src/v1/shop/ShopItemCard.jsx:import { Crown, ShoppingBag } from "lucide-react";
+src/v1/shop/ShopMarketplaceCard.jsx:import React, { useEffect, useMemo, useState, useCallback } from "react";
+src/v1/shop/ShopMarketplaceCard.jsx:import { motion } from "framer-motion";
+src/v1/shop/ShopMarketplaceCard.jsx:import { ChevronLeft, ChevronRight } from "lucide-react";
+src/v1/shop/ShopMarketplaceCard.jsx:import { ZUPREME_LOGO } from "@/App";
+src/v1/shop/ShopMarketplaceCard.jsx:import ShopItemCard from "@/components/shop/ShopItemCard";
+src/v1/shop/ShopMarketplaceCard.jsx:import ShopPurchaseDialog from "@/components/shop/ShopPurchaseDialog";
+src/v1/shop/ShopPurchaseDialog.jsx:import React from "react";
+src/v1/shop/ShopPurchaseDialog.jsx:import {
+src/v1/shop/ShopPurchaseDialog.jsx:} from "lucide-react";
+src/v1/shop/ShopPurchaseDialog.jsx:import { Button } from "@/components/ui/button";
+src/v1/shop/ShopPurchaseDialog.jsx:import {
+src/v1/shop/ShopPurchaseDialog.jsx:} from "@/components/ui/dialog";
+src/v1/shop/ShopRewardsFeedback.jsx:import React, { useEffect } from "react";
+src/v1/shop/ShopRewardsFeedback.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/shop/ShopRewardsFeedback.jsx:import { CheckCircle2, Sparkles } from "lucide-react";
+src/v1/shop/ShopTab.jsx:import React, { useEffect, useMemo, useState, useCallback } from "react";
+src/v1/shop/ShopTab.jsx:import { useApp } from "@/App";
+src/v1/shop/ShopTab.jsx:import api from "@/lib/api";
+src/v1/shop/ShopTab.jsx:import ShopHome from "@/components/shop/ShopHome";
+src/v1/shop/ShopTab.jsx:import ShopMarketplaceCard from "@/components/shop/ShopMarketplaceCard";
+src/v1/shop/ShopTab.jsx:import ShopInventoryCard from "@/components/shop/ShopInventoryCard";
+src/v1/signup/SignupGate.jsx:import React, { useEffect, useRef, useState } from "react";
+src/v1/signup/SignupGate.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/signup/SignupOnboarding.jsx:import React, { useEffect, useState } from "react";
+src/v1/signup/SignupOnboarding.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/signup/SignupOnboarding.jsx:import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
+src/v1/signup/SignupOnboarding.jsx:      setStatusText("Enter the code from your email.");
+src/v1/stream/ActivityStreamSection.jsx:import React, { useEffect, useState } from "react";
+src/v1/stream/ActivityStreamSection.jsx:import { Activity, Globe, MapPin } from "lucide-react";
+src/v1/stream/ActivityStreamSection.jsx:import api from "@/lib/api";
+src/v1/stream/StreamCard.jsx:import React from "react";
+src/v1/stream/StreamCard.jsx:import { motion } from "framer-motion";
+src/v1/stream/StreamCard.jsx:import {
+src/v1/stream/StreamCard.jsx:} from "lucide-react";
+src/v1/stream/StreamMediaModal.jsx:import React from "react";
+src/v1/stream/StreamMediaModal.jsx:import { motion, AnimatePresence } from "framer-motion";
+src/v1/stream/StreamMediaModal.jsx:import {
+src/v1/stream/StreamMediaModal.jsx:} from "lucide-react";
+src/v1/stream/StreamMediaModal.jsx:import { connectSpotify } from "@/lib/spotify";
+src/v1/stream/StreamPanel.jsx:import React, { useMemo, useState } from "react";
+src/v1/stream/StreamPanel.jsx:import { Sheet, SheetContent } from "@/components/ui/sheet";
+src/v1/stream/StreamPanel.jsx:import StreamTabs from "./StreamTabs";
+src/v1/stream/StreamPanel.jsx:import StreamCard from "./StreamCard";
+src/v1/stream/StreamPanel.jsx:import ActivityStreamSection from "./ActivityStreamSection";
+src/v1/stream/StreamPanel.jsx:import StreamMediaModal from "./StreamMediaModal";
+src/v1/stream/StreamPanel.jsx:import {
+src/v1/stream/StreamPanel.jsx:} from "./streamData";
+src/v1/stream/StreamPanelContent.jsx:import React from "react";
+src/v1/stream/StreamPanelContent.jsx:import StreamTabs from "./StreamTabs";
+src/v1/stream/StreamPanelContent.jsx:import StreamPlayerSurface from "./StreamPlayerSurface";
+src/v1/stream/StreamPanelContent.jsx:import StreamCard from "./StreamCard";
+src/v1/stream/StreamPanelContent.jsx:import ActivityStreamSection from "./ActivityStreamSection";
+src/v1/stream/StreamPlayerSurface.jsx:import React from "react";
+src/v1/stream/StreamPlayerSurface.jsx:import { motion } from "framer-motion";
+src/v1/stream/StreamPlayerSurface.jsx:import {
+src/v1/stream/StreamPlayerSurface.jsx:} from "lucide-react";
+src/v1/stream/StreamPlayerSurface.jsx:import { connectSpotify } from "@/lib/spotify";
+src/v1/stream/StreamRail.jsx:import React, { useMemo, useState } from "react";
+src/v1/stream/StreamRail.jsx:import StreamMediaModal from "./StreamMediaModal";
+src/v1/stream/StreamRail.jsx:import StreamPanelContent from "./StreamPanelContent";
+src/v1/stream/StreamRail.jsx:import {
+src/v1/stream/StreamRail.jsx:} from "./streamData";
+src/v1/stream/StreamTabs.jsx:import React from "react";
+src/v1/stream/StreamTabs.jsx:import { BookOpen, Headphones, Radio, Video } from "lucide-react";
+src/v1/stream/StreamTabs.jsx:import { motion } from "framer-motion";
+src/v1/swap/ConvertZPtsModal.jsx:import React from "react";
+src/v1/swap/ConvertZPtsModal.jsx:import ReactDOM from "react-dom";
+src/v1/swap/ConvertZPtsModal.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/swap/ConvertZPtsModal.jsx:import { ArrowRightLeft, Sparkles, TrendingUp, X } from "lucide-react";
+src/v1/swap/SwapCoreCard.jsx:import React from "react";
+src/v1/swap/SwapCoreCard.jsx:import { motion } from "framer-motion";
+src/v1/swap/SwapCoreCard.jsx:import {
+src/v1/swap/SwapCoreCard.jsx:} from "lucide-react";
+src/v1/swap/SwapEmbeddedFlow.jsx:import React from "react";
+src/v1/swap/SwapEmbeddedFlow.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/swap/SwapEmbeddedFlow.jsx:import {
+src/v1/swap/SwapEmbeddedFlow.jsx:} from "lucide-react";
+src/v1/swap/SwapFeedback.jsx:import React from "react";
+src/v1/swap/SwapFeedback.jsx:import { AnimatePresence, motion } from "framer-motion";
+src/v1/swap/SwapFeedback.jsx:import {
+src/v1/swap/SwapFeedback.jsx:} from "lucide-react";
+src/v1/swap/SwapHistory.jsx:import React from "react";
+src/v1/swap/SwapHistory.jsx:import { motion } from "framer-motion";
+src/v1/swap/SwapHistory.jsx:import { ArrowRightLeft, TrendingUp } from "lucide-react";
+src/v1/swap/SwapHome.jsx:import React from "react";
+src/v1/swap/SwapHome.jsx:import { ArrowRightLeft } from "lucide-react";
+src/v1/swap/SwapHome.jsx:import SwapCoreCard from "@/components/swap/SwapCoreCard";
+src/v1/swap/SwapHome.jsx:import SwapFeedback from "@/components/swap/SwapFeedback";
+src/v1/swap/SwapHome.jsx:import SwapHistory from "@/components/swap/SwapHistory";
+src/v1/swap/SwapHome.jsx:import SwapEmbeddedFlow from "@/components/swap/SwapEmbeddedFlow";
+src/v1/swap/SwapHome.jsx:import ConvertZPtsModal from "@/components/swap/ConvertZPtsModal";
+src/v1/swap/SwapModesCarousel.jsx:import React from "react";
+src/v1/swap/SwapModesCarousel.jsx:import { motion } from "framer-motion";
+src/v1/swap/SwapModesCarousel.jsx:import {
+src/v1/swap/SwapModesCarousel.jsx:} from "lucide-react";
+src/v1/swap/SwapPortal.jsx:import React from "react";
+src/v1/swap/SwapPortal.jsx:import { ArrowUpRight, Info, Layers3, ShieldCheck } from "lucide-react";
+src/v1/swap/SwapTab.jsx:import React, { useCallback, useEffect, useMemo, useState } from "react";
+src/v1/swap/SwapTab.jsx:import { useApp } from "@/App";
+src/v1/swap/SwapTab.jsx:import api from "@/lib/api";
+src/v1/swap/SwapTab.jsx:import SwapHome from "@/components/swap/SwapHome";
+src/v1/V1App.jsx:import React, { useMemo, useRef, useState } from "react";
+src/v1/V1App.jsx:import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+src/v1/V1App.jsx:import { useApp } from "@/app/AppProvider";
+src/v1/V1App.jsx:import OnboardingAboutPage from "@/v1/about/OnboardingAboutPage";
+src/v1/V1App.jsx:import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
+src/v1/V1App.jsx:import SignIn from "@/v1/auth/SignIn";
+src/v1/V1App.jsx:import SignOut from "@/v1/auth/SignOut";
+src/v1/V1App.jsx:import LandingSequence from "@/v1/landing/LandingSequence";
+src/v1/V1App.jsx:import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
+src/v1/V1App.jsx:import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
+src/v1/V1App.jsx:import SignupGate from "@/v1/signup/SignupGate";
+src/v1/V1App.jsx:import SignupOnboarding from "@/v1/signup/SignupOnboarding";
+src/v1/V1App.jsx:import {
+src/v1/V1App.jsx:} from "@/v1/V1OnboardingStorage";
