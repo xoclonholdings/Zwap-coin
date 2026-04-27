@@ -1,6 +1,6 @@
 import React from "react";
 
-import AdminSectionCardV1 from "../components/AdminSectionCardV1";
+import AdminSectionCardV1 from "./AdminSectionCardV1";
 
 export default function AdminMoveSectionV1() {
   return (
