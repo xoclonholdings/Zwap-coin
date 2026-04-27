@@ -4,12 +4,18 @@ import { PrivyProvider } from "@privy-io/react-auth";
 export default function PrivyProviderWrapper({ children }) {
   return (
     <PrivyProvider
-      appId={process.env.REACT_APP_PRIVY_APP_ID}
+      appId={import.meta.env.VITE_PRIVY_APP_ID}
       config={{
+        loginMethods: ["email"], // 👈 ONLY email
+
         embeddedWallets: {
           ethereum: {
             createOnLogin: "users-without-wallets",
           },
+        },
+
+        externalWallets: {
+          enabled: false, // 👈 disables MetaMask and others
         },
       }}
     >
