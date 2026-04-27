@@ -1,8 +1,8 @@
 import React from "react";
 
-import AdminSectionCardV1 from "../components/AdminSectionCardV1";
-import AdminUnlockRowV1 from "../components/AdminUnlockRowV1";
-import AdminStatusPillV1 from "../components/AdminStatusPillV1";
+import AdminSectionCardV1 from "./AdminSectionCardV1";
+import AdminUnlockRowV1 from "./AdminUnlockRowV1";
+import AdminStatusPillV1 from "./AdminStatusPillV1";
 
 const V1_PROGRESSION_FLOW =
   "MOVE / PLAY → Shop → Garden → Badges → Learn → Stream → Assist → Sponsor Rewards → Swap";
