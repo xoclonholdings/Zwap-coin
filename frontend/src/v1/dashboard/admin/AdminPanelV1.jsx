@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Shield,
+  Route,
   Users,
   Database,
   Footprints,
@@ -13,11 +14,27 @@ import {
   X,
 } from "lucide-react";
 
-export default function AdminPanelV1({
-  isOpen = false,
-  onClose,
-}) {
+import AdminSectionCardV1 from "./components/AdminSectionCardV1";
+import AdminProgressionSectionV1 from "./sections/AdminProgressionSectionV1";
+
+export default function AdminPanelV1({ isOpen = false, onClose }) {
   const [activeSection, setActiveSection] = useState("dashboard");
+
+  const sections = useMemo(
+    () => [
+      { id: "dashboard", label: "Dashboard", icon: Shield },
+      { id: "progression", label: "Progression", icon: Route },
+      { id: "users", label: "Users", icon: Users },
+      { id: "treasury", label: "Treasury", icon: Database },
+      { id: "move", label: "Move", icon: Footprints },
+      { id: "play", label: "Play", icon: Gamepad2 },
+      { id: "shop", label: "Shop", icon: ShoppingBag },
+      { id: "activity", label: "Activity", icon: Activity },
+      { id: "badges", label: "Badges", icon: Award },
+      { id: "settings", label: "Settings", icon: Settings },
+    ],
+    []
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -25,95 +42,101 @@ export default function AdminPanelV1({
     }
   }, [isOpen]);
 
-  const sections = [
-    { id: "dashboard", label: "Dashboard", icon: Shield },
-    { id: "users", label: "Users", icon: Users },
-    { id: "treasury", label: "Treasury", icon: Database },
-    { id: "move", label: "Move", icon: Footprints },
-    { id: "play", label: "Play", icon: Gamepad2 },
-    { id: "shop", label: "Shop", icon: ShoppingBag },
-    { id: "activity", label: "Activity", icon: Activity },
-    { id: "badges", label: "Badges", icon: Award },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+  const activeSectionLabel =
+    sections.find((section) => section.id === activeSection)?.label ||
+    "Dashboard";
 
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
         return (
-          <Section title="System Overview">
+          <AdminSectionCardV1 title="System Overview">
             ZWAP! behavioral engine is active.
             <br />
-            All reward systems routing through reward_service.
-          </Section>
+            All reward systems route through reward_service.
+          </AdminSectionCardV1>
         );
+
+      case "progression":
+        return <AdminProgressionSectionV1 />;
 
       case "users":
         return (
-          <Section title="Users">
-            Monitor user growth, onboarding flow, and retention signals.
-          </Section>
+          <AdminSectionCardV1 title="Users">
+            Monitor user growth, onboarding flow, account status, and retention
+            signals.
+          </AdminSectionCardV1>
         );
 
       case "treasury":
         return (
-          <Section title="Treasury">
-            Track zPts issuance, ZWAP unlocks, and conversion flow.
-          </Section>
+          <AdminSectionCardV1 title="Treasury">
+            Track zPts issuance, ZWAP unlocks, conversion readiness, sponsor
+            pools, and value sinks.
+          </AdminSectionCardV1>
         );
 
       case "move":
         return (
-          <Section title="Move System">
-            Step validation, cooldown enforcement, and activity spikes.
-          </Section>
+          <AdminSectionCardV1 title="Move System">
+            Review step validation, cooldown enforcement, movement claims, and
+            activity spikes.
+          </AdminSectionCardV1>
         );
 
       case "play":
         return (
-          <Section title="Play System">
-            Game sessions, progression depth, and reward distribution.
-          </Section>
+          <AdminSectionCardV1 title="Play System">
+            Review game sessions, progression depth, score signals, and reward
+            distribution.
+          </AdminSectionCardV1>
         );
 
       case "shop":
         return (
-          <Section title="Shop">
-            Item rotation, purchases, and value sink behavior.
-          </Section>
+          <AdminSectionCardV1 title="Shop">
+            Manage item rotation, purchases, unlock thresholds, and value sink
+            behavior.
+          </AdminSectionCardV1>
         );
 
       case "activity":
         return (
-          <Section title="Activity">
-            System-wide engagement and event tracking.
-          </Section>
+          <AdminSectionCardV1 title="Activity">
+            Track system-wide engagement, streak events, purchases, assists, and
+            milestone activity.
+          </AdminSectionCardV1>
         );
 
       case "badges":
         return (
-          <Section title="Badges">
-            Badge progression, trophy system, identity layer.
-          </Section>
+          <AdminSectionCardV1 title="Badges">
+            Monitor badge progression, trophy completion, identity unlocks, and
+            mastery pacing.
+          </AdminSectionCardV1>
         );
 
       case "settings":
         return (
-          <Section title="Settings">
-            Reward tuning, unlock control, environment flags.
-          </Section>
+          <AdminSectionCardV1 title="Settings">
+            Control reward tuning, unlock flags, environment settings, and admin
+            configuration.
+          </AdminSectionCardV1>
         );
 
       default:
-        return null;
+        return (
+          <AdminSectionCardV1 title="System Overview">
+            ZWAP! behavioral engine is active.
+          </AdminSectionCardV1>
+        );
     }
   };
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen ? (
         <div className="fixed inset-0 z-[200]">
-          {/* BACKDROP */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -122,88 +145,85 @@ export default function AdminPanelV1({
             onClick={onClose}
           />
 
-          {/* PANEL */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="absolute inset-0 flex flex-col bg-[#050816]"
+            className="absolute inset-0 flex flex-col bg-[#050816] text-white"
           >
-            {/* HEADER */}
-            <div className="flex items-center justify-between border-b border-white/10 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-400/20">
-                  <Shield className="w-5 h-5 text-cyan-300" />
+            <div className="border-b border-white/10 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
+                    <Shield className="h-5 w-5 text-cyan-300" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold text-white">
+                      ZWAP! Admin
+                    </div>
+                    <div className="truncate text-[11px] text-white/40">
+                      {activeSectionLabel} Control Surface
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="text-sm font-bold text-white">
-                    ZWAP! Admin
-                  </div>
-                  <div className="text-[11px] text-white/40">
-                    Control Surface
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close admin panel"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition active:scale-[0.97]"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-
-              <button
-                onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5"
-              >
-                <X className="w-5 h-5 text-white/60" />
-              </button>
             </div>
 
-            {/* NAV */}
-            <div className="flex gap-2 overflow-x-auto px-4 py-3 border-b border-white/10">
-              {sections.map((s) => {
-                const Icon = s.icon;
-                const isActive = activeSection === s.id;
+            <div className="border-b border-white/10 px-4 py-3">
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  const isActive = activeSection === section.id;
 
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setActiveSection(s.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs whitespace-nowrap transition ${
-                      isActive
-                        ? "bg-cyan-500/20 text-white border border-cyan-400/30"
-                        : "bg-white/5 text-white/40 border border-white/10"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {s.label}
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => setActiveSection(section.id)}
+                      className={[
+                        "flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs whitespace-nowrap transition active:scale-[0.98]",
+                        isActive
+                          ? "border-cyan-400/30 bg-cyan-500/20 text-white shadow-[0_0_14px_rgba(34,211,238,0.10)]"
+                          : "border-white/10 bg-white/5 text-white/40",
+                      ].join(" ")}
+                    >
+                      <Icon
+                        className={[
+                          "h-4 w-4",
+                          isActive ? "text-cyan-300" : "text-white/35",
+                        ].join(" ")}
+                      />
+                      {section.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* CONTENT */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+24px)]">
               <motion.div
                 key={activeSection}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18 }}
               >
                 {renderSection()}
               </motion.div>
             </div>
           </motion.div>
         </div>
-      )}
+      ) : null}
     </AnimatePresence>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="text-sm font-semibold text-white mb-2">
-        {title}
-      </div>
-      <div className="text-xs text-white/60 leading-5">
-        {children}
-      </div>
-    </div>
   );
 }
