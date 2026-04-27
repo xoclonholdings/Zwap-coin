@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
+
 import useV1DashboardState from "./useV1DashboardState";
 import AppHeaderV1 from "./AppHeaderV1";
 import DashboardWindowMove from "./windows/DashboardWindowMove";
@@ -6,16 +7,42 @@ import DashboardWindowPlay from "./windows/DashboardWindowPlay";
 import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
-import StackzGame from "@/v1/components/games/stackz/StackzGame";
-import BreakerzGame from "@/v1/components/games/breakerz/BreakerzGame";
-import PulzeGame from "@/v1/components/games/pulze/PulzeGame";
-import ZapManGame from "@/v1/components/games/zapman/ZapManGame";
-
 import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
+
+const StackzGame = lazy(() =>
+  import("@/v1/components/games/stackz/StackzGame")
+);
+
+const BreakerzGame = lazy(() =>
+  import("@/v1/components/games/breakerz/BreakerzGame")
+);
+
+const PulzeGame = lazy(() =>
+  import("@/v1/components/games/pulze/PulzeGame")
+);
+
+const ZapManGame = lazy(() =>
+  import("@/v1/components/games/zapman/ZapManGame")
+);
 
 function estimateCaloriesFromSteps(steps) {
   const safeSteps = Math.max(0, Number(steps || 0));
   return Math.round(safeSteps * 0.04);
+}
+
+function GameLoadingScreen() {
+  return (
+    <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050816] text-white">
+      <div className="rounded-[24px] border border-cyan-300/15 bg-white/[0.04] px-5 py-4 text-center shadow-[0_0_32px_rgba(34,211,238,0.10)]">
+        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/70">
+          Loading Game
+        </div>
+        <div className="mt-2 text-sm font-semibold text-white/70">
+          Powering up the arcade…
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardV1({ user, authUser }) {
@@ -128,20 +155,26 @@ export default function DashboardV1({ user, authUser }) {
 
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
-  if (activeGameId === "stackz") {
-    return <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />;
-  }
+  if (activeGameId) {
+    return (
+      <Suspense fallback={<GameLoadingScreen />}>
+        {activeGameId === "stackz" ? (
+          <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />
+        ) : null}
 
-  if (activeGameId === "breakerz") {
-    return <BreakerzGame isPlaying={true} onGameEnd={handleGameEnd} />;
-  }
+        {activeGameId === "breakerz" ? (
+          <BreakerzGame isPlaying={true} onGameEnd={handleGameEnd} />
+        ) : null}
 
-  if (activeGameId === "pulze") {
-    return <PulzeGame isPlaying={true} onGameEnd={handleGameEnd} />;
-  }
+        {activeGameId === "pulze" ? (
+          <PulzeGame isPlaying={true} onGameEnd={handleGameEnd} />
+        ) : null}
 
-  if (activeGameId === "zap-man") {
-    return <ZapManGame isPlaying={true} onGameEnd={handleGameEnd} />;
+        {activeGameId === "zap-man" ? (
+          <ZapManGame isPlaying={true} onGameEnd={handleGameEnd} />
+        ) : null}
+      </Suspense>
+    );
   }
 
   return (
