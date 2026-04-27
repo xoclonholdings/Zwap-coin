@@ -62,7 +62,6 @@ export default function V1App() {
   const signupGateRoute = `${V1_BASE}/signup-gate`;
   const signupRoute = `${V1_BASE}/signup`;
   const signInRoute = `${V1_BASE}/signin`;
-  const signOutRoute = `${V1_BASE}/signout`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
 
   const openDashboard = () => {
