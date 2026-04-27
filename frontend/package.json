@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
-    "@capacitor/android": "^7.4.4",
-    "@capacitor/cli": "^7.4.4",
-    "@capacitor/core": "^7.4.4",
-    "@capacitor/ios": "^7.4.4",
     "@privy-io/react-auth": "^3.18.0",
     "axios": "^1.8.4",
     "framer-motion": "^12.24.12",
@@ -16,21 +17,9 @@
     "react-dom": "18.3.1",
     "react-router-dom": "^7.5.1"
   },
-  "scripts": {
-    "start": "vite --host 0.0.0.0",
-    "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0",
-    "cap:init": "cap init ZWAP com.xoclon.zwap --web-dir dist",
-    "cap:add:android": "cap add android",
-    "cap:add:ios": "cap add ios",
-    "cap:sync": "cap sync",
-    "cap:open:android": "cap open android",
-    "cap:open:ios": "cap open ios"
-  },
   "devDependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "@vitejs/plugin-react": "4.3.4",
+    "vite": "5.4.21",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17"
