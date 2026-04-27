@@ -1,6 +1,6 @@
 import React from "react";
 
-import AdminSectionCardV1 from "../components/AdminSectionCardV1";
+import AdminSectionCardV1 from "./AdminSectionCardV1";
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString();
