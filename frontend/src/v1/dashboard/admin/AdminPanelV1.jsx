@@ -14,11 +14,24 @@ import {
   X,
 } from "lucide-react";
 
-import AdminSectionCardV1 from "./components/AdminSectionCardV1";
+import AdminLogin from "./AdminLogin";
+
+import AdminDashboardSectionV1 from "./sections/AdminDashboardSectionV1";
 import AdminProgressionSectionV1 from "./sections/AdminProgressionSectionV1";
+import AdminUsersSectionV1 from "./sections/AdminUsersSectionV1";
+import AdminTreasurySectionV1 from "./sections/AdminTreasurySectionV1";
+import AdminMoveSectionV1 from "./sections/AdminMoveSectionV1";
+import AdminPlaySectionV1 from "./sections/AdminPlaySectionV1";
+import AdminShopSectionV1 from "./sections/AdminShopSectionV1";
+import AdminActivitySectionV1 from "./sections/AdminActivitySectionV1";
+import AdminBadgesSectionV1 from "./sections/AdminBadgesSectionV1";
+import AdminSettingsSectionV1 from "./sections/AdminSettingsSectionV1";
 
 export default function AdminPanelV1({ isOpen = false, onClose }) {
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return Boolean(localStorage.getItem("zwap_admin_key"));
+  });
 
   const sections = useMemo(
     () => [
@@ -46,90 +59,46 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
     sections.find((section) => section.id === activeSection)?.label ||
     "Dashboard";
 
+  const handleLogout = () => {
+    localStorage.removeItem("zwap_admin_key");
+    setIsAuthenticated(false);
+    setActiveSection("dashboard");
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
-        return (
-          <AdminSectionCardV1 title="System Overview">
-            ZWAP! behavioral engine is active.
-            <br />
-            All reward systems route through reward_service.
-          </AdminSectionCardV1>
-        );
+        return <AdminDashboardSectionV1 />;
 
       case "progression":
         return <AdminProgressionSectionV1 />;
 
       case "users":
-        return (
-          <AdminSectionCardV1 title="Users">
-            Monitor user growth, onboarding flow, account status, and retention
-            signals.
-          </AdminSectionCardV1>
-        );
+        return <AdminUsersSectionV1 />;
 
       case "treasury":
-        return (
-          <AdminSectionCardV1 title="Treasury">
-            Track zPts issuance, ZWAP unlocks, conversion readiness, sponsor
-            pools, and value sinks.
-          </AdminSectionCardV1>
-        );
+        return <AdminTreasurySectionV1 />;
 
       case "move":
-        return (
-          <AdminSectionCardV1 title="Move System">
-            Review step validation, cooldown enforcement, movement claims, and
-            activity spikes.
-          </AdminSectionCardV1>
-        );
+        return <AdminMoveSectionV1 />;
 
       case "play":
-        return (
-          <AdminSectionCardV1 title="Play System">
-            Review game sessions, progression depth, score signals, and reward
-            distribution.
-          </AdminSectionCardV1>
-        );
+        return <AdminPlaySectionV1 />;
 
       case "shop":
-        return (
-          <AdminSectionCardV1 title="Shop">
-            Manage item rotation, purchases, unlock thresholds, and value sink
-            behavior.
-          </AdminSectionCardV1>
-        );
+        return <AdminShopSectionV1 />;
 
       case "activity":
-        return (
-          <AdminSectionCardV1 title="Activity">
-            Track system-wide engagement, streak events, purchases, assists, and
-            milestone activity.
-          </AdminSectionCardV1>
-        );
+        return <AdminActivitySectionV1 />;
 
       case "badges":
-        return (
-          <AdminSectionCardV1 title="Badges">
-            Monitor badge progression, trophy completion, identity unlocks, and
-            mastery pacing.
-          </AdminSectionCardV1>
-        );
+        return <AdminBadgesSectionV1 />;
 
       case "settings":
-        return (
-          <AdminSectionCardV1 title="Settings">
-            Control reward tuning, unlock flags, environment settings, and admin
-            configuration.
-          </AdminSectionCardV1>
-        );
+        return <AdminSettingsSectionV1 onLogout={handleLogout} />;
 
       default:
-        return (
-          <AdminSectionCardV1 title="System Overview">
-            ZWAP! behavioral engine is active.
-          </AdminSectionCardV1>
-        );
+        return <AdminDashboardSectionV1 />;
     }
   };
 
@@ -164,7 +133,9 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
                       ZWAP! Admin
                     </div>
                     <div className="truncate text-[11px] text-white/40">
-                      {activeSectionLabel} Control Surface
+                      {isAuthenticated
+                        ? `${activeSectionLabel} Control Surface`
+                        : "Mission Control Access"}
                     </div>
                   </div>
                 </div>
@@ -180,46 +151,52 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
               </div>
             </div>
 
-            <div className="border-b border-white/10 px-4 py-3">
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {sections.map((section) => {
-                  const Icon = section.icon;
-                  const isActive = activeSection === section.id;
+            {isAuthenticated ? (
+              <div className="border-b border-white/10 px-4 py-3">
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {sections.map((section) => {
+                    const Icon = section.icon;
+                    const isActive = activeSection === section.id;
 
-                  return (
-                    <button
-                      key={section.id}
-                      type="button"
-                      onClick={() => setActiveSection(section.id)}
-                      className={[
-                        "flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs whitespace-nowrap transition active:scale-[0.98]",
-                        isActive
-                          ? "border-cyan-400/30 bg-cyan-500/20 text-white shadow-[0_0_14px_rgba(34,211,238,0.10)]"
-                          : "border-white/10 bg-white/5 text-white/40",
-                      ].join(" ")}
-                    >
-                      <Icon
+                    return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => setActiveSection(section.id)}
                         className={[
-                          "h-4 w-4",
-                          isActive ? "text-cyan-300" : "text-white/35",
+                          "flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs whitespace-nowrap transition active:scale-[0.98]",
+                          isActive
+                            ? "border-cyan-400/30 bg-cyan-500/20 text-white shadow-[0_0_14px_rgba(34,211,238,0.10)]"
+                            : "border-white/10 bg-white/5 text-white/40",
                         ].join(" ")}
-                      />
-                      {section.label}
-                    </button>
-                  );
-                })}
+                      >
+                        <Icon
+                          className={[
+                            "h-4 w-4",
+                            isActive ? "text-cyan-300" : "text-white/35",
+                          ].join(" ")}
+                        />
+                        {section.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            ) : null}
 
             <div className="flex-1 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+24px)]">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18 }}
-              >
-                {renderSection()}
-              </motion.div>
+              {isAuthenticated ? (
+                <motion.div
+                  key={activeSection}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {renderSection()}
+                </motion.div>
+              ) : (
+                <AdminLogin onLogin={() => setIsAuthenticated(true)} />
+              )}
             </div>
           </motion.div>
         </div>
