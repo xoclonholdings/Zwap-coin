@@ -14,6 +14,8 @@ import {
   X,
 } from "lucide-react";
 
+import adminApi from "@/lib/adminApi";
+
 import AdminLogin from "./AdminLogin";
 
 import AdminDashboardSectionV1 from "./sections/AdminDashboardSectionV1";
@@ -29,9 +31,9 @@ import AdminSettingsSectionV1 from "./sections/AdminSettingsSectionV1";
 
 export default function AdminPanelV1({ isOpen = false, onClose }) {
   const [activeSection, setActiveSection] = useState("dashboard");
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return Boolean(localStorage.getItem("zwap_admin_key"));
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [checkingAuth, setCheckingAuth] = useState(false);
 
   const sections = useMemo(
     () => [
@@ -55,20 +57,72 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const key = localStorage.getItem("zwap_admin_key");
+
+    if (!key) {
+      setIsAuthenticated(false);
+      setDashboardData(null);
+      setCheckingAuth(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function verifyAdminKey() {
+      setCheckingAuth(true);
+
+      try {
+        const data = await adminApi.get("/dashboard", key);
+
+        if (!cancelled) {
+          setDashboardData(data);
+          setIsAuthenticated(true);
+        }
+      } catch {
+        localStorage.removeItem("zwap_admin_key");
+
+        if (!cancelled) {
+          setDashboardData(null);
+          setIsAuthenticated(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingAuth(false);
+        }
+      }
+    }
+
+    verifyAdminKey();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
   const activeSectionLabel =
     sections.find((section) => section.id === activeSection)?.label ||
     "Dashboard";
 
   const handleLogout = () => {
     localStorage.removeItem("zwap_admin_key");
+    setDashboardData(null);
     setIsAuthenticated(false);
+    setActiveSection("dashboard");
+  };
+
+  const handleLogin = (data) => {
+    setDashboardData(data || null);
+    setIsAuthenticated(true);
     setActiveSection("dashboard");
   };
 
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
-        return <AdminDashboardSectionV1 />;
+        return <AdminDashboardSectionV1 data={dashboardData} />;
 
       case "progression":
         return <AdminProgressionSectionV1 />;
@@ -98,7 +152,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
         return <AdminSettingsSectionV1 onLogout={handleLogout} />;
 
       default:
-        return <AdminDashboardSectionV1 />;
+        return <AdminDashboardSectionV1 data={dashboardData} />;
     }
   };
 
@@ -133,9 +187,11 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
                       ZWAP! Admin
                     </div>
                     <div className="truncate text-[11px] text-white/40">
-                      {isAuthenticated
-                        ? `${activeSectionLabel} Control Surface`
-                        : "Mission Control Access"}
+                      {checkingAuth
+                        ? "Verifying Mission Control Access"
+                        : isAuthenticated
+                          ? `${activeSectionLabel} Control Surface`
+                          : "Mission Control Access"}
                     </div>
                   </div>
                 </div>
@@ -185,7 +241,13 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
             ) : null}
 
             <div className="flex-1 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+24px)]">
-              {isAuthenticated ? (
+              {checkingAuth ? (
+                <div className="flex min-h-[320px] items-center justify-center">
+                  <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-5 py-4 text-center text-sm font-semibold text-cyan-200">
+                    Verifying admin access...
+                  </div>
+                </div>
+              ) : isAuthenticated ? (
                 <motion.div
                   key={activeSection}
                   initial={{ opacity: 0, y: 8 }}
@@ -195,7 +257,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
                   {renderSection()}
                 </motion.div>
               ) : (
-                <AdminLogin onLogin={() => setIsAuthenticated(true)} />
+                <AdminLogin onLogin={handleLogin} />
               )}
             </div>
           </motion.div>
