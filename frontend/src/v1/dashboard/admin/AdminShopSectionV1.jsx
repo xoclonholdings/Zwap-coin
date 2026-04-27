@@ -9,8 +9,8 @@ import {
   Unlock,
 } from "lucide-react";
 
-import AdminSectionCardV1 from "../components/AdminSectionCardV1";
-import AdminStatusPillV1 from "../components/AdminStatusPillV1";
+import AdminSectionCardV1 from "./AdminSectionCardV1";
+import AdminStatusPillV1 from "./AdminStatusPillV1";
 
 const DEFAULT_CATEGORIES = [
   "Boosts",
