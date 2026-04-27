@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Play, RotateCcw, ChevronLeft, Trophy, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import PulzeGame from "./PulzeGame";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, Pause, Play, RotateCcw, Trophy, Zap } from "lucide-react";
 
-const BASE_LEVEL = 1;
+const BEATS_PER_SESSION = 10;
+const BASE_SPEED = 1.15;
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
 
 function getRank(score) {
   if (score >= 1600) return "S";
@@ -14,256 +16,337 @@ function getRank(score) {
   return "D";
 }
 
-export default function PulzeSessionView({
-  onExit,
-  onSessionComplete,
-  startingLevel = BASE_LEVEL,
-  title = "Pulze",
-  subtitle = "Precision timing under pressure",
+function getHitResult(position) {
+  const distanceFromCenter = Math.abs(position - 50);
+
+  if (distanceFromCenter <= 5) {
+    return { label: "Perfect", points: 200, zone: "perfect" };
+  }
+
+  if (distanceFromCenter <= 12) {
+    return { label: "Great", points: 120, zone: "great" };
+  }
+
+  if (distanceFromCenter <= 22) {
+    return { label: "Good", points: 60, zone: "good" };
+  }
+
+  return { label: "Miss", points: 0, zone: "miss" };
+}
+
+export default function PulzeGame({
+  onGameEnd,
+  isPlaying = true,
+  level = 1,
+  round = 1,
 }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [level, setLevel] = useState(startingLevel);
-  const [sessionEnded, setSessionEnded] = useState(false);
-  const [finalScore, setFinalScore] = useState(0);
-  const [sessionSeed, setSessionSeed] = useState(0);
+  const animationRef = useRef(null);
+  const lastFrameRef = useRef(null);
+
+  const safeLevel = Math.max(1, Number(level) || 1);
+  const safeRound = Math.max(1, Number(round) || 1);
+
+  const [gameState, setGameState] = useState(isPlaying ? "ready" : "idle");
+  const [position, setPosition] = useState(10);
+  const [direction, setDirection] = useState(1);
+  const [beat, setBeat] = useState(1);
+  const [score, setScore] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
+  const [lastHit, setLastHit] = useState(null);
+
+  const speed = useMemo(() => {
+    return BASE_SPEED + safeLevel * 0.12 + safeRound * 0.05;
+  }, [safeLevel, safeRound]);
 
   useEffect(() => {
-    setLevel(startingLevel);
-  }, [startingLevel]);
-
-  const resetSession = useCallback(() => {
-    setSessionEnded(false);
-    setFinalScore(0);
-  }, []);
-
-  const startSession = useCallback(() => {
-    resetSession();
-    setIsPlaying(false);
-    setSessionSeed((prev) => prev + 1);
-
-    requestAnimationFrame(() => {
-      setIsPlaying(true);
-    });
-  }, [resetSession]);
-
-  const handleReplay = useCallback(() => {
-    startSession();
-  }, [startSession]);
-
-  const handleGameEnd = useCallback(
-    (score, _stars, completedLevel, _perfectClear) => {
-      setIsPlaying(false);
-      setSessionEnded(true);
-      setFinalScore(score);
-
-      if (typeof onSessionComplete === "function") {
-        onSessionComplete({
-          game: "pulze",
-          score,
-          level: completedLevel,
-          rank: getRank(score),
-        });
-      }
-    },
-    [onSessionComplete]
-  );
-
-  const handleExit = useCallback(() => {
-    setIsPlaying(false);
-
-    if (typeof onExit === "function") {
-      onExit();
+    if (!isPlaying) {
+      setGameState("idle");
+      return;
     }
-  }, [onExit]);
 
-  const rank = useMemo(() => getRank(finalScore), [finalScore]);
+    setGameState("ready");
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (gameState !== "live") return undefined;
+
+    const tick = (timestamp) => {
+      if (!lastFrameRef.current) {
+        lastFrameRef.current = timestamp;
+      }
+
+      const delta = timestamp - lastFrameRef.current;
+      lastFrameRef.current = timestamp;
+
+      setPosition((current) => {
+        let next = current + direction * speed * (delta / 16.67);
+
+        if (next >= 100) {
+          next = 100;
+          setDirection(-1);
+        }
+
+        if (next <= 0) {
+          next = 0;
+          setDirection(1);
+        }
+
+        return next;
+      });
+
+      animationRef.current = requestAnimationFrame(tick);
+    };
+
+    animationRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      lastFrameRef.current = null;
+
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [gameState, direction, speed]);
+
+  const resetSession = () => {
+    setPosition(10);
+    setDirection(1);
+    setBeat(1);
+    setScore(0);
+    setCombo(0);
+    setBestCombo(0);
+    setLastHit(null);
+    setGameState("ready");
+  };
+
+  const startSession = () => {
+    resetSession();
+    setGameState("live");
+  };
+
+  const pauseSession = () => {
+    setGameState("paused");
+  };
+
+  const resumeSession = () => {
+    setGameState("live");
+  };
+
+  const finishSession = (finalScore = score) => {
+    setGameState("finished");
+
+    onGameEnd?.({
+      score: finalScore,
+      round: safeRound,
+      level: safeLevel,
+      cleared: true,
+      combo: bestCombo,
+      gameId: "pulze",
+    });
+  };
+
+  const exitSession = () => {
+    onGameEnd?.({
+      score,
+      round: safeRound,
+      level: safeLevel,
+      cleared: false,
+      combo: bestCombo,
+      gameId: "pulze",
+    });
+  };
+
+  const hitPulse = () => {
+    if (gameState !== "live") return;
+
+    const result = getHitResult(position);
+    const nextCombo = result.points > 0 ? combo + 1 : 0;
+    const comboBonus = result.points > 0 ? nextCombo * 10 : 0;
+    const gained = result.points + comboBonus;
+    const nextScore = score + gained;
+    const nextBeat = beat + 1;
+
+    setScore(nextScore);
+    setCombo(nextCombo);
+    setBestCombo((current) => Math.max(current, nextCombo));
+    setLastHit({
+      ...result,
+      gained,
+    });
+
+    if (nextBeat > BEATS_PER_SESSION) {
+      finishSession(nextScore);
+      return;
+    }
+
+    setBeat(nextBeat);
+  };
+
+  const rank = getRank(score);
 
   return (
-    <div className="w-full max-w-sm mx-auto flex flex-col gap-4">
-      <div className="rounded-[1.75rem] border border-cyan-400/20 bg-[linear-gradient(180deg,rgba(8,13,30,0.96),rgba(9,11,24,0.98))] p-4 shadow-[0_0_28px_rgba(0,245,255,0.08)]">
-        <div className="flex items-start justify-between gap-3 mb-4">
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816] text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-10%] top-[-8%] h-[220px] w-[220px] rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute right-[-10%] top-[10%] h-[220px] w-[220px] rounded-full bg-purple-500/10 blur-3xl" />
+        <div className="absolute bottom-[-12%] left-[20%] h-[220px] w-[220px] rounded-full bg-pink-500/10 blur-3xl" />
+      </div>
+
+      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur-xl">
+        <div>
+          <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-cyan-300/70">
+            <Zap size={12} />
+            Pulze
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">
+            Beat {Math.min(beat, BEATS_PER_SESSION)} / {BEATS_PER_SESSION}
+          </p>
+        </div>
+
+        <div className="text-center">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+            Score
+          </p>
+          <p className="mt-1 text-sm font-semibold text-cyan-300">
+            {Number(score || 0).toLocaleString()}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {gameState === "live" ? (
+            <button
+              type="button"
+              onClick={pauseSession}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75"
+            >
+              <Pause size={14} />
+            </button>
+          ) : null}
+
           <button
             type="button"
-            onClick={handleExit}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-300 transition hover:bg-white/10 hover:text-white"
-            aria-label="Exit Pulze session"
+            onClick={exitSession}
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft size={14} />
           </button>
-
-          <div className="flex-1 text-center px-2">
-            <div className="inline-flex items-center gap-2 text-cyan-400 text-[11px] font-semibold uppercase tracking-[0.22em]">
-              <Zap className="h-3.5 w-3.5" />
-              Session View
-            </div>
-
-            <h2 className="mt-2 text-white text-2xl font-black leading-none">
-              {title}
-            </h2>
-
-            <p className="mt-2 text-[12px] text-gray-400">{subtitle}</p>
-          </div>
-
-          <div className="min-w-[44px]" />
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500 mb-1">
-              Level
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-5 py-5">
+        <div className="w-full max-w-[340px] rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,32,0.92),rgba(5,8,18,0.98))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/40">
+                Level
+              </p>
+              <p className="mt-1 text-sm font-black text-white">{safeLevel}</p>
             </div>
-            <div className="text-2xl font-black text-white">{level}</div>
+
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/40">
+                Combo
+              </p>
+              <p className="mt-1 text-sm font-black text-purple-300">{combo}</p>
+            </div>
+
+            <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-white/40">
+                Rank
+              </p>
+              <p className="mt-1 text-sm font-black text-cyan-300">{rank}</p>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500 mb-1">
-              Rank
-            </div>
-            <div className="text-2xl font-black text-cyan-400">
-              {sessionEnded ? rank : "–"}
-            </div>
-          </div>
-        </div>
+          <div className="mt-8">
+            <div className="relative h-14 rounded-full border border-white/10 bg-black/30 px-3">
+              <div className="absolute left-1/2 top-1/2 h-10 w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/25 bg-cyan-300/10 shadow-[0_0_24px_rgba(34,211,238,0.12)]" />
+              <div className="absolute left-1/2 top-1/2 h-10 w-[10%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-white/10" />
 
-        <AnimatePresence mode="wait">
-          {!isPlaying && !sessionEnded ? (
-            <motion.div
-              key="pulze-prestart"
-              initial={{ opacity: 0, y: 8, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.985 }}
-              transition={{ duration: 0.18 }}
-              className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5"
-            >
-              <div className="rounded-2xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top,rgba(0,245,255,0.12),transparent_45%)] px-4 py-5 text-center">
-                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-400/10">
-                  <Play className="h-6 w-6 text-cyan-300" />
-                </div>
-
-                <h3 className="text-white text-lg font-black uppercase tracking-wide">
-                  Ready to Pulse
-                </h3>
-
-                <p className="mt-2 text-sm text-gray-400 leading-relaxed">
-                  Stop the moving pulse inside the hit zone. Perfect timing
-                  builds combo pressure and pushes your score higher.
-                </p>
-
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-2 py-3">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">
-                      Beats
-                    </div>
-                    <div className="mt-1 text-white font-black">10</div>
-                  </div>
-
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-2 py-3">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">
-                      Style
-                    </div>
-                    <div className="mt-1 text-purple-300 font-black">Timing</div>
-                  </div>
-
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-2 py-3">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">
-                      Goal
-                    </div>
-                    <div className="mt-1 text-cyan-300 font-black">Precision</div>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={startSession}
-                  className="w-full mt-5 h-12 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-base font-black hover:opacity-90"
-                >
-                  START SESSION
-                </Button>
-              </div>
-            </motion.div>
-          ) : null}
-
-          {isPlaying ? (
-            <motion.div
-              key={`pulze-playing-${sessionSeed}`}
-              initial={{ opacity: 0, y: 8, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.985 }}
-              transition={{ duration: 0.18 }}
-            >
-              <PulzeGame
-                key={sessionSeed}
-                isPlaying={isPlaying}
-                level={level}
-                onGameEnd={handleGameEnd}
+              <div
+                className="absolute top-1/2 h-8 w-8 -translate-y-1/2 rounded-full border border-white/20 bg-[linear-gradient(135deg,rgba(34,211,238,1),rgba(168,85,247,1),rgba(236,72,153,1))] shadow-[0_0_24px_rgba(34,211,238,0.28)]"
+                style={{
+                  left: `calc(${clamp(position, 0, 100)}% - 16px)`,
+                }}
               />
-            </motion.div>
+            </div>
+
+            <p className="mt-3 text-center text-xs text-white/45">
+              Tap when the pulse enters the center zone.
+            </p>
+          </div>
+
+          {lastHit ? (
+            <div className="mt-5 rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-center">
+              <p className="text-lg font-black text-white">{lastHit.label}</p>
+              <p className="mt-1 text-xs text-cyan-200/70">
+                +{lastHit.gained} zPts-style score
+              </p>
+            </div>
           ) : null}
 
-          {!isPlaying && sessionEnded ? (
-            <motion.div
-              key="pulze-results"
-              initial={{ opacity: 0, y: 8, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.985 }}
-              transition={{ duration: 0.18 }}
-              className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5"
-            >
-              <div className="text-center">
-                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-yellow-400/25 bg-yellow-400/10">
-                  <Trophy className="h-6 w-6 text-yellow-300" />
+          <div className="mt-6">
+            {gameState === "ready" || gameState === "idle" ? (
+              <button
+                type="button"
+                onClick={startSession}
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-[20px] bg-[linear-gradient(90deg,rgba(34,211,238,1),rgba(168,85,247,1),rgba(236,72,153,1))] text-base font-black text-white active:scale-[0.98]"
+              >
+                <Play size={18} />
+                Start Session
+              </button>
+            ) : null}
+
+            {gameState === "live" ? (
+              <button
+                type="button"
+                onClick={hitPulse}
+                className="h-16 w-full rounded-[22px] bg-[linear-gradient(90deg,rgba(34,211,238,1),rgba(168,85,247,1),rgba(236,72,153,1))] text-lg font-black text-white shadow-[0_0_28px_rgba(34,211,238,0.18)] active:scale-[0.98]"
+              >
+                HIT
+              </button>
+            ) : null}
+
+            {gameState === "paused" ? (
+              <button
+                type="button"
+                onClick={resumeSession}
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-[20px] bg-[linear-gradient(90deg,rgba(34,211,238,1),rgba(168,85,247,1),rgba(236,72,153,1))] text-base font-black text-white active:scale-[0.98]"
+              >
+                <Play size={18} />
+                Resume
+              </button>
+            ) : null}
+
+            {gameState === "finished" ? (
+              <div className="space-y-3 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-yellow-300/20 bg-yellow-300/10 text-yellow-200">
+                  <Trophy size={24} />
                 </div>
 
-                <div className="text-[11px] uppercase tracking-[0.2em] text-gray-500">
-                  Session Complete
-                </div>
+                <p className="text-xl font-black text-white">Session Complete</p>
 
-                <div className="mt-3 text-4xl font-black text-white">
-                  {finalScore}
-                </div>
+                <button
+                  type="button"
+                  onClick={resetSession}
+                  className="flex h-14 w-full items-center justify-center gap-2 rounded-[20px] border border-white/10 bg-white/[0.06] text-base font-black text-white active:scale-[0.98]"
+                >
+                  <RotateCcw size={18} />
+                  Play Again
+                </button>
 
-                <div className="mt-1 text-sm text-gray-400">Final Score</div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-4">
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500">
-                      Rank
-                    </div>
-                    <div className="mt-1 text-2xl font-black text-cyan-400">
-                      {rank}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-4">
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500">
-                      Level
-                    </div>
-                    <div className="mt-1 text-2xl font-black text-white">
-                      {level}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex flex-col gap-3">
-                  <Button
-                    onClick={handleReplay}
-                    className="w-full h-12 rounded-2xl bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-base font-black hover:opacity-90"
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    PLAY AGAIN
-                  </Button>
-
-                  <Button
-                    onClick={handleExit}
-                    variant="outline"
-                    className="w-full h-12 rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10"
-                  >
-                    EXIT
-                  </Button>
-                </div>
+                <button
+                  type="button"
+                  onClick={exitSession}
+                  className="h-12 w-full rounded-[18px] border border-white/10 bg-white/[0.04] text-sm font-bold text-white/70"
+                >
+                  Back to Arcade
+                </button>
               </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );
