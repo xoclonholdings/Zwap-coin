@@ -18,16 +18,16 @@ import adminApi from "@/lib/adminApi";
 
 import AdminLogin from "./AdminLogin";
 
-import AdminDashboardSectionV1 from "./sections/AdminDashboardSectionV1";
-import AdminProgressionSectionV1 from "./sections/AdminProgressionSectionV1";
-import AdminUsersSectionV1 from "./sections/AdminUsersSectionV1";
-import AdminTreasurySectionV1 from "./sections/AdminTreasurySectionV1";
-import AdminMoveSectionV1 from "./sections/AdminMoveSectionV1";
-import AdminPlaySectionV1 from "./sections/AdminPlaySectionV1";
-import AdminShopSectionV1 from "./sections/AdminShopSectionV1";
-import AdminActivitySectionV1 from "./sections/AdminActivitySectionV1";
-import AdminBadgesSectionV1 from "./sections/AdminBadgesSectionV1";
-import AdminSettingsSectionV1 from "./sections/AdminSettingsSectionV1";
+import AdminDashboardSectionV1 from "./AdminDashboardSectionV1";
+import AdminProgressionSectionV1 from "./AdminProgressionSectionV1";
+import AdminUsersSectionV1 from "./AdminUsersSectionV1";
+import AdminTreasurySectionV1 from "./AdminTreasurySectionV1";
+import AdminMoveSectionV1 from "./AdminMoveSectionV1";
+import AdminPlaySectionV1 from "./AdminPlaySectionV1";
+import AdminShopSectionV1 from "./AdminShopSectionV1";
+import AdminActivitySectionV1 from "./AdminActivitySectionV1";
+import AdminBadgesSectionV1 from "./AdminBadgesSectionV1";
+import AdminSettingsSectionV1 from "./AdminSettingsSectionV1";
 
 export default function AdminPanelV1({ isOpen = false, onClose }) {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -58,7 +58,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return undefined;
 
     const key = localStorage.getItem("zwap_admin_key");
 
@@ -66,7 +66,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
       setIsAuthenticated(false);
       setDashboardData(null);
       setCheckingAuth(false);
-      return;
+      return undefined;
     }
 
     let cancelled = false;
@@ -192,6 +192,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
                     <div className="truncate text-sm font-bold text-white">
                       ZWAP! Admin
                     </div>
+
                     <div className="truncate text-[11px] text-white/40">
                       {checkingAuth
                         ? "Verifying Mission Control Access"
