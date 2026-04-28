@@ -165,7 +165,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
   return (
     <AnimatePresence>
       {isOpen ? (
-        <div className="fixed inset-0 z-[200]">
+        <div className="fixed inset-0 z-[200] bg-[#050816]">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -174,100 +174,102 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
             onClick={onClose}
           />
 
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="absolute inset-0 flex flex-col bg-[#050816] text-white"
-          >
-            <div className="border-b border-white/10 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
-                    <Shield className="h-5 w-5 text-cyan-300" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-bold text-white">
-                      ZWAP! Admin
+          <div className="absolute inset-0 flex justify-center">
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              className="relative flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden border-x border-white/10 bg-[#050816] text-white shadow-[0_0_60px_rgba(0,0,0,0.5)]"
+            >
+              <div className="border-b border-white/10 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
+                      <Shield className="h-5 w-5 text-cyan-300" />
                     </div>
 
-                    <div className="truncate text-[11px] text-white/40">
-                      {checkingAuth
-                        ? "Verifying Mission Control Access"
-                        : isAuthenticated
-                          ? `${activeSectionLabel} Control Surface`
-                          : "Mission Control Access"}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-bold text-white">
+                        ZWAP! Admin
+                      </div>
+
+                      <div className="truncate text-[11px] text-white/40">
+                        {checkingAuth
+                          ? "Verifying Mission Control Access"
+                          : isAuthenticated
+                            ? `${activeSectionLabel} Control Surface`
+                            : "Mission Control Access"}
+                      </div>
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Close admin panel"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition active:scale-[0.97]"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Close admin panel"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition active:scale-[0.97]"
-                >
-                  <X className="h-5 w-5" />
-                </button>
               </div>
-            </div>
 
-            {isAuthenticated ? (
-              <div className="border-b border-white/10 px-4 py-3">
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {sections.map((section) => {
-                    const Icon = section.icon;
-                    const isActive = activeSection === section.id;
+              {isAuthenticated ? (
+                <div className="border-b border-white/10 px-4 py-3">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {sections.map((section) => {
+                      const Icon = section.icon;
+                      const isActive = activeSection === section.id;
 
-                    return (
-                      <button
-                        key={section.id}
-                        type="button"
-                        onClick={() => setActiveSection(section.id)}
-                        className={[
-                          "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 text-xs transition active:scale-[0.98]",
-                          isActive
-                            ? "border-cyan-400/30 bg-cyan-500/20 text-white shadow-[0_0_14px_rgba(34,211,238,0.10)]"
-                            : "border-white/10 bg-white/5 text-white/40",
-                        ].join(" ")}
-                      >
-                        <Icon
+                      return (
+                        <button
+                          key={section.id}
+                          type="button"
+                          onClick={() => setActiveSection(section.id)}
                           className={[
-                            "h-4 w-4",
-                            isActive ? "text-cyan-300" : "text-white/35",
+                            "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 text-xs transition active:scale-[0.98]",
+                            isActive
+                              ? "border-cyan-400/30 bg-cyan-500/20 text-white shadow-[0_0_14px_rgba(34,211,238,0.10)]"
+                              : "border-white/10 bg-white/5 text-white/40",
                           ].join(" ")}
-                        />
-                        {section.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="flex-1 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+24px)]">
-              {checkingAuth ? (
-                <div className="flex min-h-[320px] items-center justify-center">
-                  <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-5 py-4 text-center text-sm font-semibold text-cyan-200">
-                    Verifying admin access...
+                        >
+                          <Icon
+                            className={[
+                              "h-4 w-4",
+                              isActive ? "text-cyan-300" : "text-white/35",
+                            ].join(" ")}
+                          />
+                          {section.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              ) : isAuthenticated ? (
-                <motion.div
-                  key={activeSection}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  {renderSection()}
-                </motion.div>
-              ) : (
-                <AdminLogin onLogin={handleLogin} />
-              )}
-            </div>
-          </motion.div>
+              ) : null}
+
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+24px)]">
+                {checkingAuth ? (
+                  <div className="flex min-h-[320px] items-center justify-center">
+                    <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-5 py-4 text-center text-sm font-semibold text-cyan-200">
+                      Verifying admin access...
+                    </div>
+                  </div>
+                ) : isAuthenticated ? (
+                  <motion.div
+                    key={activeSection}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {renderSection()}
+                  </motion.div>
+                ) : (
+                  <AdminLogin onLogin={handleLogin} />
+                )}
+              </div>
+            </motion.div>
+          </div>
         </div>
       ) : null}
     </AnimatePresence>
