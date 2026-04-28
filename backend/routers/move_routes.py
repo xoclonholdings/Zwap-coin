@@ -350,7 +350,7 @@ async def get_move_session(email: str):
     }
 
 
-@router.post("/anti-cheat")
+@router.post("/anti-cheat/{email}")
 async def submit_anti_cheat_flags(email: str):
     safe_email = normalize_email(email)
 
