@@ -4,6 +4,9 @@ import { Sprout, BookOpen, Play, Award } from "lucide-react";
 import AccountDrawerV1 from "./account/AccountDrawerV1";
 import AdminPanelV1 from "./admin/AdminPanelV1";
 
+// ✅ IMPORTANT: rename file to lowercase
+import activityLogo from "@/assets/activity_logo.png";
+
 function formatZpts(value) {
   return Number(value || 0).toLocaleString();
 }
@@ -21,7 +24,7 @@ function buildInitials(name = "") {
 function HeaderIconButton({
   label,
   icon,
-  unlocked = false,
+  unlocked = true, // Activity is always unlocked
   hasAlert = false,
   onClick,
 }) {
@@ -40,9 +43,9 @@ function HeaderIconButton({
     >
       {icon}
 
-      {hasAlert ? (
+      {hasAlert && (
         <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.8)]" />
-      ) : null}
+      )}
     </button>
   );
 }
@@ -89,6 +92,7 @@ export default function AppHeaderV1({
   streamHasAlert = false,
   badgesHasAlert = false,
 
+  onActivityClick, // ✅ NEW
   onGardenClick,
   onLearnClick,
   onStreamClick,
@@ -128,52 +132,36 @@ export default function AppHeaderV1({
 
   function handleGardenTap() {
     if (!gardenUnlocked) {
-      showLockedPopup(
-        "Garden Locked",
-        "Complete more daily activity to unlock Garden."
-      );
+      showLockedPopup("Garden Locked", "Complete more daily activity.");
       return;
     }
-
     setPopup(null);
     onGardenClick?.();
   }
 
   function handleLearnTap() {
     if (!learnUnlocked) {
-      showLockedPopup(
-        "Learn Locked",
-        "Complete more progress to unlock Learn."
-      );
+      showLockedPopup("Learn Locked", "Complete more progress.");
       return;
     }
-
     setPopup(null);
     onLearnClick?.();
   }
 
   function handleStreamTap() {
     if (!streamUnlocked) {
-      showLockedPopup(
-        "Stream Locked",
-        "Complete more progress to unlock Stream."
-      );
+      showLockedPopup("Stream Locked", "Complete more progress.");
       return;
     }
-
     setPopup(null);
     onStreamClick?.();
   }
 
   function handleBadgeTap() {
     if (!badgesUnlocked) {
-      showLockedPopup(
-        "Badges Locked",
-        "Complete more progress to unlock Badges."
-      );
+      showLockedPopup("Badges Locked", "Complete more progress.");
       return;
     }
-
     setPopup(null);
     onBadgeClick?.();
   }
@@ -190,7 +178,23 @@ export default function AppHeaderV1({
           .join(" ")}
       >
         <div className="flex h-[64px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+          
+          {/* LEFT ICON STRIP */}
           <div className="flex min-w-0 flex-1 items-center gap-2">
+
+            {/* ✅ Activity */}
+            <HeaderIconButton
+              label="Activity"
+              onClick={onActivityClick}
+              icon={
+                <img
+                  src={activityLogo}
+                  alt="Activity"
+                  className="h-4 w-4 object-contain"
+                />
+              }
+            />
+
             <HeaderIconButton
               label="Garden"
               unlocked={gardenUnlocked}
@@ -224,26 +228,27 @@ export default function AppHeaderV1({
             />
           </div>
 
+          {/* BALANCE */}
           <div className="shrink-0 rounded-2xl border border-cyan-400/14 bg-cyan-400/[0.06] px-3 py-1.5 text-center shadow-[0_0_16px_rgba(34,211,238,0.08)]">
             <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/42">
               Balance
             </div>
-            <div className="mt-0.5 whitespace-nowrap text-[14px] font-bold leading-none tracking-[-0.03em] text-cyan-300">
+            <div className="mt-0.5 whitespace-nowrap text-[14px] font-bold tracking-[-0.03em] text-cyan-300">
               {formatZpts(zptsBalance)} zPts
             </div>
           </div>
 
+          {/* AVATAR */}
           <button
             type="button"
             onClick={() => setAccountOpen(true)}
-            className="relative ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/18 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(8,14,20,0.98))] text-sm font-semibold tracking-[0.02em] text-white shadow-[0_0_18px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
-            aria-label="Open account"
+            className="relative ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/18 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(15,28,38,0.96),rgba(8,14,20,0.98))] text-sm font-semibold text-white shadow-[0_0_18px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
           >
             {accountInitials}
 
-            {isOnline ? (
+            {isOnline && (
               <span className="absolute bottom-[2px] right-[2px] h-2.5 w-2.5 rounded-full border border-[#081018] bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.55)]" />
-            ) : null}
+            )}
           </button>
         </div>
       </div>

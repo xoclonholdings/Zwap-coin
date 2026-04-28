@@ -63,7 +63,7 @@ function buildGuidance({
     return "Keep the loop going.\nOne more action completes your cycle.";
   }
 
-  return "Start with one action.\nMove, play, or learn to begin your loop.";
+  return "Hey, I’m Zap.\nI’ll be your guide.";
 }
 
 function buildTaskItems({
@@ -93,7 +93,7 @@ function ZwapHeader() {
   return (
     <div className="relative z-10 flex items-center gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/35 bg-violet-400/14 text-[18px] shadow-[0_0_18px_rgba(168,85,247,0.18)]">
-        <span className="translate-y-[1px]">🗣️</span>
+        <span className="translate-y-[1px]">🤖</span>
       </div>
 
       <div className="bg-gradient-to-r from-cyan-200 via-violet-200 to-fuchsia-200 bg-clip-text text-[13px] font-black uppercase tracking-[0.22em] text-transparent">
