@@ -4,6 +4,7 @@ import { BookOpen, PlayCircle, X } from "lucide-react";
 
 import { useApp } from "@/app/AppProvider";
 import { generateUsername } from "@/lib/utils/generateUsername";
+import { clearV1OnboardingSeen } from "@/v1/V1OnboardingStorage";
 
 import AccountProfileCardV1 from "./AccountProfileCardV1";
 import AccountBalanceCardV1 from "./AccountBalanceCardV1";
@@ -21,6 +22,9 @@ import TermsViewV1 from "./drawer/TermsViewV1";
 
 const ADMIN_TAP_THRESHOLD = 3;
 const ADMIN_TAP_RESET_MS = 1200;
+
+const ONBOARDING_RESET_TAP_THRESHOLD = 3;
+const ONBOARDING_RESET_TAP_MS = 700;
 
 function HeaderIconButton({ onClick, children, label }) {
   return (
@@ -111,6 +115,9 @@ export default function AccountPanelContentV1({
   const adminTapCountRef = useRef(0);
   const adminTapResetRef = useRef(null);
 
+  const onboardingResetTapCountRef = useRef(0);
+  const onboardingResetTimerRef = useRef(null);
+
   const resolvedWalletAddress =
     walletAddress || user?.walletAddress || user?.wallet_address || "";
 
@@ -128,6 +135,10 @@ export default function AccountPanelContentV1({
       if (adminTapResetRef.current) {
         clearTimeout(adminTapResetRef.current);
       }
+
+      if (onboardingResetTimerRef.current) {
+        clearTimeout(onboardingResetTimerRef.current);
+      }
     };
   }, []);
 
@@ -137,6 +148,15 @@ export default function AccountPanelContentV1({
     if (adminTapResetRef.current) {
       clearTimeout(adminTapResetRef.current);
       adminTapResetRef.current = null;
+    }
+  };
+
+  const resetOnboardingTapCounter = () => {
+    onboardingResetTapCountRef.current = 0;
+
+    if (onboardingResetTimerRef.current) {
+      clearTimeout(onboardingResetTimerRef.current);
+      onboardingResetTimerRef.current = null;
     }
   };
 
@@ -164,6 +184,30 @@ export default function AccountPanelContentV1({
       onClose?.();
       navigate("/v1/signout", { replace: true });
     }
+  };
+
+  const handleLogoutTap = () => {
+    onboardingResetTapCountRef.current += 1;
+
+    if (onboardingResetTimerRef.current) {
+      clearTimeout(onboardingResetTimerRef.current);
+    }
+
+    if (onboardingResetTapCountRef.current >= ONBOARDING_RESET_TAP_THRESHOLD) {
+      resetOnboardingTapCounter();
+      clearV1OnboardingSeen();
+      window.location.reload();
+      return;
+    }
+
+    onboardingResetTimerRef.current = setTimeout(() => {
+      const tapCount = onboardingResetTapCountRef.current;
+      resetOnboardingTapCounter();
+
+      if (tapCount === 1) {
+        handleLogout();
+      }
+    }, ONBOARDING_RESET_TAP_MS);
   };
 
   if (activeView === "profile") {
@@ -291,7 +335,7 @@ export default function AccountPanelContentV1({
               <AccountActionRowV1
                 label="Logout"
                 danger
-                onClick={handleLogout}
+                onClick={handleLogoutTap}
               />
             ) : null}
           </div>
