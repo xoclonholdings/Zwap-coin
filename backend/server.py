@@ -18,6 +18,7 @@ from routers import learn_routes
 from routers import user_routes
 from routers import rewards_routes
 from routers import activity_routes
+from routers.admin_routes import admin_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -129,6 +130,7 @@ api_router.include_router(user_routes.router)
 api_router.include_router(rewards_routes.router)
 api_router.include_router(stripe_routes.router)
 api_router.include_router(activity_routes.router)
+api_router.include_router(admin_router)
 
 app.include_router(api_router)
 
