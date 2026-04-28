@@ -75,6 +75,16 @@ function makeGuidance(headline, detail, action) {
   };
 }
 
+function isFreshSignal(signal) {
+  if (!signal?.createdAt) return true;
+
+  const created = new Date(signal.createdAt).getTime();
+  if (!Number.isFinite(created)) return true;
+
+  const ageMs = Date.now() - created;
+  return ageMs <= 1000 * 60 * 10;
+}
+
 function buildSignalGuidance({
   signal,
   safeZpts,
@@ -86,7 +96,7 @@ function buildSignalGuidance({
   loopComplete,
   nextUnlock,
 }) {
-  if (!signal) return null;
+  if (!signal || !isFreshSignal(signal)) return null;
 
   if (signal.type === "login") {
     if (loopComplete) {
@@ -99,12 +109,22 @@ function buildSignalGuidance({
 
     return makeGuidance(
       "You showed up.",
-      signal.zpts > 0 ? `+${formatNumber(signal.zpts)} zPts claimed.` : "Daily check-in counted.",
+      signal.zpts > 0
+        ? `+${formatNumber(signal.zpts)} zPts claimed.`
+        : "Daily check-in counted.",
       "Move or play next."
     );
   }
 
   if (signal.type === "move") {
+    if (loopComplete) {
+      return makeGuidance(
+        "Move counted.",
+        `Daily loop complete. ${formatNumber(safeZpts)} zPts ready.`,
+        "That one landed."
+      );
+    }
+
     if (!playComplete) {
       return makeGuidance(
         "Move counted.",
@@ -126,6 +146,14 @@ function buildSignalGuidance({
 
   if (signal.type === "play") {
     const gameName = formatGameName(signal.game);
+
+    if (loopComplete) {
+      return makeGuidance(
+        gameName ? `${gameName} counted.` : "Play counted.",
+        `Daily loop complete. ${formatNumber(safeZpts)} zPts ready.`,
+        "Clean finish."
+      );
+    }
 
     if (!moveComplete && safeSteps === 0) {
       return makeGuidance(
@@ -152,7 +180,7 @@ function buildSignalGuidance({
       signal.zpts > 0
         ? `+${formatNumber(signal.zpts)} zPts added.`
         : "Knowledge added.",
-      "That brain battery is charging."
+      "Brain battery charging."
     );
   }
 
@@ -160,7 +188,17 @@ function buildSignalGuidance({
     return makeGuidance(
       "Item acquired.",
       signal.itemName || "Shop purchase complete.",
-      "Spend with a plan."
+      safeZpts > 0 ? `${formatNumber(safeZpts)} zPts left.` : "Spend with a plan."
+    );
+  }
+
+  if (signal.type === "full_loop") {
+    return makeGuidance(
+      "Daily loop complete.",
+      signal.zpts > 0
+        ? `+${formatNumber(signal.zpts)} bonus zPts added.`
+        : `${formatNumber(safeZpts)} zPts ready.`,
+      "That’s the rhythm."
     );
   }
 
@@ -252,8 +290,14 @@ export function buildZapGuidance({
     nextUnlock,
   });
 
-  if (signalGuidance) {
-    return signalGuidance;
+  if (signalGuidance) return signalGuidance;
+
+  if (loopComplete) {
+    return makeGuidance(
+      "Daily loop complete.",
+      `${formatNumber(safeZpts)} zPts ready.`,
+      "Check your next unlock."
+    );
   }
 
   if (swapUnlocked) {
@@ -261,14 +305,6 @@ export function buildZapGuidance({
       "Swap is ready.",
       `${formatNumber(safeZpts)} zPts available.`,
       "Spend, hold, or swap with intention."
-    );
-  }
-
-  if (loopComplete) {
-    return makeGuidance(
-      "Daily loop complete.",
-      `${formatNumber(safeZpts)} zPts earned so far.`,
-      "Check your next unlock."
     );
   }
 
@@ -280,35 +316,19 @@ export function buildZapGuidance({
     );
   }
 
-  if (signalType === "play_complete" || safeGames > 0) {
-    if (!moveComplete && safeSteps === 0) {
-      return makeGuidance(
-        "Play counted.",
-        `${safeGames} of ${safePlayGoal} play goals done.`,
-        "Add movement next."
-      );
-    }
-
+  if (safeGames > 0 && safeSteps === 0) {
     return makeGuidance(
       "Play counted.",
       `${safeGames} of ${safePlayGoal} play goals done.`,
-      "Keep the loop moving."
+      "Add movement next."
     );
   }
 
-  if (signalType === "move_progress" || safeSteps > 0) {
-    if (!playComplete) {
-      return makeGuidance(
-        "Move is active.",
-        `${formatNumber(safeSteps)} steps logged.`,
-        "Play 1 game next."
-      );
-    }
-
+  if (safeSteps > 0 && !playComplete) {
     return makeGuidance(
       "Move is active.",
       `${formatNumber(safeSteps)} steps logged.`,
-      "Keep earning zPts."
+      "Play 1 game next."
     );
   }
 
