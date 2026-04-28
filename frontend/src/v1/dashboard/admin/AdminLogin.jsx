@@ -36,8 +36,8 @@ export default function AdminLogin({ onLogin }) {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 justify-center px-3 py-6">
-      <div className="w-full max-w-[430px]">
+    <div className="mx-auto flex min-h-full w-full max-w-[430px] flex-col bg-[#050816] px-3 py-6">
+      <div className="flex flex-1 items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -75,9 +75,7 @@ export default function AdminLogin({ onLogin }) {
                   if (error) setError("");
                 }}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handleLogin();
-                  }
+                  if (event.key === "Enter") handleLogin();
                 }}
                 className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white outline-none placeholder:text-white/25 transition focus:border-cyan-400/40 focus:bg-cyan-500/[0.06] disabled:opacity-60"
               />
