@@ -3,6 +3,14 @@ ZWAP! V1 Play Router
 ====================
 Submits V1 game results and awards controlled zPts.
 
+V1 behavior:
+- Email is the primary user identity
+- Privy wallet is optional metadata only
+- PLAY earns controlled zPts
+- PLAY writes rewards_ledger
+- PLAY writes activity_logs for Activity + Zap
+- Full daily loop processing runs after valid play results
+
 V1 game registry:
 - available now: stackz, breakerz, pulze, zap-man
 - locked future games: brainz, triplez, werdz
@@ -11,6 +19,7 @@ V1 game registry:
 import logging
 from datetime import datetime, timezone
 from typing import Any, Optional
+import uuid
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -58,6 +67,10 @@ def today_key() -> str:
     return utc_now().date().isoformat()
 
 
+def normalize_email(email: Optional[str]) -> str:
+    return str(email or "").lower().strip()
+
+
 def safe_int(value: Any, fallback: int = 0) -> int:
     try:
         return int(value or fallback)
@@ -78,6 +91,7 @@ def parse_datetime(value: Optional[Any]) -> Optional[datetime]:
     if isinstance(value, str):
         try:
             parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+
             if parsed.tzinfo is None:
                 return parsed.replace(tzinfo=timezone.utc)
 
@@ -156,7 +170,7 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
 
     if should_reset:
         await db.users.update_one(
-            {"wallet_address": user["wallet_address"]},
+            {"email": user["email"]},
             {
                 "$set": {
                     "daily_zpts_earned": 0,
@@ -211,18 +225,18 @@ async def get_game_registry():
     }
 
 
-@router.post("/result/{wallet_address}")
+@router.post("/result/{email}")
 async def submit_game_result(
-    wallet_address: str,
+    email: str,
     game_data: GameResultRequest,
     request: Request,
 ):
     db = request.app.state.db
-    wallet = wallet_address.lower().strip()
+    safe_email = normalize_email(email)
     canonical_game_type = normalize_game_id(game_data.game_type)
 
-    if not wallet:
-        raise HTTPException(status_code=400, detail="Wallet address is required")
+    if not safe_email:
+        raise HTTPException(status_code=400, detail="Email is required")
 
     game_config = GAME_REGISTRY.get(canonical_game_type)
 
@@ -241,7 +255,7 @@ async def submit_game_result(
     if game_data.session_duration_seconds < 0:
         raise HTTPException(status_code=400, detail="Invalid session duration")
 
-    user = await db.users.find_one({"wallet_address": wallet})
+    user = await db.users.find_one({"email": safe_email})
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -257,7 +271,7 @@ async def submit_game_result(
     zpts_cap = safe_int(tier_reward_config.get("daily_zpts_cap"), 0)
 
     cap_check = await enforce_daily_caps(
-        wallet_address=wallet,
+        email=safe_email,
         tier=tier,
         earned_today=daily_zpts,
         cap_type="zpts",
@@ -280,7 +294,7 @@ async def submit_game_result(
     except ValueError as error:
         logging.warning(
             "Game reward validation failed for %s / %s: %s",
-            wallet,
+            safe_email,
             canonical_game_type,
             str(error),
         )
@@ -322,7 +336,10 @@ async def submit_game_result(
         daily_best_bonus = 5
 
     total_requested_zpts = adjusted_base_zpts + personal_best_bonus + daily_best_bonus
-    zpts_to_add = max(0, min(total_requested_zpts, safe_int(cap_check.get("remaining"), 0)))
+    zpts_to_add = max(
+        0,
+        min(total_requested_zpts, safe_int(cap_check.get("remaining"), 0)),
+    )
 
     achievement_bonus_requested = personal_best_bonus + daily_best_bonus
     achievement_bonus_awarded = max(0, zpts_to_add - adjusted_base_zpts)
@@ -350,7 +367,7 @@ async def submit_game_result(
             set_updates[daily_best_count_field] = previous_daily_best_count + 1
 
     await db.users.update_one(
-        {"wallet_address": wallet},
+        {"email": safe_email},
         {
             "$inc": {
                 "zpts_balance": zpts_to_add,
@@ -367,7 +384,8 @@ async def submit_game_result(
 
     await db.rewards_ledger.insert_one(
         {
-            "wallet_address": wallet,
+            "id": str(uuid.uuid4()),
+            "email": safe_email,
             "currency": "zpts",
             "amount": zpts_to_add,
             "uncapped_amount": total_requested_zpts,
@@ -381,20 +399,46 @@ async def submit_game_result(
         }
     )
 
-    updated_user = await db.users.find_one({"wallet_address": wallet})
+    await db.activity_logs.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "email": safe_email,
+            "type": "play",
+            "game": canonical_game_type,
+            "zpts": zpts_to_add,
+            "message": f"+{zpts_to_add} zPts from {canonical_game_type}",
+            "priority": "normal",
+            "completed": True,
+            "created_at": now_iso,
+            "metadata": {
+                "score": game_data.score,
+                "level": game_data.level,
+                "base_zpts": adjusted_base_zpts,
+                "uncapped_zpts": total_requested_zpts,
+                "daily_cap": zpts_cap,
+                "personal_best_achieved": personal_best_achieved,
+                "daily_best_achieved": daily_best_achieved,
+                "session_diminishing_multiplier": session_multiplier,
+                "move_dependency_multiplier": move_multiplier,
+            },
+        }
+    )
+
+    updated_user = await db.users.find_one({"email": safe_email})
 
     if not updated_user:
         raise HTTPException(status_code=500, detail="User missing after play update")
 
     updated_user = await persist_badges_safely(db, updated_user)
 
-    full_loop_result = await maybe_process_full_daily_loop(db, wallet)
+    full_loop_result = await maybe_process_full_daily_loop(db, email=safe_email)
 
     if (
         full_loop_result.get("awarded")
         or full_loop_result.get("reason") == "daily_cap_reached_loop_counted"
+        or full_loop_result.get("reason") == "cap_reached_loop_counted"
     ):
-        refreshed_user = await db.users.find_one({"wallet_address": wallet})
+        refreshed_user = await db.users.find_one({"email": safe_email})
 
         if refreshed_user:
             updated_user = refreshed_user
