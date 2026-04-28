@@ -7,7 +7,9 @@ import mysteryboxItem from "../../assets/mysterybox_item.png";
 import ringItem from "../../assets/ring_item.png";
 
 function renderGradientLine(line) {
-  const parts = String(line).split(/(ZWAP!|zPts|SHOP|SWAP|MOVE|PLAY|EARN TODAY)/g);
+  const parts = String(line).split(
+    /(ZWAP!|zPts|SHOP|SWAP|MOVE|PLAY|EARN TODAY)/g
+  );
 
   return parts.map((part, index) => {
     if (part === "ZWAP!") {
@@ -153,18 +155,21 @@ export function ActionProofView() {
         animate={{
           boxShadow: [
             "0 0 28px rgba(34,211,238,0.10)",
-            "0 0 46px rgba(34,211,238,0.20)",
+            "0 0 60px rgba(34,211,238,0.28)",
             "0 0 28px rgba(34,211,238,0.10)",
           ],
         }}
-        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
         className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center backdrop-blur-md"
       >
         <div>
           <motion.div
-            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
+            animate={{
+              opacity: [1, 0.4, 1],
+              scale: [1, 1.06, 1],
+            }}
             transition={{
-              duration: 3.2,
+              duration: 2.2,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -172,25 +177,47 @@ export function ActionProofView() {
           >
             20
           </motion.div>
+
           <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             STEPS
           </div>
         </div>
 
-        <div className="h-10 w-px bg-white/15" />
+        <motion.div
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            scaleY: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 1.6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="h-10 w-px bg-white/20"
+        />
 
         <div>
           <motion.div
-            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
+            animate={{
+              opacity: [0.6, 1, 0.6],
+              scale: [0.95, 1.08, 0.95],
+              textShadow: [
+                "0 0 8px rgba(45,212,191,0.2)",
+                "0 0 22px rgba(45,212,191,0.6)",
+                "0 0 8px rgba(45,212,191,0.2)",
+              ],
+            }}
             transition={{
-              duration: 3.2,
+              duration: 2.2,
               repeat: Infinity,
               ease: "easeInOut",
+              delay: 0.3,
             }}
             className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-2xl font-black tracking-[-0.05em] text-transparent"
           >
             +50
           </motion.div>
+
           <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
             zPTS
           </div>
@@ -207,8 +234,8 @@ export function ActionProofView() {
           {roundFrames.map((frame, index) => (
             <React.Fragment key={frame.round}>
               <motion.div
-                initial={{ opacity: 0.35, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0.35, y: 8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{
                   duration: 0.42,
                   delay: 0.35 + index * 0.45,
@@ -220,13 +247,38 @@ export function ActionProofView() {
                 <div className="text-[12px] font-black tracking-[-0.03em] text-white">
                   {frame.round}
                 </div>
-                <div className="mt-1 bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-[13px] font-black tracking-[-0.03em] text-transparent">
+
+                <motion.div
+                  animate={{
+                    textShadow: [
+                      "0 0 6px rgba(45,212,191,0.2)",
+                      "0 0 18px rgba(45,212,191,0.5)",
+                      "0 0 6px rgba(45,212,191,0.2)",
+                    ],
+                  }}
+                  transition={{
+                    duration: 1.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="mt-1 bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-[13px] font-black tracking-[-0.03em] text-transparent"
+                >
                   {frame.zpts}
-                </div>
+                </motion.div>
               </motion.div>
 
               {index < roundFrames.length - 1 && (
-                <div className="text-sm font-black text-cyan-200/70">&gt;</div>
+                <motion.div
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{
+                    duration: 1.4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="text-sm font-black text-cyan-200/70"
+                >
+                  &gt;
+                </motion.div>
               )}
             </React.Fragment>
           ))}
@@ -374,7 +426,7 @@ export function FinalContinueView({
           <button
             type="button"
             onClick={onMove}
-            className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
+            className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition active:scale-[0.96]"
           >
             Move
           </button>
@@ -382,7 +434,7 @@ export function FinalContinueView({
           <button
             type="button"
             onClick={onPlay}
-            className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
+            className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)] transition active:scale-[0.96]"
           >
             Play
           </button>
@@ -393,7 +445,7 @@ export function FinalContinueView({
         <button
           type="button"
           onClick={onMove}
-          className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
+          className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition active:scale-[0.96]"
         >
           Move
         </button>
@@ -403,7 +455,7 @@ export function FinalContinueView({
         <button
           type="button"
           onClick={onPlay}
-          className="w-full rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)]"
+          className="w-full rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)] transition active:scale-[0.96]"
         >
           Play
         </button>
