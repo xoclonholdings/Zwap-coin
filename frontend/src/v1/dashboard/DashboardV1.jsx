@@ -15,18 +15,22 @@ import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 import ActivityPageV1 from "./activity/ActivityPageV1";
+import { getActivityDashboard } from "./activity/activityApi";
 
 import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
 );
+
 const BreakerzGame = lazy(() =>
   import("@/v1/components/games/breakerz/BreakerzGame")
 );
+
 const PulzeGame = lazy(() =>
   import("@/v1/components/games/pulze/PulzeGame")
 );
+
 const ZapManGame = lazy(() =>
   import("@/v1/components/games/zapman/ZapManGame")
 );
@@ -86,6 +90,11 @@ export default function DashboardV1({ user, authUser }) {
     streamUnlocked,
     assistUnlocked,
 
+    profileNeedsSetup,
+    hasNewHighScore,
+    canSpendZpts,
+    shouldSaveZpts,
+
     completedTaskCount,
     totalTaskCount,
 
@@ -113,7 +122,6 @@ export default function DashboardV1({ user, authUser }) {
     zwapHint,
   } = state;
 
-  // ✅ V1 IDENTITY (EMAIL ONLY)
   const resolvedEmail = useMemo(
     () => getResolvedEmail({ authUser, user }),
     [authUser, user]
@@ -141,6 +149,9 @@ export default function DashboardV1({ user, authUser }) {
   const [shopItems, setShopItems] = useState([]);
   const [shopLoading, setShopLoading] = useState(false);
   const [shopError, setShopError] = useState("");
+
+  const [activitySignal, setActivitySignal] = useState(null);
+  const [activitySnapshot, setActivitySnapshot] = useState(null);
 
   const sessionStartStepsRef = useRef(0);
 
@@ -175,17 +186,33 @@ export default function DashboardV1({ user, authUser }) {
     setActiveGameId(game.id);
   };
 
-  const handleGameEnd = (result) => {
-    console.log("Game ended:", result);
-    setActiveGameId(null);
+  const refreshActivitySnapshot = async () => {
+    if (!resolvedEmail) return null;
+
+    try {
+      const data = await getActivityDashboard(resolvedEmail);
+
+      setActivitySnapshot(data || null);
+      setActivitySignal(data?.latestActivitySignal || null);
+
+      return data;
+    } catch (error) {
+      console.error("Activity snapshot failed:", error);
+      return null;
+    }
   };
 
-  // ✅ V1 SHOP PURCHASE (EMAIL)
+  const handleGameEnd = async (result) => {
+    console.log("Game ended:", result);
+    setActiveGameId(null);
+    await refreshActivitySnapshot();
+  };
+
   const handlePurchaseShopItem = async (item) => {
     const itemId = item?.id || item?._id;
     const paymentType = item?.payment_method || "zpts";
 
-    if (!resolvedEmail || !itemId) return;
+    if (!resolvedEmail || !itemId) return null;
 
     const res = await fetch(`${API_BASE}/shop/purchase`, {
       method: "POST",
@@ -204,12 +231,14 @@ export default function DashboardV1({ user, authUser }) {
       throw new Error(text || "Purchase failed");
     }
 
-    return res.json();
+    const data = await res.json();
+    await refreshActivitySnapshot();
+
+    return data;
   };
 
-  // MOVE SESSION
   useEffect(() => {
-    if (!moveIsActive) return;
+    if (!moveIsActive) return undefined;
 
     const unsubscribe = subscribeToSteps((deviceSteps) => {
       const start = Number(sessionStartStepsRef.current || 0);
@@ -220,16 +249,15 @@ export default function DashboardV1({ user, authUser }) {
   }, [moveIsActive]);
 
   useEffect(() => {
-    if (!moveIsActive) return;
+    if (!moveIsActive) return undefined;
 
-    const interval = setInterval(() => {
-      setTimerSeconds((s) => s + 1);
+    const interval = window.setInterval(() => {
+      setTimerSeconds((current) => current + 1);
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, [moveIsActive]);
 
-  // SHOP LOAD
   useEffect(() => {
     let mounted = true;
 
@@ -238,27 +266,37 @@ export default function DashboardV1({ user, authUser }) {
       setShopError("");
 
       try {
-        const [cats, items] = await Promise.all([
+        const [categoriesResponse, itemsResponse] = await Promise.all([
           fetch(`${API_BASE}/shop/categories`),
           fetch(`${API_BASE}/shop/items`),
         ]);
 
-        if (!cats.ok || !items.ok) throw new Error("Shop failed");
+        if (!categoriesResponse.ok) {
+          throw new Error("Shop categories failed to load");
+        }
 
-        const c = await cats.json();
-        const i = await items.json();
+        if (!itemsResponse.ok) {
+          throw new Error("Shop items failed to load");
+        }
+
+        const categories = await categoriesResponse.json();
+        const items = await itemsResponse.json();
 
         if (!mounted) return;
 
-        setShopCategories(Array.isArray(c) ? c : []);
-        setShopItems(Array.isArray(i) ? i : []);
-      } catch (err) {
+        setShopCategories(Array.isArray(categories) ? categories : []);
+        setShopItems(Array.isArray(items) ? items : []);
+      } catch (error) {
         if (!mounted) return;
 
-        console.error(err);
-        setShopError("Shop failed to load");
+        console.error("Shop load failed:", error);
+        setShopError(error?.message || "Shop failed to load");
+        setShopCategories([]);
+        setShopItems([]);
       } finally {
-        if (mounted) setShopLoading(false);
+        if (mounted) {
+          setShopLoading(false);
+        }
       }
     }
 
@@ -269,29 +307,76 @@ export default function DashboardV1({ user, authUser }) {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadActivity() {
+      if (!resolvedEmail) {
+        setActivitySnapshot(null);
+        setActivitySignal(null);
+        return;
+      }
+
+      try {
+        const data = await getActivityDashboard(resolvedEmail);
+
+        if (!mounted) return;
+
+        setActivitySnapshot(data || null);
+        setActivitySignal(data?.latestActivitySignal || null);
+      } catch (error) {
+        if (!mounted) return;
+
+        console.error("Activity load failed:", error);
+        setActivitySnapshot(null);
+        setActivitySignal(null);
+      }
+    }
+
+    loadActivity();
+
+    return () => {
+      mounted = false;
+    };
+  }, [resolvedEmail]);
+
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
-  // GAME MODE
+  const resolvedCompletedTaskCount =
+    activitySnapshot?.completedTaskCount ?? completedTaskCount;
+
+  const resolvedTotalTaskCount = activitySnapshot?.totalTaskCount ?? totalTaskCount;
+
+  const resolvedDailySteps = activitySnapshot?.dailySteps ?? dailySteps;
+
+  const resolvedGamesPlayedToday =
+    activitySnapshot?.gamesPlayedToday ?? gamesPlayedToday;
+
+  const resolvedLessonsCompletedToday =
+    activitySnapshot?.lessonsCompletedToday ?? lessonsCompletedToday;
+
+  const resolvedFullLoopCompleted =
+    activitySnapshot?.fullLoopCompleted ?? fullLoopCompleted;
+
   if (activeGameId) {
     return (
       <Suspense fallback={<GameLoadingScreen />}>
         {activeGameId === "stackz" && (
-          <StackzGame isPlaying onGameEnd={handleGameEnd} />
+          <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />
         )}
         {activeGameId === "breakerz" && (
-          <BreakerzGame isPlaying onGameEnd={handleGameEnd} />
+          <BreakerzGame isPlaying={true} onGameEnd={handleGameEnd} />
         )}
         {activeGameId === "pulze" && (
-          <PulzeGame isPlaying onGameEnd={handleGameEnd} />
+          <PulzeGame isPlaying={true} onGameEnd={handleGameEnd} />
         )}
         {activeGameId === "zap-man" && (
-          <ZapManGame isPlaying onGameEnd={handleGameEnd} />
+          <ZapManGame isPlaying={true} onGameEnd={handleGameEnd} />
         )}
       </Suspense>
     );
   }
 
-  // ✅ ACTIVITY PAGE (EMAIL, NOT WALLET)
   if (activeView === "activity") {
     return (
       <ActivityPageV1
@@ -301,7 +386,6 @@ export default function DashboardV1({ user, authUser }) {
     );
   }
 
-  // DASHBOARD
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
       <div className="shrink-0">
@@ -317,47 +401,76 @@ export default function DashboardV1({ user, authUser }) {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
-        <DashboardWindowMove
-          isActive={moveIsActive}
-          sessionSteps={sessionSteps}
-          calories={calories}
-          timerSeconds={timerSeconds}
-          onToggleMove={handleToggleMove}
-        />
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowMove
+            isActive={moveIsActive}
+            sessionSteps={sessionSteps}
+            calories={calories}
+            timerSeconds={timerSeconds}
+            onToggleMove={handleToggleMove}
+          />
+        </div>
 
-        <DashboardWindowPlay
-          onStartGame={handleStartGame}
-          onOpenPlay={handleStartGame}
-        />
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowPlay
+            onStartGame={handleStartGame}
+            onOpenPlay={handleStartGame}
+          />
+        </div>
 
-        <DashboardWindowShop
-          zptsBalance={zptsBalance}
-          shopUnlocked={previewShopUnlocked}
-          categories={shopCategories}
-          items={shopItems}
-          loading={shopLoading}
-          error={shopError}
-          onPurchaseItem={handlePurchaseShopItem}
-        />
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowShop
+            zptsBalance={zptsBalance}
+            shopUnlocked={previewShopUnlocked}
+            categories={shopCategories}
+            items={shopItems}
+            loading={shopLoading}
+            error={shopError}
+            onPurchaseItem={handlePurchaseShopItem}
+          />
+        </div>
 
-        <DashboardWindowZwap
-          isAltView={isZwapAltView}
-          onToggleAltView={handleToggleZwapAltView}
-          systemMessage={zwapMessage}
-          eventType={zwapMode}
-          nextStep={zwapHint}
-          completedTaskCount={completedTaskCount}
-          totalTaskCount={totalTaskCount}
-          shopUnlocked={previewShopUnlocked}
-          gardenUnlocked={previewGardenUnlocked}
-          learnUnlocked={previewLearnUnlocked}
-          assistUnlocked={previewAssistUnlocked}
-          swapUnlocked={previewSwapUnlocked}
-          dailySteps={dailySteps}
-          gamesPlayedToday={gamesPlayedToday}
-          lessonsCompletedToday={lessonsCompletedToday}
-          fullLoopCompleted={fullLoopCompleted}
-        />
+        <div className="min-h-0 overflow-hidden [&>*]:h-full">
+          <DashboardWindowZwap
+            isAltView={isZwapAltView}
+            onToggleAltView={handleToggleZwapAltView}
+            systemMessage={zwapMessage}
+            eventType={zwapMode}
+            nextStep={zwapHint}
+            activitySignal={activitySignal}
+            completedTaskCount={resolvedCompletedTaskCount}
+            totalTaskCount={resolvedTotalTaskCount}
+            zptsBalance={zptsBalance}
+            shopUnlocked={previewShopUnlocked}
+            gardenUnlocked={previewGardenUnlocked}
+            learnUnlocked={previewLearnUnlocked}
+            assistUnlocked={previewAssistUnlocked}
+            swapUnlocked={previewSwapUnlocked}
+            badgeVisibilityUnlocked={previewBadgeVisibilityUnlocked}
+            streamUnlocked={previewStreamUnlocked}
+            profileNeedsSetup={profileNeedsSetup}
+            hasNewHighScore={hasNewHighScore}
+            canSpendZpts={canSpendZpts}
+            shouldSaveZpts={shouldSaveZpts}
+            streakDays={streakDays}
+            dailySteps={resolvedDailySteps}
+            gamesPlayedToday={resolvedGamesPlayedToday}
+            lessonsCompletedToday={resolvedLessonsCompletedToday}
+            lastActiveAt={lastActiveAt}
+            fullLoopCompleted={resolvedFullLoopCompleted}
+            healthPercent={healthPercent}
+            growthStage={growthStage}
+            plantName={plantName}
+            rarePlantUnlocked={previewRarePlantUnlocked}
+            longestStreak={longestStreak}
+            totalBlooms={totalBlooms}
+            activeDays={activeDays}
+            missedDays={missedDays}
+            daysUntilNextBloom={daysUntilNextBloom}
+            nextRareUnlock={nextRareUnlock}
+            streakGraceDaysRemaining={streakGraceDaysRemaining}
+          />
+        </div>
       </div>
     </div>
   );
