@@ -18,7 +18,7 @@ from routers import learn_routes
 from routers import user_routes
 from routers import rewards_routes
 from routers import activity_routes
-from routers.admin_routes import admin_router
+from admin_routes import admin_router
 
 logging.basicConfig(
     level=logging.INFO,
