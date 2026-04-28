@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import List, Optional
+import re
 import uuid
 
 from fastapi import APIRouter, HTTPException, Request
@@ -31,6 +32,9 @@ class ShopItem(BaseModel):
     image_url: Optional[str] = None
     category: str = "general"
     subcategory: Optional[str] = None
+    item_type: Optional[str] = "custom"
+    rotation: Optional[str] = "Custom"
+    phase: Optional[str] = "Phase A"
     in_stock: bool = True
     active: bool = True
     plus_only: bool = False
@@ -50,8 +54,15 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def normalize_id(value: str) -> str:
-    return str(value or "").strip().lower().replace(" ", "-")
+def normalize_id(value: Optional[str]) -> str:
+    if value is None:
+        return ""
+
+    normalized = str(value).strip().lower()
+    normalized = re.sub(r"[^a-z0-9]+", "-", normalized)
+    normalized = re.sub(r"-+", "-", normalized)
+    normalized = normalized.strip("-")
+    return normalized
 
 
 def title_from_category_id(category_id: str) -> str:
@@ -63,28 +74,32 @@ def title_from_category_id(category_id: str) -> str:
 async def get_shop_categories(request: Request):
     db = request.app.state.db
 
-    saved_categories = await db.shop_categories.find(
-        {"active": {"$ne": False}},
-        {"_id": 0},
-    ).sort("sort_order", 1).to_list(length=100)
+    saved_categories = (
+        await db.shop_categories.find(
+            {"active": True},
+            {"_id": 0},
+        )
+        .sort("sort_order", 1)
+        .to_list(length=100)
+    )
 
     if saved_categories:
         return [
             ShopCategory(
                 id=normalize_id(category.get("id", "")),
-                label=category.get("label") or category.get("name") or "Category",
+                label=category.get("label") or "Category",
                 description=category.get("description", ""),
                 sort_order=int(category.get("sort_order", 0) or 0),
-                active=category.get("active", True),
+                active=True,
             )
             for category in saved_categories
-            if category.get("id")
+            if normalize_id(category.get("id", ""))
         ]
 
     active_items = await db.shop_items.find(
         {
-            "active": {"$ne": False},
-            "in_stock": {"$ne": False},
+            "active": True,
+            "in_stock": True,
         },
         {"_id": 0, "category": 1},
     ).to_list(length=200)
@@ -114,15 +129,15 @@ async def get_shop_items(request: Request):
 
     items = await db.shop_items.find(
         {
-            "active": {"$ne": False},
-            "in_stock": {"$ne": False},
+            "active": True,
+            "in_stock": True,
         },
         {"_id": 0},
-    ).to_list(length=100)
+    ).sort([("category", 1), ("name", 1)]).to_list(length=200)
 
     return [
         ShopItem(
-            id=item.get("id", ""),
+            id=normalize_id(item.get("id", "")),
             name=item.get("name", ""),
             description=item.get("description", ""),
             payment_method=item.get("payment_method", "zpts"),
@@ -130,11 +145,14 @@ async def get_shop_items(request: Request):
             price_zwap=item.get("price_zwap"),
             price_stripe=item.get("price_stripe"),
             image_url=item.get("image_url"),
-            category=normalize_id(item.get("category", "general")),
-            subcategory=item.get("subcategory"),
-            in_stock=item.get("in_stock", True),
-            active=item.get("active", True),
-            plus_only=item.get("plus_only", False),
+            category=normalize_id(item.get("category", "general")) or "general",
+            subcategory=normalize_id(item.get("subcategory")) if item.get("subcategory") else None,
+            item_type=item.get("item_type", "custom"),
+            rotation=item.get("rotation", "Custom"),
+            phase=item.get("phase", "Phase A"),
+            in_stock=True,
+            active=True,
+            plus_only=bool(item.get("plus_only", False)),
             max_quantity=item.get("max_quantity"),
             fulfillment_type=item.get("fulfillment_type", "none"),
             download_url=item.get("download_url"),
@@ -142,7 +160,7 @@ async def get_shop_items(request: Request):
             fulfillment_notes=item.get("fulfillment_notes"),
         )
         for item in items
-        if item.get("id")
+        if normalize_id(item.get("id", ""))
     ]
 
 
@@ -155,7 +173,7 @@ async def purchase_item(
     db = request.app.state.db
 
     wallet = wallet_address.lower().strip()
-    item_id = purchase.item_id.strip()
+    item_id = normalize_id(purchase.item_id)
     payment_type = purchase.payment_type.lower().strip()
 
     if not wallet:
@@ -174,8 +192,8 @@ async def purchase_item(
     item = await db.shop_items.find_one(
         {
             "id": item_id,
-            "active": {"$ne": False},
-            "in_stock": {"$ne": False},
+            "active": True,
+            "in_stock": True,
         },
         {"_id": 0},
     )
@@ -186,6 +204,13 @@ async def purchase_item(
     if item.get("plus_only") and user.get("tier") not in {"plus", "zitizen"}:
         raise HTTPException(status_code=403, detail="Zitizen subscription required")
 
+    item_payment_method = str(item.get("payment_method", "zpts")).lower().strip()
+    if item_payment_method != payment_type:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Item requires {item_payment_method} payment",
+        )
+
     if payment_type == "zpts":
         price_paid = int(item.get("price_zpts") or 0)
 
@@ -195,7 +220,10 @@ async def purchase_item(
         if int(user.get("zpts_balance", 0) or 0) < price_paid:
             raise HTTPException(status_code=400, detail="Insufficient zPts")
 
-        balance_update = {"$inc": {"zpts_balance": -price_paid}}
+        balance_update = {
+            "$inc": {"zpts_balance": -price_paid},
+            "$set": {"updated_at": utc_now_iso()},
+        }
 
     else:
         price_paid = float(item.get("price_zwap") or 0)
@@ -206,7 +234,10 @@ async def purchase_item(
         if float(user.get("zwap_balance", 0) or 0) < price_paid:
             raise HTTPException(status_code=400, detail="Insufficient ZWAP balance")
 
-        balance_update = {"$inc": {"zwap_balance": -price_paid}}
+        balance_update = {
+            "$inc": {"zwap_balance": -price_paid},
+            "$set": {"updated_at": utc_now_iso()},
+        }
 
     purchase_id = str(uuid.uuid4())
     now_iso = utc_now_iso()
@@ -219,17 +250,18 @@ async def purchase_item(
     if update_result.matched_count == 0:
         raise HTTPException(status_code=400, detail="Purchase failed")
 
-    await db.purchases.insert_one(
-        {
-            "id": purchase_id,
-            "user_wallet": wallet,
-            "item_id": item_id,
-            "item_name": item.get("name", "Item"),
-            "price": price_paid,
-            "currency": payment_type,
-            "purchased_at": now_iso,
-        }
-    )
+    purchase_record = {
+        "id": purchase_id,
+        "user_wallet": wallet,
+        "item_id": item_id,
+        "item_name": item.get("name", "Item"),
+        "price": price_paid,
+        "currency": payment_type,
+        "purchased_at": now_iso,
+    }
+
+    await db.purchases.insert_one(dict(purchase_record))
+    await db.shop_purchases.insert_one(dict(purchase_record))
 
     existing_inventory = await db.user_inventory.find_one(
         {
@@ -246,10 +278,13 @@ async def purchase_item(
                 "user_wallet": wallet,
                 "item_id": item_id,
                 "item_name": item.get("name", "Item"),
-                "category": normalize_id(item.get("category", "general")),
+                "category": normalize_id(item.get("category", "general")) or "general",
+                "subcategory": normalize_id(item.get("subcategory")) if item.get("subcategory") else None,
+                "item_type": item.get("item_type", "custom"),
                 "fulfillment_type": item.get("fulfillment_type", "none"),
                 "download_url": item.get("download_url"),
                 "external_url": item.get("external_url"),
+                "fulfillment_notes": item.get("fulfillment_notes"),
                 "granted_at": now_iso,
                 "source": payment_type,
                 "active": True,
@@ -276,10 +311,14 @@ async def get_user_inventory(wallet_address: str, request: Request):
     db = request.app.state.db
     wallet = wallet_address.lower().strip()
 
-    inventory = await db.user_inventory.find(
-        {"user_wallet": wallet, "active": True},
-        {"_id": 0},
-    ).sort("granted_at", -1).to_list(length=200)
+    inventory = (
+        await db.user_inventory.find(
+            {"user_wallet": wallet, "active": True},
+            {"_id": 0},
+        )
+        .sort("granted_at", -1)
+        .to_list(length=200)
+    )
 
     return {"items": inventory}
 
