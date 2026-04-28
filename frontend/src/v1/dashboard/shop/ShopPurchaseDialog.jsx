@@ -1,90 +1,139 @@
 import React from "react";
 import {
+  Activity,
   Check,
   Coins,
   CreditCard,
   Crown,
   Loader2,
   ShoppingBag,
-  Zap,
+  X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+
+function getPaymentMethod(item = {}) {
+  if (item.payment_method) return item.payment_method;
+
+  if (Number(item.price_stripe || 0) > 0) return "stripe";
+
+  if (
+    Number(item.price_zpts || item.priceZpts || item.price || 0) > 0 &&
+    Number(item.price_zwap || item.priceZwap || 0) === 0
+  ) {
+    return "zpts";
+  }
+
+  return "zwap";
+}
+
+function getItemName(item = {}) {
+  return item.name || item.title || "Shop Item";
+}
+
+function getItemDescription(item = {}) {
+  return item.description || item.subtitle || "Redeem your progress for utility.";
+}
+
+function getItemImage(item = {}) {
+  return item.image_url || item.imageUrl || "";
+}
+
+function getZptsPrice(item = {}) {
+  return Number(item.price_zpts || item.priceZpts || item.price || 0);
+}
+
+function getZwapPrice(item = {}) {
+  return Number(item.price_zwap || item.priceZwap || 0);
+}
+
+function getStripePrice(item = {}) {
+  return Number(item.price_stripe || item.priceStripe || 0);
+}
 
 export default function ShopPurchaseDialog({
   selectedItem,
   selectedPaymentMethod,
-  selectedItemOwned,
-  purchaseSuccess,
-  isPurchasing,
+  selectedItemOwned = false,
+  purchaseSuccess = false,
+  isPurchasing = false,
   paymentType,
   setPaymentType,
-  canAffordZwap,
-  canAffordZpts,
+  canAffordZwap = () => true,
+  canAffordZpts = () => true,
   user,
   onClose,
   onPurchase,
   onStripeCheckout,
 }) {
+  const paymentMethod = selectedPaymentMethod || getPaymentMethod(selectedItem);
+  const isPlusOnly = selectedItem?.plus_only || selectedItem?.plusOnly;
+  const userTier = user?.tier || user?.membership || "zwapper";
+  const hasPlusAccess = userTier === "plus" || userTier === "zitizen";
+
+  if (!selectedItem) return null;
+
   return (
-    <Dialog open={!!selectedItem} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-3xl border-pink-500/30 bg-[linear-gradient(180deg,rgba(14,10,24,0.98),rgba(9,8,18,0.99))]">
+    <div className="absolute inset-0 z-30 flex items-end rounded-[1.5rem] bg-black/60 p-3 backdrop-blur-sm">
+      <div className="relative w-full overflow-hidden rounded-[1.25rem] border border-cyan-200/15 bg-[#101827] p-4 shadow-[0_0_30px_rgba(34,211,238,0.14)]">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/55"
+          aria-label="Close purchase dialog"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
         {purchaseSuccess ? (
-          <div className="py-4 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-pink-500/15">
-              <Check className="h-8 w-8 text-pink-300" />
+          <div className="py-5 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+              <Check className="h-7 w-7" />
             </div>
 
-            <DialogTitle className="mb-2 text-xl text-white">
+            <h3 className="text-lg font-semibold text-white">
               Purchase Complete
-            </DialogTitle>
+            </h3>
 
-            <DialogDescription className="mb-4 text-sm text-white/60">
-              You purchased {selectedItem?.name}
-            </DialogDescription>
+            <p className="mt-2 text-sm text-white/55">
+              You unlocked {getItemName(selectedItem)}.
+            </p>
 
-            <div className="flex justify-center gap-2">
-              <Button
-                onClick={onClose}
-                className="bg-[linear-gradient(135deg,#ec4899,#a855f7)] text-white"
-              >
-                Continue Shopping
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-5 w-full rounded-xl border border-cyan-300/25 bg-cyan-300/15 px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100"
+            >
+              Continue
+            </button>
           </div>
-        ) : selectedItem ? (
+        ) : (
           <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-lg text-white">
-                {selectedItem.name}
+            <div className="pr-9">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-base font-semibold text-white">
+                  {getItemName(selectedItem)}
+                </h3>
 
-                {selectedItem.plus_only ? (
-                  <Crown className="h-4 w-4 text-pink-300" />
+                {isPlusOnly ? (
+                  <Crown className="h-4 w-4 shrink-0 text-cyan-200" />
                 ) : null}
 
                 {selectedItemOwned ? (
-                  <span className="rounded-full border border-pink-500/20 bg-pink-500/10 px-2 py-1 text-[10px] text-pink-200">
-                    OWNED
+                  <span className="shrink-0 rounded-full border border-emerald-300/20 bg-emerald-400/15 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-emerald-100">
+                    Owned
                   </span>
                 ) : null}
-              </DialogTitle>
+              </div>
 
-              <DialogDescription className="text-sm text-white/55">
-                {selectedItem.description}
-              </DialogDescription>
-            </DialogHeader>
+              <p className="mt-2 line-clamp-2 text-xs leading-snug text-white/55">
+                {getItemDescription(selectedItem)}
+              </p>
+            </div>
 
-            <div className="my-3 aspect-video overflow-hidden rounded-2xl bg-black/30">
-              {selectedItem.image_url ? (
+            <div className="my-4 aspect-video overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              {getItemImage(selectedItem) ? (
                 <img
-                  src={selectedItem.image_url}
-                  alt={selectedItem.name}
+                  src={getItemImage(selectedItem)}
+                  alt={getItemName(selectedItem)}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -94,154 +143,143 @@ export default function ShopPurchaseDialog({
               )}
             </div>
 
-            {selectedPaymentMethod === "zwap" ? (
-              <div className="mb-3 space-y-2">
-                <p className="text-xs text-white/45">Pay with:</p>
+            {paymentMethod === "zpts" ? (
+              <button
+                type="button"
+                onClick={() => setPaymentType?.("zpts")}
+                className={[
+                  "mb-3 flex w-full items-center gap-3 rounded-2xl border p-3 text-left",
+                  paymentType === "zpts" || !paymentType
+                    ? "border-cyan-300/30 bg-cyan-300/10"
+                    : "border-white/10 bg-white/[0.03]",
+                ].join(" ")}
+              >
+                <Activity className="h-4 w-4 text-cyan-300" />
 
-                <button
-                  type="button"
-                  onClick={() => setPaymentType("zwap")}
-                  className={`flex w-full items-center gap-3 rounded-2xl border p-3 ${
-                    paymentType === "zwap"
-                      ? "border-pink-500/30 bg-pink-500/10"
-                      : "border-white/10 bg-white/[0.03]"
-                  }`}
-                >
-                  <Coins className="h-4 w-4 text-pink-300" />
+                <div>
+                  <p className="text-sm font-bold text-cyan-100">
+                    {getZptsPrice(selectedItem).toLocaleString()} zPts
+                  </p>
 
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-pink-200">
-                      {selectedItem.price_zwap} ZWAP
-                    </p>
-
-                    <p
-                      className={`text-[10px] ${
-                        canAffordZwap(selectedItem.price_zwap)
-                          ? "text-pink-300"
-                          : "text-red-400"
-                      }`}
-                    >
-                      {canAffordZwap(selectedItem.price_zwap)
-                        ? "Available"
-                        : "Insufficient"}
-                    </p>
-                  </div>
-                </button>
-              </div>
+                  <p
+                    className={[
+                      "text-[10px]",
+                      canAffordZpts(getZptsPrice(selectedItem))
+                        ? "text-cyan-300/75"
+                        : "text-red-300",
+                    ].join(" ")}
+                  >
+                    {canAffordZpts(getZptsPrice(selectedItem))
+                      ? "Available"
+                      : "Insufficient zPts"}
+                  </p>
+                </div>
+              </button>
             ) : null}
 
-            {selectedPaymentMethod === "zpts" ? (
-              <div className="mb-3 space-y-2">
-                <p className="text-xs text-white/45">Pay with:</p>
+            {paymentMethod === "zwap" ? (
+              <button
+                type="button"
+                onClick={() => setPaymentType?.("zwap")}
+                className={[
+                  "mb-3 flex w-full items-center gap-3 rounded-2xl border p-3 text-left",
+                  paymentType === "zwap" || !paymentType
+                    ? "border-cyan-300/30 bg-cyan-300/10"
+                    : "border-white/10 bg-white/[0.03]",
+                ].join(" ")}
+              >
+                <Coins className="h-4 w-4 text-cyan-300" />
 
-                <button
-                  type="button"
-                  onClick={() => setPaymentType("zpts")}
-                  className={`flex w-full items-center gap-3 rounded-2xl border p-3 ${
-                    paymentType === "zpts"
-                      ? "border-pink-500/30 bg-pink-500/10"
-                      : "border-white/10 bg-white/[0.03]"
-                  }`}
-                >
-                  <Zap className="h-4 w-4 text-pink-300" />
+                <div>
+                  <p className="text-sm font-bold text-cyan-100">
+                    {getZwapPrice(selectedItem).toLocaleString()} ZWAP
+                  </p>
 
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-pink-200">
-                      {selectedItem.price_zpts} zPts
-                    </p>
-
-                    <p
-                      className={`text-[10px] ${
-                        canAffordZpts(selectedItem.price_zpts)
-                          ? "text-pink-300"
-                          : "text-red-400"
-                      }`}
-                    >
-                      {canAffordZpts(selectedItem.price_zpts)
-                        ? "Available"
-                        : "Insufficient"}
-                    </p>
-                  </div>
-                </button>
-              </div>
+                  <p
+                    className={[
+                      "text-[10px]",
+                      canAffordZwap(getZwapPrice(selectedItem))
+                        ? "text-cyan-300/75"
+                        : "text-red-300",
+                    ].join(" ")}
+                  >
+                    {canAffordZwap(getZwapPrice(selectedItem))
+                      ? "Available"
+                      : "Insufficient ZWAP"}
+                  </p>
+                </div>
+              </button>
             ) : null}
 
-            {selectedPaymentMethod === "stripe" ? (
-              <div className="mb-3 space-y-2">
-                <p className="text-xs text-white/45">Payment method:</p>
+            {paymentMethod === "stripe" ? (
+              <div className="mb-3 flex w-full items-center gap-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-left">
+                <CreditCard className="h-4 w-4 text-cyan-300" />
 
-                <div className="flex w-full items-center gap-3 rounded-2xl border border-pink-500/20 bg-pink-500/10 p-3">
-                  <CreditCard className="h-4 w-4 text-pink-300" />
+                <div>
+                  <p className="text-sm font-bold text-cyan-100">
+                    ${getStripePrice(selectedItem).toFixed(2)} USD
+                  </p>
 
-                  <div className="text-left">
-                    <p className="text-sm font-bold text-pink-200">
-                      ${Number(selectedItem.price_stripe || 0).toFixed(2)} USD
-                    </p>
-                    <p className="text-[10px] text-white/50">
-                      Secure Stripe checkout
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-white/45">
+                    Secure card checkout
+                  </p>
                 </div>
               </div>
             ) : null}
 
-            <div className="space-y-3">
-              {selectedPaymentMethod !== "stripe" ? (
-                <Button
-                  data-testid="confirm-purchase"
-                  onClick={onPurchase}
-                  disabled={
-                    isPurchasing ||
-                    (selectedItem.plus_only && user?.tier !== "plus") ||
-                    (paymentType === "zwap" &&
-                      !canAffordZwap(selectedItem.price_zwap)) ||
-                    (paymentType === "zpts" &&
-                      !canAffordZpts(selectedItem.price_zpts))
-                  }
-                  className="w-full bg-[linear-gradient(135deg,#ec4899,#a855f7)] text-white"
-                >
-                  {isPurchasing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : selectedItem.plus_only && user?.tier !== "plus" ? (
-                    "Plus Required"
-                  ) : (
-                    "Confirm Purchase"
-                  )}
-                </Button>
-              ) : null}
-
-              {selectedPaymentMethod === "stripe" ? (
-                <Button
-                  type="button"
-                  onClick={onStripeCheckout}
-                  disabled={
-                    isPurchasing ||
-                    (selectedItem.plus_only && user?.tier !== "plus")
-                  }
-                  className="w-full bg-[linear-gradient(135deg,#ec4899,#a855f7)] text-white"
-                >
-                  {isPurchasing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Redirecting...
-                    </>
-                  ) : selectedItem.plus_only && user?.tier !== "plus" ? (
-                    "Plus Required"
-                  ) : (
-                    <>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Pay with Card
-                    </>
-                  )}
-                </Button>
-              ) : null}
-            </div>
+            {paymentMethod === "stripe" ? (
+              <button
+                type="button"
+                onClick={onStripeCheckout}
+                disabled={isPurchasing || (isPlusOnly && !hasPlusAccess)}
+                className="flex w-full items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/15 px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 disabled:cursor-default disabled:opacity-50"
+              >
+                {isPurchasing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Redirecting
+                  </>
+                ) : isPlusOnly && !hasPlusAccess ? (
+                  "Zitizen Required"
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Pay with Card
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onPurchase}
+                disabled={
+                  isPurchasing ||
+                  selectedItemOwned ||
+                  (isPlusOnly && !hasPlusAccess) ||
+                  (paymentMethod === "zpts" &&
+                    !canAffordZpts(getZptsPrice(selectedItem))) ||
+                  (paymentMethod === "zwap" &&
+                    !canAffordZwap(getZwapPrice(selectedItem)))
+                }
+                className="flex w-full items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/15 px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 disabled:cursor-default disabled:opacity-50"
+              >
+                {isPurchasing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing
+                  </>
+                ) : selectedItemOwned ? (
+                  "Already Owned"
+                ) : isPlusOnly && !hasPlusAccess ? (
+                  "Zitizen Required"
+                ) : (
+                  "Confirm Purchase"
+                )}
+              </button>
+            )}
           </>
-        ) : null}
-      </DialogContent>
-    </Dialog>
+        )}
+      </div>
+    </div>
   );
 }
