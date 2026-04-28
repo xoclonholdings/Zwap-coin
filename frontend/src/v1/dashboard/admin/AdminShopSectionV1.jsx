@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Image,
   Lock,
@@ -9,18 +9,16 @@ import {
   Unlock,
 } from "lucide-react";
 
+import adminApi from "@/lib/adminApi";
 import AdminSectionCardV1 from "./AdminSectionCardV1";
 import AdminStatusPillV1 from "./AdminStatusPillV1";
 
 const DEFAULT_CATEGORIES = [
-  "Boosts",
-  "Illustrated eBooks",
-  "Cosmetic / Identity",
-  "Utility",
-  "Featured Bundle",
-  "Garden",
-  "Sponsor Rewards",
-  "Custom",
+  { id: "boosts", label: "Boosts", sort_order: 0, active: true },
+  { id: "ebooks", label: "Illustrated eBooks", sort_order: 1, active: true },
+  { id: "cosmetics", label: "Cosmetic / Identity", sort_order: 2, active: true },
+  { id: "utility", label: "Utility", sort_order: 3, active: true },
+  { id: "featured", label: "Featured Bundle", sort_order: 4, active: true },
 ];
 
 const DEFAULT_ROTATIONS = [
@@ -67,27 +65,108 @@ const PROGRESSION_GUIDE = {
   },
   "Future Rotation": {
     focus: "Future inventory",
-    guidance:
-      "Use this for items not ready for V1 release but worth staging.",
+    guidance: "Use this for staged items that are not ready for V1 release.",
   },
   "Always Available": {
     focus: "Permanent shelf",
     guidance:
-      "Use this carefully for evergreen items that should not depend on rotation timing.",
+      "Use carefully for evergreen items that should not depend on rotation timing.",
   },
   Custom: {
     focus: "Manual schedule",
-    guidance:
-      "Use this when you want full control outside the standard V1 progression schedule.",
+    guidance: "Use this when you want full control outside the standard V1 schedule.",
   },
 };
 
-function buildItemId(name) {
-  return String(name || "")
+function buildSlug(value) {
+  return String(value || "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+function normalizeCategory(category = {}, index = 0) {
+  const label = category.label || category.name || category.id || "Category";
+  const id = category.id || buildSlug(label);
+
+  return {
+    id,
+    label,
+    description: category.description || "",
+    sort_order: Number(category.sort_order ?? index),
+    active: category.active !== false,
+  };
+}
+
+function normalizeItem(item = {}) {
+  return {
+    id: item.id || item._id || buildSlug(item.name),
+    name: item.name || "",
+    description: item.description || "",
+    payment_method: item.payment_method || "zpts",
+    price_zpts: item.price_zpts ?? "",
+    price_zwap: item.price_zwap ?? "",
+    price_stripe: item.price_stripe ?? "",
+    image_url: item.image_url || "",
+    category: item.category || "boosts",
+    subcategory: item.subcategory || "",
+    item_type: item.item_type || item.type || "boost",
+    rotation: item.rotation || "Month 1 / Cycle 1",
+    phase: item.phase || "Phase A",
+    in_stock: item.in_stock !== false,
+    active: item.active === true,
+    plus_only: item.plus_only === true,
+    max_quantity: item.max_quantity ?? "",
+    fulfillment_type: item.fulfillment_type || "none",
+    download_url: item.download_url || "",
+    external_url: item.external_url || "",
+    fulfillment_notes: item.fulfillment_notes || "",
+  };
+}
+
+function buildItemPayload(form) {
+  const id = form.id || buildSlug(form.name);
+
+  return {
+    id,
+    name: form.name.trim(),
+    description: form.description.trim(),
+    payment_method: form.payment_method,
+    price_zpts:
+      form.payment_method === "zpts" ? Number(form.price_zpts || 0) : null,
+    price_zwap:
+      form.payment_method === "zwap" ? Number(form.price_zwap || 0) : null,
+    price_stripe:
+      form.payment_method === "stripe" ? Number(form.price_stripe || 0) : null,
+    image_url: form.image_url.trim(),
+    category: form.category,
+    subcategory: form.subcategory.trim() || null,
+    item_type: form.item_type,
+    rotation: form.rotation,
+    phase: form.phase,
+    in_stock: form.in_stock,
+    active: form.active,
+    plus_only: form.plus_only,
+    max_quantity:
+      form.max_quantity === "" ? null : Number(form.max_quantity || 0),
+    fulfillment_type: form.fulfillment_type,
+    download_url: form.download_url.trim() || null,
+    external_url: form.external_url.trim() || null,
+    fulfillment_notes: form.fulfillment_notes.trim() || null,
+  };
+}
+
+function getPriceLabel(item) {
+  if (item.payment_method === "stripe") {
+    return `$${Number(item.price_stripe || 0).toFixed(2)}`;
+  }
+
+  if (item.payment_method === "zwap") {
+    return `${Number(item.price_zwap || 0).toLocaleString()} ZWAP`;
+  }
+
+  return `${Number(item.price_zpts || 0).toLocaleString()} zPts`;
 }
 
 function ShopInput({ label, children }) {
@@ -102,15 +181,15 @@ function ShopInput({ label, children }) {
 }
 
 function ShopItemRow({ item, onToggle, onRemove, onEdit }) {
-  const isActive = item.status === "active";
+  const isActive = item.active === true;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
       <div className="flex items-start gap-3">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-cyan-400/15 bg-cyan-500/10">
-          {item.imageUrl ? (
+          {item.image_url ? (
             <img
-              src={item.imageUrl}
+              src={item.image_url}
               alt={item.name}
               className="h-full w-full object-cover"
             />
@@ -127,7 +206,7 @@ function ShopItemRow({ item, onToggle, onRemove, onEdit }) {
               </div>
 
               <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-cyan-300/55">
-                {item.category || "Uncategorized"}
+                {item.category || "uncategorized"}
               </div>
             </div>
 
@@ -137,9 +216,9 @@ function ShopItemRow({ item, onToggle, onRemove, onEdit }) {
           </div>
 
           <div className="mt-2 text-xs leading-5 text-white/50">
-            {Number(item.price || 0).toLocaleString()} {item.currency} •{" "}
-            {item.rotation || "No rotation"} • {item.inventoryType}
-            {item.inventoryType === "limited" ? ` (${item.quantity || 0})` : ""}
+            {getPriceLabel(item)} • {item.rotation || "No rotation"} •{" "}
+            {item.in_stock ? "In stock" : "Out of stock"}
+            {item.max_quantity ? ` • ${item.max_quantity} max` : ""}
           </div>
 
           {item.description ? (
@@ -151,7 +230,7 @@ function ShopItemRow({ item, onToggle, onRemove, onEdit }) {
           <div className="mt-3 flex gap-2">
             <button
               type="button"
-              onClick={() => onToggle(item.id)}
+              onClick={() => onToggle(item)}
               className={[
                 "flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border text-xs font-semibold transition active:scale-[0.98]",
                 isActive
@@ -182,7 +261,7 @@ function ShopItemRow({ item, onToggle, onRemove, onEdit }) {
 
             <button
               type="button"
-              onClick={() => onRemove(item.id)}
+              onClick={() => onRemove(item)}
               className="flex h-10 w-11 items-center justify-center rounded-xl border border-red-400/20 bg-red-500/10 text-red-300 transition active:scale-[0.98]"
               aria-label={`Remove ${item.name}`}
             >
@@ -195,6 +274,30 @@ function ShopItemRow({ item, onToggle, onRemove, onEdit }) {
   );
 }
 
+const EMPTY_FORM = {
+  id: "",
+  name: "",
+  description: "",
+  payment_method: "zpts",
+  price_zpts: "",
+  price_zwap: "",
+  price_stripe: "",
+  image_url: "",
+  category: "boosts",
+  subcategory: "",
+  item_type: "boost",
+  rotation: "Month 1 / Cycle 1",
+  phase: "Phase A",
+  in_stock: true,
+  active: false,
+  plus_only: false,
+  max_quantity: "",
+  fulfillment_type: "none",
+  download_url: "",
+  external_url: "",
+  fulfillment_notes: "",
+};
+
 export default function AdminShopSectionV1() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
@@ -202,33 +305,24 @@ export default function AdminShopSectionV1() {
   const [newCategory, setNewCategory] = useState("");
   const [newRotation, setNewRotation] = useState("");
   const [editingItemId, setEditingItemId] = useState(null);
-
-  const [form, setForm] = useState({
-    name: "",
-    category: "Boosts",
-    type: "boost",
-    status: "locked",
-    phase: "Phase A",
-    rotation: "Month 1 / Cycle 1",
-    price: "",
-    currency: "zPts",
-    inventoryType: "unlimited",
-    quantity: "",
-    imageUrl: "",
-    description: "",
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const stats = useMemo(() => {
-    const active = items.filter((item) => item.status === "active").length;
+    const active = items.filter((item) => item.active).length;
+    const inStock = items.filter((item) => item.in_stock).length;
 
     return {
       total: items.length,
       active,
       locked: items.length - active,
+      inStock,
     };
   }, [items]);
 
-  const rotationGuide = PROGRESSION_GUIDE[form.rotation] || PROGRESSION_GUIDE.Custom;
+  const rotationGuide =
+    PROGRESSION_GUIDE[form.rotation] || PROGRESSION_GUIDE.Custom;
 
   const updateForm = (field, value) => {
     setForm((current) => ({
@@ -239,33 +333,70 @@ export default function AdminShopSectionV1() {
 
   const resetForm = () => {
     setEditingItemId(null);
-    setForm({
-      name: "",
-      category: form.category,
-      type: form.type,
-      status: "locked",
-      phase: form.phase,
-      rotation: form.rotation,
-      price: "",
-      currency: "zPts",
-      inventoryType: "unlimited",
-      quantity: "",
-      imageUrl: "",
-      description: "",
-    });
+    setForm((current) => ({
+      ...EMPTY_FORM,
+      category: current.category,
+      item_type: current.item_type,
+      rotation: current.rotation,
+      phase: current.phase,
+    }));
   };
 
-  const handleAddCategory = () => {
-    const safeCategory = newCategory.trim();
-    if (!safeCategory) return;
+  const loadShop = async () => {
+    setLoading(true);
+
+    try {
+      const [categoryData, itemData] = await Promise.all([
+        adminApi.get("/shop/categories"),
+        adminApi.get("/shop/items"),
+      ]);
+
+      const nextCategories =
+        Array.isArray(categoryData) && categoryData.length
+          ? categoryData.map(normalizeCategory)
+          : DEFAULT_CATEGORIES;
+
+      setCategories(nextCategories);
+
+      setItems(Array.isArray(itemData) ? itemData.map(normalizeItem) : []);
+    } catch (error) {
+      console.error("Admin shop load failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadShop();
+  }, []);
+
+  const handleAddCategory = async () => {
+    const label = newCategory.trim();
+    const id = buildSlug(label);
+
+    if (!label || !id) return;
+
+    const nextCategory = {
+      id,
+      label,
+      description: "",
+      sort_order: categories.length,
+      active: true,
+    };
 
     setCategories((current) => {
-      if (current.includes(safeCategory)) return current;
-      return [...current, safeCategory];
+      if (current.some((category) => category.id === id)) return current;
+      return [...current, nextCategory];
     });
 
-    updateForm("category", safeCategory);
+    updateForm("category", id);
     setNewCategory("");
+
+    try {
+      await adminApi.post("/shop/categories", nextCategory);
+    } catch (error) {
+      console.error("Category save failed:", error);
+    }
   };
 
   const handleAddRotation = () => {
@@ -281,87 +412,96 @@ export default function AdminShopSectionV1() {
     setNewRotation("");
   };
 
-  const handleSaveItem = () => {
+  const handleSaveItem = async () => {
     const safeName = form.name.trim();
-    const fallbackId = buildItemId(safeName);
+    const fallbackId = form.id || buildSlug(safeName);
 
     if (!safeName || !fallbackId) return;
 
-    const nextItem = {
+    const payload = buildItemPayload({
       ...form,
       id: editingItemId || fallbackId,
-      name: safeName,
-      price: Number(form.price || 0),
-      quantity:
-        form.inventoryType === "limited" ? Number(form.quantity || 0) : "",
-      imageUrl: form.imageUrl.trim(),
-      description: form.description.trim(),
-    };
-
-    setItems((current) => {
-      if (editingItemId) {
-        return current.map((item) =>
-          item.id === editingItemId ? nextItem : item
-        );
-      }
-
-      const exists = current.some((item) => item.id === fallbackId);
-      if (exists) return current;
-
-      return [...current, nextItem];
     });
 
-    resetForm();
+    setSaving(true);
+
+    try {
+      if (editingItemId) {
+        await adminApi.put(`/shop/items/${editingItemId}`, payload);
+      } else {
+        await adminApi.post("/shop/items", payload);
+      }
+
+      setItems((current) => {
+        if (editingItemId) {
+          return current.map((item) =>
+            item.id === editingItemId ? normalizeItem(payload) : item
+          );
+        }
+
+        const exists = current.some((item) => item.id === payload.id);
+        if (exists) return current;
+
+        return [...current, normalizeItem(payload)];
+      });
+
+      resetForm();
+    } catch (error) {
+      console.error("Shop item save failed:", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEditItem = (item) => {
-    setEditingItemId(item.id);
-    setForm({
-      name: item.name || "",
-      category: item.category || "Custom",
-      type: item.type || "custom",
-      status: item.status || "locked",
-      phase: item.phase || "Phase A",
-      rotation: item.rotation || "Custom",
-      price: String(item.price ?? ""),
-      currency: item.currency || "zPts",
-      inventoryType: item.inventoryType || "unlimited",
-      quantity: String(item.quantity ?? ""),
-      imageUrl: item.imageUrl || "",
-      description: item.description || "",
-    });
+    const normalized = normalizeItem(item);
+
+    setEditingItemId(normalized.id);
+    setForm(normalized);
   };
 
-  const handleToggleItem = (itemId) => {
+  const handleToggleItem = async (item) => {
+    const nextItem = {
+      ...item,
+      active: !item.active,
+    };
+
     setItems((current) =>
-      current.map((item) => {
-        if (item.id !== itemId) return item;
-
-        return {
-          ...item,
-          status: item.status === "active" ? "locked" : "active",
-        };
-      })
+      current.map((currentItem) =>
+        currentItem.id === item.id ? nextItem : currentItem
+      )
     );
+
+    try {
+      await adminApi.put(`/shop/items/${item.id}`, buildItemPayload(nextItem));
+    } catch (error) {
+      console.error("Shop item toggle failed:", error);
+    }
   };
 
-  const handleRemoveItem = (itemId) => {
-    setItems((current) => current.filter((item) => item.id !== itemId));
+  const handleRemoveItem = async (item) => {
+    setItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
 
-    if (editingItemId === itemId) {
+    if (editingItemId === item.id) {
       resetForm();
+    }
+
+    try {
+      await adminApi.delete(`/shop/items/${item.id}`);
+    } catch (error) {
+      console.error("Shop item delete failed:", error);
     }
   };
 
   return (
     <div className="space-y-4">
       <AdminSectionCardV1 title="Shop System">
-        Manage Shop inventory manually while staying guided by the V1
-        progression schedule. Nothing here is hardcoded. Items can be added,
-        edited, locked, unlocked, rotated, limited, or removed.
+        Manage the V1 Shop inventory, categories, rotations, pricing, visibility,
+        and fulfillment. The dashboard Shop pulls from this data. Shop remains
+        locked for users until 1,000 lifetime zPts, except admin preview.
       </AdminSectionCardV1>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
           <div className="text-[10px] uppercase tracking-[0.14em] text-white/35">
             Total
@@ -383,6 +523,15 @@ export default function AdminShopSectionV1() {
             Locked
           </div>
           <div className="mt-1 text-lg font-bold text-white">{stats.locked}</div>
+        </div>
+
+        <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-3">
+          <div className="text-[10px] uppercase tracking-[0.14em] text-cyan-300/70">
+            In Stock
+          </div>
+          <div className="mt-1 text-lg font-bold text-cyan-200">
+            {stats.inStock}
+          </div>
         </div>
       </div>
 
@@ -418,8 +567,8 @@ export default function AdminShopSectionV1() {
             <div className="flex items-center gap-2">
               <Image className="h-4 w-4 shrink-0 text-cyan-300/70" />
               <input
-                value={form.imageUrl}
-                onChange={(event) => updateForm("imageUrl", event.target.value)}
+                value={form.image_url}
+                onChange={(event) => updateForm("image_url", event.target.value)}
                 placeholder="Paste image URL"
                 className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
               />
@@ -434,8 +583,8 @@ export default function AdminShopSectionV1() {
                 className="h-11 w-full rounded-xl border border-white/10 bg-[#07101b] px-3 text-sm text-white outline-none focus:border-cyan-400/35"
               >
                 {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                  <option key={category.id} value={category.id}>
+                    {category.label}
                   </option>
                 ))}
               </select>
@@ -443,8 +592,8 @@ export default function AdminShopSectionV1() {
 
             <ShopInput label="Type">
               <select
-                value={form.type}
-                onChange={(event) => updateForm("type", event.target.value)}
+                value={form.item_type}
+                onChange={(event) => updateForm("item_type", event.target.value)}
                 className="h-11 w-full rounded-xl border border-white/10 bg-[#07101b] px-3 text-sm text-white outline-none focus:border-cyan-400/35"
               >
                 {DEFAULT_ITEM_TYPES.map((type) => (
@@ -486,66 +635,123 @@ export default function AdminShopSectionV1() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
+            <ShopInput label="Payment">
+              <select
+                value={form.payment_method}
+                onChange={(event) =>
+                  updateForm("payment_method", event.target.value)
+                }
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#07101b] px-3 text-sm text-white outline-none focus:border-cyan-400/35"
+              >
+                <option value="zpts">zPts</option>
+                <option value="zwap">ZWAP</option>
+                <option value="stripe">USD / Stripe</option>
+              </select>
+            </ShopInput>
+
             <ShopInput label="Price">
               <input
                 type="number"
                 min="0"
-                value={form.price}
-                onChange={(event) => updateForm("price", event.target.value)}
+                value={
+                  form.payment_method === "stripe"
+                    ? form.price_stripe
+                    : form.payment_method === "zwap"
+                      ? form.price_zwap
+                      : form.price_zpts
+                }
+                onChange={(event) => {
+                  const field =
+                    form.payment_method === "stripe"
+                      ? "price_stripe"
+                      : form.payment_method === "zwap"
+                        ? "price_zwap"
+                        : "price_zpts";
+
+                  updateForm(field, event.target.value);
+                }}
                 placeholder="0"
                 className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
               />
             </ShopInput>
+          </div>
 
-            <ShopInput label="Currency">
+          <div className="grid grid-cols-2 gap-3">
+            <ShopInput label="Max Quantity">
+              <input
+                type="number"
+                min="0"
+                value={form.max_quantity}
+                onChange={(event) =>
+                  updateForm("max_quantity", event.target.value)
+                }
+                placeholder="Blank = unlimited"
+                className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
+              />
+            </ShopInput>
+
+            <ShopInput label="Fulfillment">
               <select
-                value={form.currency}
-                onChange={(event) => updateForm("currency", event.target.value)}
+                value={form.fulfillment_type}
+                onChange={(event) =>
+                  updateForm("fulfillment_type", event.target.value)
+                }
                 className="h-11 w-full rounded-xl border border-white/10 bg-[#07101b] px-3 text-sm text-white outline-none focus:border-cyan-400/35"
               >
-                <option value="zPts">zPts</option>
-                <option value="ZWAP">ZWAP</option>
-                <option value="USD">USD</option>
+                <option value="none">None</option>
+                <option value="digital">Digital</option>
+                <option value="external">External</option>
+                <option value="manual">Manual</option>
               </select>
             </ShopInput>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <ShopInput label="Inventory">
-              <select
-                value={form.inventoryType}
+            <ShopInput label="Download URL">
+              <input
+                value={form.download_url}
                 onChange={(event) =>
-                  updateForm("inventoryType", event.target.value)
+                  updateForm("download_url", event.target.value)
                 }
-                className="h-11 w-full rounded-xl border border-white/10 bg-[#07101b] px-3 text-sm text-white outline-none focus:border-cyan-400/35"
-              >
-                <option value="unlimited">Unlimited</option>
-                <option value="limited">Limited</option>
-              </select>
+                placeholder="Optional"
+                className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
+              />
             </ShopInput>
 
-            <ShopInput label="Quantity">
+            <ShopInput label="External URL">
               <input
-                type="number"
-                min="0"
-                value={form.quantity}
-                disabled={form.inventoryType !== "limited"}
-                onChange={(event) => updateForm("quantity", event.target.value)}
-                placeholder="Only for limited"
-                className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35 disabled:opacity-40"
+                value={form.external_url}
+                onChange={(event) =>
+                  updateForm("external_url", event.target.value)
+                }
+                placeholder="Optional"
+                className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
               />
             </ShopInput>
           </div>
 
-          <ShopInput label="Status">
-            <select
-              value={form.status}
-              onChange={(event) => updateForm("status", event.target.value)}
-              className="h-11 w-full rounded-xl border border-white/10 bg-[#07101b] px-3 text-sm text-white outline-none focus:border-cyan-400/35"
-            >
-              <option value="locked">Locked</option>
-              <option value="active">Active</option>
-            </select>
+          <ShopInput label="Flags">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ["active", "Active"],
+                ["in_stock", "In Stock"],
+                ["plus_only", "Zitizen Only"],
+              ].map(([field, label]) => (
+                <button
+                  key={field}
+                  type="button"
+                  onClick={() => updateForm(field, !form[field])}
+                  className={[
+                    "h-10 rounded-xl border text-xs font-semibold transition active:scale-[0.98]",
+                    form[field]
+                      ? "border-cyan-400/25 bg-cyan-500/10 text-cyan-200"
+                      : "border-white/10 bg-white/[0.04] text-white/45",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </ShopInput>
 
           <ShopInput label="Description">
@@ -557,9 +763,20 @@ export default function AdminShopSectionV1() {
             />
           </ShopInput>
 
+          <ShopInput label="Fulfillment Notes">
+            <textarea
+              value={form.fulfillment_notes}
+              onChange={(event) =>
+                updateForm("fulfillment_notes", event.target.value)
+              }
+              placeholder="Internal notes, delivery context, or usage rules."
+              className="min-h-[72px] w-full resize-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
+            />
+          </ShopInput>
+
           <div className="grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-3">
             <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
-              Add Admin Options
+              Admin Options
             </div>
 
             <div className="flex gap-2">
@@ -569,6 +786,7 @@ export default function AdminShopSectionV1() {
                 placeholder="New category"
                 className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
               />
+
               <button
                 type="button"
                 onClick={handleAddCategory}
@@ -585,6 +803,7 @@ export default function AdminShopSectionV1() {
                 placeholder="New rotation"
                 className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs text-white outline-none placeholder:text-white/25 focus:border-cyan-400/35"
               />
+
               <button
                 type="button"
                 onClick={handleAddRotation}
@@ -599,10 +818,11 @@ export default function AdminShopSectionV1() {
             <button
               type="button"
               onClick={handleSaveItem}
-              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/15 text-sm font-semibold text-cyan-100 transition active:scale-[0.98]"
+              disabled={saving}
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-500/15 text-sm font-semibold text-cyan-100 transition active:scale-[0.98] disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
-              {editingItemId ? "Save Changes" : "Add Item"}
+              {saving ? "Saving..." : editingItemId ? "Save Changes" : "Add Item"}
             </button>
 
             {editingItemId ? (
@@ -619,7 +839,11 @@ export default function AdminShopSectionV1() {
       </div>
 
       <div className="space-y-3">
-        {items.length ? (
+        {loading ? (
+          <AdminSectionCardV1 title="Loading Shop">
+            Fetching Shop inventory and categories.
+          </AdminSectionCardV1>
+        ) : items.length ? (
           items.map((item) => (
             <ShopItemRow
               key={item.id}
