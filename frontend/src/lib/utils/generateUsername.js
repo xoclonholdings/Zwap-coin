@@ -1,64 +1,66 @@
-ADJECTIVES = [
-    "Nova",
-    "Pixel",
-    "Quantum",
-    "Echo",
-    "Neon",
-    "Solar",
-    "Cyber",
-    "Hyper",
-    "Shadow",
-    "Turbo",
-]
+const ADJECTIVES = [
+  "Nova",
+  "Pixel",
+  "Quantum",
+  "Echo",
+  "Neon",
+  "Solar",
+  "Cyber",
+  "Hyper",
+  "Shadow",
+  "Turbo",
+];
 
-NOUNS = [
-    "Runner",
-    "Walker",
-    "Strider",
-    "Pilot",
-    "Glider",
-    "Breaker",
-    "Phantom",
-    "Rider",
-    "Explorer",
-    "Voyager",
-]
+const NOUNS = [
+  "Runner",
+  "Walker",
+  "Strider",
+  "Pilot",
+  "Glider",
+  "Breaker",
+  "Phantom",
+  "Rider",
+  "Explorer",
+  "Voyager",
+];
 
+function normalizeEmail(email = "") {
+  return String(email || "").toLowerCase().trim();
+}
 
-def hash_string(value: str = "") -> int:
-    hash_value = 0
-    safe_value = str(value or "").lower().strip()
+function normalizeWallet(walletAddress = "") {
+  return String(walletAddress || "").toLowerCase().trim();
+}
 
-    for char in safe_value:
-        hash_value = ((hash_value << 5) - hash_value) + ord(char)
-        hash_value = hash_value & 0xFFFFFFFF
+function hashString(value = "") {
+  let hashValue = 0;
+  const safeValue = String(value || "").toLowerCase().trim();
 
-        if hash_value >= 0x80000000:
-            hash_value -= 0x100000000
+  for (let index = 0; index < safeValue.length; index += 1) {
+    hashValue = (hashValue << 5) - hashValue + safeValue.charCodeAt(index);
+    hashValue |= 0;
+  }
 
-    return abs(hash_value)
+  return Math.abs(hashValue);
+}
 
+export function generateUsername({
+  username = "",
+  email = "",
+  walletAddress = "",
+} = {}) {
+  if (username) return username;
 
-def generate_username(email: str = "", wallet_address: Optional[str] = None) -> str:
-    safe_email = normalize_email(email)
-    safe_wallet = normalize_wallet(wallet_address) or ""
+  const safeEmail = normalizeEmail(email);
+  const safeWallet = normalizeWallet(walletAddress);
+  const seedSource = safeEmail || safeWallet;
 
-    seed_source = safe_email or safe_wallet
+  if (!seedSource) return "Zwapper";
 
-    if not seed_source:
-        return ""
+  const seed = hashString(seedSource);
+  const adjective = ADJECTIVES[seed % ADJECTIVES.length];
+  const noun = NOUNS[Math.floor(seed / 7) % NOUNS.length];
+  const number = seed % 999;
 
-    if safe_wallet.startswith("0x") and len(safe_wallet) >= 10:
-        try:
-            seed = int(safe_wallet[2:10], 16)
-        except Exception:
-            seed = hash_string(seed_source)
-    else:
-        seed = hash_string(seed_source)
-
-    safe_seed = abs(seed)
-    adjective = ADJECTIVES[safe_seed % len(ADJECTIVES)]
-    noun = NOUNS[(safe_seed // 7) % len(NOUNS)]
-    number = safe_seed % 999
-
-    return f"{adjective}{noun}{number}"
+  return `${adjective}${noun}${number}`;
+}
