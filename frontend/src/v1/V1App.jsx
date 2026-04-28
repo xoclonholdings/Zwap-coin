@@ -35,7 +35,6 @@ export default function V1App() {
 
   const progressRef = useRef({ move: false, play: false });
 
-  const [dashboardUnlocked, setDashboardUnlocked] = useState(false);
   const [onboardingProgress, setOnboardingProgress] = useState({
     move: false,
     play: false,
@@ -65,36 +64,22 @@ export default function V1App() {
   const dashboardRoute = `${V1_BASE}/dashboard`;
 
   const openDashboard = () => {
-    setDashboardUnlocked(true);
     setZptsBalance((current) => Math.max(current, STARTING_ONBOARDING_ZPTS));
     navigate(dashboardRoute);
   };
 
   const setProgress = ({ move, play }) => {
-    const nextProgress = {
-      move: Boolean(move),
-      play: Boolean(play),
-    };
-
-    progressRef.current = nextProgress;
-    setOnboardingProgress(nextProgress);
-
-    return nextProgress;
+    const next = { move: !!move, play: !!play };
+    progressRef.current = next;
+    setOnboardingProgress(next);
+    return next;
   };
 
-  const markMoveTried = () => {
-    return setProgress({
-      move: true,
-      play: progressRef.current.play,
-    });
-  };
+  const markMoveTried = () =>
+    setProgress({ move: true, play: progressRef.current.play });
 
-  const markPlayTried = () => {
-    return setProgress({
-      move: progressRef.current.move,
-      play: true,
-    });
-  };
+  const markPlayTried = () =>
+    setProgress({ move: progressRef.current.move, play: true });
 
   const getNextOnboardingRoute = ({
     move = progressRef.current.move,
@@ -107,12 +92,7 @@ export default function V1App() {
   };
 
   const advanceOnboarding = (progress = progressRef.current) => {
-    navigate(
-      getNextOnboardingRoute({
-        move: progress.move,
-        play: progress.play,
-      })
-    );
+    navigate(getNextOnboardingRoute(progress));
   };
 
   const shopUnlocked = zptsBalance >= SHOP_UNLOCK_ZPTS;
@@ -127,15 +107,18 @@ export default function V1App() {
   }, [isAuthenticated, triedMove, triedPlay, shopUnlocked]);
 
   const completedTasks = useMemo(() => {
-    return taskStates.filter((task) => task.completed).length;
+    return taskStates.filter((t) => t.completed).length;
   }, [taskStates]);
 
   return (
     <Routes>
+      {/* ENTRY */}
       <Route
         path=""
         element={
-          onboardingSeen ? (
+          isAuthenticated ? (
+            <Navigate to="dashboard" replace />
+          ) : onboardingSeen ? (
             <Navigate to="signin" replace />
           ) : (
             <LandingSequence
@@ -149,6 +132,7 @@ export default function V1App() {
         }
       />
 
+      {/* ABOUT */}
       <Route
         path="about"
         element={
@@ -164,6 +148,7 @@ export default function V1App() {
         }
       />
 
+      {/* MOVE */}
       <Route
         path="move"
         element={
@@ -174,8 +159,7 @@ export default function V1App() {
             onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
               setMoveActive(false);
-              const nextProgress = markMoveTried();
-              advanceOnboarding(nextProgress);
+              advanceOnboarding(markMoveTried());
             }}
             onLearnMore={() => {
               setMoveActive(false);
@@ -184,25 +168,18 @@ export default function V1App() {
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setMoveActive(false);
-              const nextProgress = markMoveTried();
-
-              setTodaySteps((prev) => Math.max(prev, displayedSteps));
-              setZptsBalance((prev) =>
-                Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
+              const next = markMoveTried();
+              setTodaySteps((p) => Math.max(p, displayedSteps));
+              setZptsBalance((p) =>
+                Math.max(p, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
-
-              advanceOnboarding(nextProgress);
-            }}
-            onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
-              setTodaySteps((prev) => Math.max(prev, displayedSteps));
-              setZptsBalance((prev) =>
-                Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
-              );
+              advanceOnboarding(next);
             }}
           />
         }
       />
 
+      {/* PLAY */}
       <Route
         path="play"
         element={
@@ -212,32 +189,26 @@ export default function V1App() {
               markPlayTried();
               navigate(aboutRoute);
             }}
-            onComplete={({ displayedZpts = 50, shouldRouteToMove = false } = {}) => {
-              const nextProgress = markPlayTried();
-
-              setGamesPlayedToday((prev) => prev + 1);
-              setZptsBalance((prev) =>
-                Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
+            onComplete={({ displayedZpts = 50 } = {}) => {
+              const next = markPlayTried();
+              setGamesPlayedToday((p) => p + 1);
+              setZptsBalance((p) =>
+                Math.max(p, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
-
-              if (shouldRouteToMove && !nextProgress.move) {
-                navigate(moveRoute);
-                return;
-              }
-
-              advanceOnboarding(nextProgress);
+              advanceOnboarding(next);
             }}
           />
         }
       />
 
+      {/* SIGNUP GATE */}
       <Route
         path="signup-gate"
         element={
           progressRef.current.move && progressRef.current.play ? (
             <SignupGate
-              hasTriedMove={progressRef.current.move}
-              hasTriedPlay={progressRef.current.play}
+              hasTriedMove
+              hasTriedPlay
               onBeginAuth={() => {
                 markV1OnboardingSeen();
                 navigate(signupRoute);
@@ -250,60 +221,47 @@ export default function V1App() {
         }
       />
 
+      {/* SIGNUP */}
       <Route
         path="signup"
         element={
           <SignupOnboarding
             navigate={navigate}
             dashboardRoute={dashboardRoute}
-            onAuthSuccess={openDashboard}
+            onAuthSuccess={() => navigate(dashboardRoute)}
           />
         }
       />
 
+      {/* SIGNIN */}
       <Route
         path="signin"
         element={
-          <SignIn dashboardRoute={dashboardRoute} onSuccess={openDashboard} />
+          <SignIn
+            dashboardRoute={dashboardRoute}
+            onSuccess={() => navigate(dashboardRoute)}
+          />
         }
       />
 
       <Route path="signout" element={<SignOut nextRoute={signInRoute} />} />
 
+      {/* DASHBOARD */}
       <Route
         path="dashboard"
         element={
-          isAuthenticated && dashboardUnlocked ? (
+          isAuthenticated ? (
             <SimplifiedDashboard
               displayName={displayName}
-              subtext={walletAddress || authUser?.email || "Account active"}
               tier={tier}
               zptsBalance={zptsBalance}
               zwapBalance={0}
               todaySteps={todaySteps}
-              stepGoal={20}
-              isMoveActive={moveActive}
               gamesPlayedToday={gamesPlayedToday}
-              playGoal={1}
               completedTasks={completedTasks}
               totalTasks={taskStates.length}
-              taskStates={taskStates}
               shopUnlocked={shopUnlocked}
               walletAddress={walletAddress}
-              showUpgrade={!isAuthenticated}
-              onOpenUpgrade={() => navigate(signupGateRoute)}
-              onAdminTrigger={() => navigate("/admin")}
-              onOpenProfile={() => navigate(dashboardRoute)}
-              onOpenContact={() => navigate("/contact")}
-              onOpenPrivacy={() => navigate("/privacy")}
-              onOpenHelp={() => navigate(aboutRoute)}
-              onOpenTerms={() => navigate("/terms")}
-              onOpenZwapPanel={() => navigate(signupGateRoute)}
-              homeRoute={dashboardRoute}
-              moveRoute={moveRoute}
-              playRoute={playRoute}
-              tasksRoute={signupGateRoute}
-              shopRoute={dashboardRoute}
             />
           ) : (
             <Navigate to="signin" replace />
