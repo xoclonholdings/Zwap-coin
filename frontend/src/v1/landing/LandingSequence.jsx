@@ -34,10 +34,10 @@ export default function LandingSequence({ onSelect }) {
       if (cancelled) return;
 
       setPhase(2);
-      await wait(1800); // ⬅ slightly slower pacing for readability
+      await wait(1800);
       if (cancelled) return;
 
-      setWaitingForContinue(true); // ⬅ stays on SAME screen
+      setWaitingForContinue(true);
     };
 
     runSequence();
@@ -96,27 +96,48 @@ export default function LandingSequence({ onSelect }) {
       onClick={handleTap}
       className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white"
     >
+      {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
       <div className="relative z-10 h-[560px] w-[360px] overflow-hidden rounded-[42px] border border-cyan-300/10 bg-white/[0.025] px-10 text-center shadow-[0_0_90px_rgba(34,211,238,0.22)]">
 
-        {/* 🔻 TAP TO CONTINUE — FIXED */}
+        {/* 🔻 TAP TO CONTINUE — ENHANCED */}
         {waitingForContinue && !continuing && (
-          <div className="absolute bottom-6 left-0 w-full flex justify-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0.6, 1, 0.6],
+            }}
+            transition={{
+              duration: 1.6,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute bottom-6 left-0 w-full flex justify-center"
+          >
             <div className="flex items-center gap-3">
-              <div className="h-px w-10 bg-cyan-300/50" />
-              <div className="text-[10px] font-medium uppercase tracking-[0.34em] text-white/70">
+              <motion.div
+                className="h-px w-10 bg-cyan-300/70"
+                animate={{ scaleX: [0.6, 1, 0.6] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+              />
+              <div className="text-[10px] font-semibold uppercase tracking-[0.38em] text-cyan-200 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">
                 Tap to Continue
               </div>
-              <div className="h-px w-10 bg-cyan-300/50" />
+              <motion.div
+                className="h-px w-10 bg-cyan-300/70"
+                animate={{ scaleX: [0.6, 1, 0.6] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+              />
             </div>
-          </div>
+          </motion.div>
         )}
 
         <div className="flex h-full w-full flex-col items-center justify-center">
           <AnimatePresence mode="wait">
 
+            {/* Phase 0 */}
             {phase === 0 && (
               <motion.div
                 key="hey"
@@ -130,6 +151,7 @@ export default function LandingSequence({ onSelect }) {
               </motion.div>
             )}
 
+            {/* Phase 1 */}
             {phase === 1 && (
               <motion.div
                 key="you-made-it"
@@ -143,6 +165,7 @@ export default function LandingSequence({ onSelect }) {
               </motion.div>
             )}
 
+            {/* Phase 2 */}
             {phase === 2 && (
               <motion.div
                 key="welcome"
@@ -152,13 +175,14 @@ export default function LandingSequence({ onSelect }) {
                 transition={{ duration: 0.7 }}
                 className="flex w-full flex-col items-center"
               >
+                {/* LOGO — ENHANCED */}
                 <motion.img
                   src={zwapLogo}
                   alt="ZWAP!"
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{
                     opacity: 1,
-                    scale: [1, 1.045, 1],
+                    scale: [1, 1.06, 1],
                   }}
                   transition={{
                     opacity: { duration: 0.6 },
@@ -168,7 +192,7 @@ export default function LandingSequence({ onSelect }) {
                       ease: "easeInOut",
                     },
                   }}
-                  className="mb-8 w-48"
+                  className="mb-8 w-48 drop-shadow-[0_0_25px_rgba(34,211,238,0.45)]"
                 />
 
                 <div className="whitespace-nowrap text-3xl font-black tracking-[-0.05em] text-white">
@@ -178,12 +202,19 @@ export default function LandingSequence({ onSelect }) {
                   </span>
                 </div>
 
-                <div className="mt-4 whitespace-nowrap text-sm font-bold tracking-[0.24em] text-cyan-300">
+                {/* TAGLINE — ANIMATED */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="mt-4 whitespace-nowrap text-sm font-bold tracking-[0.24em] text-cyan-300"
+                >
                   MOVE. PLAY. EARN TODAY.
-                </div>
+                </motion.div>
               </motion.div>
             )}
 
+            {/* Phase 3 */}
             {phase === 3 && (
               <motion.div
                 key="start"
@@ -197,30 +228,38 @@ export default function LandingSequence({ onSelect }) {
 
           </AnimatePresence>
 
+          {/* Phase 4 */}
           {phase === 4 && (
             <div className="flex w-full flex-col items-center gap-5">
-              <img src={zwapLogo} alt="ZWAP!" className="mb-5 w-40" />
+              <img
+                src={zwapLogo}
+                alt="ZWAP!"
+                className="mb-5 w-40 opacity-90"
+              />
 
               <div className="flex w-full gap-4">
+
+                {/* MOVE — kinetic energy */}
                 <button
                   onClick={() => onSelect("move")}
-                  className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100"
+                  className="flex-1 rounded-2xl border border-cyan-300/50 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.35)] transition-all duration-200 active:scale-[0.96]"
                 >
                   Move
                 </button>
 
+                {/* PLAY — arcade energy */}
                 <button
                   onClick={() => onSelect("play")}
-                  className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100"
+                  className="flex-1 rounded-2xl border border-purple-300/50 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_18px_rgba(168,85,247,0.35)] transition-all duration-200 active:scale-[0.96]"
                 >
                   Play
                 </button>
+
               </div>
 
-              <div className="text-sm font-bold text-white/55">Or…</div>
-
+              {/* Learn — secondary */}
               <button
-                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/70"
+                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/60 hover:text-white/80 transition"
                 onClick={() => onSelect("learn")}
               >
                 Learn More
