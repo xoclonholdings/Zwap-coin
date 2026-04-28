@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Sprout, BookOpen, Play, Award } from "lucide-react";
 
 import AccountDrawerV1 from "./account/AccountDrawerV1";
+import AdminPanelV1 from "./admin/AdminPanelV1";
 
 function formatZpts(value) {
   return Number(value || 0).toLocaleString();
@@ -92,9 +93,25 @@ export default function AppHeaderV1({
   onLearnClick,
   onStreamClick,
   onBadgeClick,
+
+  user,
+  authUser,
+  tier = "zwapper",
+  walletAddress = "",
+  zwapBalance = 0,
+  inventoryItems = [],
+  achievements = [],
+  trophyCount = 0,
+  trophyBonusPercent = 0,
+
+  onOpenFAQ,
+  onOpenContact,
+  onOpenAbout,
+  onOpenSupportChat,
 }) {
   const [popup, setPopup] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   const accountInitials = useMemo(() => {
     return initials || buildInitials(displayName);
@@ -102,6 +119,11 @@ export default function AppHeaderV1({
 
   function showLockedPopup(title, message) {
     setPopup({ title, message });
+  }
+
+  function handleAdminOpen() {
+    setAccountOpen(false);
+    setAdminOpen(true);
   }
 
   function handleGardenTap() {
@@ -230,10 +252,33 @@ export default function AppHeaderV1({
 
       <AccountDrawerV1
         open={accountOpen}
-        onClose={() => setAccountOpen(false)}
+        onOpenChange={setAccountOpen}
+        user={user}
+        authUser={authUser}
         username={displayName}
         initials={accountInitials}
+        tier={tier}
         zptsBalance={zptsBalance}
+        zwapBalance={zwapBalance}
+        walletAddress={walletAddress}
+        inventoryItems={inventoryItems}
+        achievements={achievements}
+        trophyCount={trophyCount}
+        trophyBonusPercent={trophyBonusPercent}
+        learnUnlocked={learnUnlocked}
+        streamUnlocked={streamUnlocked}
+        onAdminTrigger={handleAdminOpen}
+        onLearnOpen={onLearnClick}
+        onStreamOpen={onStreamClick}
+        onOpenFAQ={onOpenFAQ}
+        onOpenContact={onOpenContact}
+        onOpenAbout={onOpenAbout}
+        onOpenSupportChat={onOpenSupportChat}
+      />
+
+      <AdminPanelV1
+        isOpen={adminOpen}
+        onClose={() => setAdminOpen(false)}
       />
     </>
   );
