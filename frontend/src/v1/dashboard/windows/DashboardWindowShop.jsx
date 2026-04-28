@@ -21,8 +21,12 @@ function clamp(value, min = 0, max = 100) {
   return Math.min(Math.max(value, min), max);
 }
 
-function formatZPts(value) {
+function formatNumber(value) {
   return Number(value || 0).toLocaleString();
+}
+
+function formatMoney(value) {
+  return Number(value || 0).toFixed(2);
 }
 
 function getCategoryIcon(category = {}) {
@@ -47,7 +51,7 @@ function getCategoryLabel(category = {}) {
 }
 
 function getItemCategoryId(item = {}) {
-  return item.categoryId || item.category_id || item.category || "featured";
+  return item.category || item.category_id || item.categoryId || "featured";
 }
 
 function getItemName(item = {}) {
@@ -59,7 +63,32 @@ function getItemDescription(item = {}) {
 }
 
 function getItemPrice(item = {}) {
-  return item.priceZpts ?? item.price_zpts ?? item.price ?? 0;
+  if (item.payment_method === "stripe") {
+    return item.price_stripe ?? 0;
+  }
+
+  if (item.payment_method === "zwap") {
+    return item.price_zwap ?? 0;
+  }
+
+  return item.price_zpts ?? 0;
+}
+
+function getItemCurrencyLabel(item = {}) {
+  if (item.payment_method === "stripe") return "USD";
+  if (item.payment_method === "zwap") return "ZWAP";
+  return "zPts";
+}
+
+function getFormattedItemPrice(item = {}) {
+  const price = getItemPrice(item);
+  const currency = getItemCurrencyLabel(item);
+
+  if (currency === "USD") {
+    return `$${formatMoney(price)}`;
+  }
+
+  return `${formatNumber(price)} ${currency}`;
 }
 
 export default function DashboardWindowShop({
@@ -183,8 +212,8 @@ export default function DashboardWindowShop({
             </div>
 
             <p className="mt-3 text-left text-sm font-semibold text-white/80">
-              {formatZPts(unlockProgressSource)} /{" "}
-              {formatZPts(SHOP_UNLOCK_THRESHOLD)}{" "}
+              {formatNumber(unlockProgressSource)} /{" "}
+              {formatNumber(SHOP_UNLOCK_THRESHOLD)}{" "}
               <sub className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/45">
                 zPts
               </sub>
@@ -227,37 +256,30 @@ export default function DashboardWindowShop({
 
           {visibleItems.length > 0 ? (
             <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-2">
-              {visibleItems.map((item) => {
-                const price = getItemPrice(item);
+              {visibleItems.map((item) => (
+                <button
+                  key={item.id || getItemName(item)}
+                  type="button"
+                  onClick={() => handleItemSelect(item)}
+                  className="min-w-[78%] snap-start rounded-[1.15rem] border border-white/10 bg-white/[0.05] p-3 text-left"
+                >
+                  <div className="flex min-h-[92px] flex-col justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {getItemName(item)}
+                      </p>
 
-                return (
-                  <button
-                    key={item.id || item._id || getItemName(item)}
-                    type="button"
-                    onClick={() => handleItemSelect(item)}
-                    className="min-w-[78%] snap-start rounded-[1.15rem] border border-white/10 bg-white/[0.05] p-3 text-left"
-                  >
-                    <div className="flex min-h-[92px] flex-col justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          {getItemName(item)}
-                        </p>
-
-                        <p className="mt-1 line-clamp-2 text-xs text-white/50">
-                          {getItemDescription(item)}
-                        </p>
-                      </div>
-
-                      <p className="mt-4 text-sm font-black text-cyan-200">
-                        {formatZPts(price)}{" "}
-                        <sub className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/45">
-                          zPts
-                        </sub>
+                      <p className="mt-1 line-clamp-2 text-xs text-white/50">
+                        {getItemDescription(item)}
                       </p>
                     </div>
-                  </button>
-                );
-              })}
+
+                    <p className="mt-4 text-sm font-black text-cyan-200">
+                      {getFormattedItemPrice(item)}
+                    </p>
+                  </div>
+                </button>
+              ))}
             </div>
           ) : (
             <div className="mt-3 flex flex-1 items-center justify-center rounded-[1.15rem] border border-white/10 bg-white/[0.04] px-3 text-center">
@@ -281,10 +303,7 @@ export default function DashboardWindowShop({
             </p>
 
             <p className="mt-4 text-sm font-black text-cyan-200">
-              {formatZPts(getItemPrice(selectedItem))}{" "}
-              <sub className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/45">
-                zPts
-              </sub>
+              {getFormattedItemPrice(selectedItem)}
             </p>
 
             <div className="mt-4 grid grid-cols-2 gap-2">
