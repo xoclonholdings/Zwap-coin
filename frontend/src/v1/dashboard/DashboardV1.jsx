@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 
 import useV1DashboardState from "./useV1DashboardState";
 import AppHeaderV1 from "./AppHeaderV1";
@@ -7,7 +7,7 @@ import DashboardWindowPlay from "./windows/DashboardWindowPlay";
 import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
-import ActivityPageV1 from "./activity/ActivityPageV1"; // ✅ NEW
+import ActivityPageV1 from "./activity/ActivityPageV1";
 
 import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
 
@@ -27,9 +27,23 @@ const ZapManGame = lazy(() =>
   import("@/v1/components/games/zapman/ZapManGame")
 );
 
+const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
+
 function estimateCaloriesFromSteps(steps) {
   const safeSteps = Math.max(0, Number(steps || 0));
   return Math.round(safeSteps * 0.04);
+}
+
+function getResolvedEmail({ authUser, user }) {
+  return String(
+    authUser?.email?.address ||
+      authUser?.email ||
+      user?.email ||
+      user?.email_address ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
 }
 
 function GameLoadingScreen() {
@@ -99,16 +113,30 @@ export default function DashboardV1({ user, authUser }) {
     zwapHint,
   } = state;
 
+  const resolvedEmail = useMemo(
+    () => getResolvedEmail({ authUser, user }),
+    [authUser, user]
+  );
+
+  const isAdminPreviewUser = ADMIN_PREVIEW_EMAILS.includes(resolvedEmail);
+
+  const previewShopUnlocked = isAdminPreviewUser || shopUnlocked;
+  const previewGardenUnlocked = isAdminPreviewUser || gardenUnlocked;
+  const previewRarePlantUnlocked = isAdminPreviewUser || rarePlantUnlocked;
+  const previewSwapUnlocked = isAdminPreviewUser || isSwapUnlocked;
+  const previewBadgeVisibilityUnlocked =
+    isAdminPreviewUser || badgeVisibilityUnlocked;
+  const previewLearnUnlocked = isAdminPreviewUser || learnUnlocked;
+  const previewStreamUnlocked = isAdminPreviewUser || streamUnlocked;
+  const previewAssistUnlocked = isAdminPreviewUser || assistUnlocked;
+
   const [moveIsActive, setMoveIsActive] = useState(false);
   const [sessionSteps, setSessionSteps] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [activeGameId, setActiveGameId] = useState(null);
-
-  const [activeView, setActiveView] = useState("dashboard"); // ✅ NEW
+  const [activeView, setActiveView] = useState("dashboard");
 
   const sessionStartStepsRef = useRef(0);
-
-  /* ---------------- VIEW HANDLERS ---------------- */
 
   function handleOpenActivity() {
     setActiveView("activity");
@@ -117,8 +145,6 @@ export default function DashboardV1({ user, authUser }) {
   function handleBackFromActivity() {
     setActiveView("dashboard");
   }
-
-  /* ---------------- MOVE ---------------- */
 
   const handleToggleMove = () => {
     setMoveIsActive((current) => {
@@ -134,13 +160,9 @@ export default function DashboardV1({ user, authUser }) {
     });
   };
 
-  /* ---------------- ZWAP ---------------- */
-
   const handleToggleZwapAltView = () => {
     setIsZwapAltView((current) => !current);
   };
-
-  /* ---------------- GAMES ---------------- */
 
   const handleStartGame = (game) => {
     if (!game || game.locked) return;
@@ -151,8 +173,6 @@ export default function DashboardV1({ user, authUser }) {
     console.log("Game ended:", result);
     setActiveGameId(null);
   };
-
-  /* ---------------- EFFECTS ---------------- */
 
   useEffect(() => {
     if (!moveIsActive) return undefined;
@@ -177,9 +197,6 @@ export default function DashboardV1({ user, authUser }) {
 
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
-  /* ---------------- PRIORITY RENDERS ---------------- */
-
-  // 🎮 Game mode
   if (activeGameId) {
     return (
       <Suspense fallback={<GameLoadingScreen />}>
@@ -199,19 +216,14 @@ export default function DashboardV1({ user, authUser }) {
     );
   }
 
-  // 📊 Activity page
   if (activeView === "activity") {
     return (
       <ActivityPageV1
         onBack={handleBackFromActivity}
-        walletAddress={
-          user?.wallet_address || user?.walletAddress || ""
-        }
+        walletAddress={user?.wallet_address || user?.walletAddress || ""}
       />
     );
   }
-
-  /* ---------------- DEFAULT DASHBOARD ---------------- */
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
@@ -219,11 +231,11 @@ export default function DashboardV1({ user, authUser }) {
         <AppHeaderV1
           zptsBalance={zptsBalance}
           displayName={displayName}
-          gardenUnlocked={gardenUnlocked}
-          learnUnlocked={learnUnlocked}
-          streamUnlocked={streamUnlocked}
-          badgesUnlocked={badgeVisibilityUnlocked}
-          onActivityClick={handleOpenActivity} // ✅ KEY LINE
+          gardenUnlocked={previewGardenUnlocked}
+          learnUnlocked={previewLearnUnlocked}
+          streamUnlocked={previewStreamUnlocked}
+          badgesUnlocked={previewBadgeVisibilityUnlocked}
+          onActivityClick={handleOpenActivity}
         />
       </div>
 
@@ -246,7 +258,10 @@ export default function DashboardV1({ user, authUser }) {
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop zptsBalance={zptsBalance} />
+          <DashboardWindowShop
+            zptsBalance={zptsBalance}
+            shopUnlocked={previewShopUnlocked}
+          />
         </div>
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
@@ -258,13 +273,13 @@ export default function DashboardV1({ user, authUser }) {
             nextStep={zwapHint}
             completedTaskCount={completedTaskCount}
             totalTaskCount={totalTaskCount}
-            shopUnlocked={shopUnlocked}
-            gardenUnlocked={gardenUnlocked}
-            learnUnlocked={learnUnlocked}
-            assistUnlocked={assistUnlocked}
-            swapUnlocked={isSwapUnlocked}
-            badgeVisibilityUnlocked={badgeVisibilityUnlocked}
-            streamUnlocked={streamUnlocked}
+            shopUnlocked={previewShopUnlocked}
+            gardenUnlocked={previewGardenUnlocked}
+            learnUnlocked={previewLearnUnlocked}
+            assistUnlocked={previewAssistUnlocked}
+            swapUnlocked={previewSwapUnlocked}
+            badgeVisibilityUnlocked={previewBadgeVisibilityUnlocked}
+            streamUnlocked={previewStreamUnlocked}
             profileNeedsSetup={profileNeedsSetup}
             hasNewHighScore={hasNewHighScore}
             canSpendZpts={canSpendZpts}
@@ -278,7 +293,7 @@ export default function DashboardV1({ user, authUser }) {
             healthPercent={healthPercent}
             growthStage={growthStage}
             plantName={plantName}
-            rarePlantUnlocked={rarePlantUnlocked}
+            rarePlantUnlocked={previewRarePlantUnlocked}
             longestStreak={longestStreak}
             totalBlooms={totalBlooms}
             activeDays={activeDays}
