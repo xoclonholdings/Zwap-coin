@@ -7,6 +7,13 @@ function formatNumber(value) {
   return toNumber(value, 0).toLocaleString();
 }
 
+function formatGameName(value = "") {
+  return String(value || "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    .trim();
+}
+
 function getNextUnlock({
   zptsBalance = 0,
   shopUnlocked = false,
@@ -49,6 +56,13 @@ function normalizeActivitySignal(activitySignal) {
     type: activitySignal.type || activitySignal.activityType || "",
     message: activitySignal.message || "",
     priority: activitySignal.priority || "normal",
+    zpts: toNumber(activitySignal.zpts, 0),
+    zwap: toNumber(activitySignal.zwap, 0),
+    steps: toNumber(activitySignal.steps, 0),
+    game: activitySignal.game || "",
+    itemId: activitySignal.item_id || activitySignal.itemId || "",
+    itemName: activitySignal.item_name || activitySignal.itemName || "",
+    createdAt: activitySignal.created_at || activitySignal.createdAt || null,
   };
 }
 
@@ -59,6 +73,114 @@ function makeGuidance(headline, detail, action) {
     action,
     text: [headline, detail, action].filter(Boolean).join("\n"),
   };
+}
+
+function buildSignalGuidance({
+  signal,
+  safeZpts,
+  safeSteps,
+  safeGames,
+  safePlayGoal,
+  moveComplete,
+  playComplete,
+  loopComplete,
+  nextUnlock,
+}) {
+  if (!signal) return null;
+
+  if (signal.type === "login") {
+    if (loopComplete) {
+      return makeGuidance(
+        "You showed up.",
+        `Daily loop complete. ${formatNumber(safeZpts)} zPts ready.`,
+        "Check the next unlock."
+      );
+    }
+
+    return makeGuidance(
+      "You showed up.",
+      signal.zpts > 0 ? `+${formatNumber(signal.zpts)} zPts claimed.` : "Daily check-in counted.",
+      "Move or play next."
+    );
+  }
+
+  if (signal.type === "move") {
+    if (!playComplete) {
+      return makeGuidance(
+        "Move counted.",
+        signal.zpts > 0
+          ? `+${formatNumber(signal.zpts)} zPts from movement.`
+          : `${formatNumber(signal.steps || safeSteps)} steps logged.`,
+        "Play 1 game next."
+      );
+    }
+
+    return makeGuidance(
+      "Move counted.",
+      signal.zpts > 0
+        ? `+${formatNumber(signal.zpts)} zPts from movement.`
+        : `${formatNumber(signal.steps || safeSteps)} steps logged.`,
+      "Keep the loop alive."
+    );
+  }
+
+  if (signal.type === "play") {
+    const gameName = formatGameName(signal.game);
+
+    if (!moveComplete && safeSteps === 0) {
+      return makeGuidance(
+        gameName ? `${gameName} counted.` : "Play counted.",
+        signal.zpts > 0
+          ? `+${formatNumber(signal.zpts)} zPts added.`
+          : `${safeGames} of ${safePlayGoal} play goals done.`,
+        "Add movement next."
+      );
+    }
+
+    return makeGuidance(
+      gameName ? `${gameName} counted.` : "Play counted.",
+      signal.zpts > 0
+        ? `+${formatNumber(signal.zpts)} zPts added.`
+        : `${safeGames} of ${safePlayGoal} play goals done.`,
+      "Keep the loop moving."
+    );
+  }
+
+  if (signal.type === "learn") {
+    return makeGuidance(
+      "Learn counted.",
+      signal.zpts > 0
+        ? `+${formatNumber(signal.zpts)} zPts added.`
+        : "Knowledge added.",
+      "That brain battery is charging."
+    );
+  }
+
+  if (signal.type === "shop_purchase") {
+    return makeGuidance(
+      "Item acquired.",
+      signal.itemName || "Shop purchase complete.",
+      "Spend with a plan."
+    );
+  }
+
+  if (signal.type === "milestone") {
+    return makeGuidance(
+      "Milestone reached.",
+      `${formatNumber(safeZpts)} zPts stacked.`,
+      `Keep building toward ${nextUnlock.label}.`
+    );
+  }
+
+  if (signal.message) {
+    return makeGuidance(
+      signal.message,
+      `${formatNumber(safeZpts)} zPts available.`,
+      "Keep building."
+    );
+  }
+
+  return null;
 }
 
 export function buildZapGuidance({
@@ -116,6 +238,22 @@ export function buildZapGuidance({
 
   if (nextStep) {
     return makeGuidance(nextStep, "", "");
+  }
+
+  const signalGuidance = buildSignalGuidance({
+    signal,
+    safeZpts,
+    safeSteps,
+    safeGames,
+    safePlayGoal,
+    moveComplete,
+    playComplete,
+    loopComplete,
+    nextUnlock,
+  });
+
+  if (signalGuidance) {
+    return signalGuidance;
   }
 
   if (swapUnlocked) {
