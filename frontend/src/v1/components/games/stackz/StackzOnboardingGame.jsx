@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import stackzLogo from "@/assets/games/stackz_game_logo.PNG";
+import stackzLogo from "@/assets/games/stackz_game_logo.png";
 import { STACKZ_CANVAS } from "./stackzConfig";
 import { createStackzEngine } from "./StackzEngine";
 import { renderStackzFrame } from "./stackzRenderer";

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 import boostItem from "../../assets/boost_item.png";
 import ebookItem from "../../assets/ebook_item.png";
-import mysteryboxItem from "../../assets/mysterybox_item.PNG";
+import mysteryboxItem from "../../assets/mysterybox_item.png";
 import ringItem from "../../assets/ring_item.png";
 
 function renderGradientLine(line) {

@@ -1,5 +1,5 @@
 import React from "react";
-import zapManLogo from "@/assets/games/zap_man_logo.PNG";
+import zapManLogo from "@/assets/games/zap_man_logo.png";
 
 export function ZapManSplashOverlay({ open, onStart, onBackToArcade }) {
   if (!open) return null;

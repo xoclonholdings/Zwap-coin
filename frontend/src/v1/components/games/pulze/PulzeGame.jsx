@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import pulzeLogo from "@/assets/games/pulze_game_logo.PNG";
+import pulzeLogo from "@/assets/games/pulze_game_logo.png";
 import { PULZE_CANVAS } from "./pulzeConfig";
 import { createPulzeEngine } from "./pulzeEngine";
 import { renderPulzeFrame } from "./pulzeRenderer";

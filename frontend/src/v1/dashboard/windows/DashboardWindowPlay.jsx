@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Gamepad2, ChevronRight, Lock } from "lucide-react";
 
-import brainzLogo from "@/assets/games/brainz_game_logo.PNG";
-import breakerzLogo from "@/assets/games/breakerz_game_logo.PNG";
-import pulzeLogo from "@/assets/games/pulze_game_logo.PNG";
-import stackzLogo from "@/assets/games/stackz_game_logo.PNG";
-import triplezLogo from "@/assets/games/triplez_game_logo.PNG";
-import werdzLogo from "@/assets/games/werdz_game_logo.PNG";
-import zapManLogo from "@/assets/games/zap_man_logo.PNG";
+import brainzLogo from "@/assets/games/brainz_game_logo.png";
+import breakerzLogo from "@/assets/games/breakerz_game_logo.png";
+import pulzeLogo from "@/assets/games/pulze_game_logo.png";
+import stackzLogo from "@/assets/games/stackz_game_logo.png";
+import triplezLogo from "@/assets/games/triplez_game_logo.png";
+import werdzLogo from "@/assets/games/werdz_game_logo.png";
+import zapManLogo from "@/assets/games/zap_man_logo.png";
 
 const DEFAULT_GAMES = [
   { id: "stackz", name: "STACKZ", logo: stackzLogo, locked: false },
