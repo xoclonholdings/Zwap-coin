@@ -7,6 +7,10 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def normalize_email(email: str) -> str:
+    return str(email or "").lower().strip()
+
+
 def safe_int(value: Any, fallback: int = 0) -> int:
     try:
         return int(value or fallback)
@@ -23,7 +27,7 @@ def safe_float(value: Any, fallback: float = 0.0) -> float:
 
 async def log_activity(
     db,
-    user_id: str,
+    email: str,
     activity_type: str,
     message: str = "",
     zpts: int = 0,
@@ -34,18 +38,21 @@ async def log_activity(
     item_name: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    if not user_id or not activity_type:
+    normalized_email = normalize_email(email)
+    activity = str(activity_type or "").lower().strip()
+
+    if not normalized_email or not activity:
         return {
             "success": False,
-            "reason": "user_id_and_activity_type_required",
+            "reason": "email_and_activity_type_required",
         }
 
     now_iso = utc_now_iso()
 
     event = {
         "id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "type": str(activity_type).lower().strip(),
+        "email": normalized_email,
+        "type": activity,
         "message": message,
         "zpts": safe_int(zpts),
         "zwap": safe_float(zwap),
@@ -58,7 +65,7 @@ async def log_activity(
         "created_at": now_iso,
     }
 
-    await db.activity_logs.insert_one(event)
+    await db.activity_logs.insert_one(dict(event))
 
     return {
         "success": True,
@@ -66,12 +73,14 @@ async def log_activity(
     }
 
 
-async def get_latest_activity_signal(db, user_id: str) -> Optional[Dict[str, Any]]:
-    if not user_id:
+async def get_latest_activity_signal(db, email: str) -> Optional[Dict[str, Any]]:
+    normalized_email = normalize_email(email)
+
+    if not normalized_email:
         return None
 
     event = await db.activity_logs.find_one(
-        {"user_id": user_id},
+        {"email": normalized_email},
         {"_id": 0},
         sort=[("created_at", -1)],
     )
@@ -82,7 +91,9 @@ async def get_latest_activity_signal(db, user_id: str) -> Optional[Dict[str, Any
     return {
         "type": event.get("type", ""),
         "message": event.get("message", ""),
+        "priority": event.get("priority", "normal"),
         "zpts": event.get("zpts", 0),
+        "zwap": event.get("zwap", 0),
         "steps": event.get("steps", 0),
         "game": event.get("game"),
         "item_id": event.get("item_id"),
