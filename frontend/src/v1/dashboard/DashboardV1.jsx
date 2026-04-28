@@ -21,15 +21,12 @@ import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
 );
-
 const BreakerzGame = lazy(() =>
   import("@/v1/components/games/breakerz/BreakerzGame")
 );
-
 const PulzeGame = lazy(() =>
   import("@/v1/components/games/pulze/PulzeGame")
 );
-
 const ZapManGame = lazy(() =>
   import("@/v1/components/games/zapman/ZapManGame")
 );
@@ -39,8 +36,7 @@ const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 function estimateCaloriesFromSteps(steps) {
-  const safeSteps = Math.max(0, Number(steps || 0));
-  return Math.round(safeSteps * 0.04);
+  return Math.round(Math.max(0, Number(steps || 0)) * 0.04);
 }
 
 function getResolvedEmail({ authUser, user }) {
@@ -90,11 +86,6 @@ export default function DashboardV1({ user, authUser }) {
     streamUnlocked,
     assistUnlocked,
 
-    profileNeedsSetup,
-    hasNewHighScore,
-    canSpendZpts,
-    shouldSaveZpts,
-
     completedTaskCount,
     totalTaskCount,
 
@@ -122,6 +113,7 @@ export default function DashboardV1({ user, authUser }) {
     zwapHint,
   } = state;
 
+  // ✅ V1 IDENTITY (EMAIL ONLY)
   const resolvedEmail = useMemo(
     () => getResolvedEmail({ authUser, user }),
     [authUser, user]
@@ -162,15 +154,15 @@ export default function DashboardV1({ user, authUser }) {
 
   const handleToggleMove = () => {
     setMoveIsActive((current) => {
-      const nextState = !current;
+      const next = !current;
 
-      if (nextState) {
+      if (next) {
         sessionStartStepsRef.current = getCurrentSteps();
         setSessionSteps(0);
         setTimerSeconds(0);
       }
 
-      return nextState;
+      return next;
     });
   };
 
@@ -188,135 +180,128 @@ export default function DashboardV1({ user, authUser }) {
     setActiveGameId(null);
   };
 
+  // ✅ V1 SHOP PURCHASE (EMAIL)
   const handlePurchaseShopItem = async (item) => {
-    const walletAddress = user?.wallet_address || user?.walletAddress || "";
     const itemId = item?.id || item?._id;
     const paymentType = item?.payment_method || "zpts";
 
-    if (!walletAddress || !itemId) return;
+    if (!resolvedEmail || !itemId) return;
 
-    const response = await fetch(
-      `${API_BASE}/shop/purchase/${walletAddress}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          item_id: itemId,
-          payment_type: paymentType,
-        }),
-      }
-    );
+    const res = await fetch(`${API_BASE}/shop/purchase`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: resolvedEmail,
+        item_id: itemId,
+        payment_type: paymentType,
+      }),
+    });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Purchase failed");
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Purchase failed");
     }
 
-    return response.json();
+    return res.json();
   };
 
+  // MOVE SESSION
   useEffect(() => {
-    if (!moveIsActive) return undefined;
+    if (!moveIsActive) return;
 
     const unsubscribe = subscribeToSteps((deviceSteps) => {
-      const startSteps = Number(sessionStartStepsRef.current || 0);
-      setSessionSteps(Math.max(0, Number(deviceSteps || 0) - startSteps));
+      const start = Number(sessionStartStepsRef.current || 0);
+      setSessionSteps(Math.max(0, Number(deviceSteps || 0) - start));
     });
 
     return () => unsubscribe();
   }, [moveIsActive]);
 
   useEffect(() => {
-    if (!moveIsActive) return undefined;
+    if (!moveIsActive) return;
 
-    const interval = window.setInterval(() => {
-      setTimerSeconds((current) => current + 1);
+    const interval = setInterval(() => {
+      setTimerSeconds((s) => s + 1);
     }, 1000);
 
-    return () => window.clearInterval(interval);
+    return () => clearInterval(interval);
   }, [moveIsActive]);
 
+  // SHOP LOAD
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
-    async function loadShopData() {
+    async function loadShop() {
       setShopLoading(true);
       setShopError("");
 
       try {
-        const [categoriesResponse, itemsResponse] = await Promise.all([
+        const [cats, items] = await Promise.all([
           fetch(`${API_BASE}/shop/categories`),
           fetch(`${API_BASE}/shop/items`),
         ]);
 
-        if (!categoriesResponse.ok) {
-          throw new Error("Shop categories failed to load");
-        }
+        if (!cats.ok || !items.ok) throw new Error("Shop failed");
 
-        if (!itemsResponse.ok) {
-          throw new Error("Shop items failed to load");
-        }
+        const c = await cats.json();
+        const i = await items.json();
 
-        const categories = await categoriesResponse.json();
-        const items = await itemsResponse.json();
+        if (!mounted) return;
 
-        if (!isMounted) return;
+        setShopCategories(Array.isArray(c) ? c : []);
+        setShopItems(Array.isArray(i) ? i : []);
+      } catch (err) {
+        if (!mounted) return;
 
-        setShopCategories(Array.isArray(categories) ? categories : []);
-        setShopItems(Array.isArray(items) ? items : []);
-      } catch (error) {
-        if (!isMounted) return;
-
-        console.error("Shop load failed:", error);
-        setShopError(error?.message || "Shop failed to load");
-        setShopCategories([]);
-        setShopItems([]);
+        console.error(err);
+        setShopError("Shop failed to load");
       } finally {
-        if (isMounted) {
-          setShopLoading(false);
-        }
+        if (mounted) setShopLoading(false);
       }
     }
 
-    loadShopData();
+    loadShop();
 
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, []);
 
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
+  // GAME MODE
   if (activeGameId) {
     return (
       <Suspense fallback={<GameLoadingScreen />}>
         {activeGameId === "stackz" && (
-          <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />
+          <StackzGame isPlaying onGameEnd={handleGameEnd} />
         )}
         {activeGameId === "breakerz" && (
-          <BreakerzGame isPlaying={true} onGameEnd={handleGameEnd} />
+          <BreakerzGame isPlaying onGameEnd={handleGameEnd} />
         )}
         {activeGameId === "pulze" && (
-          <PulzeGame isPlaying={true} onGameEnd={handleGameEnd} />
+          <PulzeGame isPlaying onGameEnd={handleGameEnd} />
         )}
         {activeGameId === "zap-man" && (
-          <ZapManGame isPlaying={true} onGameEnd={handleGameEnd} />
+          <ZapManGame isPlaying onGameEnd={handleGameEnd} />
         )}
       </Suspense>
     );
   }
 
+  // ✅ ACTIVITY PAGE (EMAIL, NOT WALLET)
   if (activeView === "activity") {
     return (
       <ActivityPageV1
         onBack={handleBackFromActivity}
-        walletAddress={user?.wallet_address || user?.walletAddress || ""}
+        email={resolvedEmail}
       />
     );
   }
 
+  // DASHBOARD
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
       <div className="shrink-0">
@@ -332,74 +317,47 @@ export default function DashboardV1({ user, authUser }) {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowMove
-            isActive={moveIsActive}
-            sessionSteps={sessionSteps}
-            calories={calories}
-            timerSeconds={timerSeconds}
-            onToggleMove={handleToggleMove}
-          />
-        </div>
+        <DashboardWindowMove
+          isActive={moveIsActive}
+          sessionSteps={sessionSteps}
+          calories={calories}
+          timerSeconds={timerSeconds}
+          onToggleMove={handleToggleMove}
+        />
 
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowPlay
-            onStartGame={handleStartGame}
-            onOpenPlay={handleStartGame}
-          />
-        </div>
+        <DashboardWindowPlay
+          onStartGame={handleStartGame}
+          onOpenPlay={handleStartGame}
+        />
 
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop
-            zptsBalance={zptsBalance}
-            shopUnlocked={previewShopUnlocked}
-            categories={shopCategories}
-            items={shopItems}
-            loading={shopLoading}
-            error={shopError}
-            onPurchaseItem={handlePurchaseShopItem}
-          />
-        </div>
+        <DashboardWindowShop
+          zptsBalance={zptsBalance}
+          shopUnlocked={previewShopUnlocked}
+          categories={shopCategories}
+          items={shopItems}
+          loading={shopLoading}
+          error={shopError}
+          onPurchaseItem={handlePurchaseShopItem}
+        />
 
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowZwap
-            isAltView={isZwapAltView}
-            onToggleAltView={handleToggleZwapAltView}
-            systemMessage={zwapMessage}
-            eventType={zwapMode}
-            nextStep={zwapHint}
-            completedTaskCount={completedTaskCount}
-            totalTaskCount={totalTaskCount}
-            shopUnlocked={previewShopUnlocked}
-            gardenUnlocked={previewGardenUnlocked}
-            learnUnlocked={previewLearnUnlocked}
-            assistUnlocked={previewAssistUnlocked}
-            swapUnlocked={previewSwapUnlocked}
-            badgeVisibilityUnlocked={previewBadgeVisibilityUnlocked}
-            streamUnlocked={previewStreamUnlocked}
-            profileNeedsSetup={profileNeedsSetup}
-            hasNewHighScore={hasNewHighScore}
-            canSpendZpts={canSpendZpts}
-            shouldSaveZpts={shouldSaveZpts}
-            streakDays={streakDays}
-            dailySteps={dailySteps}
-            gamesPlayedToday={gamesPlayedToday}
-            lessonsCompletedToday={lessonsCompletedToday}
-            lastActiveAt={lastActiveAt}
-            fullLoopCompleted={fullLoopCompleted}
-            healthPercent={healthPercent}
-            growthStage={growthStage}
-            plantName={plantName}
-            rarePlantUnlocked={previewRarePlantUnlocked}
-            longestStreak={longestStreak}
-            totalBlooms={totalBlooms}
-            activeDays={activeDays}
-            missedDays={missedDays}
-            daysUntilNextBloom={daysUntilNextBloom}
-            nextRareUnlock={nextRareUnlock}
-            streakGraceDaysRemaining={streakGraceDaysRemaining}
-          />
-        </div>
+        <DashboardWindowZwap
+          isAltView={isZwapAltView}
+          onToggleAltView={handleToggleZwapAltView}
+          systemMessage={zwapMessage}
+          eventType={zwapMode}
+          nextStep={zwapHint}
+          completedTaskCount={completedTaskCount}
+          totalTaskCount={totalTaskCount}
+          shopUnlocked={previewShopUnlocked}
+          gardenUnlocked={previewGardenUnlocked}
+          learnUnlocked={previewLearnUnlocked}
+          assistUnlocked={previewAssistUnlocked}
+          swapUnlocked={previewSwapUnlocked}
+          dailySteps={dailySteps}
+          gamesPlayedToday={gamesPlayedToday}
+          lessonsCompletedToday={lessonsCompletedToday}
+          fullLoopCompleted={fullLoopCompleted}
+        />
       </div>
     </div>
   );
