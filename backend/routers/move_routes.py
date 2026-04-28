@@ -1,19 +1,21 @@
 """
 ZWAP! V1 Move Router
 ====================
-Routes for step submission, session status, and anti-cheat placeholders.
+Routes for step submission and session status.
 
 V1 behavior:
 - MOVE earns zPts
 - daily zPts caps are enforced
 - Shaker = successful movement claims
 - Mover = unique active movement days
-- Activity Stream dependency removed
+- Daily task state is updated through daily_steps
+- Full daily loop processing runs after valid movement claims
 """
 
 from collections import defaultdict
 import time as _time
 from datetime import datetime, timezone
+from typing import Any, Optional
 
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
@@ -40,6 +42,52 @@ MAX_STEPS_PER_CLAIM = 50000
 MIN_STEPS_PER_CLAIM = 10
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def utc_now_iso() -> str:
+    return utc_now().isoformat()
+
+
+def today_key() -> str:
+    return utc_now().date().isoformat()
+
+
+def safe_int(value: Any, fallback: int = 0) -> int:
+    try:
+        return int(value or fallback)
+    except Exception:
+        return fallback
+
+
+def parse_datetime(value: Optional[Any]) -> Optional[datetime]:
+    if value is None:
+        return None
+
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+
+        return value.astimezone(timezone.utc)
+
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+
+            return parsed.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    return None
+
+
+def get_user_persist_id(user: dict):
+    return user.get("id") or user.get("_id")
+
+
 def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
     now = _time.time()
     last = _rate_limits[wallet].get(action, 0)
@@ -51,39 +99,52 @@ def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
     return False
 
 
+async def persist_badges_safely(db, user: dict) -> dict:
+    badge_result = evaluate_badges(user)
+    updates = badge_result.get("updates", {})
+    user_id = get_user_persist_id(user)
+
+    if user_id and updates:
+        await persist_badge_updates(db, user_id, updates)
+        user.update(updates)
+
+    return user
+
+
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
-    now = datetime.now(timezone.utc)
-    last_reset = user.get("last_zpts_reset")
+    now = utc_now()
+    now_iso = now.isoformat()
+    current_day = today_key()
 
-    if last_reset:
-        last_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+    last_reset = parse_datetime(user.get("last_zpts_reset"))
+    stored_daily_key = user.get("daily_zpts_date")
 
-        if last_dt.date() < now.date():
-            await db.users.update_one(
-                {"wallet_address": user["wallet_address"]},
-                {
-                    "$set": {
-                        "daily_zpts_earned": 0,
-                        "last_zpts_reset": now.isoformat(),
-                    }
-                },
-            )
+    should_reset = False
 
-            user["daily_zpts_earned"] = 0
-            user["last_zpts_reset"] = now.isoformat()
-    else:
+    if stored_daily_key and stored_daily_key != current_day:
+        should_reset = True
+    elif last_reset and last_reset.date() < now.date():
+        should_reset = True
+    elif not stored_daily_key and not last_reset:
+        should_reset = True
+
+    if should_reset:
         await db.users.update_one(
             {"wallet_address": user["wallet_address"]},
             {
                 "$set": {
                     "daily_zpts_earned": 0,
-                    "last_zpts_reset": now.isoformat(),
+                    "daily_zpts_date": current_day,
+                    "last_zpts_reset": now_iso,
+                    "updated_at": now_iso,
                 }
             },
         )
 
         user["daily_zpts_earned"] = 0
-        user["last_zpts_reset"] = now.isoformat()
+        user["daily_zpts_date"] = current_day
+        user["last_zpts_reset"] = now_iso
+        user["updated_at"] = now_iso
 
     return user
 
@@ -122,10 +183,10 @@ async def claim_step_rewards(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    tier = user.get("tier", "starter")
+    tier = str(user.get("tier", "zwapper")).lower().strip()
     user = await check_and_reset_daily_zpts(db, user)
 
-    daily_zpts = int(user.get("daily_zpts_earned", 0) or 0)
+    daily_zpts = safe_int(user.get("daily_zpts_earned"), 0)
 
     tier_config = await get_tier_multipliers(tier)
     cap_check = await enforce_daily_caps(
@@ -135,7 +196,7 @@ async def claim_step_rewards(
         cap_type="zpts",
     )
 
-    if cap_check["capped"]:
+    if cap_check.get("capped"):
         raise HTTPException(
             status_code=429,
             detail="Daily zPts earning limit reached. Come back tomorrow!",
@@ -145,49 +206,70 @@ async def claim_step_rewards(
         reward_result = await calculate_move_reward(
             steps=steps_data.steps,
             tier=tier,
-            daily_steps_so_far=user.get("daily_steps", 0),
+            daily_steps_so_far=safe_int(user.get("daily_steps"), 0),
         )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
 
-    rewards = min(int(reward_result["zpts"]), int(cap_check["remaining"]))
-    zpts_cap = int(tier_config["daily_zpts_cap"])
+    requested_reward = safe_int(reward_result.get("zpts"), 0)
+    rewards = min(requested_reward, safe_int(cap_check.get("remaining"), 0))
+    zpts_cap = safe_int(tier_config.get("daily_zpts_cap"), 0)
 
-    today_key = datetime.now(timezone.utc).date().isoformat()
+    current_day = today_key()
+    now_iso = utc_now_iso()
+
     last_move_day = user.get("badge_last_move_day")
-    increment_mover = last_move_day != today_key
+    increment_mover = last_move_day != current_day
 
     update_doc = {
         "$inc": {
             "zpts_balance": rewards,
+            "lifetime_zpts": rewards,
             "total_steps": steps_data.steps,
             "daily_zpts_earned": rewards,
             "badge_zpts_earned": rewards,
             "badge_step_claims": 1,
         },
         "$set": {
-            "daily_steps": steps_data.steps,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "daily_steps": safe_int(user.get("daily_steps"), 0) + steps_data.steps,
+            "daily_zpts_date": current_day,
+            "last_zpts_reset": now_iso,
+            "updated_at": now_iso,
         },
     }
 
     if increment_mover:
         update_doc["$inc"]["badge_sustained_move_days"] = 1
-        update_doc["$set"]["badge_last_move_day"] = today_key
+        update_doc["$set"]["badge_last_move_day"] = current_day
 
     await db.users.update_one({"wallet_address": wallet}, update_doc)
+
+    await db.rewards_ledger.insert_one(
+        {
+            "wallet_address": wallet,
+            "currency": "zpts",
+            "amount": rewards,
+            "uncapped_amount": requested_reward,
+            "source": "move",
+            "reward_type": "move_steps",
+            "steps": steps_data.steps,
+            "daily_cap": zpts_cap,
+            "created_at": now_iso,
+        }
+    )
 
     updated_user = await db.users.find_one({"wallet_address": wallet})
     if not updated_user:
         raise HTTPException(status_code=500, detail="User missing after movement update")
 
-    badge_result = evaluate_badges(updated_user)
-    await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
-    updated_user.update(badge_result["updates"])
+    updated_user = await persist_badges_safely(db, updated_user)
 
     full_loop_result = await maybe_process_full_daily_loop(db, wallet)
 
-    if full_loop_result.get("awarded") or full_loop_result.get("reason") == "daily_cap_reached_loop_counted":
+    if (
+        full_loop_result.get("awarded")
+        or full_loop_result.get("reason") == "daily_cap_reached_loop_counted"
+    ):
         refreshed_user = await db.users.find_one({"wallet_address": wallet})
         if refreshed_user:
             updated_user = refreshed_user
@@ -196,15 +278,18 @@ async def claim_step_rewards(
         "success": True,
         "steps_counted": steps_data.steps,
         "rewards_earned": rewards,
+        "uncapped_rewards": requested_reward,
         "full_loop_awarded": full_loop_result.get("awarded", False),
         "full_loop_bonus": full_loop_result.get("full_loop_bonus", 0),
-        "new_balance": int(updated_user.get("zpts_balance", 0)),
+        "new_balance": safe_int(updated_user.get("zpts_balance"), 0),
+        "daily_steps": safe_int(updated_user.get("daily_steps"), 0),
+        "daily_zpts_earned": safe_int(updated_user.get("daily_zpts_earned"), 0),
         "daily_zpts_remaining": max(
             0,
-            zpts_cap - int(updated_user.get("daily_zpts_earned", 0)),
+            zpts_cap - safe_int(updated_user.get("daily_zpts_earned"), 0),
         ),
         "tier": tier,
-        "multiplier": tier_config["move"],
+        "multiplier": tier_config.get("move"),
         "badge_step_claims": updated_user.get("badge_step_claims", 0),
         "badge_sustained_move_days": updated_user.get("badge_sustained_move_days", 0),
         "badge_last_move_day": updated_user.get("badge_last_move_day"),
@@ -226,7 +311,6 @@ async def get_move_session(wallet_address: str):
     return {
         "active": False,
         "steps": 0,
-        "wallet": wallet_address.lower().strip(),
     }
 
 
@@ -235,5 +319,4 @@ async def submit_anti_cheat_flags(wallet_address: str):
     return {
         "received": True,
         "flagged": False,
-        "wallet": wallet_address.lower().strip(),
     }
