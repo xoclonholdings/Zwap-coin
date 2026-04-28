@@ -41,6 +41,7 @@ export default function V1App() {
   });
 
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
+
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
@@ -62,11 +63,6 @@ export default function V1App() {
   const signupRoute = `${V1_BASE}/signup`;
   const signInRoute = `${V1_BASE}/signin`;
   const dashboardRoute = `${V1_BASE}/dashboard`;
-
-  const openDashboard = () => {
-    setZptsBalance((current) => Math.max(current, STARTING_ONBOARDING_ZPTS));
-    navigate(dashboardRoute);
-  };
 
   const setProgress = ({ move, play }) => {
     const next = { move: !!move, play: !!play };
@@ -169,10 +165,12 @@ export default function V1App() {
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setMoveActive(false);
               const next = markMoveTried();
+
               setTodaySteps((p) => Math.max(p, displayedSteps));
               setZptsBalance((p) =>
                 Math.max(p, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
+
               advanceOnboarding(next);
             }}
           />
@@ -191,10 +189,12 @@ export default function V1App() {
             }}
             onComplete={({ displayedZpts = 50 } = {}) => {
               const next = markPlayTried();
+
               setGamesPlayedToday((p) => p + 1);
               setZptsBalance((p) =>
                 Math.max(p, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
+
               advanceOnboarding(next);
             }}
           />
@@ -228,7 +228,10 @@ export default function V1App() {
           <SignupOnboarding
             navigate={navigate}
             dashboardRoute={dashboardRoute}
-            onAuthSuccess={() => navigate(dashboardRoute)}
+            onAuthSuccess={() => {
+              markV1OnboardingSeen();
+              navigate(dashboardRoute);
+            }}
           />
         }
       />
@@ -239,7 +242,10 @@ export default function V1App() {
         element={
           <SignIn
             dashboardRoute={dashboardRoute}
-            onSuccess={() => navigate(dashboardRoute)}
+            onSuccess={() => {
+              markV1OnboardingSeen();
+              navigate(dashboardRoute);
+            }}
           />
         }
       />
