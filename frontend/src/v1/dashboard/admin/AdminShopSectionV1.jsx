@@ -344,21 +344,27 @@ export default function AdminShopSectionV1() {
 
   const loadShop = async () => {
     setLoading(true);
-
+  
     try {
       const [categoryData, itemData] = await Promise.all([
         adminApi.get("/shop/categories"),
         adminApi.get("/shop/items"),
       ]);
-
-      const nextCategories =
-        Array.isArray(categoryData) && categoryData.length
-          ? categoryData.map(normalizeCategory)
-          : DEFAULT_CATEGORIES;
-
+  
+      const rawCategories = Array.isArray(categoryData)
+        ? categoryData
+        : categoryData?.categories || [];
+  
+      const rawItems = Array.isArray(itemData)
+        ? itemData
+        : itemData?.items || [];
+  
+      const nextCategories = rawCategories.length
+        ? rawCategories.map(normalizeCategory)
+        : DEFAULT_CATEGORIES;
+  
       setCategories(nextCategories);
-
-      setItems(Array.isArray(itemData) ? itemData.map(normalizeItem) : []);
+      setItems(rawItems.map(normalizeItem));
     } catch (error) {
       console.error("Admin shop load failed:", error);
     } finally {
@@ -426,23 +432,31 @@ export default function AdminShopSectionV1() {
     setSaving(true);
 
     try {
+      let response;
+      
       if (editingItemId) {
-        await adminApi.put(`/shop/items/${editingItemId}`, payload);
+        response = await adminApi.put(`/shop/items/${editingItemId}`, payload);
       } else {
-        await adminApi.post("/shop/items", payload);
+        response = await adminApi.post("/shop/items", payload);
       }
-
+      
+      const savedItem = normalizeItem(response?.item || payload);
+      
       setItems((current) => {
         if (editingItemId) {
           return current.map((item) =>
-            item.id === editingItemId ? normalizeItem(payload) : item
+            item.id === editingItemId ? savedItem : item
           );
         }
-
-        const exists = current.some((item) => item.id === payload.id);
-        if (exists) return current;
-
-        return [...current, normalizeItem(payload)];
+      
+        const exists = current.some((item) => item.id === savedItem.id);
+        if (exists) {
+          return current.map((item) =>
+            item.id === savedItem.id ? savedItem : item
+          );
+        }
+      
+        return [...current, savedItem];
       });
 
       resetForm();
@@ -465,31 +479,57 @@ export default function AdminShopSectionV1() {
       ...item,
       active: !item.active,
     };
-
+  
     setItems((current) =>
       current.map((currentItem) =>
         currentItem.id === item.id ? nextItem : currentItem
       )
     );
-
+  
     try {
-      await adminApi.put(`/shop/items/${item.id}`, buildItemPayload(nextItem));
+      const response = await adminApi.put(
+        `/shop/items/${item.id}`,
+        buildItemPayload(nextItem)
+      );
+  
+      const savedItem = normalizeItem(response?.item || nextItem);
+  
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === item.id ? savedItem : currentItem
+        )
+      );
     } catch (error) {
       console.error("Shop item toggle failed:", error);
+  
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === item.id ? item : currentItem
+        )
+      );
     }
   };
 
   const handleRemoveItem = async (item) => {
-    setItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
-
+    setItems((current) =>
+      current.filter((currentItem) => currentItem.id !== item.id)
+    );
+  
     if (editingItemId === item.id) {
       resetForm();
     }
-
+  
     try {
       await adminApi.delete(`/shop/items/${item.id}`);
     } catch (error) {
       console.error("Shop item delete failed:", error);
+  
+      setItems((current) => {
+        const exists = current.some((currentItem) => currentItem.id === item.id);
+        if (exists) return current;
+  
+        return [...current, item];
+      });
     }
   };
 
