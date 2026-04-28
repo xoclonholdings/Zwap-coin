@@ -3,6 +3,15 @@ const BACKEND_URL =
 
 const API = `${BACKEND_URL}/api`;
 
+async function parseResponse(res, method, endpoint) {
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${method} ${endpoint} failed: ${text}`);
+  }
+
+  return res.json();
+}
+
 const adminApi = {
   headers(key) {
     return {
@@ -17,42 +26,27 @@ const adminApi = {
       headers: this.headers(key),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`GET ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
+    return parseResponse(res, "GET", endpoint);
   },
 
-  async post(endpoint, data, key) {
+  async post(endpoint, data = {}, key) {
     const res = await fetch(`${API}/admin${endpoint}`, {
       method: "POST",
       headers: this.headers(key),
       body: JSON.stringify(data),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`POST ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
+    return parseResponse(res, "POST", endpoint);
   },
 
-  async put(endpoint, data, key) {
+  async put(endpoint, data = {}, key) {
     const res = await fetch(`${API}/admin${endpoint}`, {
       method: "PUT",
       headers: this.headers(key),
       body: JSON.stringify(data),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`PUT ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
+    return parseResponse(res, "PUT", endpoint);
   },
 
   async delete(endpoint, key) {
@@ -61,12 +55,7 @@ const adminApi = {
       headers: this.headers(key),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`DELETE ${endpoint} failed: ${text}`);
-    }
-
-    return res.json();
+    return parseResponse(res, "DELETE", endpoint);
   },
 };
 
