@@ -5,6 +5,8 @@ Central reward logic for MOVE, PLAY, tier multipliers, conversion math,
 daily caps, and reward validation.
 
 V1 rules:
+- Email is the primary user identity
+- Privy wallet is optional metadata
 - MOVE earns zPts
 - PLAY earns zPts
 - zPts convert internally at 1000:1
@@ -15,10 +17,11 @@ V1 rules:
 from collections import defaultdict
 from datetime import datetime, timezone
 import time as _time
-from typing import Dict
+from typing import Dict, Optional
+
 
 TIERS = {
-    "starter": {
+    "zwapper": {
         "name": "Zwapper",
         "price": 0,
         "move": 1.0,
@@ -30,7 +33,7 @@ TIERS = {
         "games": ["stackz", "breakerz", "pulze", "zap-man"],
         "features": ["move", "play", "shop"],
     },
-    "plus": {
+    "zitizen": {
         "name": "Zitizen",
         "price": 9.99,
         "move": 1.5,
@@ -74,13 +77,17 @@ MAX_GAME_SCORES = {
 _rate_limits = defaultdict(dict)
 
 
+def _normalize_identity(value: Optional[str]) -> str:
+    return str(value or "").lower().strip()
+
+
 def _normalize_tier_key(tier: str) -> str:
     safe = str(tier or "").lower().strip()
 
-    if safe in ("zitizen", "plus"):
-        return "plus"
+    if safe in {"zitizen", "plus"}:
+        return "zitizen"
 
-    return "starter"
+    return "zwapper"
 
 
 def _get_tier_config(tier: str) -> Dict:
@@ -100,50 +107,58 @@ def get_daily_reward(streak: int) -> int:
     return DAILY_REWARD_TABLE.get(safe_streak, DAILY_REWARD_TABLE[7])
 
 
-def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
+def check_rate_limit(identity: str, action: str, cooldown_seconds: int) -> bool:
+    key = _normalize_identity(identity)
     now = _time.time()
-    last = _rate_limits[wallet].get(action, 0)
+    last = _rate_limits[key].get(action, 0)
 
     if now - last < cooldown_seconds:
         return True
 
-    _rate_limits[wallet][action] = now
+    _rate_limits[key][action] = now
     return False
 
 
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
     now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    current_day = now.date().isoformat()
+
     last_reset = user.get("last_zpts_reset")
+    daily_zpts_date = user.get("daily_zpts_date")
 
-    if last_reset:
-        last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+    should_reset = False
 
-        if last_reset_dt.date() < now.date():
-            await db.users.update_one(
-                {"id": user["id"]},
-                {
-                    "$set": {
-                        "daily_zpts_earned": 0,
-                        "last_zpts_reset": now.isoformat(),
-                    }
-                },
-            )
-
-            user["daily_zpts_earned"] = 0
-            user["last_zpts_reset"] = now.isoformat()
+    if daily_zpts_date and daily_zpts_date != current_day:
+        should_reset = True
+    elif last_reset:
+        try:
+            last_reset_dt = datetime.fromisoformat(str(last_reset).replace("Z", "+00:00"))
+            should_reset = last_reset_dt.date() < now.date()
+        except Exception:
+            should_reset = True
     else:
+        should_reset = True
+
+    if should_reset:
+        lookup = {"email": user["email"]} if user.get("email") else {"id": user["id"]}
+
         await db.users.update_one(
-            {"id": user["id"]},
+            lookup,
             {
                 "$set": {
                     "daily_zpts_earned": 0,
-                    "last_zpts_reset": now.isoformat(),
+                    "daily_zpts_date": current_day,
+                    "last_zpts_reset": now_iso,
+                    "updated_at": now_iso,
                 }
             },
         )
 
         user["daily_zpts_earned"] = 0
-        user["last_zpts_reset"] = now.isoformat()
+        user["daily_zpts_date"] = current_day
+        user["last_zpts_reset"] = now_iso
+        user["updated_at"] = now_iso
 
     return user
 
@@ -227,7 +242,7 @@ async def calculate_move_reward(
     }
 
 
-async def convert_zpts_to_zwap(zpts_amount: int, tier: str = "starter") -> Dict:
+async def convert_zpts_to_zwap(zpts_amount: int, tier: str = "zwapper") -> Dict:
     if zpts_amount < ZPTS_TO_ZWAP_RATE:
         raise ValueError(f"Minimum {ZPTS_TO_ZWAP_RATE} zPts required")
 
@@ -256,11 +271,21 @@ async def get_tier_multipliers(tier: str) -> Dict:
 
 
 async def enforce_daily_caps(
-    wallet_address: str,
     tier: str,
     earned_today: float,
     cap_type: str = "zpts",
+    email: Optional[str] = None,
+    wallet_address: Optional[str] = None,
 ) -> Dict:
+    identity = _normalize_identity(email or wallet_address)
+
+    if not identity:
+        return {
+            "capped": True,
+            "remaining": 0,
+            "reason": "identity_required",
+        }
+
     tier_config = _get_tier_config(tier)
 
     if cap_type == "zwap":
@@ -273,4 +298,6 @@ async def enforce_daily_caps(
     return {
         "capped": remaining <= 0,
         "remaining": round(remaining, 2),
+        "cap": cap,
+        "identity": identity,
     }
