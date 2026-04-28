@@ -8,6 +8,16 @@ from pydantic import BaseModel, ConfigDict
 shop_router = APIRouter(tags=["Shop"])
 
 
+class ShopCategory(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    label: str
+    description: str = ""
+    sort_order: int = 0
+    active: bool = True
+
+
 class ShopItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -40,6 +50,64 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def normalize_id(value: str) -> str:
+    return str(value or "").strip().lower().replace(" ", "-")
+
+
+def title_from_category_id(category_id: str) -> str:
+    safe = str(category_id or "general").replace("-", " ").replace("_", " ")
+    return safe.title()
+
+
+@shop_router.get("/shop/categories", response_model=List[ShopCategory])
+async def get_shop_categories(request: Request):
+    db = request.app.state.db
+
+    saved_categories = await db.shop_categories.find(
+        {"active": {"$ne": False}},
+        {"_id": 0},
+    ).sort("sort_order", 1).to_list(length=100)
+
+    if saved_categories:
+        return [
+            ShopCategory(
+                id=normalize_id(category.get("id", "")),
+                label=category.get("label") or category.get("name") or "Category",
+                description=category.get("description", ""),
+                sort_order=int(category.get("sort_order", 0) or 0),
+                active=category.get("active", True),
+            )
+            for category in saved_categories
+            if category.get("id")
+        ]
+
+    active_items = await db.shop_items.find(
+        {
+            "active": {"$ne": False},
+            "in_stock": {"$ne": False},
+        },
+        {"_id": 0, "category": 1},
+    ).to_list(length=200)
+
+    category_ids = sorted(
+        {
+            normalize_id(item.get("category", "general"))
+            for item in active_items
+            if normalize_id(item.get("category", "general"))
+        }
+    )
+
+    return [
+        ShopCategory(
+            id=category_id,
+            label=title_from_category_id(category_id),
+            sort_order=index,
+            active=True,
+        )
+        for index, category_id in enumerate(category_ids)
+    ]
+
+
 @shop_router.get("/shop/items", response_model=List[ShopItem])
 async def get_shop_items(request: Request):
     db = request.app.state.db
@@ -62,7 +130,7 @@ async def get_shop_items(request: Request):
             price_zwap=item.get("price_zwap"),
             price_stripe=item.get("price_stripe"),
             image_url=item.get("image_url"),
-            category=item.get("category", "general"),
+            category=normalize_id(item.get("category", "general")),
             subcategory=item.get("subcategory"),
             in_stock=item.get("in_stock", True),
             active=item.get("active", True),
@@ -79,7 +147,11 @@ async def get_shop_items(request: Request):
 
 
 @shop_router.post("/shop/purchase/{wallet_address}")
-async def purchase_item(wallet_address: str, purchase: PurchaseRequest, request: Request):
+async def purchase_item(
+    wallet_address: str,
+    purchase: PurchaseRequest,
+    request: Request,
+):
     db = request.app.state.db
 
     wallet = wallet_address.lower().strip()
@@ -174,7 +246,7 @@ async def purchase_item(wallet_address: str, purchase: PurchaseRequest, request:
                 "user_wallet": wallet,
                 "item_id": item_id,
                 "item_name": item.get("name", "Item"),
-                "category": item.get("category", "general"),
+                "category": normalize_id(item.get("category", "general")),
                 "fulfillment_type": item.get("fulfillment_type", "none"),
                 "download_url": item.get("download_url"),
                 "external_url": item.get("external_url"),
