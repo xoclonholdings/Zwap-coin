@@ -1,138 +1,32 @@
 import React, { useMemo } from "react";
-
-function toNumber(value, fallback = 0) {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : fallback;
-}
-
-function formatNumber(value) {
-  return toNumber(value, 0).toLocaleString();
-}
+import { CheckCircle2, Circle } from "lucide-react";
+import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
 function buildTaskLabel(completed = 0, total = 4) {
   return `${completed} of ${total} tasks complete`;
 }
 
-function getNextUnlock({
-  zptsBalance = 0,
-  shopUnlocked = false,
-  learnUnlocked = false,
-  swapUnlocked = false,
-}) {
-  if (!shopUnlocked) {
-    return {
-      label: "Shop",
-      required: 1000,
-      remaining: Math.max(0, 1000 - zptsBalance),
-    };
-  }
-
-  if (!learnUnlocked) {
-    return {
-      label: "Learn",
-      required: 1500,
-      remaining: Math.max(0, 1500 - zptsBalance),
-    };
-  }
-
-  if (!swapUnlocked) {
-    return {
-      label: "Swap",
-      required: 3000,
-      remaining: Math.max(0, 3000 - zptsBalance),
-    };
-  }
-
-  return {
-    label: "Next reward",
-    required: 0,
-    remaining: 0,
-  };
-}
-
-function buildZapGuidance({
-  systemMessage,
-  nextStep,
-  eventType,
-
+function buildTaskItems({
   completedTaskCount = 0,
-  totalTaskCount = 4,
-
-  zptsBalance = 0,
-
-  dailySteps = 0,
-  stepGoal = 10000,
-
-  gamesPlayedToday = 0,
-  playGoal = 1,
-
-  shopUnlocked = false,
   learnUnlocked = false,
-  swapUnlocked = false,
+  shopUnlocked = false,
+  assistUnlocked = false,
 }) {
-  if (systemMessage) return systemMessage;
-  if (nextStep) return nextStep;
+  const fourthLabel = assistUnlocked
+    ? "Assist"
+    : learnUnlocked
+    ? "Learn"
+    : shopUnlocked
+    ? "Shop"
+    : "Complete Loop";
 
-  const safeZpts = toNumber(zptsBalance, 0);
-  const safeSteps = toNumber(dailySteps, 0);
-  const safeStepGoal = Math.max(1, toNumber(stepGoal, 10000));
-  const safeGames = toNumber(gamesPlayedToday, 0);
-  const safePlayGoal = Math.max(1, toNumber(playGoal, 1));
+  const labels = ["Login", "Move", "Play", fourthLabel];
 
-  const loopComplete =
-    completedTaskCount >= totalTaskCount && totalTaskCount > 0;
-
-  const moveComplete = safeSteps >= safeStepGoal;
-  const playComplete = safeGames >= safePlayGoal;
-
-  const nextUnlock = getNextUnlock({
-    zptsBalance: safeZpts,
-    shopUnlocked,
-    learnUnlocked,
-    swapUnlocked,
-  });
-
-  if (swapUnlocked) {
-    return `Swap is ready.\nYou have ${formatNumber(safeZpts)} zPts.\nSpend, hold, or swap with intention.`;
-  }
-
-  if (loopComplete) {
-    return `Daily loop complete.\nYou have ${formatNumber(safeZpts)} zPts.\nThat progress counts toward your next unlock.`;
-  }
-
-  if (eventType === "move_progress" || (!moveComplete && safeSteps > 0)) {
-    return `You’re moving.\n${formatNumber(safeSteps)} of ${formatNumber(safeStepGoal)} steps logged.\nKeep moving to strengthen today’s loop.`;
-  }
-
-  if (eventType === "play_complete" || safeGames > 0) {
-    return `You just played.\n${safeGames} of ${safePlayGoal} play goals complete.\nOne more action can push your loop forward.`;
-  }
-
-  if (eventType === "milestone") {
-    return `Milestone reached.\nYou have ${formatNumber(safeZpts)} zPts.\nKeep stacking progress toward ${nextUnlock.label}.`;
-  }
-
-  if (shopUnlocked && safeZpts < 500) {
-    return `Shop is open.\nYou have ${formatNumber(safeZpts)} zPts.\nSave a little more before spending.`;
-  }
-
-  if (shopUnlocked) {
-    return `Shop is open.\nYou have ${formatNumber(safeZpts)} zPts.\nCheck rewards, but spend with a plan.`;
-  }
-
-  if (learnUnlocked) {
-    return `Learn is open.\nYou have ${formatNumber(safeZpts)} zPts.\nUse Learn to earn while building skill.`;
-  }
-
-  if (completedTaskCount > 0) {
-    return `${completedTaskCount} of ${totalTaskCount} tasks complete.\nYou have ${formatNumber(safeZpts)} zPts.\nMove or play next to keep the loop going.`;
-  }
-
-  if (nextUnlock.remaining > 0) {
-    return `Hey, I’m Zap.\nYou have ${formatNumber(safeZpts)} zPts.\nEarn ${formatNumber(nextUnlock.remaining)} more to unlock ${nextUnlock.label}.`;
-  }
-
-  return `Hey, I’m Zap.\nI’ll be your guide.\nMove, play, or earn zPts to begin.`;
+  return labels.map((label, index) => ({
+    id: `${label.toLowerCase().replace(/\s+/g, "-")}-${index}`,
+    label,
+    completed: index < completedTaskCount,
+  }));
 }
 
 function ZwapHeader() {
@@ -174,9 +68,12 @@ function GuidanceText({ guidance }) {
 }
 
 export default function DashboardWindowZwap({
+  isAltView = false,
+
   systemMessage = "",
   eventType = "",
   nextStep = "",
+  activitySignal = null,
 
   completedTaskCount = 0,
   totalTaskCount = 4,
@@ -189,19 +86,24 @@ export default function DashboardWindowZwap({
   gamesPlayedToday = 0,
   playGoal = 1,
 
+  lessonsCompletedToday = 0,
+
   shopUnlocked = false,
   learnUnlocked = false,
+  assistUnlocked = false,
   swapUnlocked = false,
 
+  onToggleAltView,
   className = "",
 }) {
   const taskLabel = buildTaskLabel(completedTaskCount, totalTaskCount);
 
   const guidance = useMemo(() => {
-    return buildZapGuidance({
+    const result = buildZapGuidance({
       systemMessage,
       nextStep,
       eventType,
+      activitySignal,
       completedTaskCount,
       totalTaskCount,
       zptsBalance,
@@ -209,14 +111,18 @@ export default function DashboardWindowZwap({
       stepGoal,
       gamesPlayedToday,
       playGoal,
+      lessonsCompletedToday,
       shopUnlocked,
       learnUnlocked,
       swapUnlocked,
     });
+
+    return result?.text || "";
   }, [
     systemMessage,
     nextStep,
     eventType,
+    activitySignal,
     completedTaskCount,
     totalTaskCount,
     zptsBalance,
@@ -224,21 +130,104 @@ export default function DashboardWindowZwap({
     stepGoal,
     gamesPlayedToday,
     playGoal,
+    lessonsCompletedToday,
     shopUnlocked,
     learnUnlocked,
     swapUnlocked,
   ]);
 
+  const taskItems = useMemo(() => {
+    return buildTaskItems({
+      completedTaskCount,
+      learnUnlocked,
+      shopUnlocked,
+      assistUnlocked,
+    });
+  }, [completedTaskCount, learnUnlocked, shopUnlocked, assistUnlocked]);
+
+  const handleToggle = () => {
+    if (typeof onToggleAltView === "function") {
+      onToggleAltView();
+    }
+  };
+
+  const shellClassName = [
+    "relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
+    "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.2),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.1),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
+    "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.1)]",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  if (isAltView) {
+    return (
+      <section
+        onClick={handleToggle}
+        className={shellClassName}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/14 blur-3xl" />
+          <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
+          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/28 to-transparent" />
+        </div>
+
+        <ZwapHeader />
+
+        <div className="relative z-10 mt-2 text-[0.96rem] font-black leading-tight tracking-[-0.045em] text-white">
+          Daily Tasks
+        </div>
+
+        <div className="relative z-10 mt-2 grid min-h-0 flex-1 grid-rows-4 gap-1.5 overflow-hidden">
+          {taskItems.map((task) => (
+            <div
+              key={task.id}
+              className="flex min-h-0 items-center justify-between rounded-[1.1rem] border border-white/10 bg-white/[0.045] px-2.5 py-1"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                {task.completed ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
+                ) : (
+                  <Circle className="h-3.5 w-3.5 shrink-0 text-white/30" />
+                )}
+
+                <span
+                  className={[
+                    "whitespace-nowrap text-[0.72rem] font-bold tracking-[-0.025em]",
+                    task.completed ? "text-white" : "text-white/66",
+                  ].join(" ")}
+                >
+                  {task.label}
+                </span>
+              </div>
+
+              <span
+                className={[
+                  "ml-2 shrink-0 text-[8px] font-black uppercase tracking-[0.12em]",
+                  task.completed ? "text-cyan-300" : "text-white/38",
+                ].join(" ")}
+              >
+                {task.completed ? "Done" : "Open"}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="relative z-10 mt-2 shrink-0 whitespace-nowrap text-[8px] font-black uppercase tracking-[0.12em] text-white/50">
+          {taskLabel}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
-      className={[
-        "relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
-        "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.2),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.1),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
-        "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.1)]",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      onClick={handleToggle}
+      className={shellClassName}
+      role="button"
+      tabIndex={0}
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/16 blur-3xl" />
