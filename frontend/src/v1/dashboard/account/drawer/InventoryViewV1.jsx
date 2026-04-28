@@ -1,7 +1,7 @@
 import React from "react";
 import { ChevronLeft, Sparkles } from "lucide-react";
 
-import ShopInventoryCard from "@/components/shop/ShopInventoryCard";
+import ShopInventoryCard from "@/v1/dashboard/shop/ShopInventoryCard";
 
 function HeaderButton({ onClick, children, label }) {
   return (
