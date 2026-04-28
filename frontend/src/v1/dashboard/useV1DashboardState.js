@@ -61,6 +61,12 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       0
     );
 
+    const lifetimeZpts = getFirstNumber(
+      user,
+      ["lifetimeZpts", "lifetime_zpts"],
+      zptsBalance
+    );
+
     const dailySteps = getFirstNumber(
       user,
       ["dailySteps", "daily_steps", "todaySteps", "stepsToday", "steps"],
@@ -96,32 +102,64 @@ export default function useV1DashboardState({ user, authUser } = {}) {
     const healthPercent = getFirstNumber(
       user,
       ["healthPercent", "garden_health_percent"],
+      100
+    );
+
+    const longestStreak = getFirstNumber(
+      user,
+      ["longestStreak", "longest_streak"],
       0
     );
 
-    const longestStreak = getFirstNumber(user, ["longestStreak"], 0);
-    const totalBlooms = getFirstNumber(user, ["totalBlooms"], 0);
-    const activeDays = getFirstNumber(user, ["activeDays"], 0);
-    const missedDays = getFirstNumber(user, ["missedDays"], 0);
-    const daysUntilNextBloom = getFirstNumber(user, ["daysUntilNextBloom"], 0);
+    const totalBlooms = getFirstNumber(
+      user,
+      ["totalBlooms", "total_blooms"],
+      0
+    );
+
+    const activeDays = getFirstNumber(
+      user,
+      ["activeDays", "active_days"],
+      0
+    );
+
+    const missedDays = getFirstNumber(
+      user,
+      ["missedDays", "missed_days"],
+      0
+    );
+
+    const daysUntilNextBloom = getFirstNumber(
+      user,
+      ["daysUntilNextBloom", "days_until_next_bloom"],
+      0
+    );
 
     const displayName = buildDisplayName({ user, authUser });
 
-    const shopUnlocked =
-      zptsBalance >= 1000 ||
-      getFirstBoolean(user, ["shopUnlocked", "shop_unlocked"], false);
+    const shopUnlocked = getFirstBoolean(
+      user,
+      ["shopUnlocked", "shop_unlocked"],
+      lifetimeZpts >= 1000
+    );
 
-    const gardenUnlocked =
-      getFirstBoolean(user, ["gardenUnlocked", "garden_unlocked"], false) ||
-      streakDays >= 3 ||
-      completedTaskCount >= totalTaskCount;
+    const gardenUnlocked = getFirstBoolean(
+      user,
+      ["gardenUnlocked", "garden_unlocked"],
+      false
+    );
 
-    const badgeVisibilityUnlocked =
-      getFirstBoolean(
-        user,
-        ["badgeVisibilityUnlocked", "badge_visibility_unlocked"],
-        false
-      ) || streakDays >= 7;
+    const rarePlantUnlocked = getFirstBoolean(
+      user,
+      ["rarePlantUnlocked", "rare_plant_unlocked"],
+      false
+    );
+
+    const badgeVisibilityUnlocked = getFirstBoolean(
+      user,
+      ["badgeVisibilityUnlocked", "badge_visibility_unlocked"],
+      false
+    );
 
     const learnUnlocked = getFirstBoolean(
       user,
@@ -147,20 +185,21 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       false
     );
 
-    const fullLoopCompleted =
-      getFirstBoolean(user, ["fullLoopCompleted", "full_loop_completed"], false) ||
-      completedTaskCount >= totalTaskCount;
-
-    const rarePlantUnlocked = getFirstBoolean(
+    const fullLoopCompleted = getFirstBoolean(
       user,
-      ["rarePlantUnlocked", "rare_plant_unlocked"],
+      ["fullLoopCompleted", "full_loop_completed"],
       false
     );
 
     const profileNeedsSetup = !displayName;
-    const hasNewHighScore = getFirstBoolean(user, ["hasNewHighScore"], false);
+    const hasNewHighScore = getFirstBoolean(
+      user,
+      ["hasNewHighScore", "has_new_high_score"],
+      false
+    );
+
     const canSpendZpts = zptsBalance > 0;
-    const shouldSaveZpts = zptsBalance < 1000;
+    const shouldSaveZpts = !shopUnlocked;
 
     return {
       user,
@@ -169,6 +208,7 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       displayName,
 
       zptsBalance,
+      lifetimeZpts,
 
       isZwapAltView,
       setIsZwapAltView,
@@ -199,7 +239,7 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       fullLoopCompleted,
 
       healthPercent,
-      growthStage: user?.growthStage || user?.garden_growth_stage || "Seed",
+      growthStage: user?.growthStage || user?.garden_growth_stage || "seed",
       plantName: user?.plantName || user?.garden_plant_name || "Garden",
 
       longestStreak,
@@ -207,7 +247,8 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       activeDays,
       missedDays,
       daysUntilNextBloom,
-      nextRareUnlock: user?.nextRareUnlock || "Next bloom",
+      nextRareUnlock:
+        user?.nextRareUnlock || user?.next_rare_unlock || "Next bloom",
       streakGraceDaysRemaining: getFirstNumber(
         user,
         ["streakGraceDaysRemaining", "streak_grace_days_remaining"],
@@ -215,14 +256,8 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       ),
 
       zwapMode: user?.zwapMode || user?.zwap_mode || "voice",
-      zwapMessage:
-        user?.zwapMessage ||
-        user?.zwap_message ||
-        "Ready when you are.",
-      zwapHint:
-        user?.zwapHint ||
-        user?.zwap_hint ||
-        "Complete actions to build today’s progress.",
+      zwapMessage: user?.zwapMessage || user?.zwap_message || "",
+      zwapHint: user?.zwapHint || user?.zwap_hint || "",
     };
   }, [user, authUser, isZwapAltView]);
 }
