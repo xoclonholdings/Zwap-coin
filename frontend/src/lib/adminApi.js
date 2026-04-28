@@ -1,4 +1,7 @@
-const API = `${import.meta.env.VITE_BACKEND_URL}/api`;
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+
+const API = `${BACKEND_URL}/api`;
 
 const adminApi = {
   headers(key) {
