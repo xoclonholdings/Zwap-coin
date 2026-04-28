@@ -272,7 +272,7 @@ async def stripe_webhook(request: Request):
             {"wallet_address": wallet_address},
             {
                 "$set": {
-                    "tier": "plus",
+                    "tier": "zitizen",
                     "subscription_status": "active",
                     "tier_updated_at": now_iso,
                     "stripe_session_id": session_id,
