@@ -4,11 +4,13 @@ ZWAP! V1 Move Router
 Routes for step submission and session status.
 
 V1 behavior:
+- Email is the primary user identity
+- Privy wallet is optional metadata only
 - MOVE earns zPts
 - daily zPts caps are enforced
 - Shaker = successful movement claims
 - Mover = unique active movement days
-- Daily task state is updated through daily_steps
+- MOVE writes activity_logs for Activity + Zap
 - Full daily loop processing runs after valid movement claims
 """
 
@@ -16,6 +18,7 @@ from collections import defaultdict
 import time as _time
 from datetime import datetime, timezone
 from typing import Any, Optional
+import uuid
 
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
@@ -54,6 +57,10 @@ def today_key() -> str:
     return utc_now().date().isoformat()
 
 
+def normalize_email(email: Optional[str]) -> str:
+    return str(email or "").lower().strip()
+
+
 def safe_int(value: Any, fallback: int = 0) -> int:
     try:
         return int(value or fallback)
@@ -88,14 +95,15 @@ def get_user_persist_id(user: dict):
     return user.get("id") or user.get("_id")
 
 
-def check_rate_limit(wallet: str, action: str, cooldown_seconds: int) -> bool:
+def check_rate_limit(identity: str, action: str, cooldown_seconds: int) -> bool:
+    key = normalize_email(identity)
     now = _time.time()
-    last = _rate_limits[wallet].get(action, 0)
+    last = _rate_limits[key].get(action, 0)
 
     if now - last < cooldown_seconds:
         return True
 
-    _rate_limits[wallet][action] = now
+    _rate_limits[key][action] = now
     return False
 
 
@@ -130,7 +138,7 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
 
     if should_reset:
         await db.users.update_one(
-            {"wallet_address": user["wallet_address"]},
+            {"email": user["email"]},
             {
                 "$set": {
                     "daily_zpts_earned": 0,
@@ -149,19 +157,19 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
     return user
 
 
-@router.post("/steps/{wallet_address}")
+@router.post("/steps/{email}")
 async def claim_step_rewards(
-    wallet_address: str,
+    email: str,
     steps_data: StepsUpdate,
     request: Request,
 ):
     db = request.app.state.db
-    wallet = wallet_address.lower().strip()
+    safe_email = normalize_email(email)
 
-    if not wallet:
-        raise HTTPException(status_code=400, detail="Wallet address is required")
+    if not safe_email:
+        raise HTTPException(status_code=400, detail="Email is required")
 
-    if check_rate_limit(wallet, "steps", STEP_CLAIM_COOLDOWN):
+    if check_rate_limit(safe_email, "steps", STEP_CLAIM_COOLDOWN):
         raise HTTPException(
             status_code=429,
             detail="Too many step claims. Please wait a few minutes.",
@@ -179,7 +187,7 @@ async def claim_step_rewards(
             detail=f"Step count exceeds maximum ({MAX_STEPS_PER_CLAIM})",
         )
 
-    user = await db.users.find_one({"wallet_address": wallet})
+    user = await db.users.find_one({"email": safe_email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -190,7 +198,7 @@ async def claim_step_rewards(
 
     tier_config = await get_tier_multipliers(tier)
     cap_check = await enforce_daily_caps(
-        wallet_address=wallet,
+        email=safe_email,
         tier=tier,
         earned_today=daily_zpts,
         cap_type="zpts",
@@ -221,6 +229,8 @@ async def claim_step_rewards(
     last_move_day = user.get("badge_last_move_day")
     increment_mover = last_move_day != current_day
 
+    updated_daily_steps = safe_int(user.get("daily_steps"), 0) + steps_data.steps
+
     update_doc = {
         "$inc": {
             "zpts_balance": rewards,
@@ -231,7 +241,7 @@ async def claim_step_rewards(
             "badge_step_claims": 1,
         },
         "$set": {
-            "daily_steps": safe_int(user.get("daily_steps"), 0) + steps_data.steps,
+            "daily_steps": updated_daily_steps,
             "daily_zpts_date": current_day,
             "last_zpts_reset": now_iso,
             "updated_at": now_iso,
@@ -242,11 +252,12 @@ async def claim_step_rewards(
         update_doc["$inc"]["badge_sustained_move_days"] = 1
         update_doc["$set"]["badge_last_move_day"] = current_day
 
-    await db.users.update_one({"wallet_address": wallet}, update_doc)
+    await db.users.update_one({"email": safe_email}, update_doc)
 
     await db.rewards_ledger.insert_one(
         {
-            "wallet_address": wallet,
+            "id": str(uuid.uuid4()),
+            "email": safe_email,
             "currency": "zpts",
             "amount": rewards,
             "uncapped_amount": requested_reward,
@@ -258,19 +269,39 @@ async def claim_step_rewards(
         }
     )
 
-    updated_user = await db.users.find_one({"wallet_address": wallet})
+    await db.activity_logs.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "email": safe_email,
+            "type": "move",
+            "steps": steps_data.steps,
+            "zpts": rewards,
+            "message": f"+{rewards} zPts from movement",
+            "priority": "normal",
+            "completed": True,
+            "created_at": now_iso,
+            "metadata": {
+                "daily_steps": updated_daily_steps,
+                "uncapped_zpts": requested_reward,
+                "daily_cap": zpts_cap,
+            },
+        }
+    )
+
+    updated_user = await db.users.find_one({"email": safe_email})
     if not updated_user:
         raise HTTPException(status_code=500, detail="User missing after movement update")
 
     updated_user = await persist_badges_safely(db, updated_user)
 
-    full_loop_result = await maybe_process_full_daily_loop(db, wallet)
+    full_loop_result = await maybe_process_full_daily_loop(db, email=safe_email)
 
     if (
         full_loop_result.get("awarded")
         or full_loop_result.get("reason") == "daily_cap_reached_loop_counted"
+        or full_loop_result.get("reason") == "cap_reached_loop_counted"
     ):
-        refreshed_user = await db.users.find_one({"wallet_address": wallet})
+        refreshed_user = await db.users.find_one({"email": safe_email})
         if refreshed_user:
             updated_user = refreshed_user
 
@@ -306,8 +337,13 @@ async def claim_step_rewards(
     }
 
 
-@router.get("/session/{wallet_address}")
-async def get_move_session(wallet_address: str):
+@router.get("/session/{email}")
+async def get_move_session(email: str):
+    safe_email = normalize_email(email)
+
+    if not safe_email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
     return {
         "active": False,
         "steps": 0,
@@ -315,7 +351,12 @@ async def get_move_session(wallet_address: str):
 
 
 @router.post("/anti-cheat")
-async def submit_anti_cheat_flags(wallet_address: str):
+async def submit_anti_cheat_flags(email: str):
+    safe_email = normalize_email(email)
+
+    if not safe_email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
     return {
         "received": True,
         "flagged": False,
