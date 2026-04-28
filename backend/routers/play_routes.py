@@ -10,6 +10,7 @@ V1 game registry:
 
 import logging
 from datetime import datetime, timezone
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -45,56 +46,133 @@ class GameResultRequest(BaseModel):
     completed: bool = True
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def utc_now_iso() -> str:
+    return utc_now().isoformat()
+
+
+def today_key() -> str:
+    return utc_now().date().isoformat()
+
+
+def safe_int(value: Any, fallback: int = 0) -> int:
+    try:
+        return int(value or fallback)
+    except Exception:
+        return fallback
+
+
+def parse_datetime(value: Optional[Any]) -> Optional[datetime]:
+    if value is None:
+        return None
+
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+
+        return value.astimezone(timezone.utc)
+
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+
+            return parsed.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    return None
+
+
 def normalize_tier_key(tier: str) -> str:
     safe = str(tier or "").lower().strip()
 
-    if safe in ("plus", "zitizen"):
-        return "plus"
+    if safe in {"plus", "zitizen"}:
+        return "zitizen"
 
-    return "starter"
+    return "zwapper"
 
 
 def normalize_game_id(game_type: str) -> str:
     return str(game_type or "").lower().strip()
 
 
+def safe_game_field(game_type: str) -> str:
+    return game_type.replace("-", "_")
+
+
+def get_personal_best_field(game_type: str) -> str:
+    return f"personal_best_{safe_game_field(game_type)}"
+
+
+def get_daily_best_field(game_type: str) -> str:
+    return f"daily_best_{safe_game_field(game_type)}"
+
+
+def get_daily_best_count_field(game_type: str) -> str:
+    return f"daily_best_count_{safe_game_field(game_type)}"
+
+
+def get_personal_best_rewarded_day_field(game_type: str) -> str:
+    return f"personal_best_rewarded_day_{safe_game_field(game_type)}"
+
+
+def get_user_persist_id(user: dict):
+    return user.get("id") or user.get("_id")
+
+
+async def persist_badges_safely(db, user: dict) -> dict:
+    badge_result = evaluate_badges(user)
+    updates = badge_result.get("updates", {})
+    user_id = get_user_persist_id(user)
+
+    if user_id and updates:
+        await persist_badge_updates(db, user_id, updates)
+        user.update(updates)
+
+    return user
+
+
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
-    now = datetime.now(timezone.utc)
-    last_reset = user.get("last_zpts_reset")
+    now = utc_now()
+    now_iso = now.isoformat()
+    current_day = today_key()
 
-    if last_reset:
-        last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
+    last_reset = parse_datetime(user.get("last_zpts_reset"))
+    stored_daily_key = user.get("daily_zpts_date")
 
-        if last_reset_dt.date() < now.date():
-            await db.users.update_one(
-                {"wallet_address": user["wallet_address"]},
-                {
-                    "$set": {
-                        "daily_zpts_earned": 0,
-                        "games_played_today": 0,
-                        "last_zpts_reset": now.isoformat(),
-                    }
-                },
-            )
+    should_reset = False
 
-            user["daily_zpts_earned"] = 0
-            user["games_played_today"] = 0
-            user["last_zpts_reset"] = now.isoformat()
-    else:
+    if stored_daily_key and stored_daily_key != current_day:
+        should_reset = True
+    elif last_reset and last_reset.date() < now.date():
+        should_reset = True
+    elif not stored_daily_key and not last_reset:
+        should_reset = True
+
+    if should_reset:
         await db.users.update_one(
             {"wallet_address": user["wallet_address"]},
             {
                 "$set": {
                     "daily_zpts_earned": 0,
                     "games_played_today": 0,
-                    "last_zpts_reset": now.isoformat(),
+                    "daily_zpts_date": current_day,
+                    "last_zpts_reset": now_iso,
+                    "updated_at": now_iso,
                 }
             },
         )
 
         user["daily_zpts_earned"] = 0
         user["games_played_today"] = 0
-        user["last_zpts_reset"] = now.isoformat()
+        user["daily_zpts_date"] = current_day
+        user["last_zpts_reset"] = now_iso
+        user["updated_at"] = now_iso
 
     return user
 
@@ -121,26 +199,6 @@ def get_move_dependency_multiplier(today_steps: int) -> float:
         return 0.5
 
     return 1.0
-
-
-def safe_game_field(game_type: str) -> str:
-    return game_type.replace("-", "_")
-
-
-def get_personal_best_field(game_type: str) -> str:
-    return f"personal_best_{safe_game_field(game_type)}"
-
-
-def get_daily_best_field(game_type: str) -> str:
-    return f"daily_best_{safe_game_field(game_type)}"
-
-
-def get_daily_best_count_field(game_type: str) -> str:
-    return f"daily_best_count_{safe_game_field(game_type)}"
-
-
-def get_personal_best_rewarded_day_field(game_type: str) -> str:
-    return f"personal_best_rewarded_day_{safe_game_field(game_type)}"
 
 
 @router.get("/registry")
@@ -188,16 +246,15 @@ async def submit_game_result(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    tier = normalize_tier_key(user.get("tier", "starter"))
-
+    tier = normalize_tier_key(user.get("tier", "zwapper"))
     user = await check_and_reset_daily_zpts(db, user)
 
-    daily_zpts = int(user.get("daily_zpts_earned", 0) or 0)
-    games_played_today = int(user.get("games_played_today", 0) or 0)
-    today_steps = int(user.get("daily_steps", 0) or 0)
+    daily_zpts = safe_int(user.get("daily_zpts_earned"), 0)
+    games_played_today = safe_int(user.get("games_played_today"), 0)
+    today_steps = safe_int(user.get("daily_steps"), 0)
 
     tier_reward_config = await get_tier_multipliers(tier)
-    zpts_cap = int(tier_reward_config["daily_zpts_cap"])
+    zpts_cap = safe_int(tier_reward_config.get("daily_zpts_cap"), 0)
 
     cap_check = await enforce_daily_caps(
         wallet_address=wallet,
@@ -206,7 +263,7 @@ async def submit_game_result(
         cap_type="zpts",
     )
 
-    if cap_check["capped"]:
+    if cap_check.get("capped"):
         raise HTTPException(
             status_code=429,
             detail="Daily zPts earning limit reached. Come back tomorrow!",
@@ -229,7 +286,7 @@ async def submit_game_result(
         )
         raise HTTPException(status_code=400, detail=str(error))
 
-    base_zpts = int(rewards["zpts"])
+    base_zpts = safe_int(rewards.get("zpts"), 0)
 
     session_multiplier = get_session_diminishing_multiplier(games_played_today)
     move_multiplier = get_move_dependency_multiplier(today_steps)
@@ -237,7 +294,8 @@ async def submit_game_result(
     adjusted_base_zpts = int(round(base_zpts * session_multiplier * move_multiplier))
     adjusted_base_zpts = max(adjusted_base_zpts, 0)
 
-    today_key = datetime.now(timezone.utc).date().isoformat()
+    current_day = today_key()
+    now_iso = utc_now_iso()
 
     personal_best_field = get_personal_best_field(canonical_game_type)
     daily_best_field = get_daily_best_field(canonical_game_type)
@@ -246,15 +304,15 @@ async def submit_game_result(
         canonical_game_type
     )
 
-    previous_personal_best = int(user.get(personal_best_field, 0) or 0)
-    previous_daily_best = int(user.get(daily_best_field, 0) or 0)
-    previous_daily_best_count = int(user.get(daily_best_count_field, 0) or 0)
+    previous_personal_best = safe_int(user.get(personal_best_field), 0)
+    previous_daily_best = safe_int(user.get(daily_best_field), 0)
+    previous_daily_best_count = safe_int(user.get(daily_best_count_field), 0)
     previous_personal_best_rewarded_day = user.get(personal_best_rewarded_day_field)
 
     personal_best_achieved = game_data.score > previous_personal_best
     personal_best_bonus = 0
 
-    if personal_best_achieved and previous_personal_best_rewarded_day != today_key:
+    if personal_best_achieved and previous_personal_best_rewarded_day != current_day:
         personal_best_bonus = 10
 
     daily_best_achieved = game_data.score > previous_daily_best
@@ -264,7 +322,7 @@ async def submit_game_result(
         daily_best_bonus = 5
 
     total_requested_zpts = adjusted_base_zpts + personal_best_bonus + daily_best_bonus
-    zpts_to_add = max(0, min(total_requested_zpts, int(cap_check["remaining"])))
+    zpts_to_add = max(0, min(total_requested_zpts, safe_int(cap_check.get("remaining"), 0)))
 
     achievement_bonus_requested = personal_best_bonus + daily_best_bonus
     achievement_bonus_awarded = max(0, zpts_to_add - adjusted_base_zpts)
@@ -274,14 +332,16 @@ async def submit_game_result(
     )
 
     set_updates = {
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "daily_zpts_date": current_day,
+        "last_zpts_reset": now_iso,
+        "updated_at": now_iso,
     }
 
     if personal_best_achieved:
         set_updates[personal_best_field] = game_data.score
 
         if personal_best_bonus > 0:
-            set_updates[personal_best_rewarded_day_field] = today_key
+            set_updates[personal_best_rewarded_day_field] = current_day
 
     if daily_best_achieved:
         set_updates[daily_best_field] = game_data.score
@@ -294,13 +354,31 @@ async def submit_game_result(
         {
             "$inc": {
                 "zpts_balance": zpts_to_add,
+                "lifetime_zpts": zpts_to_add,
                 "games_played": 1,
                 "games_played_today": 1,
                 "daily_zpts_earned": zpts_to_add,
                 "badge_zpts_earned": zpts_to_add,
+                "badge_deep_engagement": 1,
             },
             "$set": set_updates,
         },
+    )
+
+    await db.rewards_ledger.insert_one(
+        {
+            "wallet_address": wallet,
+            "currency": "zpts",
+            "amount": zpts_to_add,
+            "uncapped_amount": total_requested_zpts,
+            "source": "play",
+            "reward_type": "game_result",
+            "game": canonical_game_type,
+            "score": game_data.score,
+            "level": game_data.level,
+            "daily_cap": zpts_cap,
+            "created_at": now_iso,
+        }
     )
 
     updated_user = await db.users.find_one({"wallet_address": wallet})
@@ -308,9 +386,7 @@ async def submit_game_result(
     if not updated_user:
         raise HTTPException(status_code=500, detail="User missing after play update")
 
-    badge_result = evaluate_badges(updated_user)
-    await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
-    updated_user.update(badge_result["updates"])
+    updated_user = await persist_badges_safely(db, updated_user)
 
     full_loop_result = await maybe_process_full_daily_loop(db, wallet)
 
@@ -340,9 +416,12 @@ async def submit_game_result(
         "full_loop_bonus": full_loop_result.get("full_loop_bonus", 0),
         "daily_zpts_remaining": max(
             0,
-            zpts_cap - int(updated_user.get("daily_zpts_earned", 0)),
+            zpts_cap - safe_int(updated_user.get("daily_zpts_earned"), 0),
         ),
-        "new_zpts_balance": int(updated_user.get("zpts_balance", 0)),
+        "new_zpts_balance": safe_int(updated_user.get("zpts_balance"), 0),
+        "games_played_today": safe_int(updated_user.get("games_played_today"), 0),
+        "daily_zpts_earned": safe_int(updated_user.get("daily_zpts_earned"), 0),
+        "badge_deep_engagement": updated_user.get("badge_deep_engagement", 0),
         "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
         "badge_earner_level": updated_user.get("badge_earner_level", 0),
         "badge_earner_mastered": updated_user.get("badge_earner_mastered", False),
