@@ -22,9 +22,8 @@ The key is validated against:
 
 from fastapi import APIRouter, HTTPException, Header, Depends, Query
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
-from enum import Enum
 import hashlib
 import os
 import re
@@ -107,12 +106,6 @@ async def log_admin_action(
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
-
-class PaymentMethod(str, Enum):
-    zpts = "zpts"
-    zwap = "zwap"
-    stripe = "stripe"
-
 
 class ShopCategoryAdmin(BaseModel):
     id: str
@@ -212,7 +205,10 @@ class AdminKeyUpdate(BaseModel):
 # Shop validation
 # ---------------------------------------------------------------------------
 
-def validate_shop_item_payload(payload: ShopItemAdmin, forced_id: Optional[str] = None) -> Dict[str, Any]:
+def validate_shop_item_payload(
+    payload: ShopItemAdmin,
+    forced_id: Optional[str] = None,
+) -> Dict[str, Any]:
     item = model_to_dict(payload)
 
     name = str(item.get("name", "")).strip()
@@ -223,7 +219,10 @@ def validate_shop_item_payload(payload: ShopItemAdmin, forced_id: Optional[str] 
     normalized_item_id = normalize_id(forced_id or incoming_id)
 
     if not normalized_item_id:
-        raise HTTPException(status_code=400, detail="Shop item id is required or must be buildable from name")
+        raise HTTPException(
+            status_code=400,
+            detail="Shop item id is required or must be buildable from name",
+        )
 
     if forced_id:
         payload_id = normalize_id(item.get("id")) if item.get("id") else normalized_item_id
@@ -232,20 +231,32 @@ def validate_shop_item_payload(payload: ShopItemAdmin, forced_id: Optional[str] 
 
     payment_method = str(item.get("payment_method", "zpts")).strip().lower()
     if payment_method not in {"zpts", "zwap", "stripe"}:
-        raise HTTPException(status_code=400, detail="payment_method must be one of: zpts, zwap, stripe")
+        raise HTTPException(
+            status_code=400,
+            detail="payment_method must be one of: zpts, zwap, stripe",
+        )
 
     price_zpts = item.get("price_zpts")
     price_zwap = item.get("price_zwap")
     price_stripe = item.get("price_stripe")
 
     if payment_method == "zpts" and (price_zpts is None or int(price_zpts) <= 0):
-        raise HTTPException(status_code=400, detail="price_zpts must be positive when payment_method is zpts")
+        raise HTTPException(
+            status_code=400,
+            detail="price_zpts must be positive when payment_method is zpts",
+        )
 
     if payment_method == "zwap" and (price_zwap is None or float(price_zwap) <= 0):
-        raise HTTPException(status_code=400, detail="price_zwap must be positive when payment_method is zwap")
+        raise HTTPException(
+            status_code=400,
+            detail="price_zwap must be positive when payment_method is zwap",
+        )
 
     if payment_method == "stripe" and (price_stripe is None or float(price_stripe) <= 0):
-        raise HTTPException(status_code=400, detail="price_stripe must be positive when payment_method is stripe")
+        raise HTTPException(
+            status_code=400,
+            detail="price_stripe must be positive when payment_method is stripe",
+        )
 
     category = normalize_id(item.get("category") or "general") or "general"
     subcategory = normalize_id(item.get("subcategory")) if item.get("subcategory") else None
@@ -265,7 +276,10 @@ def validate_shop_item_payload(payload: ShopItemAdmin, forced_id: Optional[str] 
     if normalized.get("max_quantity") is not None:
         normalized["max_quantity"] = int(normalized["max_quantity"])
         if normalized["max_quantity"] <= 0:
-            raise HTTPException(status_code=400, detail="max_quantity must be positive when provided")
+            raise HTTPException(
+                status_code=400,
+                detail="max_quantity must be positive when provided",
+            )
 
     return remove_none_values(normalized)
 
@@ -305,13 +319,18 @@ async def get_dashboard_stats():
     shop_items = await db.shop_items.count_documents({})
     active_shop_items = await db.shop_items.count_documents({"active": True, "in_stock": True})
 
-    zpts_pipeline = [{"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$zpts_balance", 0]}}}}]
-    zwap_pipeline = [{"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$zwap_balance", 0]}}}}]
+    zpts_pipeline = [
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$zpts_balance", 0]}}}}
+    ]
+    zwap_pipeline = [
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$zwap_balance", 0]}}}}
+    ]
 
     zpts_result = await db.users.aggregate(zpts_pipeline).to_list(length=1)
     zwap_result = await db.users.aggregate(zwap_pipeline).to_list(length=1)
 
     return {
+        "success": True,
         "total_users": total_users,
         "active_users_today": active_users_today,
         "shop_items": shop_items,
@@ -403,7 +422,10 @@ async def update_user(
     await log_admin_action(
         action="update_user",
         section="users",
-        details={"wallet_address": wallet_address, "fields": list(update_data.keys())},
+        details={
+            "wallet_address": wallet_address,
+            "fields": list(update_data.keys()),
+        },
         admin_key=x_admin_key,
     )
 
@@ -469,30 +491,40 @@ async def adjust_reward_balance(
         },
     )
 
+    created_at = now_utc()
     ledger_entry = {
         "wallet_address": payload.wallet_address,
         "currency": currency,
         "amount": payload.amount,
         "reason": payload.reason,
         "source": "admin_adjustment",
-        "created_at": now_utc(),
+        "created_at": created_at,
     }
 
-    await db.rewards_ledger.insert_one(ledger_entry)
+    await db.rewards_ledger.insert_one(dict(ledger_entry))
 
     await log_admin_action(
         action="adjust_reward_balance",
         section="rewards",
-        details=ledger_entry,
+        details={
+            "wallet_address": payload.wallet_address,
+            "currency": currency,
+            "amount": payload.amount,
+            "reason": payload.reason,
+            "source": "admin_adjustment",
+        },
         admin_key=x_admin_key,
     )
 
-    updated_user = await db.users.find_one({"wallet_address": payload.wallet_address}, {"_id": 0})
+    updated_user = await db.users.find_one(
+        {"wallet_address": payload.wallet_address},
+        {"_id": 0},
+    )
 
     return {
         "success": True,
         "user": updated_user,
-        "ledger_entry": {**ledger_entry},
+        "ledger_entry": ledger_entry,
     }
 
 
@@ -553,7 +585,12 @@ async def update_walk_config(
 async def get_games_config():
     from server import db
 
-    games = await db.games_config.find({}, {"_id": 0}).sort("sort_order", 1).to_list(length=500)
+    games = (
+        await db.games_config.find({}, {"_id": 0})
+        .sort("sort_order", 1)
+        .to_list(length=500)
+    )
+
     return {"success": True, "games": games}
 
 
@@ -612,7 +649,10 @@ async def update_swap_config(
 
     update_data = remove_none_values(model_to_dict(payload))
     if not update_data:
-        raise HTTPException(status_code=400, detail="No ZWAP Window / Swap config fields provided")
+        raise HTTPException(
+            status_code=400,
+            detail="No ZWAP Window / Swap config fields provided",
+        )
 
     await db.system_config.update_one(
         {"key": "swap_config"},
@@ -858,7 +898,12 @@ async def get_system_health():
 async def get_system_config():
     from server import db
 
-    config = await db.system_config.find({}, {"_id": 0}).sort("key", 1).to_list(length=1000)
+    config = (
+        await db.system_config.find({}, {"_id": 0})
+        .sort("key", 1)
+        .to_list(length=1000)
+    )
+
     return {
         "success": True,
         "config": config,
@@ -985,7 +1030,12 @@ async def get_analytics_overview(days: int = Query(30, ge=1, le=365)):
 async def get_subscription_plans():
     from server import db
 
-    plans = await db.subscription_plans.find({}, {"_id": 0}).sort("monthly_price", 1).to_list(length=100)
+    plans = (
+        await db.subscription_plans.find({}, {"_id": 0})
+        .sort("monthly_price", 1)
+        .to_list(length=100)
+    )
+
     return {
         "success": True,
         "plans": plans,
@@ -1075,7 +1125,10 @@ async def update_admin_key(
 
     new_key = payload.new_admin_key.strip()
     if len(new_key) < 12:
-        raise HTTPException(status_code=400, detail="Admin key must be at least 12 characters")
+        raise HTTPException(
+            status_code=400,
+            detail="Admin key must be at least 12 characters",
+        )
 
     key_hash = hashlib.sha256(new_key.encode("utf-8")).hexdigest()
 
@@ -1109,7 +1162,12 @@ async def update_admin_key(
 async def get_admin_settings():
     from server import db
 
-    settings = await db.admin_settings.find({}, {"_id": 0, "value": 0}).sort("key", 1).to_list(length=500)
+    settings = (
+        await db.admin_settings.find({}, {"_id": 0, "value": 0})
+        .sort("key", 1)
+        .to_list(length=500)
+    )
+
     return {
         "success": True,
         "settings": settings,
