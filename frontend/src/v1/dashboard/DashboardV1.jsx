@@ -1,4 +1,11 @@
-import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  Suspense,
+  lazy,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import useV1DashboardState from "./useV1DashboardState";
 import AppHeaderV1 from "./AppHeaderV1";
@@ -28,6 +35,8 @@ const ZapManGame = lazy(() =>
 );
 
 const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
+
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 function estimateCaloriesFromSteps(steps) {
   const safeSteps = Math.max(0, Number(steps || 0));
@@ -136,6 +145,11 @@ export default function DashboardV1({ user, authUser }) {
   const [activeGameId, setActiveGameId] = useState(null);
   const [activeView, setActiveView] = useState("dashboard");
 
+  const [shopCategories, setShopCategories] = useState([]);
+  const [shopItems, setShopItems] = useState([]);
+  const [shopLoading, setShopLoading] = useState(false);
+  const [shopError, setShopError] = useState("");
+
   const sessionStartStepsRef = useRef(0);
 
   function handleOpenActivity() {
@@ -174,6 +188,35 @@ export default function DashboardV1({ user, authUser }) {
     setActiveGameId(null);
   };
 
+  const handlePurchaseShopItem = async (item) => {
+    const walletAddress = user?.wallet_address || user?.walletAddress || "";
+    const itemId = item?.id || item?._id;
+    const paymentType = item?.payment_method || "zpts";
+
+    if (!walletAddress || !itemId) return;
+
+    const response = await fetch(
+      `${API_BASE}/shop/purchase/${walletAddress}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          item_id: itemId,
+          payment_type: paymentType,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Purchase failed");
+    }
+
+    return response.json();
+  };
+
   useEffect(() => {
     if (!moveIsActive) return undefined;
 
@@ -194,6 +237,55 @@ export default function DashboardV1({ user, authUser }) {
 
     return () => window.clearInterval(interval);
   }, [moveIsActive]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadShopData() {
+      setShopLoading(true);
+      setShopError("");
+
+      try {
+        const [categoriesResponse, itemsResponse] = await Promise.all([
+          fetch(`${API_BASE}/shop/categories`),
+          fetch(`${API_BASE}/shop/items`),
+        ]);
+
+        if (!categoriesResponse.ok) {
+          throw new Error("Shop categories failed to load");
+        }
+
+        if (!itemsResponse.ok) {
+          throw new Error("Shop items failed to load");
+        }
+
+        const categories = await categoriesResponse.json();
+        const items = await itemsResponse.json();
+
+        if (!isMounted) return;
+
+        setShopCategories(Array.isArray(categories) ? categories : []);
+        setShopItems(Array.isArray(items) ? items : []);
+      } catch (error) {
+        if (!isMounted) return;
+
+        console.error("Shop load failed:", error);
+        setShopError(error?.message || "Shop failed to load");
+        setShopCategories([]);
+        setShopItems([]);
+      } finally {
+        if (isMounted) {
+          setShopLoading(false);
+        }
+      }
+    }
+
+    loadShopData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
@@ -261,6 +353,11 @@ export default function DashboardV1({ user, authUser }) {
           <DashboardWindowShop
             zptsBalance={zptsBalance}
             shopUnlocked={previewShopUnlocked}
+            categories={shopCategories}
+            items={shopItems}
+            loading={shopLoading}
+            error={shopError}
+            onPurchaseItem={handlePurchaseShopItem}
           />
         </div>
 
