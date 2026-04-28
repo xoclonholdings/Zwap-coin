@@ -1,85 +1,64 @@
-const ADJECTIVES = [
-  "Nova",
-  "Pixel",
-  "Quantum",
-  "Echo",
-  "Neon",
-  "Solar",
-  "Cyber",
-  "Hyper",
-  "Shadow",
-  "Turbo",
-];
+ADJECTIVES = [
+    "Nova",
+    "Pixel",
+    "Quantum",
+    "Echo",
+    "Neon",
+    "Solar",
+    "Cyber",
+    "Hyper",
+    "Shadow",
+    "Turbo",
+]
 
-const NOUNS = [
-  "Runner",
-  "Walker",
-  "Strider",
-  "Pilot",
-  "Glider",
-  "Breaker",
-  "Phantom",
-  "Rider",
-  "Explorer",
-  "Voyager",
-];
+NOUNS = [
+    "Runner",
+    "Walker",
+    "Strider",
+    "Pilot",
+    "Glider",
+    "Breaker",
+    "Phantom",
+    "Rider",
+    "Explorer",
+    "Voyager",
+]
 
-function hashString(value = "") {
-  let hash = 0;
-  const safeValue = String(value || "").toLowerCase().trim();
 
-  for (let i = 0; i < safeValue.length; i += 1) {
-    hash = (hash << 5) - hash + safeValue.charCodeAt(i);
-    hash |= 0;
-  }
+def hash_string(value: str = "") -> int:
+    hash_value = 0
+    safe_value = str(value or "").lower().strip()
 
-  return Math.abs(hash);
-}
+    for char in safe_value:
+        hash_value = ((hash_value << 5) - hash_value) + ord(char)
+        hash_value = hash_value & 0xFFFFFFFF
 
-function normalizeEmail(email = "") {
-  if (!email) return "";
-  return String(email).toLowerCase().trim();
-}
+        if hash_value >= 0x80000000:
+            hash_value -= 0x100000000
 
-function normalizeWallet(walletAddress = "") {
-  if (!walletAddress) return "";
-  return String(walletAddress).trim();
-}
+    return abs(hash_value)
 
-export function generateUsername({
-  walletAddress = "",
-  email = "",
-  username = "",
-} = {}) {
-  const savedUsername = String(username || "").trim();
 
-  if (savedUsername) {
-    return savedUsername;
-  }
+def generate_username(email: str = "", wallet_address: Optional[str] = None) -> str:
+    safe_email = normalize_email(email)
+    safe_wallet = normalize_wallet(wallet_address) or ""
 
-  const safeWalletAddress = normalizeWallet(walletAddress);
-  const safeEmail = normalizeEmail(email);
+    seed_source = safe_email or safe_wallet
 
-  const seedSource = safeWalletAddress || safeEmail;
+    if not seed_source:
+        return ""
 
-  if (!seedSource) {
-    return "";
-  }
+    if safe_wallet.startswith("0x") and len(safe_wallet) >= 10:
+        try:
+            seed = int(safe_wallet[2:10], 16)
+        except Exception:
+            seed = hash_string(seed_source)
+    else:
+        seed = hash_string(seed_source)
 
-  let seed = 0;
+    safe_seed = abs(seed)
+    adjective = ADJECTIVES[safe_seed % len(ADJECTIVES)]
+    noun = NOUNS[(safe_seed // 7) % len(NOUNS)]
+    number = safe_seed % 999
 
-  if (safeWalletAddress.startsWith("0x") && safeWalletAddress.length >= 10) {
-    seed = parseInt(safeWalletAddress.slice(2, 10), 16);
-  } else {
-    seed = hashString(seedSource);
-  }
-
-  const safeSeed = Math.abs(seed);
-  const adjective = ADJECTIVES[safeSeed % ADJECTIVES.length];
-  const noun = NOUNS[Math.floor(safeSeed / 7) % NOUNS.length];
-  const number = safeSeed % 999;
-
-  return `${adjective}${noun}${number}`;
-}
-
-export default generateUsername;
+    return f"{adjective}{noun}{number}"
