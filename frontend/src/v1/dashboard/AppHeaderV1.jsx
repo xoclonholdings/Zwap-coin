@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { Sprout, BookOpen, Play, Award } from "lucide-react";
+import { Sprout, BookOpen, Play, Award, Lock } from "lucide-react";
 
 import AccountDrawerV1 from "./account/AccountDrawerV1";
 import AdminPanelV1 from "./admin/AdminPanelV1";
 
-// ✅ IMPORTANT: rename file to lowercase
 import activityLogo from "@/assets/activity_logo.png";
 
 function formatZpts(value) {
@@ -24,10 +23,21 @@ function buildInitials(name = "") {
 function HeaderIconButton({
   label,
   icon,
-  unlocked = true, // Activity is always unlocked
+  unlocked = true,
   hasAlert = false,
   onClick,
+  tone = "cyan",
 }) {
+  const unlockedStyles =
+    tone === "garden"
+      ? "border-lime-300/45 bg-lime-300/15 text-lime-300 shadow-[0_0_16px_rgba(132,204,22,0.24)]"
+      : "border-cyan-400/45 bg-cyan-500/15 text-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.20)]";
+
+  const alertStyles =
+    tone === "garden"
+      ? "bg-lime-300 shadow-[0_0_8px_rgba(190,242,100,0.8)]"
+      : "bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.8)]";
+
   return (
     <button
       type="button"
@@ -36,15 +46,21 @@ function HeaderIconButton({
       className={[
         "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition active:scale-[0.96]",
         unlocked
-          ? "border-cyan-400/45 bg-cyan-500/15 text-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.20)]"
+          ? unlockedStyles
           : "border-white/10 bg-white/[0.03] text-white/25",
         hasAlert ? "animate-pulse" : "",
       ].join(" ")}
     >
       {icon}
 
-      {hasAlert && (
-        <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.8)]" />
+      {!unlocked && (
+        <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/10 bg-[#05070b] text-white/45">
+          <Lock size={8} />
+        </span>
+      )}
+
+      {hasAlert && unlocked && (
+        <span className={`absolute right-0 top-0 h-1.5 w-1.5 rounded-full ${alertStyles}`} />
       )}
     </button>
   );
@@ -54,7 +70,7 @@ function HeaderPopup({ popup, onClose }) {
   if (!popup) return null;
 
   return (
-    <div className="fixed left-1/2 top-[86px] z-[9999] w-[240px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#0c1220]/95 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+    <div className="fixed left-1/2 top-[86px] z-[9999] w-[250px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#0c1220]/95 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/80">
         {popup.title}
       </div>
@@ -92,7 +108,7 @@ export default function AppHeaderV1({
   streamHasAlert = false,
   badgesHasAlert = false,
 
-  onActivityClick, // ✅ NEW
+  onActivityClick,
   onGardenClick,
   onLearnClick,
   onStreamClick,
@@ -132,36 +148,43 @@ export default function AppHeaderV1({
 
   function handleGardenTap() {
     if (!gardenUnlocked) {
-      showLockedPopup("Garden Locked", "Complete more daily activity.");
+      showLockedPopup(
+        "Garden Locked",
+        "Complete 3 active days or your first full daily loop to unlock Garden."
+      );
       return;
     }
+
     setPopup(null);
     onGardenClick?.();
   }
 
   function handleLearnTap() {
     if (!learnUnlocked) {
-      showLockedPopup("Learn Locked", "Complete more progress.");
+      showLockedPopup("Learn Locked", "Complete more progress to unlock Learn.");
       return;
     }
+
     setPopup(null);
     onLearnClick?.();
   }
 
   function handleStreamTap() {
     if (!streamUnlocked) {
-      showLockedPopup("Stream Locked", "Complete more progress.");
+      showLockedPopup("Stream Locked", "Complete more progress to unlock Stream.");
       return;
     }
+
     setPopup(null);
     onStreamClick?.();
   }
 
   function handleBadgeTap() {
     if (!badgesUnlocked) {
-      showLockedPopup("Badges Locked", "Complete more progress.");
+      showLockedPopup("Badges Locked", "Complete more progress to unlock Badges.");
       return;
     }
+
     setPopup(null);
     onBadgeClick?.();
   }
@@ -178,11 +201,7 @@ export default function AppHeaderV1({
           .join(" ")}
       >
         <div className="flex h-[64px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-          
-          {/* LEFT ICON STRIP */}
           <div className="flex min-w-0 flex-1 items-center gap-2">
-
-            {/* ✅ Activity */}
             <HeaderIconButton
               label="Activity"
               onClick={onActivityClick}
@@ -200,6 +219,7 @@ export default function AppHeaderV1({
               unlocked={gardenUnlocked}
               hasAlert={gardenHasAlert}
               onClick={handleGardenTap}
+              tone="garden"
               icon={<Sprout size={15} />}
             />
 
@@ -228,7 +248,6 @@ export default function AppHeaderV1({
             />
           </div>
 
-          {/* BALANCE */}
           <div className="shrink-0 rounded-2xl border border-cyan-400/14 bg-cyan-400/[0.06] px-3 py-1.5 text-center shadow-[0_0_16px_rgba(34,211,238,0.08)]">
             <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/42">
               Balance
@@ -238,7 +257,6 @@ export default function AppHeaderV1({
             </div>
           </div>
 
-          {/* AVATAR */}
           <button
             type="button"
             onClick={() => setAccountOpen(true)}
@@ -281,10 +299,7 @@ export default function AppHeaderV1({
         onOpenSupportChat={onOpenSupportChat}
       />
 
-      <AdminPanelV1
-        isOpen={adminOpen}
-        onClose={() => setAdminOpen(false)}
-      />
+      <AdminPanelV1 isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
     </>
   );
 }
