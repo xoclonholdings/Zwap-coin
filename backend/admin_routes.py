@@ -1,855 +1,1116 @@
 """
-ZWAP! Admin Panel Backend
-========================
-Comprehensive admin controls for managing users, rewards, games, marketplace, and treasury.
+ZWAP! V1 Admin Routes
+=====================
 
-Security: Admin routes require admin authentication via X-Admin-Key header.
+Strict V1 admin controls for:
+- Dashboard stats
+- User management
+- Rewards ledger
+- MOVE config
+- PLAY config
+- SHOP categories/items
+- ZWAP Window / Swap config
+- Treasury and system config
+- Logs, analytics, subscriptions, and admin settings
+
+Security:
+Admin routes require X-Admin-Key.
+The key is validated against:
+1. ADMIN_API_KEY environment variable
+2. database-stored admin_key_hash
 """
 
 from fastapi import APIRouter, HTTPException, Header, Depends, Query
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone, timedelta
 from enum import Enum
+import hashlib
 import os
+import re
 
-# Admin API Router
+
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
-# Dependency for admin authentication - checks env var AND database-stored hash
+
+# ---------------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------------
+
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def model_to_dict(model: BaseModel) -> Dict[str, Any]:
+    if hasattr(model, "model_dump"):
+        return model.model_dump(exclude_unset=True)
+    return model.dict(exclude_unset=True)
+
+
+def normalize_id(value: Optional[str]) -> str:
+    if value is None:
+        return ""
+
+    normalized = str(value).strip().lower()
+    normalized = re.sub(r"[^a-z0-9]+", "-", normalized)
+    normalized = re.sub(r"-+", "-", normalized)
+    normalized = normalized.strip("-")
+    return normalized
+
+
+def remove_none_values(data: Dict[str, Any]) -> Dict[str, Any]:
+    return {key: value for key, value in data.items() if value is not None}
+
+
 async def verify_admin(x_admin_key: str = Header(None)):
-    import hashlib
     from server import db
-    
+
     if not x_admin_key:
         raise HTTPException(status_code=401, detail="Admin key required")
-    
-    # Check env var first
-    env_key = os.environ.get("ADMIN_API_KEY", "")
-    if env_key and x_admin_key == env_key:
+
+    env_admin_key = os.environ.get("ADMIN_API_KEY", "")
+    if env_admin_key and x_admin_key == env_admin_key:
         return True
-    
-    # Check stored hash in database
-    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
-    stored_hash = settings.get("admin_key_hash")
-    
-    if stored_hash:
-        provided_hash = hashlib.sha256(x_admin_key.encode()).hexdigest()
-        if provided_hash == stored_hash:
-            await db.admin_settings.update_one(
-                {"_id": "admin"},
-                {"$set": {"last_login": datetime.now(timezone.utc)}},
-                upsert=True
-            )
-            return True
-    
-    raise HTTPException(status_code=401, detail="Invalid admin key")
 
-# ============ ENUMS ============
+    key_hash = hashlib.sha256(x_admin_key.encode("utf-8")).hexdigest()
+    stored_key = await db.admin_settings.find_one({"key": "admin_key_hash"})
 
-class UserStatus(str, Enum):
-    ACTIVE = "active"
-    SUSPENDED = "suspended"
-    BANNED = "banned"
+    if stored_key and stored_key.get("value") == key_hash:
+        return True
 
-class RewardSource(str, Enum):
-    WALKING = "walking"
-    GAME = "game"
-    BONUS = "bonus"
-    REFERRAL = "referral"
-    CONVERSION = "conversion"
+    raise HTTPException(status_code=403, detail="Invalid admin key")
 
-class RewardStatus(str, Enum):
-    PENDING = "pending"
-    EARNED = "earned"
-    CLAIMED = "claimed"
-    EXPIRED = "expired"
-    REVOKED = "revoked"
 
-# ============ MODELS ============
+async def log_admin_action(
+    action: str,
+    section: str,
+    details: Optional[Dict[str, Any]] = None,
+    admin_key: Optional[str] = None,
+):
+    from server import db
 
-class AdminUserUpdate(BaseModel):
-    status: Optional[UserStatus] = None
+    admin_key_hash = None
+    if admin_key:
+        admin_key_hash = hashlib.sha256(admin_key.encode("utf-8")).hexdigest()
+
+    await db.admin_logs.insert_one(
+        {
+            "action": action,
+            "section": section,
+            "details": details or {},
+            "admin_key_hash": admin_key_hash,
+            "created_at": now_utc(),
+        }
+    )
+
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+
+class PaymentMethod(str, Enum):
+    zpts = "zpts"
+    zwap = "zwap"
+    stripe = "stripe"
+
+
+class ShopCategoryAdmin(BaseModel):
+    id: str
+    label: str
+    description: str = ""
+    sort_order: int = 0
+    active: bool = True
+
+
+class ShopItemAdmin(BaseModel):
+    id: Optional[str] = None
+    name: str
+    description: str = ""
+    payment_method: str = "zpts"
+    price_zpts: Optional[int] = None
+    price_zwap: Optional[float] = None
+    price_stripe: Optional[float] = None
+    image_url: Optional[str] = None
+    category: str = "general"
+    subcategory: Optional[str] = None
+    item_type: Optional[str] = "custom"
+    rotation: Optional[str] = "Custom"
+    phase: Optional[str] = "Phase A"
+    in_stock: bool = True
+    active: bool = False
+    plus_only: bool = False
+    max_quantity: Optional[int] = None
+    fulfillment_type: str = "none"
+    download_url: Optional[str] = None
+    external_url: Optional[str] = None
+    fulfillment_notes: Optional[str] = None
+
+
+class UserUpdate(BaseModel):
     tier: Optional[str] = None
-    fraud_flags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    zpts_balance: Optional[int] = None
+    zwap_balance: Optional[float] = None
+    active: Optional[bool] = None
+    admin_notes: Optional[str] = None
+
 
 class RewardAdjustment(BaseModel):
-    user_id: str
+    wallet_address: str
     amount: float
-    source: RewardSource
+    currency: str = Field(default="zpts")
     reason: str
-    is_deduction: bool = False
 
-class GameConfig(BaseModel):
+
+class WalkConfigUpdate(BaseModel):
+    min_steps_per_claim: Optional[int] = None
+    max_steps_per_claim: Optional[int] = None
+    claim_cooldown_seconds: Optional[int] = None
+    zwapper_daily_cap: Optional[int] = None
+    zitizen_daily_cap: Optional[int] = None
+    active: Optional[bool] = None
+
+
+class GameConfigUpdate(BaseModel):
     game_id: str
-    enabled: bool = True
-    reward_rate: float = 1.0
-    difficulty_multiplier: float = 1.0
-    cooldown_minutes: int = 0
-    daily_play_limit: int = 0
-
-class WalkConfig(BaseModel):
-    daily_step_cap: int = 10000
-    steps_per_zwap: int = 1000
-    steps_per_zpt: int = 100
-    anti_cheat_spike_threshold: int = 5000  # Max steps in 5 minutes
-    enabled: bool = True
-
-class MarketplaceItem(BaseModel):
     name: str
-    description: str
-    image_url: str
-    price_zwap: float
-    price_zpoints: int
-    category: str
-    inventory: int = -1  # -1 = unlimited
-    enabled: bool = True
+    active: bool = True
+    sort_order: int = 0
+    min_reward_zpts: int = 0
+    max_reward_zpts: int = 150
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
-class SwapConfig(BaseModel):
-    token_symbol: str
-    enabled: bool = True
-    external_url: str
-    min_amount: float = 0
-    max_amount: float = 0  # 0 = unlimited
 
-class TreasuryAction(BaseModel):
-    action: str  # "pause_claims", "resume_claims", "set_daily_limit"
-    value: Optional[Any] = None
-    reason: str
+class SwapConfigUpdate(BaseModel):
+    active: Optional[bool] = None
+    phase_locked: Optional[bool] = None
+    min_conversion_zpts: Optional[int] = None
+    conversion_rate_zpts_per_zwap: Optional[int] = None
+    zwapper_daily_conversion_cap: Optional[float] = None
+    zitizen_daily_conversion_cap: Optional[float] = None
 
-class SystemConfig(BaseModel):
-    claims_paused: bool = False
-    daily_claim_limit: float = 1000000
-    maintenance_mode: bool = False
-    announcement: Optional[str] = None
 
-# ============ ADMIN ENDPOINTS ============
+class SystemConfigUpdate(BaseModel):
+    key: str
+    value: Any
+    description: Optional[str] = None
 
-# --- Dashboard Stats ---
-@admin_router.get("/dashboard", dependencies=[Depends(verify_admin)])
-async def get_admin_dashboard(db=None):
-    """Get admin dashboard overview stats"""
-    from server import db as database
-    db = database
-    
-    now = datetime.now(timezone.utc)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_ago = now - timedelta(days=7)
-    month_ago = now - timedelta(days=30)
-    
-    # User stats
-    total_users = await db.users.count_documents({})
-    active_today = await db.users.count_documents({"last_active": {"$gte": today_start}})
-    active_week = await db.users.count_documents({"last_active": {"$gte": week_ago}})
-    plus_users = await db.users.count_documents({"tier": "plus"})
-    suspended_users = await db.users.count_documents({"status": "suspended"})
-    
-    # Rewards stats (from ledger)
-    rewards_today = await db.rewards_ledger.aggregate([
-        {"$match": {"timestamp": {"$gte": today_start}, "status": "earned"}},
-        {"$group": {"_id": None, "total_zwap": {"$sum": "$zwap_amount"}, "total_zpts": {"$sum": "$zpts_amount"}}}
-    ]).to_list(1)
-    
-    claims_today = await db.rewards_ledger.aggregate([
-        {"$match": {"timestamp": {"$gte": today_start}, "status": "claimed"}},
-        {"$group": {"_id": None, "total": {"$sum": "$zwap_amount"}}}
-    ]).to_list(1)
-    
-    # Game stats
-    games_played_today = await db.game_sessions.count_documents({"timestamp": {"$gte": today_start}})
-    
-    # Get system config
-    config = await db.system_config.find_one({"_id": "main"}) or {}
-    
+
+class SubscriptionPlanUpdate(BaseModel):
+    plan_id: str
+    name: str
+    stripe_price_id: Optional[str] = None
+    monthly_price: Optional[float] = None
+    active: bool = True
+    benefits: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AdminKeyUpdate(BaseModel):
+    new_admin_key: str
+
+
+# ---------------------------------------------------------------------------
+# Shop validation
+# ---------------------------------------------------------------------------
+
+def validate_shop_item_payload(payload: ShopItemAdmin, forced_id: Optional[str] = None) -> Dict[str, Any]:
+    item = model_to_dict(payload)
+
+    name = str(item.get("name", "")).strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Shop item name is required")
+
+    incoming_id = item.get("id") or name
+    normalized_item_id = normalize_id(forced_id or incoming_id)
+
+    if not normalized_item_id:
+        raise HTTPException(status_code=400, detail="Shop item id is required or must be buildable from name")
+
+    if forced_id:
+        payload_id = normalize_id(item.get("id")) if item.get("id") else normalized_item_id
+        if payload_id != normalized_item_id:
+            raise HTTPException(status_code=400, detail="Payload id must match URL item id")
+
+    payment_method = str(item.get("payment_method", "zpts")).strip().lower()
+    if payment_method not in {"zpts", "zwap", "stripe"}:
+        raise HTTPException(status_code=400, detail="payment_method must be one of: zpts, zwap, stripe")
+
+    price_zpts = item.get("price_zpts")
+    price_zwap = item.get("price_zwap")
+    price_stripe = item.get("price_stripe")
+
+    if payment_method == "zpts" and (price_zpts is None or int(price_zpts) <= 0):
+        raise HTTPException(status_code=400, detail="price_zpts must be positive when payment_method is zpts")
+
+    if payment_method == "zwap" and (price_zwap is None or float(price_zwap) <= 0):
+        raise HTTPException(status_code=400, detail="price_zwap must be positive when payment_method is zwap")
+
+    if payment_method == "stripe" and (price_stripe is None or float(price_stripe) <= 0):
+        raise HTTPException(status_code=400, detail="price_stripe must be positive when payment_method is stripe")
+
+    category = normalize_id(item.get("category") or "general") or "general"
+    subcategory = normalize_id(item.get("subcategory")) if item.get("subcategory") else None
+
+    normalized = {
+        **item,
+        "id": normalized_item_id,
+        "name": name,
+        "payment_method": payment_method,
+        "category": category,
+        "subcategory": subcategory,
+        "price_zpts": int(price_zpts) if price_zpts is not None else None,
+        "price_zwap": float(price_zwap) if price_zwap is not None else None,
+        "price_stripe": float(price_stripe) if price_stripe is not None else None,
+    }
+
+    if normalized.get("max_quantity") is not None:
+        normalized["max_quantity"] = int(normalized["max_quantity"])
+        if normalized["max_quantity"] <= 0:
+            raise HTTPException(status_code=400, detail="max_quantity must be positive when provided")
+
+    return remove_none_values(normalized)
+
+
+def validate_shop_category_payload(payload: ShopCategoryAdmin) -> Dict[str, Any]:
+    category = model_to_dict(payload)
+    normalized_id = normalize_id(category.get("id"))
+
+    if not normalized_id:
+        raise HTTPException(status_code=400, detail="Category id is required")
+
+    label = str(category.get("label", "")).strip()
+    if not label:
+        raise HTTPException(status_code=400, detail="Category label is required")
+
     return {
-        "users": {
-            "total": total_users,
-            "active_today": active_today,
-            "active_week": active_week,
-            "plus_subscribers": plus_users,
-            "suspended": suspended_users,
-        },
-        "rewards": {
-            "issued_today_zwap": rewards_today[0]["total_zwap"] if rewards_today else 0,
-            "issued_today_zpts": rewards_today[0]["total_zpts"] if rewards_today else 0,
-            "claimed_today": claims_today[0]["total"] if claims_today else 0,
-        },
-        "activity": {
-            "games_played_today": games_played_today,
-        },
-        "system": {
-            "claims_paused": config.get("claims_paused", False),
-            "maintenance_mode": config.get("maintenance_mode", False),
-            "announcement": config.get("announcement"),
-        },
-        "timestamp": now.isoformat(),
+        "id": normalized_id,
+        "label": label,
+        "description": category.get("description", ""),
+        "sort_order": int(category.get("sort_order", 0)),
+        "active": bool(category.get("active", True)),
     }
 
 
-# --- User Management ---
+# ---------------------------------------------------------------------------
+# Dashboard Stats
+# ---------------------------------------------------------------------------
+
+@admin_router.get("/dashboard/stats", dependencies=[Depends(verify_admin)])
+async def get_dashboard_stats():
+    from server import db
+
+    today = now_utc().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    total_users = await db.users.count_documents({})
+    active_users_today = await db.users.count_documents({"last_active_at": {"$gte": today}})
+    shop_items = await db.shop_items.count_documents({})
+    active_shop_items = await db.shop_items.count_documents({"active": True, "in_stock": True})
+
+    zpts_pipeline = [{"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$zpts_balance", 0]}}}}]
+    zwap_pipeline = [{"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$zwap_balance", 0]}}}}]
+
+    zpts_result = await db.users.aggregate(zpts_pipeline).to_list(length=1)
+    zwap_result = await db.users.aggregate(zwap_pipeline).to_list(length=1)
+
+    return {
+        "total_users": total_users,
+        "active_users_today": active_users_today,
+        "shop_items": shop_items,
+        "active_shop_items": active_shop_items,
+        "total_zpts_balance": zpts_result[0]["total"] if zpts_result else 0,
+        "total_zwap_balance": zwap_result[0]["total"] if zwap_result else 0,
+        "updated_at": now_utc(),
+    }
+
+
+@admin_router.get("/stats", dependencies=[Depends(verify_admin)])
+async def get_stats_alias():
+    return await get_dashboard_stats()
+
+
+# ---------------------------------------------------------------------------
+# User Management
+# ---------------------------------------------------------------------------
+
 @admin_router.get("/users", dependencies=[Depends(verify_admin)])
 async def list_users(
-    skip: int = 0,
-    limit: int = 50,
-    status: Optional[str] = None,
-    tier: Optional[str] = None,
+    limit: int = Query(50, ge=1, le=500),
+    skip: int = Query(0, ge=0),
     search: Optional[str] = None,
 ):
-    """List all users with filtering"""
     from server import db
-    
-    query = {}
-    if status:
-        query["status"] = status
-    if tier:
-        query["tier"] = tier
+
+    query: Dict[str, Any] = {}
+
     if search:
+        search_regex = {"$regex": re.escape(search), "$options": "i"}
         query["$or"] = [
-            {"wallet_address": {"$regex": search, "$options": "i"}},
-            {"username": {"$regex": search, "$options": "i"}},
+            {"wallet_address": search_regex},
+            {"email": search_regex},
+            {"username": search_regex},
+            {"display_name": search_regex},
         ]
-    
-    users = await db.users.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+
+    users = (
+        await db.users.find(query, {"_id": 0})
+        .sort("created_at", -1)
+        .skip(skip)
+        .limit(limit)
+        .to_list(length=limit)
+    )
+
     total = await db.users.count_documents(query)
-    
-    return {"users": users, "total": total, "skip": skip, "limit": limit}
+
+    return {
+        "success": True,
+        "total": total,
+        "users": users,
+    }
 
 
 @admin_router.get("/users/{wallet_address}", dependencies=[Depends(verify_admin)])
-async def get_user_details(wallet_address: str):
-    """Get detailed user information"""
+async def get_user(wallet_address: str):
     from server import db
-    
+
     user = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Get rewards history
-    rewards = await db.rewards_ledger.find(
-        {"user_id": wallet_address}
-    ).sort("timestamp", -1).limit(50).to_list(50)
-    
-    # Get game history
-    games = await db.game_sessions.find(
-        {"wallet_address": wallet_address}
-    ).sort("timestamp", -1).limit(20).to_list(20)
-    
-    # Clean up _id fields
-    for r in rewards:
-        r.pop("_id", None)
-    for g in games:
-        g.pop("_id", None)
-    
-    return {
-        "user": user,
-        "rewards_history": rewards,
-        "game_history": games,
-    }
+
+    return {"success": True, "user": user}
 
 
 @admin_router.put("/users/{wallet_address}", dependencies=[Depends(verify_admin)])
-async def update_user(wallet_address: str, update: AdminUserUpdate):
-    """Update user status, tier, or add fraud flags"""
+async def update_user(
+    wallet_address: str,
+    payload: UserUpdate,
+    x_admin_key: str = Header(None),
+):
     from server import db
-    
-    update_data = {k: v for k, v in update.dict().items() if v is not None}
+
+    update_data = remove_none_values(model_to_dict(payload))
     if not update_data:
-        raise HTTPException(status_code=400, detail="No update data provided")
-    
-    update_data["updated_at"] = datetime.now(timezone.utc)
-    
+        raise HTTPException(status_code=400, detail="No user fields provided")
+
+    update_data["updated_at"] = now_utc()
+
     result = await db.users.update_one(
         {"wallet_address": wallet_address},
-        {"$set": update_data}
+        {"$set": update_data},
     )
-    
-    if result.modified_count == 0:
+
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Log admin action
-    await db.admin_logs.insert_one({
-        "action": "user_update",
-        "target": wallet_address,
-        "changes": update_data,
-        "timestamp": datetime.now(timezone.utc),
-    })
-    
-    return {"success": True, "message": f"User {wallet_address} updated"}
 
-
-@admin_router.post("/users/{wallet_address}/suspend", dependencies=[Depends(verify_admin)])
-async def suspend_user(wallet_address: str, reason: str = ""):
-    """Suspend a user account"""
-    from server import db
-    
-    result = await db.users.update_one(
-        {"wallet_address": wallet_address},
-        {"$set": {"status": "suspended", "suspended_at": datetime.now(timezone.utc), "suspend_reason": reason}}
+    await log_admin_action(
+        action="update_user",
+        section="users",
+        details={"wallet_address": wallet_address, "fields": list(update_data.keys())},
+        admin_key=x_admin_key,
     )
-    
-    await db.admin_logs.insert_one({
-        "action": "user_suspended",
-        "target": wallet_address,
-        "reason": reason,
-        "timestamp": datetime.now(timezone.utc),
-    })
-    
-    return {"success": True, "message": f"User {wallet_address} suspended"}
+
+    user = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
+    return {"success": True, "user": user}
 
 
-@admin_router.post("/users/{wallet_address}/unsuspend", dependencies=[Depends(verify_admin)])
-async def unsuspend_user(wallet_address: str):
-    """Unsuspend a user account"""
-    from server import db
-    
-    await db.users.update_one(
-        {"wallet_address": wallet_address},
-        {"$set": {"status": "active"}, "$unset": {"suspended_at": "", "suspend_reason": ""}}
-    )
-    
-    return {"success": True, "message": f"User {wallet_address} unsuspended"}
+# ---------------------------------------------------------------------------
+# Rewards Ledger
+# ---------------------------------------------------------------------------
 
-
-# --- Rewards Ledger ---
 @admin_router.get("/rewards/ledger", dependencies=[Depends(verify_admin)])
 async def get_rewards_ledger(
-    skip: int = 0,
-    limit: int = 100,
-    user_id: Optional[str] = None,
-    source: Optional[str] = None,
-    status: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    wallet_address: Optional[str] = None,
+    limit: int = Query(100, ge=1, le=500),
+    skip: int = Query(0, ge=0),
 ):
-    """Get rewards ledger with filtering - append-only audit trail"""
     from server import db
-    
+
     query = {}
-    if user_id:
-        query["user_id"] = user_id
-    if source:
-        query["source"] = source
-    if status:
-        query["status"] = status
-    if start_date:
-        query["timestamp"] = {"$gte": datetime.fromisoformat(start_date)}
-    if end_date:
-        query.setdefault("timestamp", {})["$lte"] = datetime.fromisoformat(end_date)
-    
-    ledger = await db.rewards_ledger.find(query, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(limit).to_list(limit)
+    if wallet_address:
+        query["wallet_address"] = wallet_address
+
+    rewards = (
+        await db.rewards_ledger.find(query, {"_id": 0})
+        .sort("created_at", -1)
+        .skip(skip)
+        .limit(limit)
+        .to_list(length=limit)
+    )
+
     total = await db.rewards_ledger.count_documents(query)
-    
-    # Aggregates
-    agg = await db.rewards_ledger.aggregate([
-        {"$match": query},
-        {"$group": {
-            "_id": None,
-            "total_zwap": {"$sum": "$zwap_amount"},
-            "total_zpts": {"$sum": "$zpts_amount"},
-        }}
-    ]).to_list(1)
-    
+
     return {
-        "ledger": ledger,
-        "total_entries": total,
-        "totals": agg[0] if agg else {"total_zwap": 0, "total_zpts": 0},
-        "skip": skip,
-        "limit": limit,
+        "success": True,
+        "total": total,
+        "rewards": rewards,
     }
 
 
 @admin_router.post("/rewards/adjust", dependencies=[Depends(verify_admin)])
-async def adjust_rewards(adjustment: RewardAdjustment):
-    """Manually adjust user rewards (with audit trail)"""
+async def adjust_reward_balance(
+    payload: RewardAdjustment,
+    x_admin_key: str = Header(None),
+):
     from server import db
-    
-    user = await db.users.find_one({"wallet_address": adjustment.user_id})
+
+    currency = payload.currency.strip().lower()
+    if currency not in {"zpts", "zwap"}:
+        raise HTTPException(status_code=400, detail="currency must be zpts or zwap")
+
+    user = await db.users.find_one({"wallet_address": payload.wallet_address})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    amount = -adjustment.amount if adjustment.is_deduction else adjustment.amount
-    
-    # Update user balance
+
+    balance_field = "zpts_balance" if currency == "zpts" else "zwap_balance"
+
     await db.users.update_one(
-        {"wallet_address": adjustment.user_id},
-        {"$inc": {"zwap_balance": amount}}
+        {"wallet_address": payload.wallet_address},
+        {
+            "$inc": {balance_field: payload.amount},
+            "$set": {"updated_at": now_utc()},
+        },
     )
-    
-    # Record in ledger (immutable)
-    await db.rewards_ledger.insert_one({
-        "user_id": adjustment.user_id,
-        "zwap_amount": amount,
-        "zpts_amount": 0,
+
+    ledger_entry = {
+        "wallet_address": payload.wallet_address,
+        "currency": currency,
+        "amount": payload.amount,
+        "reason": payload.reason,
         "source": "admin_adjustment",
-        "status": "earned",
-        "reason": adjustment.reason,
-        "timestamp": datetime.now(timezone.utc),
-        "is_adjustment": True,
-    })
-    
-    await db.admin_logs.insert_one({
-        "action": "reward_adjustment",
-        "target": adjustment.user_id,
-        "amount": amount,
-        "reason": adjustment.reason,
-        "timestamp": datetime.now(timezone.utc),
-    })
-    
-    return {"success": True, "new_balance": user["zwap_balance"] + amount}
+        "created_at": now_utc(),
+    }
+
+    await db.rewards_ledger.insert_one(ledger_entry)
+
+    await log_admin_action(
+        action="adjust_reward_balance",
+        section="rewards",
+        details=ledger_entry,
+        admin_key=x_admin_key,
+    )
+
+    updated_user = await db.users.find_one({"wallet_address": payload.wallet_address}, {"_id": 0})
+
+    return {
+        "success": True,
+        "user": updated_user,
+        "ledger_entry": {**ledger_entry},
+    }
 
 
-# --- Walk-to-Earn Config ---
-@admin_router.get("/config/walk", dependencies=[Depends(verify_admin)])
+# ---------------------------------------------------------------------------
+# Walk Config
+# ---------------------------------------------------------------------------
+
+@admin_router.get("/walk/config", dependencies=[Depends(verify_admin)])
 async def get_walk_config():
-    """Get walk-to-earn configuration"""
     from server import db
-    
-    config = await db.system_config.find_one({"_id": "walk_config"})
-    if not config:
-        config = WalkConfig().dict()
-    else:
-        config.pop("_id", None)
-    
-    return config
+
+    config = await db.system_config.find_one({"key": "walk_config"}, {"_id": 0})
+    return {
+        "success": True,
+        "config": config.get("value", {}) if config else {},
+    }
 
 
-@admin_router.put("/config/walk", dependencies=[Depends(verify_admin)])
-async def update_walk_config(config: WalkConfig):
-    """Update walk-to-earn configuration"""
+@admin_router.put("/walk/config", dependencies=[Depends(verify_admin)])
+async def update_walk_config(
+    payload: WalkConfigUpdate,
+    x_admin_key: str = Header(None),
+):
     from server import db
-    
+
+    update_data = remove_none_values(model_to_dict(payload))
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No MOVE config fields provided")
+
     await db.system_config.update_one(
-        {"_id": "walk_config"},
-        {"$set": config.dict()},
-        upsert=True
+        {"key": "walk_config"},
+        {
+            "$set": {
+                "key": "walk_config",
+                "value": update_data,
+                "updated_at": now_utc(),
+            },
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
     )
-    
-    await db.admin_logs.insert_one({
-        "action": "walk_config_update",
-        "changes": config.dict(),
-        "timestamp": datetime.now(timezone.utc),
-    })
-    
-    return {"success": True, "config": config.dict()}
+
+    await log_admin_action(
+        action="update_walk_config",
+        section="walk_config",
+        details=update_data,
+        admin_key=x_admin_key,
+    )
+
+    return {"success": True, "config": update_data}
 
 
-# --- Games Config ---
-@admin_router.get("/config/games", dependencies=[Depends(verify_admin)])
+# ---------------------------------------------------------------------------
+# Games Config
+# ---------------------------------------------------------------------------
+
+@admin_router.get("/games/config", dependencies=[Depends(verify_admin)])
 async def get_games_config():
-    """Get all games configuration"""
     from server import db
-    
-    games = await db.game_configs.find({}, {"_id": 0}).to_list(100)
-    
-    # Default games if none exist
-    if not games:
-        games = [
-            {"game_id": "zbrickles", "name": "zBrickles", "enabled": True, "reward_rate": 1.0, "difficulty_multiplier": 1.0, "tier_required": "starter"},
-            {"game_id": "ztrivia", "name": "zTrivia", "enabled": True, "reward_rate": 1.0, "difficulty_multiplier": 1.0, "tier_required": "starter"},
-            {"game_id": "ztetris", "name": "zTetris", "enabled": True, "reward_rate": 1.2, "difficulty_multiplier": 1.0, "tier_required": "plus"},
-            {"game_id": "zslots", "name": "zSlots", "enabled": True, "reward_rate": 1.5, "difficulty_multiplier": 1.0, "tier_required": "plus"},
-        ]
-    
-    return {"games": games}
+
+    games = await db.games_config.find({}, {"_id": 0}).sort("sort_order", 1).to_list(length=500)
+    return {"success": True, "games": games}
 
 
-@admin_router.put("/config/games/{game_id}", dependencies=[Depends(verify_admin)])
-async def update_game_config(game_id: str, config: GameConfig):
-    """Update a game's configuration"""
+@admin_router.post("/games/config", dependencies=[Depends(verify_admin)])
+async def upsert_game_config(
+    payload: GameConfigUpdate,
+    x_admin_key: str = Header(None),
+):
     from server import db
-    
-    await db.game_configs.update_one(
-        {"game_id": game_id},
-        {"$set": config.dict()},
-        upsert=True
+
+    game = model_to_dict(payload)
+    game["game_id"] = normalize_id(game["game_id"])
+    game["updated_at"] = now_utc()
+
+    if not game["game_id"]:
+        raise HTTPException(status_code=400, detail="game_id is required")
+
+    await db.games_config.update_one(
+        {"game_id": game["game_id"]},
+        {
+            "$set": game,
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
     )
-    
-    return {"success": True, "game_id": game_id}
 
-
-@admin_router.post("/config/games/{game_id}/toggle", dependencies=[Depends(verify_admin)])
-async def toggle_game(game_id: str, enabled: bool):
-    """Enable or disable a game instantly"""
-    from server import db
-    
-    await db.game_configs.update_one(
-        {"game_id": game_id},
-        {"$set": {"enabled": enabled}},
-        upsert=True
+    await log_admin_action(
+        action="upsert_game_config",
+        section="games_config",
+        details={"game_id": game["game_id"]},
+        admin_key=x_admin_key,
     )
-    
-    return {"success": True, "game_id": game_id, "enabled": enabled}
+
+    saved = await db.games_config.find_one({"game_id": game["game_id"]}, {"_id": 0})
+    return {"success": True, "game": saved}
 
 
-# --- Marketplace Admin ---
-@admin_router.get("/marketplace/items", dependencies=[Depends(verify_admin)])
-async def get_marketplace_items():
-    """Get all marketplace items"""
-    from server import db
-    
-    items = await db.shop_items.find({}, {"_id": 0}).to_list(200)
-    return {"items": items, "total": len(items)}
+# ---------------------------------------------------------------------------
+# Swap Config
+# ---------------------------------------------------------------------------
 
-
-@admin_router.post("/marketplace/items", dependencies=[Depends(verify_admin)])
-async def create_marketplace_item(item: MarketplaceItem):
-    """Create a new marketplace item"""
-    from server import db
-    import uuid
-    
-    item_data = item.dict()
-    item_data["id"] = str(uuid.uuid4())
-    item_data["created_at"] = datetime.now(timezone.utc)
-    
-    await db.shop_items.insert_one(item_data)
-    
-    return {"success": True, "item_id": item_data["id"]}
-
-
-@admin_router.put("/marketplace/items/{item_id}", dependencies=[Depends(verify_admin)])
-async def update_marketplace_item(item_id: str, item: MarketplaceItem):
-    """Update a marketplace item"""
-    from server import db
-    
-    result = await db.shop_items.update_one(
-        {"id": item_id},
-        {"$set": item.dict()}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    return {"success": True}
-
-
-@admin_router.delete("/marketplace/items/{item_id}", dependencies=[Depends(verify_admin)])
-async def delete_marketplace_item(item_id: str):
-    """Delete a marketplace item"""
-    from server import db
-    
-    await db.shop_items.delete_one({"id": item_id})
-    return {"success": True}
-
-
-@admin_router.get("/marketplace/purchases", dependencies=[Depends(verify_admin)])
-async def get_purchase_logs(skip: int = 0, limit: int = 100):
-    """Get purchase logs"""
-    from server import db
-    
-    purchases = await db.purchases.find({}, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(limit).to_list(limit)
-    total = await db.purchases.count_documents({})
-    
-    return {"purchases": purchases, "total": total}
-
-
-# --- Swap Config ---
-@admin_router.get("/config/swap", dependencies=[Depends(verify_admin)])
+@admin_router.get("/swap/config", dependencies=[Depends(verify_admin)])
 async def get_swap_config():
-    """Get swap configuration"""
     from server import db
-    
-    config = await db.swap_configs.find({}, {"_id": 0}).to_list(20)
-    
-    if not config:
-        config = [
-            {"token_symbol": "USDC", "enabled": True, "external_url": "https://jumper.exchange"},
-            {"token_symbol": "USDT", "enabled": True, "external_url": "https://jumper.exchange"},
-            {"token_symbol": "MATIC", "enabled": True, "external_url": "https://jumper.exchange"},
-            {"token_symbol": "WETH", "enabled": True, "external_url": "https://jumper.exchange"},
-        ]
-    
-    return {"tokens": config}
+
+    config = await db.system_config.find_one({"key": "swap_config"}, {"_id": 0})
+    return {"success": True, "config": config.get("value", {}) if config else {}}
 
 
-@admin_router.put("/config/swap/{token_symbol}", dependencies=[Depends(verify_admin)])
-async def update_swap_config(token_symbol: str, config: SwapConfig):
-    """Update swap config for a token"""
+@admin_router.put("/swap/config", dependencies=[Depends(verify_admin)])
+async def update_swap_config(
+    payload: SwapConfigUpdate,
+    x_admin_key: str = Header(None),
+):
     from server import db
-    
-    await db.swap_configs.update_one(
-        {"token_symbol": token_symbol},
-        {"$set": config.dict()},
-        upsert=True
+
+    update_data = remove_none_values(model_to_dict(payload))
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No ZWAP Window / Swap config fields provided")
+
+    await db.system_config.update_one(
+        {"key": "swap_config"},
+        {
+            "$set": {
+                "key": "swap_config",
+                "value": update_data,
+                "updated_at": now_utc(),
+            },
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
     )
-    
-    return {"success": True}
+
+    await log_admin_action(
+        action="update_swap_config",
+        section="swap_config",
+        details=update_data,
+        admin_key=x_admin_key,
+    )
+
+    return {"success": True, "config": update_data}
 
 
-# --- Treasury & System ---
+# ---------------------------------------------------------------------------
+# Shop Admin
+# ---------------------------------------------------------------------------
+
+@admin_router.get("/shop/categories", dependencies=[Depends(verify_admin)])
+async def get_shop_categories():
+    from server import db
+
+    categories = (
+        await db.shop_categories.find({}, {"_id": 0})
+        .sort("sort_order", 1)
+        .to_list(length=500)
+    )
+
+    return {
+        "success": True,
+        "categories": categories,
+    }
+
+
+@admin_router.post("/shop/categories", dependencies=[Depends(verify_admin)])
+async def upsert_shop_category(
+    payload: ShopCategoryAdmin,
+    x_admin_key: str = Header(None),
+):
+    from server import db
+
+    category = validate_shop_category_payload(payload)
+    category["updated_at"] = now_utc()
+
+    await db.shop_categories.update_one(
+        {"id": category["id"]},
+        {
+            "$set": category,
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
+    )
+
+    saved = await db.shop_categories.find_one({"id": category["id"]}, {"_id": 0})
+
+    await log_admin_action(
+        action="upsert_shop_category",
+        section="shop",
+        details={"category_id": category["id"]},
+        admin_key=x_admin_key,
+    )
+
+    return {
+        "success": True,
+        "category": saved,
+    }
+
+
+@admin_router.get("/shop/items", dependencies=[Depends(verify_admin)])
+async def get_shop_items():
+    from server import db
+
+    items = (
+        await db.shop_items.find({}, {"_id": 0})
+        .sort([("category", 1), ("name", 1)])
+        .to_list(length=1000)
+    )
+
+    return {
+        "success": True,
+        "items": items,
+    }
+
+
+@admin_router.post("/shop/items", dependencies=[Depends(verify_admin)])
+async def create_shop_item(
+    payload: ShopItemAdmin,
+    x_admin_key: str = Header(None),
+):
+    from server import db
+
+    item = validate_shop_item_payload(payload)
+    item["updated_at"] = now_utc()
+
+    await db.shop_items.update_one(
+        {"id": item["id"]},
+        {
+            "$set": item,
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
+    )
+
+    saved = await db.shop_items.find_one({"id": item["id"]}, {"_id": 0})
+
+    await log_admin_action(
+        action="upsert_shop_item",
+        section="shop",
+        details={"item_id": item["id"], "name": item["name"]},
+        admin_key=x_admin_key,
+    )
+
+    return {
+        "success": True,
+        "item": saved,
+    }
+
+
+@admin_router.put("/shop/items/{item_id}", dependencies=[Depends(verify_admin)])
+async def update_shop_item(
+    item_id: str,
+    payload: ShopItemAdmin,
+    x_admin_key: str = Header(None),
+):
+    from server import db
+
+    normalized_item_id = normalize_id(item_id)
+    if not normalized_item_id:
+        raise HTTPException(status_code=400, detail="Invalid item id")
+
+    existing = await db.shop_items.find_one({"id": normalized_item_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Shop item not found")
+
+    item = validate_shop_item_payload(payload, forced_id=normalized_item_id)
+    item["id"] = normalized_item_id
+    item["updated_at"] = now_utc()
+
+    await db.shop_items.update_one(
+        {"id": normalized_item_id},
+        {"$set": item},
+    )
+
+    saved = await db.shop_items.find_one({"id": normalized_item_id}, {"_id": 0})
+
+    await log_admin_action(
+        action="update_shop_item",
+        section="shop",
+        details={"item_id": normalized_item_id, "name": item["name"]},
+        admin_key=x_admin_key,
+    )
+
+    return {
+        "success": True,
+        "item": saved,
+    }
+
+
+@admin_router.delete("/shop/items/{item_id}", dependencies=[Depends(verify_admin)])
+async def delete_shop_item(
+    item_id: str,
+    x_admin_key: str = Header(None),
+):
+    from server import db
+
+    normalized_item_id = normalize_id(item_id)
+    if not normalized_item_id:
+        raise HTTPException(status_code=400, detail="Invalid item id")
+
+    result = await db.shop_items.delete_one({"id": normalized_item_id})
+
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Shop item not found")
+
+    await log_admin_action(
+        action="delete_shop_item",
+        section="shop",
+        details={"item_id": normalized_item_id},
+        admin_key=x_admin_key,
+    )
+
+    return {
+        "success": True,
+        "item_id": normalized_item_id,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Treasury & System
+# ---------------------------------------------------------------------------
+
 @admin_router.get("/treasury", dependencies=[Depends(verify_admin)])
 async def get_treasury_status():
-    """Get treasury status (read-only)"""
-    from server import db, w3, zwap_contract, ZWAP_DECIMALS
-    
-    # Get on-chain treasury balance if connected
-    treasury_balance = None
-    treasury_wallet = os.environ.get("TREASURY_WALLET")
-    
-    if treasury_wallet and zwap_contract and w3:
-        try:
-            from web3 import Web3
-            balance_wei = zwap_contract.functions.balanceOf(
-                Web3.to_checksum_address(treasury_wallet)
-            ).call()
-            treasury_balance = balance_wei / (10 ** ZWAP_DECIMALS)
-        except:
-            pass
-    
-    # Get total issued from ledger
-    total_issued = await db.rewards_ledger.aggregate([
-        {"$match": {"status": {"$in": ["earned", "claimed"]}}},
-        {"$group": {"_id": None, "total": {"$sum": "$zwap_amount"}}}
-    ]).to_list(1)
-    
-    # Get total claimed
-    total_claimed = await db.rewards_ledger.aggregate([
-        {"$match": {"status": "claimed"}},
-        {"$group": {"_id": None, "total": {"$sum": "$zwap_amount"}}}
-    ]).to_list(1)
-    
-    # Get system config
-    config = await db.system_config.find_one({"_id": "main"}) or {}
-    
+    from server import db
+
+    config = await db.system_config.find_one({"key": "treasury"}, {"_id": 0})
+    recent_ledger = (
+        await db.rewards_ledger.find({}, {"_id": 0})
+        .sort("created_at", -1)
+        .limit(50)
+        .to_list(length=50)
+    )
+
     return {
-        "treasury_wallet": treasury_wallet,
-        "treasury_balance": treasury_balance,
-        "total_issued": total_issued[0]["total"] if total_issued else 0,
-        "total_claimed": total_claimed[0]["total"] if total_claimed else 0,
-        "circulating_in_app": (total_issued[0]["total"] if total_issued else 0) - (total_claimed[0]["total"] if total_claimed else 0),
-        "claims_paused": config.get("claims_paused", False),
-        "daily_claim_limit": config.get("daily_claim_limit", 1000000),
+        "success": True,
+        "treasury": config.get("value", {}) if config else {},
+        "recent_ledger": recent_ledger,
     }
 
 
-@admin_router.post("/treasury/action", dependencies=[Depends(verify_admin)])
-async def treasury_action(action: TreasuryAction):
-    """Execute treasury control action (pause, resume, set limits)"""
+@admin_router.get("/system/health", dependencies=[Depends(verify_admin)])
+async def get_system_health():
     from server import db
-    
-    if action.action == "pause_claims":
-        await db.system_config.update_one(
-            {"_id": "main"},
-            {"$set": {"claims_paused": True}},
-            upsert=True
-        )
-    elif action.action == "resume_claims":
-        await db.system_config.update_one(
-            {"_id": "main"},
-            {"$set": {"claims_paused": False}},
-            upsert=True
-        )
-    elif action.action == "set_daily_limit":
-        await db.system_config.update_one(
-            {"_id": "main"},
-            {"$set": {"daily_claim_limit": action.value}},
-            upsert=True
-        )
-    else:
-        raise HTTPException(status_code=400, detail="Unknown action")
-    
-    await db.admin_logs.insert_one({
-        "action": f"treasury_{action.action}",
-        "value": action.value,
-        "reason": action.reason,
-        "timestamp": datetime.now(timezone.utc),
-    })
-    
-    return {"success": True, "action": action.action}
+
+    try:
+        await db.command("ping")
+        mongo_ok = True
+    except Exception:
+        mongo_ok = False
+
+    return {
+        "success": True,
+        "database": "ok" if mongo_ok else "error",
+        "timestamp": now_utc(),
+    }
 
 
-# --- System Config ---
-@admin_router.get("/config/system", dependencies=[Depends(verify_admin)])
+# ---------------------------------------------------------------------------
+# System Config
+# ---------------------------------------------------------------------------
+
+@admin_router.get("/system/config", dependencies=[Depends(verify_admin)])
 async def get_system_config():
-    """Get system configuration"""
     from server import db
-    
-    config = await db.system_config.find_one({"_id": "main"}) or {}
-    config.pop("_id", None)
-    
-    return config
+
+    config = await db.system_config.find({}, {"_id": 0}).sort("key", 1).to_list(length=1000)
+    return {
+        "success": True,
+        "config": config,
+    }
 
 
-@admin_router.put("/config/system", dependencies=[Depends(verify_admin)])
-async def update_system_config(config: SystemConfig):
-    """Update system configuration"""
+@admin_router.post("/system/config", dependencies=[Depends(verify_admin)])
+async def upsert_system_config(
+    payload: SystemConfigUpdate,
+    x_admin_key: str = Header(None),
+):
     from server import db
-    
+
+    key = normalize_id(payload.key)
+    if not key:
+        raise HTTPException(status_code=400, detail="Config key is required")
+
+    doc = {
+        "key": key,
+        "value": payload.value,
+        "description": payload.description,
+        "updated_at": now_utc(),
+    }
+
     await db.system_config.update_one(
-        {"_id": "main"},
-        {"$set": config.dict()},
-        upsert=True
+        {"key": key},
+        {
+            "$set": doc,
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
     )
-    
-    return {"success": True}
+
+    await log_admin_action(
+        action="upsert_system_config",
+        section="system_config",
+        details={"key": key},
+        admin_key=x_admin_key,
+    )
+
+    saved = await db.system_config.find_one({"key": key}, {"_id": 0})
+    return {
+        "success": True,
+        "config": saved,
+    }
 
 
-# --- Admin Logs ---
+# ---------------------------------------------------------------------------
+# Admin Logs
+# ---------------------------------------------------------------------------
+
 @admin_router.get("/logs", dependencies=[Depends(verify_admin)])
-async def get_admin_logs(skip: int = 0, limit: int = 100):
-    """Get admin action logs"""
+async def get_admin_logs(
+    limit: int = Query(100, ge=1, le=500),
+    skip: int = Query(0, ge=0),
+    section: Optional[str] = None,
+):
     from server import db
-    
-    logs = await db.admin_logs.find({}, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(limit).to_list(limit)
-    total = await db.admin_logs.count_documents({})
-    
-    return {"logs": logs, "total": total}
+
+    query = {}
+    if section:
+        query["section"] = section
+
+    logs = (
+        await db.admin_logs.find(query, {"_id": 0})
+        .sort("created_at", -1)
+        .skip(skip)
+        .limit(limit)
+        .to_list(length=limit)
+    )
+
+    total = await db.admin_logs.count_documents(query)
+
+    return {
+        "success": True,
+        "total": total,
+        "logs": logs,
+    }
 
 
-# --- Analytics ---
+# ---------------------------------------------------------------------------
+# Analytics
+# ---------------------------------------------------------------------------
+
 @admin_router.get("/analytics/overview", dependencies=[Depends(verify_admin)])
-async def get_analytics_overview(days: int = 30):
-    """Get analytics overview"""
+async def get_analytics_overview(days: int = Query(30, ge=1, le=365)):
     from server import db
-    
-    now = datetime.now(timezone.utc)
-    start_date = now - timedelta(days=days)
-    
-    # Daily active users over time
-    dau_pipeline = [
-        {"$match": {"last_active": {"$gte": start_date}}},
-        {"$group": {
-            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$last_active"}},
-            "count": {"$sum": 1}
-        }},
-        {"$sort": {"_id": 1}}
+
+    start_date = now_utc() - timedelta(days=days)
+
+    users_created = await db.users.count_documents({"created_at": {"$gte": start_date}})
+    rewards_issued = await db.rewards_ledger.count_documents({"created_at": {"$gte": start_date}})
+    shop_purchases = await db.shop_purchases.count_documents({"created_at": {"$gte": start_date}})
+
+    reward_pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}}},
+        {
+            "$group": {
+                "_id": "$currency",
+                "total_amount": {"$sum": "$amount"},
+                "count": {"$sum": 1},
+            }
+        },
     ]
-    dau_data = await db.users.aggregate(dau_pipeline).to_list(days)
-    
-    # Rewards issued over time
-    rewards_pipeline = [
-        {"$match": {"timestamp": {"$gte": start_date}}},
-        {"$group": {
-            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}},
-            "zwap": {"$sum": "$zwap_amount"},
-            "zpts": {"$sum": "$zpts_amount"}
-        }},
-        {"$sort": {"_id": 1}}
-    ]
-    rewards_data = await db.rewards_ledger.aggregate(rewards_pipeline).to_list(days)
-    
-    # Top earners (potential whale risk)
-    top_earners = await db.users.find(
-        {}, {"_id": 0, "wallet_address": 1, "username": 1, "zwap_balance": 1, "total_earned": 1}
-    ).sort("zwap_balance", -1).limit(10).to_list(10)
-    
-    # Abuse flags
-    flagged_users = await db.users.count_documents({"fraud_flags": {"$exists": True, "$ne": []}})
-    
+
+    reward_totals = await db.rewards_ledger.aggregate(reward_pipeline).to_list(length=20)
+
     return {
-        "period_days": days,
-        "dau_trend": dau_data,
-        "rewards_trend": rewards_data,
-        "top_earners": top_earners,
-        "flagged_users": flagged_users,
+        "success": True,
+        "days": days,
+        "users_created": users_created,
+        "rewards_issued": rewards_issued,
+        "shop_purchases": shop_purchases,
+        "reward_totals": reward_totals,
+        "updated_at": now_utc(),
     }
 
 
-# --- Subscriptions ---
-@admin_router.get("/subscriptions", dependencies=[Depends(verify_admin)])
-async def get_subscriptions(skip: int = 0, limit: int = 50):
-    """Get subscription data"""
+# ---------------------------------------------------------------------------
+# Subscriptions
+# ---------------------------------------------------------------------------
+
+@admin_router.get("/subscriptions/plans", dependencies=[Depends(verify_admin)])
+async def get_subscription_plans():
     from server import db
-    
-    plus_users = await db.users.find(
-        {"tier": "plus"},
-        {"_id": 0, "wallet_address": 1, "username": 1, "tier": 1, "subscription_started": 1}
-    ).skip(skip).limit(limit).to_list(limit)
-    
-    total = await db.users.count_documents({"tier": "plus"})
-    
-    return {"subscriptions": plus_users, "total": total}
+
+    plans = await db.subscription_plans.find({}, {"_id": 0}).sort("monthly_price", 1).to_list(length=100)
+    return {
+        "success": True,
+        "plans": plans,
+    }
 
 
-# ============ ADMIN ACCOUNT SETTINGS ============
+@admin_router.post("/subscriptions/plans", dependencies=[Depends(verify_admin)])
+async def upsert_subscription_plan(
+    payload: SubscriptionPlanUpdate,
+    x_admin_key: str = Header(None),
+):
+    from server import db
 
-class AdminKeyUpdate(BaseModel):
-    current_key: str
-    new_key: str
+    plan = model_to_dict(payload)
+    plan["plan_id"] = normalize_id(plan["plan_id"])
 
-class AdminSettings(BaseModel):
-    admin_email: Optional[str] = None
-    notification_enabled: bool = True
-    two_factor_enabled: bool = False
+    if not plan["plan_id"]:
+        raise HTTPException(status_code=400, detail="plan_id is required")
 
-@admin_router.get("/account/settings", dependencies=[Depends(verify_admin)])
+    plan["updated_at"] = now_utc()
+
+    await db.subscription_plans.update_one(
+        {"plan_id": plan["plan_id"]},
+        {
+            "$set": plan,
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
+    )
+
+    await log_admin_action(
+        action="upsert_subscription_plan",
+        section="subscriptions",
+        details={"plan_id": plan["plan_id"]},
+        admin_key=x_admin_key,
+    )
+
+    saved = await db.subscription_plans.find_one({"plan_id": plan["plan_id"]}, {"_id": 0})
+    return {
+        "success": True,
+        "plan": saved,
+    }
+
+
+@admin_router.get("/subscriptions/users", dependencies=[Depends(verify_admin)])
+async def get_subscription_users(
+    limit: int = Query(100, ge=1, le=500),
+    skip: int = Query(0, ge=0),
+):
+    from server import db
+
+    query = {
+        "$or": [
+            {"tier": "zitizen"},
+            {"subscription_status": {"$exists": True}},
+            {"stripe_customer_id": {"$exists": True}},
+        ]
+    }
+
+    users = (
+        await db.users.find(query, {"_id": 0})
+        .sort("updated_at", -1)
+        .skip(skip)
+        .limit(limit)
+        .to_list(length=limit)
+    )
+
+    total = await db.users.count_documents(query)
+
+    return {
+        "success": True,
+        "total": total,
+        "users": users,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Admin Account Settings
+# ---------------------------------------------------------------------------
+
+@admin_router.post("/settings/admin-key", dependencies=[Depends(verify_admin)])
+async def update_admin_key(
+    payload: AdminKeyUpdate,
+    x_admin_key: str = Header(None),
+):
+    from server import db
+
+    new_key = payload.new_admin_key.strip()
+    if len(new_key) < 12:
+        raise HTTPException(status_code=400, detail="Admin key must be at least 12 characters")
+
+    key_hash = hashlib.sha256(new_key.encode("utf-8")).hexdigest()
+
+    await db.admin_settings.update_one(
+        {"key": "admin_key_hash"},
+        {
+            "$set": {
+                "key": "admin_key_hash",
+                "value": key_hash,
+                "updated_at": now_utc(),
+            },
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
+    )
+
+    await log_admin_action(
+        action="update_admin_key",
+        section="admin_settings",
+        details={"updated": True},
+        admin_key=x_admin_key,
+    )
+
+    return {
+        "success": True,
+        "message": "Admin key updated",
+    }
+
+
+@admin_router.get("/settings", dependencies=[Depends(verify_admin)])
 async def get_admin_settings():
-    """Get admin account settings"""
     from server import db
-    
-    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
-    settings.pop("_id", None)
-    settings.pop("admin_key_hash", None)  # Never expose key
-    
+
+    settings = await db.admin_settings.find({}, {"_id": 0, "value": 0}).sort("key", 1).to_list(length=500)
     return {
-        "admin_email": settings.get("admin_email", ""),
-        "notification_enabled": settings.get("notification_enabled", True),
-        "two_factor_enabled": settings.get("two_factor_enabled", False),
-        "last_login": settings.get("last_login"),
-        "key_last_changed": settings.get("key_last_changed"),
+        "success": True,
+        "settings": settings,
     }
-
-@admin_router.put("/account/settings", dependencies=[Depends(verify_admin)])
-async def update_admin_settings(settings: AdminSettings):
-    """Update admin account settings"""
-    from server import db
-    
-    await db.admin_settings.update_one(
-        {"_id": "admin"},
-        {"$set": {
-            "admin_email": settings.admin_email,
-            "notification_enabled": settings.notification_enabled,
-            "two_factor_enabled": settings.two_factor_enabled,
-            "updated_at": datetime.now(timezone.utc),
-        }},
-        upsert=True
-    )
-    
-    await db.admin_logs.insert_one({
-        "action": "admin_settings_update",
-        "timestamp": datetime.now(timezone.utc),
-    })
-    
-    return {"success": True}
-
-@admin_router.post("/account/change-key", dependencies=[Depends(verify_admin)])
-async def change_admin_key(update: AdminKeyUpdate):
-    """Change the admin API key"""
-    from server import db
-    import hashlib
-    
-    # Verify current key against env var or stored hash
-    env_key = os.environ.get("ADMIN_API_KEY", "")
-    settings = await db.admin_settings.find_one({"_id": "admin"}) or {}
-    stored_hash = settings.get("admin_key_hash")
-    current_hash = hashlib.sha256(update.current_key.encode()).hexdigest()
-    
-    key_valid = False
-    if env_key and update.current_key == env_key:
-        key_valid = True
-    if stored_hash and current_hash == stored_hash:
-        key_valid = True
-    
-    if not key_valid:
-        raise HTTPException(status_code=401, detail="Current key is incorrect")
-    
-    if len(update.new_key) < 12:
-        raise HTTPException(status_code=400, detail="New key must be at least 12 characters")
-    
-    new_hash = hashlib.sha256(update.new_key.encode()).hexdigest()
-    
-    await db.admin_settings.update_one(
-        {"_id": "admin"},
-        {"$set": {
-            "admin_key_hash": new_hash,
-            "key_last_changed": datetime.now(timezone.utc),
-        }},
-        upsert=True
-    )
-    
-    await db.admin_logs.insert_one({
-        "action": "admin_key_changed",
-        "timestamp": datetime.now(timezone.utc),
-    })
-    
-    return {"success": True, "message": "Admin key updated successfully. Use your new key to login."}
