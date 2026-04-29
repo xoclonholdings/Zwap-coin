@@ -10,6 +10,7 @@ import SignOut from "@/v1/auth/SignOut";
 import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
 import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
 import LandingSequence from "@/v1/landing/LandingSequence";
+import CompletionFlow from "@/v1/onboarding/CompletionFlow";
 import NextActionGate from "@/v1/onboarding/NextActionGate";
 import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
 import useV1OnboardingSessionStats from "@/v1/onboarding/useV1OnboardingSessionStats";
@@ -63,6 +64,21 @@ export default function V1App() {
             hasTriedPlay={onboarding.playCompleted}
             onMove={onboarding.goToMove}
             onPlay={onboarding.goToPlay}
+            onComplete={() => {
+              onboarding.finishLearnMoreAndShowCompletion();
+              navigate(V1_ONBOARDING_ROUTES.completion);
+            }}
+          />
+        }
+      />
+
+      <Route
+        path="completion"
+        element={
+          <CompletionFlow
+            type={onboarding.completionType}
+            moveStarted={onboarding.moveStarted}
+            onComplete={onboarding.finishCompletionAndShowNext}
           />
         }
       />
@@ -92,8 +108,8 @@ export default function V1App() {
             onStopTracking={session.stopMoveTracking}
             onTryPlay={() => {
               session.stopMoveTracking();
-              onboarding.finishMoveAndShowNext();
-              navigate("next");
+              onboarding.finishMoveAndShowCompletion();
+              navigate(V1_ONBOARDING_ROUTES.completion);
             }}
             onLearnMore={() => {
               session.stopMoveTracking();
@@ -101,8 +117,8 @@ export default function V1App() {
             }}
             onMoveComplete={(payload) => {
               session.applyMoveComplete(payload);
-              onboarding.finishMoveAndShowNext();
-              navigate("next");
+              onboarding.finishMoveAndShowCompletion();
+              navigate(V1_ONBOARDING_ROUTES.completion);
             }}
             onMoveMilestone={session.applyMoveMilestone}
           />
@@ -117,8 +133,8 @@ export default function V1App() {
             onStartPlay={onboarding.markPlayStarted}
             onComplete={(payload) => {
               session.applyPlayComplete(payload);
-              onboarding.finishPlayAndShowNext();
-              navigate("next");
+              onboarding.finishPlayAndShowCompletion();
+              navigate(V1_ONBOARDING_ROUTES.completion);
             }}
           />
         }
