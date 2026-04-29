@@ -20,8 +20,6 @@ import SignupOnboarding from "@/v1/signup/SignupOnboarding";
 import {
   V1_ONBOARDING_ROUTES,
   ONBOARDING_ACTIONS,
-  getLandingTargetRoute,
-  getNextOnboardingRoute,
 } from "@/v1/onboarding/onboardingFlow";
 
 const STARTING_ONBOARDING_ZPTS = 100;
@@ -49,12 +47,14 @@ export default function V1App() {
   });
 
   const {
-    onboardingProgress,
     onboardingSeen,
     triedMove,
     triedPlay,
-    completeAction,
-    navigateToNext,
+    startFromWelcome,
+    completeActionAndGoNext,
+    goToLearnMoreAfterAction,
+    canEnterSignupGate,
+    getSignupGateFallback,
     markSeenAndGo,
   } = useV1OnboardingController({ navigate });
 
@@ -85,9 +85,7 @@ export default function V1App() {
           ) : onboardingSeen ? (
             <Navigate to="signin" replace />
           ) : (
-            <LandingSequence
-              onSelect={(target) => navigate(getLandingTargetRoute(target))}
-            />
+            <LandingSequence onSelect={startFromWelcome} />
           )
         }
       />
@@ -100,9 +98,6 @@ export default function V1App() {
             hasTriedPlay={triedPlay}
             onMove={() => navigate(V1_ONBOARDING_ROUTES.move)}
             onPlay={() => navigate(V1_ONBOARDING_ROUTES.play)}
-            navigate={navigate}
-            moveRoute={V1_ONBOARDING_ROUTES.move}
-            playRoute={V1_ONBOARDING_ROUTES.play}
           />
         }
       />
@@ -117,13 +112,14 @@ export default function V1App() {
             onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
               setMoveActive(false);
-              const next = completeAction(ONBOARDING_ACTIONS.move);
-              navigateToNext(next);
+              completeActionAndGoNext(ONBOARDING_ACTIONS.move);
             }}
             onLearnMore={() => {
               setMoveActive(false);
-              completeAction(ONBOARDING_ACTIONS.move);
-              navigate(V1_ONBOARDING_ROUTES.about);
+              goToLearnMoreAfterAction(
+                ONBOARDING_ACTIONS.move,
+                V1_ONBOARDING_ROUTES.about
+              );
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setMoveActive(false);
@@ -133,8 +129,7 @@ export default function V1App() {
                 Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
 
-              const next = completeAction(ONBOARDING_ACTIONS.move);
-              navigateToNext(next);
+              completeActionAndGoNext(ONBOARDING_ACTIONS.move);
             }}
             onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setTodaySteps((previous) => Math.max(previous, displayedSteps));
@@ -152,8 +147,10 @@ export default function V1App() {
           <PlayOnboardingSequence
             triedMove={triedMove}
             onLearnMore={() => {
-              completeAction(ONBOARDING_ACTIONS.play);
-              navigate(V1_ONBOARDING_ROUTES.about);
+              goToLearnMoreAfterAction(
+                ONBOARDING_ACTIONS.play,
+                V1_ONBOARDING_ROUTES.about
+              );
             }}
             onComplete={({ displayedZpts = 50 } = {}) => {
               setGamesPlayedToday((previous) => previous + 1);
@@ -161,8 +158,7 @@ export default function V1App() {
                 Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
 
-              const next = completeAction(ONBOARDING_ACTIONS.play);
-              navigateToNext(next);
+              completeActionAndGoNext(ONBOARDING_ACTIONS.play);
             }}
           />
         }
@@ -171,8 +167,7 @@ export default function V1App() {
       <Route
         path="signup-gate"
         element={
-          getNextOnboardingRoute(onboardingProgress) ===
-          V1_ONBOARDING_ROUTES.signupGate ? (
+          canEnterSignupGate() ? (
             <SignupGate
               hasTriedMove
               hasTriedPlay
@@ -180,7 +175,7 @@ export default function V1App() {
               onExitOnboarding={() => navigate(V1_ONBOARDING_ROUTES.root)}
             />
           ) : (
-            <Navigate to={getNextOnboardingRoute(onboardingProgress)} replace />
+            <Navigate to={getSignupGateFallback()} replace />
           )
         }
       />
