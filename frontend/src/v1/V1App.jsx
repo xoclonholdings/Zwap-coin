@@ -1,7 +1,11 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
+
+import useV1AccessState from "@/v1/app/useV1AccessState";
+import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
+import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
 
 import OnboardingAboutPage from "@/v1/about/OnboardingAboutPage";
 import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
@@ -12,161 +16,64 @@ import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
 import SignupGate from "@/v1/signup/SignupGate";
 import SignupOnboarding from "@/v1/signup/SignupOnboarding";
-import {
-  hasSeenV1Onboarding,
-  markV1OnboardingSeen,
-} from "@/v1/V1OnboardingStorage";
+
 import {
   V1_ONBOARDING_ROUTES,
   ONBOARDING_ACTIONS,
   getLandingTargetRoute,
   getNextOnboardingRoute,
-  isOnboardingComplete,
-  markOnboardingActionTried,
 } from "@/v1/onboarding/onboardingFlow";
 
 const STARTING_ONBOARDING_ZPTS = 100;
-const SHOP_UNLOCK_ZPTS = 1000;
-const ADMIN_PREVIEW_ZPTS = 5000;
-
-const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
-const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
-
-function getReviewAccessEnabled() {
-  try {
-    return window.localStorage.getItem(REVIEW_ACCESS_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function getResolvedEmail({ authUser, user, isReviewAccess }) {
-  if (isReviewAccess) return "review@zwap.app";
-
-  return String(
-    authUser?.email?.address ||
-      authUser?.email ||
-      user?.email ||
-      user?.email_address ||
-      ""
-  )
-    .trim()
-    .toLowerCase();
-}
-
-function getIsAdminPreviewUser(email) {
-  return ADMIN_PREVIEW_EMAILS.includes(String(email || "").trim().toLowerCase());
-}
-
-function buildDisplayName({ authUser, user, walletAddress, isReviewAccess }) {
-  if (isReviewAccess) return "Reviewer";
-  if (authUser?.email?.address) return authUser.email.address.split("@")[0];
-  if (authUser?.email) return String(authUser.email).split("@")[0];
-  if (user?.email) return String(user.email).split("@")[0];
-  if (walletAddress) return `Zwapper ${walletAddress.slice(2, 6)}`;
-  return "Zwapper";
-}
 
 export default function V1App() {
   const navigate = useNavigate();
   const { user, authUser, walletAddress, isAuthenticated } = useApp();
-
-  const progressRef = useRef({ move: false, play: false });
-
-  const [onboardingProgress, setOnboardingProgress] = useState({
-    move: false,
-    play: false,
-  });
-
-  const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
-  const [isReviewAccess] = useState(() => getReviewAccessEnabled());
 
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
   const [zptsBalance, setZptsBalance] = useState(STARTING_ONBOARDING_ZPTS);
 
-  const canSeeDashboard = isAuthenticated || isReviewAccess;
-
-  const resolvedEmail = useMemo(() => {
-    return getResolvedEmail({ authUser, user, isReviewAccess });
-  }, [authUser, user, isReviewAccess]);
-
-  const isAdminPreviewUser = useMemo(() => {
-    return getIsAdminPreviewUser(resolvedEmail);
-  }, [resolvedEmail]);
-
-  const displayName = useMemo(() => {
-    return buildDisplayName({
-      authUser,
-      user,
-      walletAddress,
-      isReviewAccess,
-    });
-  }, [authUser, user, walletAddress, isReviewAccess]);
-
-  const tier =
-    isAdminPreviewUser || user?.subscription_tier === "plus"
-      ? "zitizen"
-      : "zwapper";
-
-  const triedMove = onboardingProgress.move;
-  const triedPlay = onboardingProgress.play;
-
-  function setProgress(nextProgress) {
-    const normalizedProgress = {
-      move: Boolean(nextProgress?.move),
-      play: Boolean(nextProgress?.play),
-    };
-
-    progressRef.current = normalizedProgress;
-    setOnboardingProgress(normalizedProgress);
-
-    return normalizedProgress;
-  }
-
-  function completeAction(action) {
-    const nextProgress = markOnboardingActionTried(progressRef.current, action);
-    return setProgress(nextProgress);
-  }
-
-  function navigateToNext(progress = progressRef.current) {
-    navigate(getNextOnboardingRoute(progress));
-  }
-
-  const normalShopUnlocked = zptsBalance >= SHOP_UNLOCK_ZPTS;
-  const shopUnlocked = isAdminPreviewUser || normalShopUnlocked;
-
-  const dashboardZptsBalance = isAdminPreviewUser
-    ? Math.max(zptsBalance, ADMIN_PREVIEW_ZPTS)
-    : zptsBalance;
-
-  const dashboardTodaySteps = isAdminPreviewUser
-    ? Math.max(todaySteps, 20)
-    : todaySteps;
-
-  const dashboardGamesPlayedToday = isAdminPreviewUser
-    ? Math.max(gamesPlayedToday, 1)
-    : gamesPlayedToday;
-
-  const taskStates = useMemo(() => {
-    return [
-      { label: "Login", completed: Boolean(canSeeDashboard) },
-      { label: "Move", completed: isAdminPreviewUser || triedMove },
-      { label: "Play", completed: isAdminPreviewUser || triedPlay },
-      { label: shopUnlocked ? "Shop" : "Learn", completed: shopUnlocked },
-    ];
-  }, [
+  const {
     canSeeDashboard,
+    resolvedEmail,
     isAdminPreviewUser,
+    displayName,
+    tier,
+  } = useV1AccessState({
+    user,
+    authUser,
+    walletAddress,
+    isAuthenticated,
+  });
+
+  const {
+    onboardingProgress,
+    onboardingSeen,
     triedMove,
     triedPlay,
-    shopUnlocked,
-  ]);
+    completeAction,
+    navigateToNext,
+    markSeenAndGo,
+  } = useV1OnboardingController({ navigate });
 
-  const completedTasks = useMemo(() => {
-    return taskStates.filter((task) => task.completed).length;
-  }, [taskStates]);
+  const dashboardUser = {
+    ...(user || {}),
+    zptsBalance,
+    zpts_balance: zptsBalance,
+    dailySteps: todaySteps,
+    daily_steps: todaySteps,
+    gamesPlayedToday,
+    games_played_today: gamesPlayedToday,
+  };
+
+  const dashboardState = useV1DashboardState({
+    user: dashboardUser,
+    authUser,
+    isAuthenticated: canSeeDashboard,
+    isAdminPreviewUser,
+  });
 
   return (
     <Routes>
@@ -264,14 +171,12 @@ export default function V1App() {
       <Route
         path="signup-gate"
         element={
-          isOnboardingComplete(onboardingProgress) ? (
+          getNextOnboardingRoute(onboardingProgress) ===
+          V1_ONBOARDING_ROUTES.signupGate ? (
             <SignupGate
               hasTriedMove
               hasTriedPlay
-              onBeginAuth={() => {
-                markV1OnboardingSeen();
-                navigate(V1_ONBOARDING_ROUTES.signup);
-              }}
+              onBeginAuth={() => markSeenAndGo(V1_ONBOARDING_ROUTES.signup)}
               onExitOnboarding={() => navigate(V1_ONBOARDING_ROUTES.root)}
             />
           ) : (
@@ -286,10 +191,7 @@ export default function V1App() {
           <SignupOnboarding
             navigate={navigate}
             dashboardRoute={V1_ONBOARDING_ROUTES.dashboard}
-            onAuthSuccess={() => {
-              markV1OnboardingSeen();
-              navigate(V1_ONBOARDING_ROUTES.dashboard);
-            }}
+            onAuthSuccess={() => markSeenAndGo(V1_ONBOARDING_ROUTES.dashboard)}
           />
         }
       />
@@ -299,10 +201,7 @@ export default function V1App() {
         element={
           <SignIn
             dashboardRoute={V1_ONBOARDING_ROUTES.dashboard}
-            onSuccess={() => {
-              markV1OnboardingSeen();
-              navigate(V1_ONBOARDING_ROUTES.dashboard);
-            }}
+            onSuccess={() => markSeenAndGo(V1_ONBOARDING_ROUTES.dashboard)}
           />
         }
       />
@@ -317,29 +216,29 @@ export default function V1App() {
         element={
           canSeeDashboard ? (
             <SimplifiedDashboard
-              user={user}
+              user={dashboardUser}
               authUser={authUser}
-              displayName={displayName}
+              displayName={displayName || dashboardState.displayName}
               subtext={walletAddress || resolvedEmail || "Account active"}
               tier={tier}
-              zptsBalance={dashboardZptsBalance}
+              zptsBalance={dashboardState.zptsBalance}
               zwapBalance={0}
-              todaySteps={dashboardTodaySteps}
+              todaySteps={dashboardState.dailySteps}
               stepGoal={20}
               isMoveActive={moveActive}
-              gamesPlayedToday={dashboardGamesPlayedToday}
+              gamesPlayedToday={dashboardState.gamesPlayedToday}
               playGoal={1}
-              completedTasks={completedTasks}
-              totalTasks={taskStates.length}
-              taskStates={taskStates}
-              shopUnlocked={shopUnlocked}
-              gardenUnlocked={isAdminPreviewUser}
-              rarePlantUnlocked={isAdminPreviewUser}
-              learnUnlocked={isAdminPreviewUser}
-              streamUnlocked={isAdminPreviewUser}
-              assistUnlocked={isAdminPreviewUser}
-              badgeVisibilityUnlocked={isAdminPreviewUser}
-              isSwapUnlocked={isAdminPreviewUser}
+              completedTasks={dashboardState.completedTaskCount}
+              totalTasks={dashboardState.totalTaskCount}
+              taskStates={dashboardState.taskStates}
+              shopUnlocked={dashboardState.shopUnlocked}
+              gardenUnlocked={dashboardState.gardenUnlocked}
+              rarePlantUnlocked={dashboardState.rarePlantUnlocked}
+              learnUnlocked={dashboardState.learnUnlocked}
+              streamUnlocked={dashboardState.streamUnlocked}
+              assistUnlocked={dashboardState.assistUnlocked}
+              badgeVisibilityUnlocked={dashboardState.badgeVisibilityUnlocked}
+              isSwapUnlocked={dashboardState.isSwapUnlocked}
               walletAddress={walletAddress}
               showUpgrade={!canSeeDashboard}
               onOpenUpgrade={() => navigate(V1_ONBOARDING_ROUTES.signupGate)}
