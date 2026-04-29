@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+const ADMIN_PREVIEW_ZPTS = 5000;
+
 function asNumber(value, fallback = 0) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
@@ -51,50 +53,93 @@ function buildDisplayName({ user, authUser }) {
   );
 }
 
-export default function useV1DashboardState({ user, authUser } = {}) {
+function buildTaskStates({
+  isAuthenticated = false,
+  isAdminPreviewUser = false,
+  dailySteps = 0,
+  gamesPlayedToday = 0,
+  shopUnlocked = false,
+}) {
+  return [
+    {
+      label: "Login",
+      completed: Boolean(isAuthenticated || isAdminPreviewUser),
+    },
+    {
+      label: "Move",
+      completed: Boolean(isAdminPreviewUser || dailySteps > 0),
+    },
+    {
+      label: "Play",
+      completed: Boolean(isAdminPreviewUser || gamesPlayedToday > 0),
+    },
+    {
+      label: shopUnlocked ? "Shop" : "Learn",
+      completed: Boolean(shopUnlocked),
+    },
+  ];
+}
+
+export default function useV1DashboardState({
+  user,
+  authUser,
+  isAuthenticated = false,
+  isAdminPreviewUser = false,
+} = {}) {
   const [isZwapAltView, setIsZwapAltView] = useState(false);
 
   return useMemo(() => {
-    const zptsBalance = getFirstNumber(
+    const baseZptsBalance = getFirstNumber(
       user,
       ["zptsBalance", "zpts_balance", "zPts", "zpts"],
       0
     );
 
-    const lifetimeZpts = getFirstNumber(
-      user,
-      ["lifetimeZpts", "lifetime_zpts"],
-      zptsBalance
-    );
+    const zptsBalance = isAdminPreviewUser
+      ? Math.max(baseZptsBalance, ADMIN_PREVIEW_ZPTS)
+      : baseZptsBalance;
 
-    const dailySteps = getFirstNumber(
-      user,
-      ["dailySteps", "daily_steps", "todaySteps", "stepsToday", "steps"],
-      0
-    );
+    const lifetimeZpts = isAdminPreviewUser
+      ? Math.max(
+          getFirstNumber(user, ["lifetimeZpts", "lifetime_zpts"], zptsBalance),
+          ADMIN_PREVIEW_ZPTS
+        )
+      : getFirstNumber(user, ["lifetimeZpts", "lifetime_zpts"], zptsBalance);
 
-    const gamesPlayedToday = getFirstNumber(
-      user,
-      ["gamesPlayedToday", "games_played_today", "gamesPlayed"],
-      0
-    );
+    const dailySteps = isAdminPreviewUser
+      ? Math.max(
+          getFirstNumber(
+            user,
+            ["dailySteps", "daily_steps", "todaySteps", "stepsToday", "steps"],
+            0
+          ),
+          20
+        )
+      : getFirstNumber(
+          user,
+          ["dailySteps", "daily_steps", "todaySteps", "stepsToday", "steps"],
+          0
+        );
+
+    const gamesPlayedToday = isAdminPreviewUser
+      ? Math.max(
+          getFirstNumber(
+            user,
+            ["gamesPlayedToday", "games_played_today", "gamesPlayed"],
+            0
+          ),
+          1
+        )
+      : getFirstNumber(
+          user,
+          ["gamesPlayedToday", "games_played_today", "gamesPlayed"],
+          0
+        );
 
     const lessonsCompletedToday = getFirstNumber(
       user,
       ["lessonsCompletedToday", "lessons_completed_today"],
       0
-    );
-
-    const completedTaskCount = getFirstNumber(
-      user,
-      ["completedTaskCount", "completed_task_count"],
-      0
-    );
-
-    const totalTaskCount = getFirstNumber(
-      user,
-      ["totalTaskCount", "total_task_count"],
-      4
     );
 
     const streakDays = getFirstNumber(user, ["streakDays", "daily_streak"], 0);
@@ -117,17 +162,8 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       0
     );
 
-    const activeDays = getFirstNumber(
-      user,
-      ["activeDays", "active_days"],
-      0
-    );
-
-    const missedDays = getFirstNumber(
-      user,
-      ["missedDays", "missed_days"],
-      0
-    );
+    const activeDays = getFirstNumber(user, ["activeDays", "active_days"], 0);
+    const missedDays = getFirstNumber(user, ["missedDays", "missed_days"], 0);
 
     const daysUntilNextBloom = getFirstNumber(
       user,
@@ -137,59 +173,70 @@ export default function useV1DashboardState({ user, authUser } = {}) {
 
     const displayName = buildDisplayName({ user, authUser });
 
-    const shopUnlocked = getFirstBoolean(
-      user,
-      ["shopUnlocked", "shop_unlocked"],
-      lifetimeZpts >= 1000
-    );
+    const shopUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(
+        user,
+        ["shopUnlocked", "shop_unlocked"],
+        lifetimeZpts >= 1000
+      );
 
-    const gardenUnlocked = getFirstBoolean(
-      user,
-      ["gardenUnlocked", "garden_unlocked"],
-      false
-    );
+    const gardenUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(user, ["gardenUnlocked", "garden_unlocked"], false);
 
-    const rarePlantUnlocked = getFirstBoolean(
-      user,
-      ["rarePlantUnlocked", "rare_plant_unlocked"],
-      false
-    );
+    const rarePlantUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(
+        user,
+        ["rarePlantUnlocked", "rare_plant_unlocked"],
+        false
+      );
 
-    const badgeVisibilityUnlocked = getFirstBoolean(
-      user,
-      ["badgeVisibilityUnlocked", "badge_visibility_unlocked"],
-      false
-    );
+    const badgeVisibilityUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(
+        user,
+        ["badgeVisibilityUnlocked", "badge_visibility_unlocked"],
+        false
+      );
 
-    const learnUnlocked = getFirstBoolean(
-      user,
-      ["learnUnlocked", "learn_unlocked"],
-      false
-    );
+    const learnUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(user, ["learnUnlocked", "learn_unlocked"], false);
 
-    const streamUnlocked = getFirstBoolean(
-      user,
-      ["streamUnlocked", "stream_unlocked"],
-      false
-    );
+    const streamUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(user, ["streamUnlocked", "stream_unlocked"], false);
 
-    const assistUnlocked = getFirstBoolean(
-      user,
-      ["assistUnlocked", "assist_unlocked"],
-      false
-    );
+    const assistUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(user, ["assistUnlocked", "assist_unlocked"], false);
 
-    const isSwapUnlocked = getFirstBoolean(
-      user,
-      ["isSwapUnlocked", "swapUnlocked", "swap_unlocked"],
-      false
-    );
+    const isSwapUnlocked =
+      isAdminPreviewUser ||
+      getFirstBoolean(
+        user,
+        ["isSwapUnlocked", "swapUnlocked", "swap_unlocked"],
+        false
+      );
 
     const fullLoopCompleted = getFirstBoolean(
       user,
       ["fullLoopCompleted", "full_loop_completed"],
       false
     );
+
+    const taskStates = buildTaskStates({
+      isAuthenticated,
+      isAdminPreviewUser,
+      dailySteps,
+      gamesPlayedToday,
+      shopUnlocked,
+    });
+
+    const completedTaskCount = taskStates.filter((task) => task.completed).length;
+    const totalTaskCount = taskStates.length;
 
     const profileNeedsSetup = !displayName;
     const hasNewHighScore = getFirstBoolean(
@@ -230,6 +277,7 @@ export default function useV1DashboardState({ user, authUser } = {}) {
 
       completedTaskCount,
       totalTaskCount,
+      taskStates,
 
       streakDays,
       dailySteps,
@@ -259,5 +307,5 @@ export default function useV1DashboardState({ user, authUser } = {}) {
       zwapMessage: user?.zwapMessage || user?.zwap_message || "",
       zwapHint: user?.zwapHint || user?.zwap_hint || "",
     };
-  }, [user, authUser, isZwapAltView]);
+  }, [user, authUser, isAuthenticated, isAdminPreviewUser, isZwapAltView]);
 }
