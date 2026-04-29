@@ -14,6 +14,7 @@ user_router = APIRouter(prefix="/users", tags=["User"])
 
 SHOP_UNLOCK_THRESHOLD = 1000
 GARDEN_STREAK_UNLOCK_DAYS = 3
+MAX_ONBOARDING_REWARD_ZPTS = 100
 
 ADJECTIVES = [
     "Nova",
@@ -47,6 +48,12 @@ class UserCreate(BaseModel):
     wallet_address: Optional[str] = None
     username: Optional[str] = None
 
+    zpts_balance: Optional[int] = None
+    lifetime_zpts: Optional[int] = None
+    daily_steps: Optional[int] = None
+    games_played_today: Optional[int] = None
+    onboarding_reward: Optional[Dict[str, Any]] = None
+
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -60,6 +67,10 @@ class UserResponse(BaseModel):
     zpts_balance: int = 0
     lifetime_zpts: int = 0
     total_earned: float = 0.0
+
+    onboarding_reward: Dict[str, Any] = {}
+    onboarding_reward_applied: bool = False
+    onboarding_reward_applied_at: Optional[str] = None
 
     daily_streak: int = 0
     last_daily_claim: Optional[str] = None
@@ -186,6 +197,11 @@ def safe_bool(value: Any, fallback: bool = False) -> bool:
     return fallback
 
 
+def clamp_int(value: Any, minimum: int = 0, maximum: int = 100) -> int:
+    parsed = safe_int(value, minimum)
+    return max(minimum, min(parsed, maximum))
+
+
 def hash_string(value: str = "") -> int:
     hash_value = 0
     safe_value = str(value or "").lower().strip()
@@ -211,7 +227,6 @@ def generate_username(
 
     safe_email = normalize_email(email)
     safe_wallet = normalize_wallet(wallet_address) or ""
-
     seed_source = safe_email or safe_wallet
 
     if not seed_source:
@@ -231,6 +246,117 @@ def generate_username(
     number = safe_seed % 999
 
     return f"{adjective}{noun}{number}"
+
+
+def build_onboarding_reward(user_data: UserCreate) -> Dict[str, Any]:
+    source = user_data.onboarding_reward or {}
+
+    reward_zpts = clamp_int(
+        source.get("zptsBalance")
+        or source.get("zpts_balance")
+        or source.get("zpts")
+        or user_data.zpts_balance
+        or user_data.lifetime_zpts
+        or 0,
+        0,
+        MAX_ONBOARDING_REWARD_ZPTS,
+    )
+
+    move_zpts = clamp_int(
+        source.get("moveZpts") or source.get("move_zpts") or 0,
+        0,
+        50,
+    )
+
+    play_zpts = clamp_int(
+        source.get("playZpts") or source.get("play_zpts") or 0,
+        0,
+        50,
+    )
+
+    daily_steps = clamp_int(
+        source.get("dailySteps") or source.get("daily_steps") or user_data.daily_steps or 0,
+        0,
+        50000,
+    )
+
+    games_played_today = clamp_int(
+        source.get("gamesPlayedToday")
+        or source.get("games_played_today")
+        or user_data.games_played_today
+        or 0,
+        0,
+        10,
+    )
+
+    move_completed = safe_bool(source.get("moveCompleted") or source.get("move_completed"), move_zpts > 0)
+    play_completed = safe_bool(source.get("playCompleted") or source.get("play_completed"), play_zpts > 0)
+
+    return {
+        "zpts_balance": reward_zpts,
+        "move_zpts": move_zpts,
+        "play_zpts": play_zpts,
+        "daily_steps": daily_steps,
+        "games_played_today": games_played_today,
+        "move_completed": move_completed,
+        "play_completed": play_completed,
+    }
+
+
+def apply_onboarding_reward_once(user: dict, reward: Dict[str, Any]) -> Dict[str, Any]:
+    reward_zpts = clamp_int(
+        reward.get("zpts_balance"),
+        0,
+        MAX_ONBOARDING_REWARD_ZPTS,
+    )
+
+    daily_steps = clamp_int(reward.get("daily_steps"), 0, 50000)
+    games_played_today = clamp_int(reward.get("games_played_today"), 0, 10)
+
+    has_reward_payload = reward_zpts > 0 or daily_steps > 0 or games_played_today > 0
+
+    if not has_reward_payload:
+        return {}
+
+    if safe_bool(user.get("onboarding_reward_applied"), False):
+        return {}
+
+    now_iso = utc_now_iso()
+    current_day = today_key()
+
+    updated_zpts_balance = safe_int(user.get("zpts_balance"), 0) + reward_zpts
+    updated_lifetime_zpts = safe_int(user.get("lifetime_zpts"), 0) + reward_zpts
+    updated_daily_zpts_earned = safe_int(user.get("daily_zpts_earned"), 0) + reward_zpts
+
+    updated_daily_steps = max(safe_int(user.get("daily_steps"), 0), daily_steps)
+    updated_total_steps = max(safe_int(user.get("total_steps"), 0), daily_steps)
+
+    updated_games_today = max(
+        safe_int(user.get("games_played_today"), 0),
+        games_played_today,
+    )
+    updated_games_played = max(
+        safe_int(user.get("games_played"), 0),
+        updated_games_today,
+    )
+
+    updates = {
+        "zpts_balance": updated_zpts_balance,
+        "lifetime_zpts": updated_lifetime_zpts,
+        "daily_zpts_earned": updated_daily_zpts_earned,
+        "daily_zpts_date": user.get("daily_zpts_date") or current_day,
+        "daily_steps": updated_daily_steps,
+        "total_steps": updated_total_steps,
+        "games_played_today": updated_games_today,
+        "games_played": updated_games_played,
+        "onboarding_reward": reward,
+        "onboarding_reward_applied": True,
+        "onboarding_reward_applied_at": now_iso,
+        "updated_at": now_iso,
+    }
+
+    user.update(updates)
+    return updates
 
 
 async def persist_missing_identity_fields(db, user: dict) -> dict:
@@ -259,6 +385,14 @@ async def persist_missing_identity_fields(db, user: dict) -> dict:
     if not user.get("tier"):
         updates["tier"] = "zwapper"
         user["tier"] = "zwapper"
+
+    if "onboarding_reward" not in user:
+        updates["onboarding_reward"] = {}
+        user["onboarding_reward"] = {}
+
+    if "onboarding_reward_applied" not in user:
+        updates["onboarding_reward_applied"] = False
+        user["onboarding_reward_applied"] = False
 
     if updates and email:
         updates["updated_at"] = utc_now_iso()
@@ -293,6 +427,10 @@ def build_new_user(
         "zpts_balance": 0,
         "lifetime_zpts": 0,
         "total_earned": 0.0,
+
+        "onboarding_reward": {},
+        "onboarding_reward_applied": False,
+        "onboarding_reward_applied_at": None,
 
         "tier": "zwapper",
         "subscription_id": None,
@@ -436,6 +574,13 @@ def apply_unlock_state(user: dict, task_state: Dict[str, Any]) -> dict:
     user["zwap_balance"] = safe_float(user.get("zwap_balance"), 0.0)
     user["total_earned"] = safe_float(user.get("total_earned"), 0.0)
 
+    user["onboarding_reward"] = user.get("onboarding_reward") or {}
+    user["onboarding_reward_applied"] = safe_bool(
+        user.get("onboarding_reward_applied"),
+        False,
+    )
+    user["onboarding_reward_applied_at"] = user.get("onboarding_reward_applied_at")
+
     user["tier"] = user.get("tier") or "zwapper"
     user["garden_health_percent"] = safe_int(user.get("garden_health_percent"), 100)
     user["garden_growth_stage"] = user.get("garden_growth_stage") or "seed"
@@ -454,8 +599,7 @@ async def enrich_user_for_dashboard(db, user: dict) -> dict:
     return user
 
 
-@user_router.post("/connect", response_model=UserResponse)
-async def connect_user(user_data: UserCreate, request: Request):
+async def create_or_update_email_user(user_data: UserCreate, request: Request):
     db = request.app.state.db
 
     email = normalize_email(user_data.email)
@@ -464,6 +608,7 @@ async def connect_user(user_data: UserCreate, request: Request):
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
 
+    reward = build_onboarding_reward(user_data)
     existing = await db.users.find_one({"email": email}, {"_id": 0})
 
     if existing:
@@ -477,6 +622,9 @@ async def connect_user(user_data: UserCreate, request: Request):
         if incoming_username and incoming_username != existing.get("username"):
             updates["username"] = incoming_username
             existing["username"] = incoming_username
+
+        reward_updates = apply_onboarding_reward_once(existing, reward)
+        updates.update(reward_updates)
 
         if updates:
             updates["updated_at"] = utc_now_iso()
@@ -492,10 +640,39 @@ async def connect_user(user_data: UserCreate, request: Request):
         username=user_data.username,
     )
 
+    apply_onboarding_reward_once(new_user, reward)
+
     await db.users.insert_one(dict(new_user))
 
     enriched_user = await enrich_user_for_dashboard(db, new_user)
     return UserResponse(**enriched_user)
+
+
+@user_router.post("/email", response_model=UserResponse)
+async def create_or_update_user_by_email(user_data: UserCreate, request: Request):
+    return await create_or_update_email_user(user_data, request)
+
+
+@user_router.get("/email/{email}", response_model=UserResponse)
+async def get_user_by_email(email: str, request: Request):
+    db = request.app.state.db
+    normalized_email = normalize_email(email)
+
+    if not normalized_email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    user = await db.users.find_one({"email": normalized_email}, {"_id": 0})
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user = await enrich_user_for_dashboard(db, user)
+    return UserResponse(**user)
+
+
+@user_router.post("/connect", response_model=UserResponse)
+async def connect_user(user_data: UserCreate, request: Request):
+    return await create_or_update_email_user(user_data, request)
 
 
 @user_router.get("/{email}", response_model=UserResponse)
