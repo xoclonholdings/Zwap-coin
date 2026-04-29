@@ -70,24 +70,6 @@ export function markOnboardingActionTried(progress = {}, action) {
   };
 }
 
-export function getAboutGuidanceLines(progress = {}) {
-  const normalized = normalizeOnboardingProgress(progress);
-
-  if (normalized.move && !normalized.play) {
-    return ["Now try", "PLAY."];
-  }
-
-  if (!normalized.move && normalized.play) {
-    return ["Now try", "MOVE."];
-  }
-
-  if (!normalized.move && !normalized.play) {
-    return ["Choose your", "next action."];
-  }
-
-  return null;
-}
-
 export function getAboutAvailableActions(progress = {}) {
   const normalized = normalizeOnboardingProgress(progress);
 
