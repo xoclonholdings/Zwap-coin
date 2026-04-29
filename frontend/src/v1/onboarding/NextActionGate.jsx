@@ -21,7 +21,6 @@ export default function NextActionGate({
         transition={{ duration: 0.6 }}
         className="flex w-full max-w-[320px] flex-col items-center gap-6"
       >
-        {/* TEXT */}
         {type === "move" && (
           <OnboardingVoiceText lines={["Now try", "MOVE."]} />
         )}
@@ -36,11 +35,10 @@ export default function NextActionGate({
 
         {type === "continue" && (
           <OnboardingVoiceText
-            lines={["Keep earning?", "Sign up to save your progress."]}
+            lines={["Save your progress.", "Create your account."]}
           />
         )}
 
-        {/* BUTTONS */}
         <div className="flex w-full flex-col items-center gap-4">
           {type === "move" && (
             <OnboardingActionButton type="move" onClick={onMove} />
@@ -59,14 +57,8 @@ export default function NextActionGate({
 
           {type === "continue" && (
             <>
-              <OnboardingActionButton
-                type="primary"
-                onClick={onContinue}
-              />
-              <OnboardingActionButton
-                type="secondary"
-                onClick={onMove}
-              />
+              <OnboardingActionButton type="primary" onClick={onContinue} />
+              <OnboardingActionButton type="secondary" onClick={onMove} />
             </>
           )}
         </div>
