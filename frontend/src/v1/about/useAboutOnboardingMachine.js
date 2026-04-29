@@ -1,25 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ABOUT_STEPS } from "./AboutOnboardingContent";
+
 const TRANSITION_GAP_MS = 320;
 
-const STEPS = [
-  { id: "voice-1", type: "voice", duration: 3100 },
-  { id: "voice-2", type: "voice", duration: 3100 },
-  { id: "proof-1", type: "proof-actions", duration: 3500 },
-  { id: "voice-3", type: "voice", duration: 3000 },
-  { id: "voice-4", type: "voice", duration: 3200 },
-  { id: "proof-2", type: "proof-shop", duration: 3700 },
-  { id: "voice-5", type: "voice", duration: 3600 },
-  { id: "anchor", type: "anchor", duration: 2900 },
-  { id: "final", type: "final", duration: 0 },
-];
-
 function getStep(index) {
-  return STEPS[index] || STEPS[0];
+  return ABOUT_STEPS[index] || ABOUT_STEPS[0];
 }
 
 function getNextStepIndex(index) {
-  return Math.min(index + 1, STEPS.length - 1);
+  return Math.min(index + 1, ABOUT_STEPS.length - 1);
 }
 
 function shouldHoldStep({ isPaused, isFinal }) {
@@ -86,7 +76,7 @@ export default function useAboutOnboardingMachine() {
   return {
     currentStep,
     stepIndex,
-    totalSteps: STEPS.length,
+    totalSteps: ABOUT_STEPS.length,
     isPaused,
     isFinal,
     goNext,
