@@ -20,7 +20,10 @@ import {
 const V1_BASE = "/v1";
 const STARTING_ONBOARDING_ZPTS = 100;
 const SHOP_UNLOCK_ZPTS = 1000;
+const ADMIN_PREVIEW_ZPTS = 5000;
+
 const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
+const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
 
 function getReviewAccessEnabled() {
   try {
@@ -28,6 +31,24 @@ function getReviewAccessEnabled() {
   } catch {
     return false;
   }
+}
+
+function getResolvedEmail({ authUser, user, isReviewAccess }) {
+  if (isReviewAccess) return "review@zwap.app";
+
+  return String(
+    authUser?.email?.address ||
+      authUser?.email ||
+      user?.email ||
+      user?.email_address ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function getIsAdminPreviewUser(email) {
+  return ADMIN_PREVIEW_EMAILS.includes(String(email || "").trim().toLowerCase());
 }
 
 function buildDisplayName({ authUser, user, walletAddress, isReviewAccess }) {
@@ -60,6 +81,14 @@ export default function V1App() {
 
   const canSeeDashboard = isAuthenticated || isReviewAccess;
 
+  const resolvedEmail = useMemo(() => {
+    return getResolvedEmail({ authUser, user, isReviewAccess });
+  }, [authUser, user, isReviewAccess]);
+
+  const isAdminPreviewUser = useMemo(() => {
+    return getIsAdminPreviewUser(resolvedEmail);
+  }, [resolvedEmail]);
+
   const displayName = useMemo(() => {
     return buildDisplayName({
       authUser,
@@ -69,7 +98,10 @@ export default function V1App() {
     });
   }, [authUser, user, walletAddress, isReviewAccess]);
 
-  const tier = user?.subscription_tier === "plus" ? "zitizen" : "zwapper";
+  const tier =
+    isAdminPreviewUser || user?.subscription_tier === "plus"
+      ? "zitizen"
+      : "zwapper";
 
   const triedMove = onboardingProgress.move;
   const triedPlay = onboardingProgress.play;
@@ -109,16 +141,35 @@ export default function V1App() {
     navigate(getNextOnboardingRoute(progress));
   };
 
-  const shopUnlocked = zptsBalance >= SHOP_UNLOCK_ZPTS;
+  const normalShopUnlocked = zptsBalance >= SHOP_UNLOCK_ZPTS;
+  const shopUnlocked = isAdminPreviewUser || normalShopUnlocked;
+
+  const dashboardZptsBalance = isAdminPreviewUser
+    ? Math.max(zptsBalance, ADMIN_PREVIEW_ZPTS)
+    : zptsBalance;
+
+  const dashboardTodaySteps = isAdminPreviewUser
+    ? Math.max(todaySteps, 20)
+    : todaySteps;
+
+  const dashboardGamesPlayedToday = isAdminPreviewUser
+    ? Math.max(gamesPlayedToday, 1)
+    : gamesPlayedToday;
 
   const taskStates = useMemo(() => {
     return [
       { label: "Login", completed: Boolean(canSeeDashboard) },
-      { label: "Move", completed: triedMove },
-      { label: "Play", completed: triedPlay },
+      { label: "Move", completed: isAdminPreviewUser || triedMove },
+      { label: "Play", completed: isAdminPreviewUser || triedPlay },
       { label: shopUnlocked ? "Shop" : "Learn", completed: shopUnlocked },
     ];
-  }, [canSeeDashboard, triedMove, triedPlay, shopUnlocked]);
+  }, [
+    canSeeDashboard,
+    isAdminPreviewUser,
+    triedMove,
+    triedPlay,
+    shopUnlocked,
+  ]);
 
   const completedTasks = useMemo(() => {
     return taskStates.filter((task) => task.completed).length;
@@ -279,16 +330,44 @@ export default function V1App() {
         element={
           canSeeDashboard ? (
             <SimplifiedDashboard
+              user={user}
+              authUser={authUser}
               displayName={displayName}
+              subtext={walletAddress || resolvedEmail || "Account active"}
               tier={tier}
-              zptsBalance={zptsBalance}
+              zptsBalance={dashboardZptsBalance}
               zwapBalance={0}
-              todaySteps={todaySteps}
-              gamesPlayedToday={gamesPlayedToday}
+              todaySteps={dashboardTodaySteps}
+              stepGoal={20}
+              isMoveActive={moveActive}
+              gamesPlayedToday={dashboardGamesPlayedToday}
+              playGoal={1}
               completedTasks={completedTasks}
               totalTasks={taskStates.length}
+              taskStates={taskStates}
               shopUnlocked={shopUnlocked}
+              gardenUnlocked={isAdminPreviewUser}
+              rarePlantUnlocked={isAdminPreviewUser}
+              learnUnlocked={isAdminPreviewUser}
+              streamUnlocked={isAdminPreviewUser}
+              assistUnlocked={isAdminPreviewUser}
+              badgeVisibilityUnlocked={isAdminPreviewUser}
+              isSwapUnlocked={isAdminPreviewUser}
               walletAddress={walletAddress}
+              showUpgrade={!canSeeDashboard}
+              onOpenUpgrade={() => navigate(signupGateRoute)}
+              onAdminTrigger={() => navigate("/admin")}
+              onOpenProfile={() => navigate(dashboardRoute)}
+              onOpenContact={() => navigate("/contact")}
+              onOpenPrivacy={() => navigate("/privacy")}
+              onOpenHelp={() => navigate(aboutRoute)}
+              onOpenTerms={() => navigate("/terms")}
+              onOpenZwapPanel={() => navigate(signupGateRoute)}
+              homeRoute={dashboardRoute}
+              moveRoute={moveRoute}
+              playRoute={playRoute}
+              tasksRoute={signupGateRoute}
+              shopRoute={dashboardRoute}
             />
           ) : (
             <Navigate to={signInRoute} replace />
