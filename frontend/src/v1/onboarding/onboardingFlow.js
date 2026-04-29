@@ -4,6 +4,11 @@ import {
   getLearnMoreAvailableActions,
 } from "@/v1/onboarding/learnMoreFlow";
 
+import {
+  canShowSignupGate,
+  getSignupGateRoute,
+} from "@/v1/onboarding/signupGateFlow";
+
 export const V1_ONBOARDING_ROUTES = {
   root: "/v1",
   about: "/v1/about",
@@ -28,16 +33,11 @@ export function normalizeOnboardingProgress(progress = {}) {
   };
 }
 
-export function isOnboardingComplete(progress = {}) {
-  const normalized = normalizeOnboardingProgress(progress);
-  return normalized.move && normalized.play;
-}
-
 export function getNextOnboardingRoute(progress = {}) {
   const normalized = normalizeOnboardingProgress(progress);
 
-  if (normalized.move && normalized.play) {
-    return V1_ONBOARDING_ROUTES.signupGate;
+  if (canShowSignupGate(normalized)) {
+    return getSignupGateRoute();
   }
 
   if (normalized.play && !normalized.move) {
@@ -69,10 +69,7 @@ export function getLandingTargetRoute(target) {
 
 export function getWelcomeStartResult(target) {
   return {
-    progress: normalizeOnboardingProgress({
-      move: false,
-      play: false,
-    }),
+    progress: normalizeOnboardingProgress({ move: false, play: false }),
     route: getLandingTargetRoute(target),
   };
 }
@@ -87,11 +84,11 @@ export function markOnboardingActionTried(progress = {}, action) {
 }
 
 export function getActionCompletionResult(progress = {}, action) {
-  const nextProgress = markOnboardingActionTried(progress, action);
+  const progressAfterAction = markOnboardingActionTried(progress, action);
 
   return {
-    progress: nextProgress,
-    route: getNextOnboardingRoute(nextProgress),
+    progress: progressAfterAction,
+    route: getNextOnboardingRoute(progressAfterAction),
   };
 }
 
