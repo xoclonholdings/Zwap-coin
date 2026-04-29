@@ -55,7 +55,7 @@ export default function MoveOnboardingSequence({
           {showVoice && <VoiceView text={voice} />}
         </AnimatePresence>
 
-        {showAction && isTracking && (
+        {showAction && (
           <CounterView steps={displayedSteps} zpts={displayedZpts} />
         )}
 
