@@ -23,8 +23,25 @@ import TermsViewV1 from "./drawer/TermsViewV1";
 const ADMIN_TAP_THRESHOLD = 3;
 const ADMIN_TAP_RESET_MS = 1200;
 
-const ONBOARDING_RESET_TAP_THRESHOLD = 3;
-const ONBOARDING_RESET_TAP_MS = 700;
+const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
+const REVIEW_EMAIL_STORAGE_KEY = "zwap_review_email";
+
+function getReviewAccessEnabled() {
+  try {
+    return window.localStorage.getItem(REVIEW_ACCESS_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function clearReviewAccess() {
+  try {
+    window.localStorage.removeItem(REVIEW_ACCESS_STORAGE_KEY);
+    window.localStorage.removeItem(REVIEW_EMAIL_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
 
 function HeaderIconButton({ onClick, children, label }) {
   return (
@@ -111,18 +128,21 @@ export default function AccountPanelContentV1({
   const { isAuthenticated, logoutAll } = useApp();
 
   const [activeView, setActiveView] = useState("home");
+  const [isReviewAccess] = useState(() => getReviewAccessEnabled());
 
   const adminTapCountRef = useRef(0);
   const adminTapResetRef = useRef(null);
 
-  const onboardingResetTapCountRef = useRef(0);
-  const onboardingResetTimerRef = useRef(null);
+  const canLogout = isAuthenticated || isReviewAccess;
 
   const resolvedWalletAddress =
     walletAddress || user?.walletAddress || user?.wallet_address || "";
 
   const resolvedEmail =
-    authUser?.email?.address || authUser?.email || user?.email || "";
+    authUser?.email?.address ||
+    authUser?.email ||
+    user?.email ||
+    (isReviewAccess ? "review@zwap.app" : "");
 
   const resolvedUsername = generateUsername({
     username: user?.username || username,
@@ -135,10 +155,6 @@ export default function AccountPanelContentV1({
       if (adminTapResetRef.current) {
         clearTimeout(adminTapResetRef.current);
       }
-
-      if (onboardingResetTimerRef.current) {
-        clearTimeout(onboardingResetTimerRef.current);
-      }
     };
   }, []);
 
@@ -148,15 +164,6 @@ export default function AccountPanelContentV1({
     if (adminTapResetRef.current) {
       clearTimeout(adminTapResetRef.current);
       adminTapResetRef.current = null;
-    }
-  };
-
-  const resetOnboardingTapCounter = () => {
-    onboardingResetTapCountRef.current = 0;
-
-    if (onboardingResetTimerRef.current) {
-      clearTimeout(onboardingResetTimerRef.current);
-      onboardingResetTimerRef.current = null;
     }
   };
 
@@ -179,35 +186,22 @@ export default function AccountPanelContentV1({
 
   const handleLogout = async () => {
     try {
-      await logoutAll?.();
+      clearReviewAccess();
+
+      if (isAuthenticated) {
+        await logoutAll?.();
+      }
     } finally {
       onClose?.();
       navigate("/v1/signout", { replace: true });
     }
   };
 
-  const handleLogoutTap = () => {
-    onboardingResetTapCountRef.current += 1;
-
-    if (onboardingResetTimerRef.current) {
-      clearTimeout(onboardingResetTimerRef.current);
-    }
-
-    if (onboardingResetTapCountRef.current >= ONBOARDING_RESET_TAP_THRESHOLD) {
-      resetOnboardingTapCounter();
-      clearV1OnboardingSeen();
-      window.location.reload();
-      return;
-    }
-
-    onboardingResetTimerRef.current = setTimeout(() => {
-      const tapCount = onboardingResetTapCountRef.current;
-      resetOnboardingTapCounter();
-
-      if (tapCount === 1) {
-        handleLogout();
-      }
-    }, ONBOARDING_RESET_TAP_MS);
+  const handleResetOnboarding = () => {
+    clearReviewAccess();
+    clearV1OnboardingSeen();
+    onClose?.();
+    window.location.href = "/v1";
   };
 
   if (activeView === "profile") {
@@ -331,13 +325,18 @@ export default function AccountPanelContentV1({
               onClick={() => setActiveView("settings")}
             />
 
-            {isAuthenticated ? (
+            {canLogout ? (
               <AccountActionRowV1
                 label="Logout"
                 danger
-                onClick={handleLogoutTap}
+                onClick={handleLogout}
               />
             ) : null}
+
+            <AccountActionRowV1
+              label="Reset Onboarding"
+              onClick={handleResetOnboarding}
+            />
           </div>
 
           <AccountShieldCardV1 onClick={handleAdminTap} />
