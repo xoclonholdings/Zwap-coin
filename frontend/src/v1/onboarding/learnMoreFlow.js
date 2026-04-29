@@ -17,12 +17,3 @@ export function getLearnMoreStartResult(progress = {}) {
     route: V1_ONBOARDING_ROUTES.about,
   };
 }
-
-export function getLearnMoreFinalState(progress = {}) {
-  return {
-    progress: normalize(progress),
-    lines: ["Choose your", "next action."],
-    showMove: true,
-    showPlay: true,
-  };
-}
