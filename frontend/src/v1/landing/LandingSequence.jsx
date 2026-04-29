@@ -2,6 +2,57 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import zwapLogo from "../../assets/Zwap_logo_full.png";
 
+function OnboardingActionButton({ type = "move", onClick }) {
+  const isMove = type === "move";
+
+  const label = isMove ? "Move" : "Play";
+  const eyebrow = isMove ? "STEP INTO VALUE" : "ENTER THE ARCADE";
+
+  const shellClass = isMove
+    ? "border-cyan-300/45 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.24),rgba(34,211,238,0.12)_42%,rgba(8,12,24,0.9)_100%)] text-cyan-50 shadow-[0_0_32px_rgba(34,211,238,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]"
+    : "border-violet-300/45 bg-[radial-gradient(circle_at_top,rgba(216,180,254,0.24),rgba(168,85,247,0.13)_42%,rgba(12,8,24,0.9)_100%)] text-violet-50 shadow-[0_0_32px_rgba(168,85,247,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]";
+
+  const glowClass = isMove
+    ? "from-cyan-200/0 via-cyan-200/45 to-cyan-200/0"
+    : "from-violet-200/0 via-fuchsia-200/45 to-violet-200/0";
+
+  const dotClass = isMove
+    ? "bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.75)]"
+    : "bg-violet-200 shadow-[0_0_14px_rgba(168,85,247,0.75)]";
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.965 }}
+      className={[
+        "group relative flex-1 overflow-hidden rounded-[24px] border px-4 py-4 text-left transition active:scale-[0.965]",
+        shellClass,
+      ].join(" ")}
+    >
+      <motion.div
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-[-35%] top-0 h-full w-[45%] bg-gradient-to-r ${glowClass} blur-md`}
+        animate={{ x: ["0%", "310%", "0%"] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="relative z-10 flex min-h-[54px] flex-col justify-center">
+        <div className="mb-1 flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
+            {eyebrow}
+          </span>
+        </div>
+
+        <div className="text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white">
+          {label}
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
 export default function LandingSequence({ onSelect }) {
   const [phase, setPhase] = useState(null);
   const [waitingForContinue, setWaitingForContinue] = useState(false);
@@ -96,25 +147,20 @@ export default function LandingSequence({ onSelect }) {
       onClick={handleTap}
       className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white"
     >
-      {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
       <div className="relative z-10 h-[560px] w-[360px] overflow-hidden rounded-[42px] border border-cyan-300/10 bg-white/[0.025] px-10 text-center shadow-[0_0_90px_rgba(34,211,238,0.22)]">
-
-        {/* 🔻 TAP TO CONTINUE — ENHANCED */}
         {waitingForContinue && !continuing && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{
-              opacity: [0.6, 1, 0.6],
-            }}
+            animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{
               duration: 1.6,
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="absolute bottom-6 left-0 w-full flex justify-center"
+            className="absolute bottom-6 left-0 flex w-full justify-center"
           >
             <div className="flex items-center gap-3">
               <motion.div
@@ -122,9 +168,11 @@ export default function LandingSequence({ onSelect }) {
                 animate={{ scaleX: [0.6, 1, 0.6] }}
                 transition={{ duration: 1.6, repeat: Infinity }}
               />
+
               <div className="text-[10px] font-semibold uppercase tracking-[0.38em] text-cyan-200 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">
                 Tap to Continue
               </div>
+
               <motion.div
                 className="h-px w-10 bg-cyan-300/70"
                 animate={{ scaleX: [0.6, 1, 0.6] }}
@@ -136,8 +184,6 @@ export default function LandingSequence({ onSelect }) {
 
         <div className="flex h-full w-full flex-col items-center justify-center">
           <AnimatePresence mode="wait">
-
-            {/* Phase 0 */}
             {phase === 0 && (
               <motion.div
                 key="hey"
@@ -151,7 +197,6 @@ export default function LandingSequence({ onSelect }) {
               </motion.div>
             )}
 
-            {/* Phase 1 */}
             {phase === 1 && (
               <motion.div
                 key="you-made-it"
@@ -165,7 +210,6 @@ export default function LandingSequence({ onSelect }) {
               </motion.div>
             )}
 
-            {/* Phase 2 */}
             {phase === 2 && (
               <motion.div
                 key="welcome"
@@ -175,7 +219,6 @@ export default function LandingSequence({ onSelect }) {
                 transition={{ duration: 0.7 }}
                 className="flex w-full flex-col items-center"
               >
-                {/* LOGO — ENHANCED */}
                 <motion.img
                   src={zwapLogo}
                   alt="ZWAP!"
@@ -202,7 +245,6 @@ export default function LandingSequence({ onSelect }) {
                   </span>
                 </div>
 
-                {/* TAGLINE — ANIMATED */}
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -214,7 +256,6 @@ export default function LandingSequence({ onSelect }) {
               </motion.div>
             )}
 
-            {/* Phase 3 */}
             {phase === 3 && (
               <motion.div
                 key="start"
@@ -225,10 +266,8 @@ export default function LandingSequence({ onSelect }) {
                 Let’s get you started.
               </motion.div>
             )}
-
           </AnimatePresence>
 
-          {/* Phase 4 */}
           {phase === 4 && (
             <div className="flex w-full flex-col items-center gap-5">
               <img
@@ -238,28 +277,20 @@ export default function LandingSequence({ onSelect }) {
               />
 
               <div className="flex w-full gap-4">
-
-                {/* MOVE — kinetic energy */}
-                <button
+                <OnboardingActionButton
+                  type="move"
                   onClick={() => onSelect("move")}
-                  className="flex-1 rounded-2xl border border-cyan-300/50 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.35)] transition-all duration-200 active:scale-[0.96]"
-                >
-                  Move
-                </button>
+                />
 
-                {/* PLAY — arcade energy */}
-                <button
+                <OnboardingActionButton
+                  type="play"
                   onClick={() => onSelect("play")}
-                  className="flex-1 rounded-2xl border border-purple-300/50 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_18px_rgba(168,85,247,0.35)] transition-all duration-200 active:scale-[0.96]"
-                >
-                  Play
-                </button>
-
+                />
               </div>
 
-              {/* Learn — secondary */}
               <button
-                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/60 hover:text-white/80 transition"
+                type="button"
+                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold text-white/60 transition hover:text-white/80 active:scale-[0.97]"
                 onClick={() => onSelect("learn")}
               >
                 Learn More
