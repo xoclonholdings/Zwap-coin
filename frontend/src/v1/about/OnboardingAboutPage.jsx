@@ -3,6 +3,7 @@ import { AnimatePresence } from "framer-motion";
 
 import useAboutOnboardingMachine from "./useAboutOnboardingMachine";
 import { getAboutVoiceLines } from "./aboutOnboardingScript";
+
 import {
   AboutShell,
   VoiceView,
@@ -17,33 +18,8 @@ export default function OnboardingAboutPage({
   hasTriedPlay = false,
   onMove,
   onPlay,
-  navigate,
-  moveRoute = "/move",
-  playRoute = "/play",
 }) {
   const { currentStep } = useAboutOnboardingMachine();
-
-  const handleMove = () => {
-    if (typeof onMove === "function") {
-      onMove();
-      return;
-    }
-
-    if (typeof navigate === "function") {
-      navigate(moveRoute);
-    }
-  };
-
-  const handlePlay = () => {
-    if (typeof onPlay === "function") {
-      onPlay();
-      return;
-    }
-
-    if (typeof navigate === "function") {
-      navigate(playRoute);
-    }
-  };
 
   return (
     <AboutShell>
@@ -63,15 +39,19 @@ export default function OnboardingAboutPage({
           <ShopProofView key={currentStep.id} />
         )}
 
-        {currentStep.type === "anchor" && <AnchorView key={currentStep.id} />}
+        {currentStep.type === "anchor" && (
+          <AnchorView key={currentStep.id} />
+        )}
 
         {currentStep.type === "final" && (
           <FinalContinueView
             key={currentStep.id}
-            hasTriedMove={hasTriedMove}
-            hasTriedPlay={hasTriedPlay}
-            onMove={handleMove}
-            onPlay={handlePlay}
+            progress={{
+              move: hasTriedMove,
+              play: hasTriedPlay,
+            }}
+            onMove={onMove}
+            onPlay={onPlay}
           />
         )}
       </AnimatePresence>
