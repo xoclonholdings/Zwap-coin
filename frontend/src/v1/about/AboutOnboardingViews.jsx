@@ -4,12 +4,10 @@ import { motion } from "framer-motion";
 import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
 import OnboardingShell from "@/v1/onboarding/OnboardingShell";
 import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
-import { getFinalGuidance } from "@/v1/onboarding/onboardingFlow";
-
-import boostItem from "../../assets/boost_item.png";
-import ebookItem from "../../assets/ebook_item.png";
-import mysteryboxItem from "../../assets/mysterybox_item.png";
-import ringItem from "../../assets/ring_item.png";
+import {
+  getAboutAvailableActions,
+  getAboutGuidanceLines,
+} from "@/v1/onboarding/onboardingFlow";
 
 export function AboutShell({ children }) {
   return <OnboardingShell>{children}</OnboardingShell>;
@@ -41,15 +39,19 @@ export function AnchorView() {
 }
 
 export function FinalContinueView({
-  hasTriedMove,
-  hasTriedPlay,
+  hasTriedMove = false,
+  hasTriedPlay = false,
   onMove,
   onPlay,
 }) {
-  const showMove = !hasTriedMove;
-  const showPlay = !hasTriedPlay;
+  const progress = {
+    move: hasTriedMove,
+    play: hasTriedPlay,
+  };
 
-  const lines = getFinalGuidance({ hasTriedMove, hasTriedPlay });
+  const lines = getAboutGuidanceLines(progress);
+  const { showMove, showPlay } = getAboutAvailableActions(progress);
+
   if (!lines) return null;
 
   return (
