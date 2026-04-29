@@ -9,7 +9,7 @@ import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingRoutes";
 
 import {
   ONBOARDING_ACTIONS,
-  getActionStartedResult,
+  getActionResult,
   getLandingTargetResult,
   normalizeOnboardingProgress,
 } from "@/v1/onboarding/onboardingFlow";
@@ -24,12 +24,16 @@ import {
 export default function useV1OnboardingController({ navigate }) {
   const progressRef = useRef({
     moveStarted: false,
+    moveVerified: false,
     playStarted: false,
+    playCompleted: false,
   });
 
   const [onboardingProgress, setOnboardingProgress] = useState({
     moveStarted: false,
+    moveVerified: false,
     playStarted: false,
+    playCompleted: false,
   });
 
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
@@ -43,16 +47,16 @@ export default function useV1OnboardingController({ navigate }) {
     return normalizedProgress;
   }
 
-  function applyStartedAction(action) {
-    const result = getActionStartedResult(progressRef.current, action);
+  function applyAction(action) {
+    const result = getActionResult(progressRef.current, action);
 
     setProgress(result.progress);
 
     return result;
   }
 
-  function applyStartedActionAndNavigate(action) {
-    const result = getActionStartedResult(progressRef.current, action);
+  function applyActionAndNavigate(action) {
+    const result = getActionResult(progressRef.current, action);
 
     setProgress(result.progress);
     navigate(result.route);
@@ -99,19 +103,31 @@ export default function useV1OnboardingController({ navigate }) {
   }
 
   function markMoveStarted() {
-    return applyStartedAction(ONBOARDING_ACTIONS.moveStarted);
+    return applyAction(ONBOARDING_ACTIONS.moveStarted);
+  }
+
+  function markMoveVerified() {
+    return applyAction(ONBOARDING_ACTIONS.moveVerified);
   }
 
   function markPlayStarted() {
-    return applyStartedAction(ONBOARDING_ACTIONS.playStarted);
+    return applyAction(ONBOARDING_ACTIONS.playStarted);
+  }
+
+  function markPlayCompleted() {
+    return applyAction(ONBOARDING_ACTIONS.playCompleted);
   }
 
   function finishMoveAndGoNext() {
-    return applyStartedActionAndNavigate(ONBOARDING_ACTIONS.moveStarted);
+    return applyActionAndNavigate(ONBOARDING_ACTIONS.moveStarted);
+  }
+
+  function verifyMoveAndGoNext() {
+    return applyActionAndNavigate(ONBOARDING_ACTIONS.moveVerified);
   }
 
   function finishPlayAndGoNext() {
-    return applyStartedActionAndNavigate(ONBOARDING_ACTIONS.playStarted);
+    return applyActionAndNavigate(ONBOARDING_ACTIONS.playCompleted);
   }
 
   function canEnterSignupGate() {
@@ -132,7 +148,9 @@ export default function useV1OnboardingController({ navigate }) {
     onboardingSeen,
 
     moveStarted: onboardingProgress.moveStarted,
+    moveVerified: onboardingProgress.moveVerified,
     playStarted: onboardingProgress.playStarted,
+    playCompleted: onboardingProgress.playCompleted,
 
     startFromWelcome,
 
@@ -144,9 +162,12 @@ export default function useV1OnboardingController({ navigate }) {
     goToLearnMore,
 
     markMoveStarted,
+    markMoveVerified,
     markPlayStarted,
+    markPlayCompleted,
 
     finishMoveAndGoNext,
+    verifyMoveAndGoNext,
     finishPlayAndGoNext,
 
     canEnterSignupGate,
