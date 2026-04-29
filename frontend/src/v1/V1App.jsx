@@ -22,12 +22,11 @@ import SignupOnboarding from "@/v1/signup/SignupOnboarding";
 
 export default function V1App() {
   const navigate = useNavigate();
-  const { user, authUser, walletAddress, isAuthenticated } = useApp();
+  const { user, authUser, isAuthenticated } = useApp();
 
   const access = useV1AccessState({
     user,
     authUser,
-    walletAddress,
     isAuthenticated,
   });
 
@@ -198,7 +197,7 @@ export default function V1App() {
               user={session.dashboardUser}
               authUser={authUser}
               displayName={access.displayName || dashboardState.displayName}
-              subtext={walletAddress || access.resolvedEmail || "Account active"}
+              subtext={access.resolvedEmail || "Account active"}
               tier={access.tier}
               zptsBalance={dashboardState.zptsBalance}
               zwapBalance={0}
@@ -218,7 +217,7 @@ export default function V1App() {
               assistUnlocked={dashboardState.assistUnlocked}
               badgeVisibilityUnlocked={dashboardState.badgeVisibilityUnlocked}
               isSwapUnlocked={dashboardState.isSwapUnlocked}
-              walletAddress={walletAddress}
+              walletAddress={null}
               showUpgrade={!access.canSeeDashboard}
               onOpenUpgrade={onboarding.goToSignupGate}
               onAdminTrigger={() => navigate("/admin")}
