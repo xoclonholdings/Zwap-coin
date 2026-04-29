@@ -1,7 +1,7 @@
-import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingFlow";
+import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingRoutes";
 
 export function canShowSignupGate(progress = {}) {
-  return Boolean(progress?.move) && Boolean(progress?.play);
+  return Boolean(progress?.moveStarted) && Boolean(progress?.playStarted);
 }
 
 export function getSignupGateRoute() {
@@ -9,7 +9,13 @@ export function getSignupGateRoute() {
 }
 
 export function getSignupGateFallbackRoute(progress = {}) {
-  if (progress?.play && !progress?.move) return V1_ONBOARDING_ROUTES.move;
-  if (progress?.move && !progress?.play) return V1_ONBOARDING_ROUTES.play;
+  if (progress?.playStarted && !progress?.moveStarted) {
+    return V1_ONBOARDING_ROUTES.move;
+  }
+
+  if (progress?.moveStarted && !progress?.playStarted) {
+    return V1_ONBOARDING_ROUTES.play;
+  }
+
   return V1_ONBOARDING_ROUTES.root;
 }
