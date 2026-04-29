@@ -25,11 +25,20 @@ export default function AdminLogin({ onLogin }) {
     localStorage.setItem("zwap_admin_key", safeKey);
 
     try {
-      const data = await adminApi.get("/dashboard", safeKey);
+      const data = await adminApi.get("/dashboard/stats", safeKey);
       onLogin?.(data);
-    } catch {
-      setError("Invalid admin key");
-      localStorage.removeItem("zwap_admin_key");
+    } catch (err) {
+      const message = String(err?.message || "");
+
+      if (message.includes("403") || message.includes("Invalid admin key")) {
+        setError("Invalid admin key");
+        localStorage.removeItem("zwap_admin_key");
+      } else if (message.includes("401") || message.includes("Admin key required")) {
+        setError("Admin key required");
+        localStorage.removeItem("zwap_admin_key");
+      } else {
+        setError("Admin route failed. Check backend route or server.");
+      }
     } finally {
       setLoading(false);
     }
