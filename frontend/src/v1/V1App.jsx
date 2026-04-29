@@ -12,7 +12,7 @@ import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
 import LandingSequence from "@/v1/landing/LandingSequence";
 import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
 import useV1OnboardingSessionStats from "@/v1/onboarding/useV1OnboardingSessionStats";
-import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingFlow";
+import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingRoutes";
 import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
 import SignupGate from "@/v1/signup/SignupGate";
