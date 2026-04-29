@@ -14,28 +14,35 @@ const STEPS = [
   { id: "final", type: "final", duration: 0 },
 ];
 
+function getStep(index) {
+  return STEPS[index] || STEPS[0];
+}
+
+function getNextStepIndex(index) {
+  return Math.min(index + 1, STEPS.length - 1);
+}
+
+function shouldHoldStep({ isPaused, isFinal }) {
+  return Boolean(isPaused || isFinal);
+}
+
 export default function useAboutOnboardingMachine() {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
   const timerRef = useRef(null);
 
-  const currentStep = STEPS[stepIndex] ?? STEPS[0];
+  const currentStep = getStep(stepIndex);
   const isFinal = currentStep.id === "final";
 
   const clearTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
   }, []);
 
   const goNext = useCallback(() => {
     clearTimer();
-
-    setStepIndex((previous) => {
-      const next = previous + 1;
-      return next >= STEPS.length ? previous : next;
-    });
+    setStepIndex((previous) => getNextStepIndex(previous));
   }, [clearTimer]);
 
   const pause = useCallback(() => {
@@ -48,11 +55,8 @@ export default function useAboutOnboardingMachine() {
   }, []);
 
   const togglePause = useCallback(() => {
-    setIsPaused((previous) => {
-      if (!previous) clearTimer();
-      return !previous;
-    });
-  }, [clearTimer]);
+    setIsPaused((previous) => !previous);
+  }, []);
 
   const restart = useCallback(() => {
     clearTimer();
@@ -63,11 +67,16 @@ export default function useAboutOnboardingMachine() {
   useEffect(() => {
     clearTimer();
 
-    if (isPaused || isFinal) return undefined;
+    const holdStep = shouldHoldStep({
+      isPaused,
+      isFinal,
+    });
 
-    timerRef.current = setTimeout(() => {
-      goNext();
-    }, currentStep.duration + TRANSITION_GAP_MS);
+    timerRef.current = holdStep
+      ? null
+      : setTimeout(() => {
+          goNext();
+        }, currentStep.duration + TRANSITION_GAP_MS);
 
     return () => {
       clearTimer();
