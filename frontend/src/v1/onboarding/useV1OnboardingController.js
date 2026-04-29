@@ -5,9 +5,10 @@ import {
   markV1OnboardingSeen,
 } from "@/v1/V1OnboardingStorage";
 
+import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingRoutes";
+
 import {
   ONBOARDING_ACTIONS,
-  V1_ONBOARDING_ROUTES,
   getActionStartedResult,
   getLandingTargetResult,
   normalizeOnboardingProgress,
@@ -44,22 +45,32 @@ export default function useV1OnboardingController({ navigate }) {
 
   function applyStartedAction(action) {
     const result = getActionStartedResult(progressRef.current, action);
+
     setProgress(result.progress);
+
     return result;
   }
 
   function applyStartedActionAndNavigate(action) {
     const result = getActionStartedResult(progressRef.current, action);
+
     setProgress(result.progress);
     navigate(result.route);
+
     return result;
   }
 
   function startFromWelcome(target) {
     const result = getLandingTargetResult(target);
+
     setProgress(result.progress);
     navigate(result.route);
+
     return result;
+  }
+
+  function goToRoot() {
+    navigate(V1_ONBOARDING_ROUTES.root);
   }
 
   function goToMove() {
@@ -68,6 +79,23 @@ export default function useV1OnboardingController({ navigate }) {
 
   function goToPlay() {
     navigate(V1_ONBOARDING_ROUTES.play);
+  }
+
+  function goToDashboard() {
+    navigate(V1_ONBOARDING_ROUTES.dashboard);
+  }
+
+  function goToSignupGate() {
+    navigate(V1_ONBOARDING_ROUTES.signupGate);
+  }
+
+  function goToLearnMore() {
+    const result = getLearnMoreStartResult(progressRef.current);
+
+    setProgress(result.progress);
+    navigate(result.route);
+
+    return result;
   }
 
   function markMoveStarted() {
@@ -84,13 +112,6 @@ export default function useV1OnboardingController({ navigate }) {
 
   function finishPlayAndGoNext() {
     return applyStartedActionAndNavigate(ONBOARDING_ACTIONS.playStarted);
-  }
-
-  function goToLearnMore() {
-    const result = getLearnMoreStartResult(progressRef.current);
-    setProgress(result.progress);
-    navigate(result.route);
-    return result;
   }
 
   function canEnterSignupGate() {
@@ -115,8 +136,11 @@ export default function useV1OnboardingController({ navigate }) {
 
     startFromWelcome,
 
+    goToRoot,
     goToMove,
     goToPlay,
+    goToDashboard,
+    goToSignupGate,
     goToLearnMore,
 
     markMoveStarted,
