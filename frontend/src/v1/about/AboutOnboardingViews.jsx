@@ -21,7 +21,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent"
+          className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
         >
           ZWAP!
         </span>
@@ -32,7 +32,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent"
+          className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(45,212,191,0.35)]"
         >
           zPts
         </span>
@@ -43,7 +43,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-purple-200 via-pink-300 to-cyan-200 bg-clip-text text-transparent"
+          className="bg-gradient-to-r from-purple-200 via-pink-300 to-cyan-200 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(180,134,255,0.35)]"
         >
           SHOP
         </span>
@@ -54,7 +54,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent"
+          className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
         >
           SWAP
         </span>
@@ -63,7 +63,10 @@ function renderGradientLine(line) {
 
     if (part === "MOVE" || part === "PLAY" || part === "EARN TODAY") {
       return (
-        <span key={`${part}-${index}`} className="text-cyan-300">
+        <span
+          key={`${part}-${index}`}
+          className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]"
+        >
           {part}
         </span>
       );
@@ -85,12 +88,12 @@ export function VoiceView({ lines }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex max-w-[340px] flex-col items-center justify-center gap-3"
+      className="flex w-full max-w-[300px] flex-col items-center justify-center gap-3 px-2"
     >
       {lines.map((line) => (
         <div
           key={line}
-          className="text-center text-[2.2rem] font-black leading-[1.05] tracking-[-0.06em] text-white"
+          className="w-full text-center text-[1.92rem] font-black leading-[1.08] tracking-[-0.055em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
         >
           {renderGradientLine(line)}
         </div>
@@ -99,71 +102,175 @@ export function VoiceView({ lines }) {
   );
 }
 
-/* =========================
-   🔥 FIXED SHOP VIEW
-========================= */
+export function ActionProofView() {
+  const roundFrames = [
+    { round: "Round 1", zpts: "+10" },
+    { round: "Round 2", zpts: "+25" },
+    { round: "Round 3", zpts: "+50" },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
+      transition={{ duration: 0.55 }}
+      className="flex w-full max-w-[320px] flex-col items-center gap-5"
+    >
+      <motion.div
+        animate={{
+          boxShadow: [
+            "0 0 28px rgba(34,211,238,0.10)",
+            "0 0 46px rgba(34,211,238,0.20)",
+            "0 0 28px rgba(34,211,238,0.10)",
+          ],
+        }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center backdrop-blur-md"
+      >
+        <div>
+          <motion.div
+            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
+            transition={{
+              duration: 3.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="text-2xl font-black tracking-[-0.05em] text-white"
+          >
+            20
+          </motion.div>
+          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
+            STEPS
+          </div>
+        </div>
+
+        <div className="h-10 w-px bg-white/15" />
+
+        <div>
+          <motion.div
+            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
+            transition={{
+              duration: 3.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-2xl font-black tracking-[-0.05em] text-transparent"
+          >
+            +50
+          </motion.div>
+          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
+            zPTS
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0.78 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="w-full rounded-[28px] border border-purple-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(180,134,255,0.14)] backdrop-blur-md"
+      >
+        <div className="mb-4 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+          {roundFrames.map((frame, index) => (
+            <React.Fragment key={frame.round}>
+              <motion.div
+                initial={{ opacity: 0.35, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.42,
+                  delay: 0.35 + index * 0.45,
+                  repeat: Infinity,
+                  repeatDelay: 2.1,
+                }}
+                className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-3"
+              >
+                <div className="text-[12px] font-black tracking-[-0.03em] text-white">
+                  {frame.round}
+                </div>
+                <div className="mt-1 bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-[13px] font-black tracking-[-0.03em] text-transparent">
+                  {frame.zpts}
+                </div>
+              </motion.div>
+
+              {index < roundFrames.length - 1 && (
+                <div className="text-sm font-black text-cyan-200/70">&gt;</div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        <div className="text-[10px] font-black tracking-[0.22em] text-white/45">
+          ROUNDS BUILD zPTS
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 export function ShopProofView() {
   const items = [
     {
       id: "ebook",
       src: ebookItem,
-      className: "left-[20px] top-[20px]",
+      alt: "TLDR ebook item",
+      className: "left-[16px] top-[18px]",
     },
     {
-      id: "move",
+      id: "move-boost",
       src: moveBoost12h,
-      className: "right-[20px] top-[20px]",
+      alt: "Move boost item",
+      className: "right-[16px] top-[18px]",
     },
     {
-      id: "play",
+      id: "play-boost",
       src: playBoost12h,
-      className: "left-[20px] bottom-[20px]",
+      alt: "Play boost item",
+      className: "left-[16px] top-[158px]",
     },
     {
-      id: "ring",
+      id: "bronze-ring",
       src: bronzeRing,
-      className: "right-[20px] bottom-[20px]",
+      alt: "Bronze ring item",
+      className: "right-[16px] top-[158px]",
     },
   ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="relative h-[420px] w-[340px]"   // 🔥 BIGGER CONTAINER
+      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
+      transition={{ duration: 0.55 }}
+      className="relative h-[390px] w-[320px]"
     >
-      {/* BACK PANEL */}
-      <div className="absolute inset-0 rounded-[36px] border border-cyan-300/10 bg-white/[0.04] backdrop-blur-md" />
+      <div className="absolute left-1/2 top-[6px] h-[292px] w-[300px] -translate-x-1/2 rounded-[34px] border border-cyan-300/10 bg-white/[0.035] shadow-[0_0_50px_rgba(34,211,238,0.13)] backdrop-blur-md" />
 
-      {/* ITEMS */}
-      {items.map((item, i) => (
+      {items.map((item, index) => (
         <motion.div
           key={item.id}
-          initial={{ opacity: 0, scale: 0.85 }}
+          initial={{ opacity: 0, scale: 0.88 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{
-            delay: 0.2 + i * 0.15,
-            duration: 0.45,
+            duration: 0.5,
+            delay: 0.12 + index * 0.14,
+            ease: "easeOut",
           }}
-          className={`absolute ${item.className} h-[140px] w-[140px]`} // 🔥 BIGGER ITEMS
+          className={`absolute z-10 h-[124px] w-[124px] rounded-[26px] border border-white/10 bg-black/20 p-1.5 shadow-[0_0_36px_rgba(34,211,238,0.12)] ${item.className}`}
         >
           <img
             src={item.src}
-            alt=""
-            className="h-full w-full rounded-[22px] object-cover"
+            alt={item.alt}
+            className="h-full w-full rounded-[20px] object-cover"
           />
         </motion.div>
       ))}
 
-      {/* TEXT */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="absolute bottom-[16px] left-0 right-0 text-center text-[1.2rem] font-black text-white/85"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 1.1 }}
+        className="absolute bottom-[18px] left-0 right-0 text-center text-[1.15rem] font-black tracking-[-0.04em] text-white/85 drop-shadow-[0_0_18px_rgba(255,255,255,0.12)]"
       >
         ...and much more.
       </motion.div>
@@ -171,36 +278,48 @@ export function ShopProofView() {
   );
 }
 
-/* ========================= */
-
 export function CoinProofView() {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
+      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex max-w-[340px] flex-col items-center gap-5 text-center"
+      className="flex max-w-[330px] flex-col items-center gap-5 text-center"
     >
-      <div className="flex items-center justify-center gap-6">
+      <div className="flex items-center justify-center gap-5">
         {[zptsCoin, zwapCoin].map((coin, index) => (
           <motion.img
             key={coin}
             src={coin}
-            initial={{ opacity: 0, y: -80, rotate: -180, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, rotate: 360, scale: 1 }}
-            transition={{
-              duration: 0.8,
-              delay: index * 0.2,
+            alt={index === 0 ? "zPts coin" : "ZWAP coin"}
+            initial={{ opacity: 0, y: -80, rotate: -180, scale: 0.72 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              rotate: 360,
+              scale: 1,
             }}
-            className="h-[120px] w-[120px] object-contain"
+            transition={{
+              duration: 0.9,
+              delay: index * 0.22,
+              type: "spring",
+              stiffness: 95,
+              damping: 12,
+            }}
+            className="h-[112px] w-[112px] object-contain drop-shadow-[0_0_28px_rgba(34,211,238,0.35)]"
           />
         ))}
       </div>
 
-      <div className="text-[2rem] font-black text-white">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.75 }}
+        className="text-center text-[2rem] font-black leading-[1.03] tracking-[-0.065em] text-white"
+      >
         {renderGradientLine("SWAP for ZWAP!")}
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
