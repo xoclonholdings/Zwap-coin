@@ -123,6 +123,7 @@ export function AppProvider({ children }) {
           email: normalizeEmail(parsedAuthUser?.email),
         };
 
+        setIsSigningOut(false);
         setAuthUser(normalizedAuthUser);
         localStorage.setItem(
           "zwap_auth_user",
@@ -151,6 +152,7 @@ export function AppProvider({ children }) {
 
     setAuthUser(privyAuthUser);
     localStorage.setItem("zwap_auth_user", JSON.stringify(privyAuthUser));
+    localStorage.setItem("zwap_email", privyAuthUser.email);
     closeAllAuthModals();
 
     loadEmailUser(privyAuthUser.email);
@@ -172,14 +174,18 @@ export function AppProvider({ children }) {
   };
 
   const logoutEmailUser = async () => {
-    setIsSigningOut(true);
-    setAuthUser(null);
-    setUser(null);
-    localStorage.removeItem("zwap_auth_user");
-    localStorage.removeItem("zwap_email");
+    try {
+      setIsSigningOut(true);
+      setAuthUser(null);
+      setUser(null);
+      localStorage.removeItem("zwap_auth_user");
+      localStorage.removeItem("zwap_email");
 
-    if (privyAuthenticated) {
-      await privyLogout?.();
+      if (privyAuthenticated) {
+        await privyLogout?.();
+      }
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
@@ -197,6 +203,7 @@ export function AppProvider({ children }) {
     } finally {
       clearAuthState();
       clearLocalAuthStorage();
+      setIsSigningOut(false);
       setIsLoading(false);
     }
   };
