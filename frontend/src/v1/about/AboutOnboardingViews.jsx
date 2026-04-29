@@ -1,9 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
 import OnboardingShell from "@/v1/onboarding/OnboardingShell";
-import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
 
 import moveBoost12h from "@/assets/shop/move/12h_move_boost_item.png";
 import playBoost12h from "@/assets/shop/play/12h_play_boost_item.png";
@@ -334,32 +332,6 @@ export function CoinProofView() {
       >
         {renderGradientLine("SWAP for ZWAP!")}
       </motion.div>
-    </motion.div>
-  );
-}
-
-export function AnchorView() {
-  return null;
-}
-
-export function FinalContinueView({ finalState, onMove, onPlay }) {
-  const lines = finalState?.lines || [];
-  const showMove = Boolean(finalState?.showMove);
-  const showPlay = Boolean(finalState?.showPlay);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.65 }}
-      className="flex w-full max-w-[320px] flex-col items-center gap-5"
-    >
-      <OnboardingVoiceText lines={lines} />
-
-      <div className="flex w-full flex-col items-center gap-4">
-        {showMove && <OnboardingActionButton type="move" onClick={onMove} />}
-        {showPlay && <OnboardingActionButton type="play" onClick={onPlay} />}
-      </div>
     </motion.div>
   );
 }
