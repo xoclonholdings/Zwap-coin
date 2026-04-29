@@ -1,49 +1,47 @@
-// frontend/src/v1/about/AboutOnboardingContent.js
-
 export const ABOUT_STEPS = [
   {
     id: "voice-1",
     type: "voice",
-    lines: ["Earn value", "from action."],
-    duration: 3100,
+    lines: ["Whether MOVE", "or PLAY...", "ZWAP! keeps the score."],
+    duration: 3400,
   },
   {
-    id: "voice-2",
-    type: "voice",
-    lines: ["Not time.", "Not attention."],
-    duration: 3100,
-  },
-  {
-    id: "proof-actions",
+    id: "action-proof",
     type: "action-proof",
     duration: 3500,
   },
   {
-    id: "voice-3",
+    id: "voice-2",
     type: "voice",
-    lines: ["Use what you earn."],
-    duration: 3000,
-  },
-  {
-    id: "voice-4",
-    type: "voice",
-    lines: ["In the shop."],
+    lines: ["Your activity", "becomes zPts."],
     duration: 3200,
   },
   {
-    id: "proof-shop",
+    id: "voice-3",
+    type: "voice",
+    lines: ["You can spend", "your zPts", "in our SHOP..."],
+    duration: 3400,
+  },
+  {
+    id: "shop-proof",
     type: "shop-proof",
     duration: 3700,
   },
   {
-    id: "voice-5",
+    id: "voice-4",
     type: "voice",
-    lines: ["Everything has purpose."],
+    lines: ["Or save your zPts", "and SWAP them later", "for ZWAP! tokens."],
     duration: 3600,
   },
   {
-    id: "anchor",
-    type: "anchor",
+    id: "coin-proof",
+    type: "coin-proof",
+    duration: 3500,
+  },
+  {
+    id: "voice-5",
+    type: "voice",
+    lines: ["Ready to earn?"],
     duration: 2900,
   },
   {
@@ -51,4 +49,5 @@ export const ABOUT_STEPS = [
     type: "final",
     duration: 0,
   },
+];  },
 ];
