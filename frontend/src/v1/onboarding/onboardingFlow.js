@@ -12,14 +12,18 @@ import {
 
 export const ONBOARDING_ACTIONS = {
   moveStarted: "moveStarted",
+  moveVerified: "moveVerified",
   playStarted: "playStarted",
+  playCompleted: "playCompleted",
   learn: LEARN_MORE_ACTION,
 };
 
 export function normalizeOnboardingProgress(progress = {}) {
   return {
     moveStarted: Boolean(progress?.moveStarted),
+    moveVerified: Boolean(progress?.moveVerified),
     playStarted: Boolean(progress?.playStarted),
+    playCompleted: Boolean(progress?.playCompleted),
   };
 }
 
@@ -30,12 +34,12 @@ export function getNextOnboardingRoute(progress = {}) {
     return getSignupGateRoute();
   }
 
-  if (normalized.playStarted && !normalized.moveStarted) {
-    return V1_ONBOARDING_ROUTES.move;
+  if (!normalized.playCompleted) {
+    return V1_ONBOARDING_ROUTES.play;
   }
 
-  if (normalized.moveStarted && !normalized.playStarted) {
-    return V1_ONBOARDING_ROUTES.play;
+  if (!normalized.moveStarted) {
+    return V1_ONBOARDING_ROUTES.move;
   }
 
   return V1_ONBOARDING_ROUTES.root;
@@ -66,7 +70,7 @@ export function getLandingTargetResult(target) {
   };
 }
 
-export function markOnboardingActionStarted(progress = {}, action) {
+export function markOnboardingAction(progress = {}, action) {
   const normalized = normalizeOnboardingProgress(progress);
 
   return {
@@ -74,15 +78,23 @@ export function markOnboardingActionStarted(progress = {}, action) {
       action === ONBOARDING_ACTIONS.moveStarted
         ? true
         : normalized.moveStarted,
+    moveVerified:
+      action === ONBOARDING_ACTIONS.moveVerified
+        ? true
+        : normalized.moveVerified,
     playStarted:
       action === ONBOARDING_ACTIONS.playStarted
         ? true
         : normalized.playStarted,
+    playCompleted:
+      action === ONBOARDING_ACTIONS.playCompleted
+        ? true
+        : normalized.playCompleted,
   };
 }
 
-export function getActionStartedResult(progress = {}, action) {
-  const progressAfterAction = markOnboardingActionStarted(progress, action);
+export function getActionResult(progress = {}, action) {
+  const progressAfterAction = markOnboardingAction(progress, action);
 
   return {
     progress: progressAfterAction,
