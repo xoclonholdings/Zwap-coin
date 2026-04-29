@@ -6,6 +6,8 @@ import ebookItem from "../../assets/ebook_item.png";
 import mysteryboxItem from "../../assets/mysterybox_item.png";
 import ringItem from "../../assets/ring_item.png";
 
+/* ---------------- TEXT ---------------- */
+
 function renderGradientLine(line) {
   const parts = String(line).split(
     /(ZWAP!|zPts|SHOP|SWAP|MOVE|PLAY|EARN TODAY)/g
@@ -14,10 +16,7 @@ function renderGradientLine(line) {
   return parts.map((part, index) => {
     if (part === "ZWAP!") {
       return (
-        <span
-          key={`${part}-${index}`}
-          className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
-        >
+        <span key={index} className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
           ZWAP!
         </span>
       );
@@ -25,10 +24,7 @@ function renderGradientLine(line) {
 
     if (part === "zPts") {
       return (
-        <span
-          key={`${part}-${index}`}
-          className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(45,212,191,0.35)]"
-        >
+        <span key={index} className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">
           zPts
         </span>
       );
@@ -36,10 +32,7 @@ function renderGradientLine(line) {
 
     if (part === "SHOP") {
       return (
-        <span
-          key={`${part}-${index}`}
-          className="bg-gradient-to-r from-purple-200 via-pink-300 to-cyan-200 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(180,134,255,0.35)]"
-        >
+        <span key={index} className="bg-gradient-to-r from-purple-200 via-pink-300 to-cyan-200 bg-clip-text text-transparent">
           SHOP
         </span>
       );
@@ -47,10 +40,7 @@ function renderGradientLine(line) {
 
     if (part === "SWAP") {
       return (
-        <span
-          key={`${part}-${index}`}
-          className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
-        >
+        <span key={index} className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent">
           SWAP
         </span>
       );
@@ -58,10 +48,7 @@ function renderGradientLine(line) {
 
     if (part === "MOVE" || part === "PLAY" || part === "EARN TODAY") {
       return (
-        <span
-          key={`${part}-${index}`}
-          className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]"
-        >
+        <span key={index} className="text-cyan-300">
           {part}
         </span>
       );
@@ -71,21 +58,16 @@ function renderGradientLine(line) {
   });
 }
 
+/* ---------------- GUIDANCE ---------------- */
+
 function getFinalGuidance({ hasTriedMove, hasTriedPlay }) {
-  if (hasTriedMove && !hasTriedPlay) {
-    return ["Now try", "PLAY."];
-  }
-
-  if (!hasTriedMove && hasTriedPlay) {
-    return ["Now try", "MOVE."];
-  }
-
-  if (!hasTriedMove && !hasTriedPlay) {
-    return ["Choose your", "next action."];
-  }
-
+  if (hasTriedMove && !hasTriedPlay) return ["Now try", "PLAY."];
+  if (!hasTriedMove && hasTriedPlay) return ["Now try", "MOVE."];
+  if (!hasTriedMove && !hasTriedPlay) return ["Choose your", "next action."];
   return null;
 }
+
+/* ---------------- BUTTON ---------------- */
 
 function OnboardingActionButton({ type = "move", onClick, full = false }) {
   const isMove = type === "move";
@@ -93,110 +75,64 @@ function OnboardingActionButton({ type = "move", onClick, full = false }) {
   const label = isMove ? "Move" : "Play";
   const eyebrow = isMove ? "STEP INTO VALUE" : "ENTER THE ARCADE";
 
-  const shellClass = isMove
-    ? "border-cyan-300/45 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.24),rgba(34,211,238,0.12)_42%,rgba(8,12,24,0.9)_100%)] text-cyan-50 shadow-[0_0_32px_rgba(34,211,238,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]"
-    : "border-violet-300/45 bg-[radial-gradient(circle_at_top,rgba(216,180,254,0.24),rgba(168,85,247,0.13)_42%,rgba(12,8,24,0.9)_100%)] text-violet-50 shadow-[0_0_32px_rgba(168,85,247,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]";
+  const color = isMove
+    ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.2)]"
+    : "border-purple-300/40 bg-purple-400/10 text-purple-100 shadow-[0_0_24px_rgba(168,85,247,0.2)]";
 
-  const glowClass = isMove
-    ? "from-cyan-200/0 via-cyan-200/45 to-cyan-200/0"
-    : "from-violet-200/0 via-fuchsia-200/45 to-violet-200/0";
-
-  const dotClass = isMove
-    ? "bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.75)]"
-    : "bg-violet-200 shadow-[0_0_14px_rgba(168,85,247,0.75)]";
+  const dot = isMove ? "bg-cyan-300" : "bg-purple-300";
 
   return (
     <motion.button
-      type="button"
       onClick={onClick}
-      whileTap={{ scale: 0.965 }}
+      whileTap={{ scale: 0.96 }}
       className={[
-        "group relative overflow-hidden rounded-[24px] border px-4 py-4 text-left transition active:scale-[0.965]",
+        "relative rounded-2xl border px-5 py-5 text-left transition",
+        "flex flex-col justify-center",
         full ? "w-full" : "flex-1",
-        shellClass,
+        color,
       ].join(" ")}
     >
-      <motion.div
-        aria-hidden="true"
-        className={`pointer-events-none absolute left-[-35%] top-0 h-full w-[45%] bg-gradient-to-r ${glowClass} blur-md`}
-        animate={{ x: ["0%", "310%", "0%"] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      <div className="relative z-10 flex min-h-[54px] flex-col justify-center">
-        <div className="mb-1 flex items-center gap-2">
-          <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
-          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
-            {eyebrow}
-          </span>
+      <div className="flex items-center gap-2 mb-1">
+        <div className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+        <div className="text-[9px] font-bold tracking-[0.22em] text-white/50">
+          {eyebrow}
         </div>
+      </div>
 
-        <div className="text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white">
-          {label}
-        </div>
+      <div className="text-[1.35rem] font-black tracking-[-0.04em] text-white">
+        {label}
       </div>
     </motion.button>
   );
 }
 
+/* ---------------- SHELL ---------------- */
+
 export function AboutShell({ children }) {
   return (
-    <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
+    <div className="relative flex h-screen w-full items-center justify-center bg-black text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle,_rgba(34,211,238,0.18),_rgba(0,0,0,1))]" />
 
-      <div className="absolute left-1/2 top-1/2 h-[560px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
-
-      <div className="relative z-10 flex min-h-[560px] w-full max-w-[460px] flex-col items-center justify-center px-10 text-center">
+      <div className="relative z-10 w-[360px] h-[560px] rounded-[42px] border border-cyan-300/10 bg-white/[0.03] flex items-center justify-center px-8 text-center">
         {children}
       </div>
     </div>
   );
 }
 
-export function AboutControls({ isPaused, onPause, onNext }) {
-  return (
-    <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-4">
-      <button
-        type="button"
-        onClick={onPause}
-        aria-label={isPaused ? "Resume" : "Pause"}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 backdrop-blur-md transition active:scale-95"
-      >
-        {isPaused ? (
-          <span className="ml-[2px] text-[15px]">▶</span>
-        ) : (
-          <span className="text-[15px]">Ⅱ</span>
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={onNext}
-        aria-label="Next"
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-100 backdrop-blur-md transition active:scale-95"
-      >
-        <span className="ml-[2px] text-[15px]">▶</span>
-      </button>
-    </div>
-  );
-}
+/* ---------------- VOICE ---------------- */
 
 export function VoiceView({ lines }) {
   return (
     <motion.div
       key={lines.join("-")}
-      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
-      transition={{ duration: 0.65 }}
-      className="flex max-w-[330px] flex-col items-center justify-center gap-3"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col items-center gap-2"
     >
       {lines.map((line) => (
-        <div
-          key={line}
-          className="text-center text-[2.15rem] font-black leading-[1.03] tracking-[-0.065em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
-        >
+        <div key={line} className="text-[2.1rem] font-black tracking-tight">
           {renderGradientLine(line)}
         </div>
       ))}
@@ -204,304 +140,25 @@ export function VoiceView({ lines }) {
   );
 }
 
-export function ActionProofView() {
-  const roundFrames = [
-    { round: "Round 1", zpts: "+10" },
-    { round: "Round 2", zpts: "+25" },
-    { round: "Round 3", zpts: "+50" },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
-      transition={{ duration: 0.55 }}
-      className="flex w-full max-w-[320px] flex-col items-center gap-5"
-    >
-      <motion.div
-        animate={{
-          boxShadow: [
-            "0 0 28px rgba(34,211,238,0.10)",
-            "0 0 60px rgba(34,211,238,0.28)",
-            "0 0 28px rgba(34,211,238,0.10)",
-          ],
-        }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-        className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center backdrop-blur-md"
-      >
-        <div>
-          <motion.div
-            animate={{
-              opacity: [1, 0.4, 1],
-              scale: [1, 1.06, 1],
-            }}
-            transition={{
-              duration: 2.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="text-2xl font-black tracking-[-0.05em] text-white"
-          >
-            20
-          </motion.div>
-
-          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
-            STEPS
-          </div>
-        </div>
-
-        <motion.div
-          animate={{
-            opacity: [0.3, 1, 0.3],
-            scaleY: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 1.6,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="h-10 w-px bg-white/20"
-        />
-
-        <div>
-          <motion.div
-            animate={{
-              opacity: [0.6, 1, 0.6],
-              scale: [0.95, 1.08, 0.95],
-              textShadow: [
-                "0 0 8px rgba(45,212,191,0.2)",
-                "0 0 22px rgba(45,212,191,0.6)",
-                "0 0 8px rgba(45,212,191,0.2)",
-              ],
-            }}
-            transition={{
-              duration: 2.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.3,
-            }}
-            className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-2xl font-black tracking-[-0.05em] text-transparent"
-          >
-            +50
-          </motion.div>
-
-          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
-            zPTS
-          </div>
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0.78 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
-        className="w-full rounded-[28px] border border-purple-300/15 bg-white/[0.06] px-5 py-5 text-center shadow-[0_0_42px_rgba(180,134,255,0.14)] backdrop-blur-md"
-      >
-        <div className="mb-4 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
-          {roundFrames.map((frame, index) => (
-            <React.Fragment key={frame.round}>
-              <motion.div
-                initial={{ opacity: 0.35, y: 8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                  duration: 0.42,
-                  delay: 0.35 + index * 0.45,
-                  repeat: Infinity,
-                  repeatDelay: 2.1,
-                }}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-3"
-              >
-                <div className="text-[12px] font-black tracking-[-0.03em] text-white">
-                  {frame.round}
-                </div>
-
-                <motion.div
-                  animate={{
-                    textShadow: [
-                      "0 0 6px rgba(45,212,191,0.2)",
-                      "0 0 18px rgba(45,212,191,0.5)",
-                      "0 0 6px rgba(45,212,191,0.2)",
-                    ],
-                  }}
-                  transition={{
-                    duration: 1.6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="mt-1 bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-[13px] font-black tracking-[-0.03em] text-transparent"
-                >
-                  {frame.zpts}
-                </motion.div>
-              </motion.div>
-
-              {index < roundFrames.length - 1 && (
-                <motion.div
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{
-                    duration: 1.4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="text-sm font-black text-cyan-200/70"
-                >
-                  &gt;
-                </motion.div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-
-        <div className="text-[10px] font-black tracking-[0.22em] text-white/45">
-          ROUNDS BUILD zPTS
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-export function ShopProofView() {
-  const items = [
-    {
-      id: "mysterybox",
-      src: mysteryboxItem,
-      alt: "Mystery box item",
-      className: "left-[22px] top-[26px] h-[104px] w-[104px]",
-      initial: { opacity: 0, y: -70, scale: 0.92, rotate: -7 },
-      animate: { opacity: 1, y: 0, scale: 1, rotate: -4 },
-      delay: 0.1,
-    },
-    {
-      id: "boost",
-      src: boostItem,
-      alt: "Boost item",
-      className: "right-[22px] top-[26px] h-[104px] w-[104px]",
-      initial: { opacity: 0, x: 80, scale: 0.92, rotate: 7 },
-      animate: { opacity: 1, x: 0, scale: 1, rotate: 4 },
-      delay: 0.32,
-    },
-    {
-      id: "ebook",
-      src: ebookItem,
-      alt: "eBook item",
-      className: "left-[22px] top-[138px] h-[104px] w-[104px]",
-      initial: { opacity: 0, x: -80, scale: 0.92, rotate: -7 },
-      animate: { opacity: 1, x: 0, scale: 1, rotate: -4 },
-      delay: 0.54,
-    },
-    {
-      id: "ring",
-      src: ringItem,
-      alt: "Ring item",
-      className: "right-[22px] top-[138px] h-[104px] w-[104px]",
-      initial: { opacity: 0, y: 80, scale: 0.92, rotate: 7 },
-      animate: { opacity: 1, y: 0, scale: 1, rotate: 4 },
-      delay: 0.76,
-    },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
-      transition={{ duration: 0.55 }}
-      className="relative h-[350px] w-[280px]"
-    >
-      <div className="absolute left-1/2 top-[8px] h-[250px] w-[260px] -translate-x-1/2 rounded-[34px] border border-cyan-300/10 bg-white/[0.035] shadow-[0_0_50px_rgba(34,211,238,0.13)] backdrop-blur-md" />
-
-      {items.map((item) => (
-        <motion.div
-          key={item.id}
-          initial={item.initial}
-          animate={item.animate}
-          transition={{
-            duration: 0.7,
-            delay: item.delay,
-            ease: "easeOut",
-          }}
-          className={`absolute z-10 rounded-[26px] border border-white/10 bg-black/20 p-2 shadow-[0_0_36px_rgba(34,211,238,0.12)] ${item.className}`}
-        >
-          <img
-            src={item.src}
-            alt={item.alt}
-            className="h-full w-full rounded-[20px] object-cover"
-          />
-        </motion.div>
-      ))}
-
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 1.45 }}
-        className="absolute bottom-[18px] left-0 right-0 text-center text-[1.15rem] font-black tracking-[-0.04em] text-white/85 drop-shadow-[0_0_18px_rgba(255,255,255,0.12)]"
-      >
-        ...and much more.
-      </motion.div>
-    </motion.div>
-  );
-}
-
-export function AnchorView() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
-      transition={{ duration: 0.65 }}
-      className="flex max-w-[330px] flex-col items-center gap-3 text-center"
-    >
-      <div className="text-3xl font-black leading-[1.02] tracking-[-0.06em] text-white">
-        So{" "}
-        <span className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]">
-          MOVE
-        </span>{" "}
-        or{" "}
-        <span className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]">
-          PLAY
-        </span>
-        ...
-      </div>
-
-      <div className="mt-2 text-3xl font-black leading-[1.02] tracking-[-0.06em] text-white">
-        You can{" "}
-        <span className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]">
-          EARN TODAY.
-        </span>
-      </div>
-    </motion.div>
-  );
-}
+/* ---------------- FINAL ---------------- */
 
 export function FinalContinueView({
-  hasTriedMove = false,
-  hasTriedPlay = false,
+  hasTriedMove,
+  hasTriedPlay,
   onMove,
   onPlay,
 }) {
   const showMove = !hasTriedMove;
   const showPlay = !hasTriedPlay;
 
-  const guidanceLines = getFinalGuidance({
-    hasTriedMove,
-    hasTriedPlay,
-  });
-
-  if (!guidanceLines) return null;
+  const lines = getFinalGuidance({ hasTriedMove, hasTriedPlay });
+  if (!lines) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.65 }}
-      className="flex w-full max-w-[320px] flex-col items-center gap-5"
-    >
-      <div className="flex flex-col items-center gap-1">
-        {guidanceLines.map((line) => (
-          <div
-            key={line}
-            className="text-center text-[2.1rem] font-black leading-[1.03] tracking-[-0.065em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
-          >
+    <div className="flex flex-col items-center gap-5 w-full max-w-[320px]">
+      <div className="flex flex-col items-center">
+        {lines.map((line) => (
+          <div key={line} className="text-[2rem] font-black">
             {renderGradientLine(line)}
           </div>
         ))}
@@ -521,6 +178,6 @@ export function FinalContinueView({
       {!showMove && showPlay && (
         <OnboardingActionButton type="play" onClick={onPlay} full />
       )}
-    </motion.div>
+    </div>
   );
 }
