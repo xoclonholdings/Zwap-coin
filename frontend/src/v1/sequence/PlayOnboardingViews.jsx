@@ -1,5 +1,36 @@
 import { motion } from "framer-motion";
 
+function PremiumMoveButton({ onClick }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.965 }}
+      className="group relative w-full overflow-hidden rounded-[24px] border border-cyan-300/45 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.24),rgba(34,211,238,0.12)_42%,rgba(8,12,24,0.9)_100%)] px-4 py-4 text-left text-cyan-50 shadow-[0_0_32px_rgba(34,211,238,0.28),inset_0_1px_0_rgba(255,255,255,0.16)] transition active:scale-[0.965]"
+    >
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-[-35%] top-0 h-full w-[45%] bg-gradient-to-r from-cyan-200/0 via-cyan-200/45 to-cyan-200/0 blur-md"
+        animate={{ x: ["0%", "310%", "0%"] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="relative z-10 flex min-h-[54px] flex-col justify-center">
+        <div className="mb-1 flex items-center justify-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.75)]" />
+          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
+            STEP INTO VALUE
+          </span>
+        </div>
+
+        <div className="text-center text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white">
+          Move
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
 export function PlayShell({ children }) {
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
@@ -60,14 +91,9 @@ export function PlayMoveOfferView({ onTryMove, onLearnMore }) {
       transition={{ duration: 0.65 }}
       className="flex w-full flex-col items-center gap-5"
     >
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.96 }}
-        onClick={onTryMove}
-        className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
-      >
-        Move
-      </motion.button>
+      <div className="w-full">
+        <PremiumMoveButton onClick={onTryMove} />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -83,7 +109,7 @@ export function PlayMoveOfferView({ onTryMove, onLearnMore }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.75 }}
         transition={{ duration: 0.4, delay: 0.32 }}
-        className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70"
+        className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70 transition active:scale-[0.97]"
         onClick={onLearnMore}
       >
         Learn More
