@@ -4,7 +4,7 @@ import { Sprout, BookOpen, Play, Award, Lock } from "lucide-react";
 import AccountDrawerV1 from "./account/AccountDrawerV1";
 import AdminPanelV1 from "./admin/AdminPanelV1";
 
-import activityLogo from "@/assets/activity_logo.png";
+import activityLogo from "@/assets/dashboard/activity_logo.png";
 
 function formatZpts(value) {
   return Number(value || 0).toLocaleString();
