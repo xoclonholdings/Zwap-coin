@@ -1,3 +1,11 @@
+export const NEXT_ACTION_TYPES = {
+  move: "move",
+  play: "play",
+  continue: "continue",
+};
+
+export const ONBOARDING_BONUS_ZPTS = 50;
+
 export function normalizeOnboardingCompletion(progress = {}) {
   return {
     moveStarted: Boolean(progress?.moveStarted),
@@ -7,47 +15,42 @@ export function normalizeOnboardingCompletion(progress = {}) {
   };
 }
 
-/**
- * Core decision engine
- * Returns what the user should see NEXT
- */
 export function getNextOnboardingAction(progress = {}) {
   const normalized = normalizeOnboardingCompletion(progress);
 
-  const { moveStarted, playCompleted } = normalized;
-
-  // Haven’t played yet → force Play
-  if (!playCompleted) {
+  if (!normalized.playCompleted) {
     return {
-      type: "play",
+      type: NEXT_ACTION_TYPES.play,
+      shouldAwardBonus: false,
+      bonusZpts: 0,
     };
   }
 
-  // Played, but never attempted Move → try Move
-  if (!moveStarted) {
+  if (!normalized.moveStarted) {
     return {
-      type: "move",
+      type: NEXT_ACTION_TYPES.move,
+      shouldAwardBonus: false,
+      bonusZpts: 0,
     };
   }
 
-  // Both satisfied → allow progression
   return {
-    type: "continue",
+    type: NEXT_ACTION_TYPES.continue,
+    shouldAwardBonus: true,
+    bonusZpts: ONBOARDING_BONUS_ZPTS,
   };
 }
 
-/**
- * Used ONLY for gating SignupGate
- */
 export function canCompleteOnboarding(progress = {}) {
   const normalized = normalizeOnboardingCompletion(progress);
 
   return normalized.moveStarted && normalized.playCompleted;
 }
 
-/**
- * Reward decision (kept separate intentionally)
- */
 export function shouldAwardOnboardingBonus(progress = {}) {
   return canCompleteOnboarding(progress);
+}
+
+export function getOnboardingBonusZpts(progress = {}) {
+  return shouldAwardOnboardingBonus(progress) ? ONBOARDING_BONUS_ZPTS : 0;
 }
