@@ -2,6 +2,7 @@ import React from "react";
 import { AnimatePresence } from "framer-motion";
 
 import useAboutOnboardingMachine from "./useAboutOnboardingMachine";
+import { getAboutVoiceLines } from "./aboutOnboardingScript";
 import {
   AboutShell,
   VoiceView,
@@ -10,30 +11,6 @@ import {
   AnchorView,
   FinalContinueView,
 } from "./AboutOnboardingViews";
-
-function getVoiceLines(stepId) {
-  if (stepId === "voice-1") {
-    return ["ZWAP! turns", "simple actions", "into progress."];
-  }
-
-  if (stepId === "voice-2") {
-    return ["Whether MOVE", "or PLAY...", "ZWAP! keeps the score."];
-  }
-
-  if (stepId === "voice-3") {
-    return ["Your activity", "becomes zPts."];
-  }
-
-  if (stepId === "voice-4") {
-    return ["You can spend", "your zPts", "in our SHOP..."];
-  }
-
-  if (stepId === "voice-5") {
-    return ["Or save your zPts", "and SWAP them later", "for ZWAP! tokens."];
-  }
-
-  return [];
-}
 
 export default function OnboardingAboutPage({
   hasTriedMove = false,
@@ -44,10 +21,7 @@ export default function OnboardingAboutPage({
   moveRoute = "/move",
   playRoute = "/play",
 }) {
-  const { currentStep } = useAboutOnboardingMachine({
-    hasTriedMove,
-    hasTriedPlay,
-  });
+  const { currentStep } = useAboutOnboardingMachine();
 
   const handleMove = () => {
     if (typeof onMove === "function") {
@@ -77,7 +51,7 @@ export default function OnboardingAboutPage({
         {currentStep.type === "voice" && (
           <VoiceView
             key={currentStep.id}
-            lines={getVoiceLines(currentStep.id)}
+            lines={getAboutVoiceLines(currentStep.id)}
           />
         )}
 
