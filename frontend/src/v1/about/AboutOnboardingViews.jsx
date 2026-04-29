@@ -88,7 +88,7 @@ function OnboardingActionButton({ type = "move", onClick, full = false }) {
       className={[
         "relative rounded-2xl border px-5 py-5 text-left transition",
         "flex flex-col justify-center",
-        full ? "w-full" : "flex-1",
+        full ? "w-[270px] max-w-full" : "flex-1",
         color,
       ].join(" ")}
     >
