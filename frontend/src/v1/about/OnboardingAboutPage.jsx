@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 
 import useAboutOnboardingMachine from "./useAboutOnboardingMachine";
-import { getAboutVoiceLines } from "./aboutOnboardingScript";
-
+import {
+  getAboutVoiceLines,
+} from "./aboutOnboardingScript";
+import {
+  getLearnMoreFinalState,
+} from "@/v1/onboarding/learnMoreFlow";
 import {
   AboutShell,
   VoiceView,
@@ -20,6 +24,13 @@ export default function OnboardingAboutPage({
   onPlay,
 }) {
   const { currentStep } = useAboutOnboardingMachine();
+
+  const learnMoreFinalState = useMemo(() => {
+    return getLearnMoreFinalState({
+      move: hasTriedMove,
+      play: hasTriedPlay,
+    });
+  }, [hasTriedMove, hasTriedPlay]);
 
   return (
     <AboutShell>
@@ -39,17 +50,12 @@ export default function OnboardingAboutPage({
           <ShopProofView key={currentStep.id} />
         )}
 
-        {currentStep.type === "anchor" && (
-          <AnchorView key={currentStep.id} />
-        )}
+        {currentStep.type === "anchor" && <AnchorView key={currentStep.id} />}
 
         {currentStep.type === "final" && (
           <FinalContinueView
             key={currentStep.id}
-            progress={{
-              move: hasTriedMove,
-              play: hasTriedPlay,
-            }}
+            finalState={learnMoreFinalState}
             onMove={onMove}
             onPlay={onPlay}
           />
