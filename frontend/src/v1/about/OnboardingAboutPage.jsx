@@ -9,6 +9,7 @@ import {
   VoiceView,
   ActionProofView,
   ShopProofView,
+  CoinProofView,
   AnchorView,
   FinalContinueView,
 } from "./AboutOnboardingViews";
@@ -41,6 +42,10 @@ export default function OnboardingAboutPage({
 
         {currentStep.type === "shop-proof" && (
           <ShopProofView key={currentStep.id} />
+        )}
+
+        {currentStep.type === "coin-proof" && (
+          <CoinProofView key={currentStep.id} />
         )}
 
         {currentStep.type === "anchor" && <AnchorView key={currentStep.id} />}
