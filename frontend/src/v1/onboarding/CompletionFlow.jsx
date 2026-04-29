@@ -52,7 +52,7 @@ function NeutralMoveAnchor() {
 
 export default function CompletionFlow({
   type,
-  moveStarted = false,
+  moveVerified = false,
   onComplete,
 }) {
   useEffect(() => {
@@ -75,11 +75,11 @@ export default function CompletionFlow({
         <OnboardingVoiceText lines={["Ready to earn?"]} />
       )}
 
-      {type === COMPLETION_TYPES.move && moveStarted && (
+      {type === COMPLETION_TYPES.move && moveVerified && (
         <RewardAnchor label="MOVE COMPLETE" />
       )}
 
-      {type === COMPLETION_TYPES.move && !moveStarted && <NeutralMoveAnchor />}
+      {type === COMPLETION_TYPES.move && !moveVerified && <NeutralMoveAnchor />}
 
       {type === COMPLETION_TYPES.play && <RewardAnchor label="PLAY COMPLETE" />}
     </OnboardingShell>
