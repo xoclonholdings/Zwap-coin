@@ -16,6 +16,37 @@ function buildRingStyle(progressPercent = 0) {
   };
 }
 
+function PremiumPlayButton({ onClick }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.965 }}
+      className="group relative w-full overflow-hidden rounded-[24px] border border-violet-300/45 bg-[radial-gradient(circle_at_top,rgba(216,180,254,0.24),rgba(168,85,247,0.13)_42%,rgba(12,8,24,0.9)_100%)] px-4 py-4 text-left text-violet-50 shadow-[0_0_32px_rgba(168,85,247,0.28),inset_0_1px_0_rgba(255,255,255,0.16)] transition active:scale-[0.965]"
+    >
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-[-35%] top-0 h-full w-[45%] bg-gradient-to-r from-violet-200/0 via-fuchsia-200/45 to-violet-200/0 blur-md"
+        animate={{ x: ["0%", "310%", "0%"] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="relative z-10 flex min-h-[54px] flex-col justify-center">
+        <div className="mb-1 flex items-center justify-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-200 shadow-[0_0_14px_rgba(168,85,247,0.75)]" />
+          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
+            ENTER THE ARCADE
+          </span>
+        </div>
+
+        <div className="text-center text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white">
+          Play
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
 export function VoiceView({ text }) {
   return (
     <motion.div
@@ -80,7 +111,7 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
         className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
       >
         <div
-          className="absolute inset-0 rounded-full p-[10px] transition-transform duration-200 group-active:scale-[0.98] shadow-[0_0_40px_rgba(34,211,238,0.14)]"
+          className="absolute inset-0 rounded-full p-[10px] shadow-[0_0_40px_rgba(34,211,238,0.14)] transition-transform duration-200 group-active:scale-[0.98]"
           style={buildRingStyle(progressPercent)}
         >
           <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),rgba(8,23,22,1)_55%)]">
@@ -103,16 +134,14 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
 export function PlayButton({ onClick, onLearnMore }) {
   return (
     <div className="absolute left-1/2 top-1/2 flex w-full max-w-[320px] -translate-x-1/2 -translate-y-1/2 flex-col items-center">
-      <motion.button
-        type="button"
-        onClick={onClick}
+      <motion.div
         initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={{ duration: 0.55 }}
-        className="w-full rounded-2xl border border-purple-300/50 bg-purple-400/20 px-6 py-5 text-xl font-black text-purple-100 shadow-[0_0_40px_rgba(180,134,255,0.28)]"
+        className="w-full"
       >
-        Play
-      </motion.button>
+        <PremiumPlayButton onClick={onClick} />
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -129,7 +158,7 @@ export function PlayButton({ onClick, onLearnMore }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.75 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        className="mt-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70"
+        className="mt-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70 transition active:scale-[0.97]"
       >
         Learn More
       </motion.button>
