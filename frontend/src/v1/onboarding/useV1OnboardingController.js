@@ -14,7 +14,12 @@ import {
   normalizeOnboardingProgress,
 } from "@/v1/onboarding/onboardingFlow";
 
-import { getNextOnboardingAction } from "@/v1/onboarding/onboardingCompletionFlow";
+import {
+  getNextOnboardingAction,
+  NEXT_ACTION_TYPES,
+} from "@/v1/onboarding/onboardingCompletionFlow";
+
+import { COMPLETION_TYPES } from "@/v1/onboarding/CompletionFlow";
 import { getLearnMoreStartResult } from "@/v1/onboarding/learnMoreFlow";
 
 import {
@@ -37,6 +42,7 @@ export default function useV1OnboardingController({ navigate }) {
     playCompleted: false,
   });
 
+  const [completionType, setCompletionType] = useState(null);
   const [nextActionType, setNextActionType] = useState(null);
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
 
@@ -49,8 +55,17 @@ export default function useV1OnboardingController({ navigate }) {
     return normalizedProgress;
   }
 
+  function clearCompletion() {
+    setCompletionType(null);
+  }
+
   function clearNextAction() {
     setNextActionType(null);
+  }
+
+  function clearFlowScreens() {
+    clearCompletion();
+    clearNextAction();
   }
 
   function setNextActionFromProgress(progress) {
@@ -69,11 +84,12 @@ export default function useV1OnboardingController({ navigate }) {
     return result;
   }
 
-  function applyActionThenShowNext(action) {
+  function applyActionThenShowCompletion(action, type) {
     const result = getActionResult(progressRef.current, action);
 
+    clearNextAction();
     setProgress(result.progress);
-    setNextActionFromProgress(result.progress);
+    setCompletionType(type);
 
     return result;
   }
@@ -81,7 +97,7 @@ export default function useV1OnboardingController({ navigate }) {
   function startFromWelcome(target) {
     const result = getLandingTargetResult(target);
 
-    clearNextAction();
+    clearFlowScreens();
     setProgress(result.progress);
     navigate(result.route);
 
@@ -89,34 +105,34 @@ export default function useV1OnboardingController({ navigate }) {
   }
 
   function goToRoot() {
-    clearNextAction();
+    clearFlowScreens();
     navigate(V1_ONBOARDING_ROUTES.root);
   }
 
   function goToMove() {
-    clearNextAction();
+    clearFlowScreens();
     navigate(V1_ONBOARDING_ROUTES.move);
   }
 
   function goToPlay() {
-    clearNextAction();
+    clearFlowScreens();
     navigate(V1_ONBOARDING_ROUTES.play);
   }
 
   function goToDashboard() {
-    clearNextAction();
+    clearFlowScreens();
     navigate(V1_ONBOARDING_ROUTES.dashboard);
   }
 
   function goToSignupGate() {
-    clearNextAction();
+    clearFlowScreens();
     navigate(V1_ONBOARDING_ROUTES.signupGate);
   }
 
   function goToLearnMore() {
     const result = getLearnMoreStartResult(progressRef.current);
 
-    clearNextAction();
+    clearFlowScreens();
     setProgress(result.progress);
     navigate(result.route);
 
@@ -139,16 +155,50 @@ export default function useV1OnboardingController({ navigate }) {
     return applyAction(ONBOARDING_ACTIONS.playCompleted);
   }
 
-  function finishMoveAndShowNext() {
-    return applyActionThenShowNext(ONBOARDING_ACTIONS.moveStarted);
+  function finishLearnMoreAndShowCompletion() {
+    clearNextAction();
+    setCompletionType(COMPLETION_TYPES.learnMore);
   }
 
-  function verifyMoveAndShowNext() {
-    return applyActionThenShowNext(ONBOARDING_ACTIONS.moveVerified);
+  function finishMoveAndShowCompletion() {
+    return applyActionThenShowCompletion(
+      ONBOARDING_ACTIONS.moveStarted,
+      COMPLETION_TYPES.move
+    );
   }
 
-  function finishPlayAndShowNext() {
-    return applyActionThenShowNext(ONBOARDING_ACTIONS.playCompleted);
+  function verifyMoveAndShowCompletion() {
+    return applyActionThenShowCompletion(
+      ONBOARDING_ACTIONS.moveVerified,
+      COMPLETION_TYPES.move
+    );
+  }
+
+  function finishPlayAndShowCompletion() {
+    return applyActionThenShowCompletion(
+      ONBOARDING_ACTIONS.playCompleted,
+      COMPLETION_TYPES.play
+    );
+  }
+
+  function finishCompletionAndShowNext() {
+    const completedType = completionType;
+
+    clearCompletion();
+
+    if (completedType === COMPLETION_TYPES.learnMore) {
+      setNextActionType(NEXT_ACTION_TYPES.choose);
+      navigate(V1_ONBOARDING_ROUTES.next);
+      return {
+        type: NEXT_ACTION_TYPES.choose,
+      };
+    }
+
+    const nextAction = setNextActionFromProgress(progressRef.current);
+
+    navigate(V1_ONBOARDING_ROUTES.next);
+
+    return nextAction;
   }
 
   function canEnterSignupGate() {
@@ -160,7 +210,7 @@ export default function useV1OnboardingController({ navigate }) {
   }
 
   function markSeenAndGo(route) {
-    clearNextAction();
+    clearFlowScreens();
     markV1OnboardingSeen();
     navigate(route);
   }
@@ -168,6 +218,7 @@ export default function useV1OnboardingController({ navigate }) {
   return {
     onboardingProgress,
     onboardingSeen,
+    completionType,
     nextActionType,
 
     moveStarted: onboardingProgress.moveStarted,
@@ -189,10 +240,13 @@ export default function useV1OnboardingController({ navigate }) {
     markPlayStarted,
     markPlayCompleted,
 
-    finishMoveAndShowNext,
-    verifyMoveAndShowNext,
-    finishPlayAndShowNext,
+    finishLearnMoreAndShowCompletion,
+    finishMoveAndShowCompletion,
+    verifyMoveAndShowCompletion,
+    finishPlayAndShowCompletion,
+    finishCompletionAndShowNext,
 
+    clearCompletion,
     clearNextAction,
     canEnterSignupGate,
     getSignupGateFallback,
