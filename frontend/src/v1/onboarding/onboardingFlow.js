@@ -1,7 +1,6 @@
 import {
   LEARN_MORE_ACTION,
-  getLearnMoreRoute,
-  getLearnMoreAvailableActions,
+  getLearnMoreStartResult,
 } from "@/v1/onboarding/learnMoreFlow";
 
 import {
@@ -21,15 +20,15 @@ export const V1_ONBOARDING_ROUTES = {
 };
 
 export const ONBOARDING_ACTIONS = {
-  move: "move",
-  play: "play",
+  moveStarted: "moveStarted",
+  playStarted: "playStarted",
   learn: LEARN_MORE_ACTION,
 };
 
 export function normalizeOnboardingProgress(progress = {}) {
   return {
-    move: Boolean(progress?.move),
-    play: Boolean(progress?.play),
+    moveStarted: Boolean(progress?.moveStarted),
+    playStarted: Boolean(progress?.playStarted),
   };
 }
 
@@ -40,58 +39,62 @@ export function getNextOnboardingRoute(progress = {}) {
     return getSignupGateRoute();
   }
 
-  if (normalized.play && !normalized.move) {
+  if (normalized.playStarted && !normalized.moveStarted) {
     return V1_ONBOARDING_ROUTES.move;
   }
 
-  if (normalized.move && !normalized.play) {
+  if (normalized.moveStarted && !normalized.playStarted) {
     return V1_ONBOARDING_ROUTES.play;
   }
 
   return null;
 }
 
-export function getLandingTargetRoute(target) {
-  if (target === ONBOARDING_ACTIONS.move) {
-    return V1_ONBOARDING_ROUTES.move;
+export function getLandingTargetResult(target) {
+  if (target === "move") {
+    return {
+      progress: normalizeOnboardingProgress(),
+      route: V1_ONBOARDING_ROUTES.move,
+    };
   }
 
-  if (target === ONBOARDING_ACTIONS.play) {
-    return V1_ONBOARDING_ROUTES.play;
+  if (target === "play") {
+    return {
+      progress: normalizeOnboardingProgress(),
+      route: V1_ONBOARDING_ROUTES.play,
+    };
   }
 
-  if (target === ONBOARDING_ACTIONS.learn) {
-    return getLearnMoreRoute();
+  if (target === LEARN_MORE_ACTION || target === "learn") {
+    return getLearnMoreStartResult(normalizeOnboardingProgress());
   }
 
-  return V1_ONBOARDING_ROUTES.root;
-}
-
-export function getWelcomeStartResult(target) {
   return {
-    progress: normalizeOnboardingProgress({ move: false, play: false }),
-    route: getLandingTargetRoute(target),
+    progress: normalizeOnboardingProgress(),
+    route: V1_ONBOARDING_ROUTES.root,
   };
 }
 
-export function markOnboardingActionTried(progress = {}, action) {
+export function markOnboardingActionStarted(progress = {}, action) {
   const normalized = normalizeOnboardingProgress(progress);
 
   return {
-    move: action === ONBOARDING_ACTIONS.move ? true : normalized.move,
-    play: action === ONBOARDING_ACTIONS.play ? true : normalized.play,
+    moveStarted:
+      action === ONBOARDING_ACTIONS.moveStarted
+        ? true
+        : normalized.moveStarted,
+    playStarted:
+      action === ONBOARDING_ACTIONS.playStarted
+        ? true
+        : normalized.playStarted,
   };
 }
 
-export function getActionCompletionResult(progress = {}, action) {
-  const progressAfterAction = markOnboardingActionTried(progress, action);
+export function getActionStartedResult(progress = {}, action) {
+  const progressAfterAction = markOnboardingActionStarted(progress, action);
 
   return {
     progress: progressAfterAction,
     route: getNextOnboardingRoute(progressAfterAction),
   };
-}
-
-export function getAboutAvailableActions(progress = {}) {
-  return getLearnMoreAvailableActions(normalizeOnboardingProgress(progress));
 }
