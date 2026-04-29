@@ -1,11 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-import { getAboutGuidanceLines } from "@/v1/about/aboutOnboardingScript";
 import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
 import {
-  getAboutAvailableActions,
-} from "@/v1/onboarding/onboardingFlow";
+  getLearnMoreAvailableActions,
+  getLearnMoreGuidanceLines,
+} from "@/v1/onboarding/learnMoreFlow";
 import OnboardingShell from "@/v1/onboarding/OnboardingShell";
 import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
 
@@ -38,19 +38,9 @@ export function AnchorView() {
   return null;
 }
 
-export function FinalContinueView({
-  hasTriedMove = false,
-  hasTriedPlay = false,
-  onMove,
-  onPlay,
-}) {
-  const progress = {
-    move: hasTriedMove,
-    play: hasTriedPlay,
-  };
-
-  const lines = getAboutGuidanceLines(progress);
-  const { showMove, showPlay } = getAboutAvailableActions(progress);
+export function FinalContinueView({ progress = {}, onMove, onPlay }) {
+  const lines = getLearnMoreGuidanceLines(progress);
+  const { showMove, showPlay } = getLearnMoreAvailableActions(progress);
 
   if (!lines) return null;
 
