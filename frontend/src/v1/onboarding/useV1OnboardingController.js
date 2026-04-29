@@ -49,6 +49,14 @@ export default function useV1OnboardingController({ navigate }) {
     return result;
   }
 
+  function markActionStarted(action) {
+    const result = getActionStartedResult(progressRef.current, action);
+
+    setProgress(result.progress);
+
+    return result;
+  }
+
   function startActionAndGoNext(action) {
     const result = getActionStartedResult(progressRef.current, action);
 
@@ -88,6 +96,7 @@ export default function useV1OnboardingController({ navigate }) {
     playStarted: onboardingProgress.playStarted,
 
     startFromWelcome,
+    markActionStarted,
     startActionAndGoNext,
     goToLearnMore,
     canEnterSignupGate,
