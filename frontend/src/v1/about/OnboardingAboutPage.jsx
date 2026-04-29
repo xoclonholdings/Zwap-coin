@@ -1,8 +1,7 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { AnimatePresence } from "framer-motion";
 
 import useAboutOnboardingMachine from "./useAboutOnboardingMachine";
-import { getLearnMoreFinalState } from "@/v1/onboarding/learnMoreFlow";
 
 import {
   AboutShell,
@@ -10,24 +9,10 @@ import {
   ActionProofView,
   ShopProofView,
   CoinProofView,
-  AnchorView,
-  FinalContinueView,
 } from "./AboutOnboardingViews";
 
-export default function OnboardingAboutPage({
-  hasTriedMove = false,
-  hasTriedPlay = false,
-  onMove,
-  onPlay,
-}) {
-  const { currentStep } = useAboutOnboardingMachine();
-
-  const learnMoreFinalState = useMemo(() => {
-    return getLearnMoreFinalState({
-      moveStarted: hasTriedMove,
-      playCompleted: hasTriedPlay,
-    });
-  }, [hasTriedMove, hasTriedPlay]);
+export default function OnboardingAboutPage({ onComplete }) {
+  const { currentStep } = useAboutOnboardingMachine({ onComplete });
 
   return (
     <AboutShell>
@@ -46,17 +31,6 @@ export default function OnboardingAboutPage({
 
         {currentStep.type === "coin-proof" && (
           <CoinProofView key={currentStep.id} />
-        )}
-
-        {currentStep.type === "anchor" && <AnchorView key={currentStep.id} />}
-
-        {currentStep.type === "final" && (
-          <FinalContinueView
-            key={currentStep.id}
-            finalState={learnMoreFinalState}
-            onMove={onMove}
-            onPlay={onPlay}
-          />
         )}
       </AnimatePresence>
     </AboutShell>
