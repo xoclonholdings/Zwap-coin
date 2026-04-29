@@ -14,6 +14,7 @@ import {
   normalizeOnboardingProgress,
 } from "@/v1/onboarding/onboardingFlow";
 
+import { getNextOnboardingAction } from "@/v1/onboarding/onboardingCompletionFlow";
 import { getLearnMoreStartResult } from "@/v1/onboarding/learnMoreFlow";
 
 import {
@@ -36,6 +37,7 @@ export default function useV1OnboardingController({ navigate }) {
     playCompleted: false,
   });
 
+  const [nextActionType, setNextActionType] = useState(null);
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
 
   function setProgress(nextProgress) {
@@ -47,6 +49,18 @@ export default function useV1OnboardingController({ navigate }) {
     return normalizedProgress;
   }
 
+  function clearNextAction() {
+    setNextActionType(null);
+  }
+
+  function setNextActionFromProgress(progress) {
+    const nextAction = getNextOnboardingAction(progress);
+
+    setNextActionType(nextAction.type);
+
+    return nextAction;
+  }
+
   function applyAction(action) {
     const result = getActionResult(progressRef.current, action);
 
@@ -55,11 +69,11 @@ export default function useV1OnboardingController({ navigate }) {
     return result;
   }
 
-  function applyActionAndNavigate(action) {
+  function applyActionThenShowNext(action) {
     const result = getActionResult(progressRef.current, action);
 
     setProgress(result.progress);
-    navigate(result.route);
+    setNextActionFromProgress(result.progress);
 
     return result;
   }
@@ -67,6 +81,7 @@ export default function useV1OnboardingController({ navigate }) {
   function startFromWelcome(target) {
     const result = getLandingTargetResult(target);
 
+    clearNextAction();
     setProgress(result.progress);
     navigate(result.route);
 
@@ -74,28 +89,34 @@ export default function useV1OnboardingController({ navigate }) {
   }
 
   function goToRoot() {
+    clearNextAction();
     navigate(V1_ONBOARDING_ROUTES.root);
   }
 
   function goToMove() {
+    clearNextAction();
     navigate(V1_ONBOARDING_ROUTES.move);
   }
 
   function goToPlay() {
+    clearNextAction();
     navigate(V1_ONBOARDING_ROUTES.play);
   }
 
   function goToDashboard() {
+    clearNextAction();
     navigate(V1_ONBOARDING_ROUTES.dashboard);
   }
 
   function goToSignupGate() {
+    clearNextAction();
     navigate(V1_ONBOARDING_ROUTES.signupGate);
   }
 
   function goToLearnMore() {
     const result = getLearnMoreStartResult(progressRef.current);
 
+    clearNextAction();
     setProgress(result.progress);
     navigate(result.route);
 
@@ -118,16 +139,16 @@ export default function useV1OnboardingController({ navigate }) {
     return applyAction(ONBOARDING_ACTIONS.playCompleted);
   }
 
-  function finishMoveAndGoNext() {
-    return applyActionAndNavigate(ONBOARDING_ACTIONS.moveStarted);
+  function finishMoveAndShowNext() {
+    return applyActionThenShowNext(ONBOARDING_ACTIONS.moveStarted);
   }
 
-  function verifyMoveAndGoNext() {
-    return applyActionAndNavigate(ONBOARDING_ACTIONS.moveVerified);
+  function verifyMoveAndShowNext() {
+    return applyActionThenShowNext(ONBOARDING_ACTIONS.moveVerified);
   }
 
-  function finishPlayAndGoNext() {
-    return applyActionAndNavigate(ONBOARDING_ACTIONS.playCompleted);
+  function finishPlayAndShowNext() {
+    return applyActionThenShowNext(ONBOARDING_ACTIONS.playCompleted);
   }
 
   function canEnterSignupGate() {
@@ -139,6 +160,7 @@ export default function useV1OnboardingController({ navigate }) {
   }
 
   function markSeenAndGo(route) {
+    clearNextAction();
     markV1OnboardingSeen();
     navigate(route);
   }
@@ -146,6 +168,7 @@ export default function useV1OnboardingController({ navigate }) {
   return {
     onboardingProgress,
     onboardingSeen,
+    nextActionType,
 
     moveStarted: onboardingProgress.moveStarted,
     moveVerified: onboardingProgress.moveVerified,
@@ -166,10 +189,11 @@ export default function useV1OnboardingController({ navigate }) {
     markPlayStarted,
     markPlayCompleted,
 
-    finishMoveAndGoNext,
-    verifyMoveAndGoNext,
-    finishPlayAndGoNext,
+    finishMoveAndShowNext,
+    verifyMoveAndShowNext,
+    finishPlayAndShowNext,
 
+    clearNextAction,
     canEnterSignupGate,
     getSignupGateFallback,
     markSeenAndGo,
