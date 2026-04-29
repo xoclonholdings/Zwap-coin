@@ -4,7 +4,6 @@ import { AnimatePresence } from "framer-motion";
 import useAboutOnboardingMachine from "./useAboutOnboardingMachine";
 import {
   AboutShell,
-  AboutControls,
   VoiceView,
   ActionProofView,
   ShopProofView,
@@ -45,13 +44,7 @@ export default function OnboardingAboutPage({
   moveRoute = "/move",
   playRoute = "/play",
 }) {
-  const {
-    currentStep,
-    isPaused,
-    isFinal,
-    goNext,
-    togglePause,
-  } = useAboutOnboardingMachine({
+  const { currentStep } = useAboutOnboardingMachine({
     hasTriedMove,
     hasTriedPlay,
   });
@@ -80,14 +73,6 @@ export default function OnboardingAboutPage({
 
   return (
     <AboutShell>
-      {!isFinal && (
-        <AboutControls
-          isPaused={isPaused}
-          onPause={togglePause}
-          onNext={goNext}
-        />
-      )}
-
       <AnimatePresence mode="wait">
         {currentStep.type === "voice" && (
           <VoiceView
