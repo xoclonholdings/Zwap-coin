@@ -21,7 +21,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+          className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent"
         >
           ZWAP!
         </span>
@@ -32,7 +32,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(45,212,191,0.35)]"
+          className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-transparent"
         >
           zPts
         </span>
@@ -43,7 +43,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-purple-200 via-pink-300 to-cyan-200 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(180,134,255,0.35)]"
+          className="bg-gradient-to-r from-purple-200 via-pink-300 to-cyan-200 bg-clip-text text-transparent"
         >
           SHOP
         </span>
@@ -54,7 +54,7 @@ function renderGradientLine(line) {
       return (
         <span
           key={`${part}-${index}`}
-          className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+          className="bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-300 bg-clip-text text-transparent"
         >
           SWAP
         </span>
@@ -63,10 +63,7 @@ function renderGradientLine(line) {
 
     if (part === "MOVE" || part === "PLAY" || part === "EARN TODAY") {
       return (
-        <span
-          key={`${part}-${index}`}
-          className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.30)]"
-        >
+        <span key={`${part}-${index}`} className="text-cyan-300">
           {part}
         </span>
       );
@@ -88,12 +85,12 @@ export function VoiceView({ lines }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex w-full max-w-[300px] flex-col items-center justify-center gap-3 px-2"
+      className="flex max-w-[340px] flex-col items-center justify-center gap-3"
     >
       {lines.map((line) => (
         <div
           key={line}
-          className="w-full text-center text-[1.92rem] font-black leading-[1.08] tracking-[-0.055em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
+          className="text-center text-[2.2rem] font-black leading-[1.05] tracking-[-0.06em] text-white"
         >
           {renderGradientLine(line)}
         </div>
@@ -102,114 +99,108 @@ export function VoiceView({ lines }) {
   );
 }
 
-export function ActionProofView() {
-  const roundFrames = [
-    { round: "Round 1", zpts: "+10" },
-    { round: "Round 2", zpts: "+25" },
-    { round: "Round 3", zpts: "+50" },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
-      transition={{ duration: 0.55 }}
-      className="flex w-full max-w-[320px] flex-col items-center gap-5"
-    >
-      <motion.div
-        animate={{
-          boxShadow: [
-            "0 0 28px rgba(34,211,238,0.10)",
-            "0 0 46px rgba(34,211,238,0.20)",
-            "0 0 28px rgba(34,211,238,0.10)",
-          ],
-        }}
-        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-        className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[28px] border border-cyan-300/15 bg-white/[0.06] px-5 py-5 text-center backdrop-blur-md"
-      >
-        <div>
-          <motion.div
-            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
-            transition={{
-              duration: 3.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="text-2xl font-black tracking-[-0.05em] text-white"
-          >
-            20
-          </motion.div>
-          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
-            STEPS
-          </div>
-        </div>
-
-        <div className="h-10 w-px bg-white/15" />
-
-        <div>
-          <motion.div
-            animate={{ opacity: [1, 0, 1, 0, 1, 0, 1] }}
-            transition={{
-              duration: 3.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="bg-gradient-to-r from-lime-200 via-cyan-300 to-emerald-300 bg-clip-text text-2xl font-black tracking-[-0.05em] text-transparent"
-          >
-            +50
-          </motion.div>
-          <div className="mt-1 text-[10px] font-black tracking-[0.22em] text-white/45">
-            zPTS
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
+/* =========================
+   🔥 FIXED SHOP VIEW
+========================= */
 
 export function ShopProofView() {
   const items = [
     {
       id: "ebook",
       src: ebookItem,
-      className: "left-[22px] top-[26px] h-[104px] w-[104px]",
+      className: "left-[20px] top-[20px]",
     },
     {
-      id: "move-boost",
+      id: "move",
       src: moveBoost12h,
-      className: "right-[22px] top-[26px] h-[104px] w-[104px]",
+      className: "right-[20px] top-[20px]",
     },
     {
-      id: "play-boost",
+      id: "play",
       src: playBoost12h,
-      className: "left-[22px] top-[138px] h-[104px] w-[104px]",
+      className: "left-[20px] bottom-[20px]",
     },
     {
-      id: "bronze-ring",
+      id: "ring",
       src: bronzeRing,
-      className: "right-[22px] top-[138px] h-[104px] w-[104px]",
+      className: "right-[20px] bottom-[20px]",
     },
   ];
 
   return (
-    <motion.div className="relative h-[350px] w-[280px]">
-      {items.map((item) => (
-        <div key={item.id} className={`absolute ${item.className}`}>
-          <img src={item.src} className="h-full w-full object-cover" />
-        </div>
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="relative h-[420px] w-[340px]"   // 🔥 BIGGER CONTAINER
+    >
+      {/* BACK PANEL */}
+      <div className="absolute inset-0 rounded-[36px] border border-cyan-300/10 bg-white/[0.04] backdrop-blur-md" />
+
+      {/* ITEMS */}
+      {items.map((item, i) => (
+        <motion.div
+          key={item.id}
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            delay: 0.2 + i * 0.15,
+            duration: 0.45,
+          }}
+          className={`absolute ${item.className} h-[140px] w-[140px]`} // 🔥 BIGGER ITEMS
+        >
+          <img
+            src={item.src}
+            alt=""
+            className="h-full w-full rounded-[22px] object-cover"
+          />
+        </motion.div>
       ))}
+
+      {/* TEXT */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="absolute bottom-[16px] left-0 right-0 text-center text-[1.2rem] font-black text-white/85"
+      >
+        ...and much more.
+      </motion.div>
     </motion.div>
   );
 }
 
+/* ========================= */
+
 export function CoinProofView() {
   return (
-    <div className="flex flex-col items-center gap-5">
-      <div className="flex gap-5">
-        <img src={zptsCoin} className="h-[112px]" />
-        <img src={zwapCoin} className="h-[112px]" />
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.65 }}
+      className="flex max-w-[340px] flex-col items-center gap-5 text-center"
+    >
+      <div className="flex items-center justify-center gap-6">
+        {[zptsCoin, zwapCoin].map((coin, index) => (
+          <motion.img
+            key={coin}
+            src={coin}
+            initial={{ opacity: 0, y: -80, rotate: -180, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, rotate: 360, scale: 1 }}
+            transition={{
+              duration: 0.8,
+              delay: index * 0.2,
+            }}
+            className="h-[120px] w-[120px] object-contain"
+          />
+        ))}
       </div>
-    </div>
+
+      <div className="text-[2rem] font-black text-white">
+        {renderGradientLine("SWAP for ZWAP!")}
+      </div>
+    </motion.div>
   );
 }
