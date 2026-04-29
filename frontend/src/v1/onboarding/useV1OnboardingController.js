@@ -6,10 +6,14 @@ import {
 } from "@/v1/V1OnboardingStorage";
 
 import {
-  ONBOARDING_ACTIONS,
-  getNextOnboardingRoute,
-  markOnboardingActionTried,
+  getActionCompletionResult,
+  getWelcomeStartResult,
 } from "@/v1/onboarding/onboardingFlow";
+
+import {
+  canShowSignupGate,
+  getSignupGateFallbackRoute,
+} from "@/v1/onboarding/signupGateFlow";
 
 export default function useV1OnboardingController({ navigate }) {
   const progressRef = useRef({ move: false, play: false });
@@ -33,23 +37,35 @@ export default function useV1OnboardingController({ navigate }) {
     return normalizedProgress;
   }
 
-  function completeAction(action) {
-    const nextProgress = markOnboardingActionTried(progressRef.current, action);
-    return setProgress(nextProgress);
+  function startFromWelcome(target) {
+    const result = getWelcomeStartResult(target);
+    setProgress(result.progress);
+    navigate(result.route);
   }
 
-  function navigateToNext(progress = progressRef.current) {
-    navigate(getNextOnboardingRoute(progress));
+  function completeActionAndGoNext(action) {
+    const result = getActionCompletionResult(progressRef.current, action);
+    setProgress(result.progress);
+
+    if (result.route) {
+      navigate(result.route);
+    }
+
+    return result;
   }
 
-  function completeMoveAndGoNext() {
-    const nextProgress = completeAction(ONBOARDING_ACTIONS.move);
-    navigateToNext(nextProgress);
+  function goToLearnMoreAfterAction(action, route) {
+    const result = getActionCompletionResult(progressRef.current, action);
+    setProgress(result.progress);
+    navigate(route);
   }
 
-  function completePlayAndGoNext() {
-    const nextProgress = completeAction(ONBOARDING_ACTIONS.play);
-    navigateToNext(nextProgress);
+  function canEnterSignupGate() {
+    return canShowSignupGate(progressRef.current);
+  }
+
+  function getSignupGateFallback() {
+    return getSignupGateFallbackRoute(progressRef.current);
   }
 
   function markSeenAndGo(route) {
@@ -64,10 +80,11 @@ export default function useV1OnboardingController({ navigate }) {
     triedMove: onboardingProgress.move,
     triedPlay: onboardingProgress.play,
 
-    completeAction,
-    navigateToNext,
-    completeMoveAndGoNext,
-    completePlayAndGoNext,
+    startFromWelcome,
+    completeActionAndGoNext,
+    goToLearnMoreAfterAction,
+    canEnterSignupGate,
+    getSignupGateFallback,
     markSeenAndGo,
   };
 }
