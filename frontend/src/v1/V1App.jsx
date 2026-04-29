@@ -10,6 +10,7 @@ import SignOut from "@/v1/auth/SignOut";
 import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
 import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
 import LandingSequence from "@/v1/landing/LandingSequence";
+import NextActionGate from "@/v1/onboarding/NextActionGate";
 import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
 import useV1OnboardingSessionStats from "@/v1/onboarding/useV1OnboardingSessionStats";
 import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingRoutes";
@@ -30,7 +31,6 @@ export default function V1App() {
   });
 
   const onboarding = useV1OnboardingController({ navigate });
-
   const session = useV1OnboardingSessionStats({ user });
 
   const dashboardState = useV1DashboardState({
@@ -60,9 +60,21 @@ export default function V1App() {
         element={
           <OnboardingAboutPage
             hasTriedMove={onboarding.moveStarted}
-            hasTriedPlay={onboarding.playStarted}
+            hasTriedPlay={onboarding.playCompleted}
             onMove={onboarding.goToMove}
             onPlay={onboarding.goToPlay}
+          />
+        }
+      />
+
+      <Route
+        path="next"
+        element={
+          <NextActionGate
+            type={onboarding.nextActionType}
+            onMove={onboarding.goToMove}
+            onPlay={onboarding.goToPlay}
+            onContinue={onboarding.goToSignupGate}
           />
         }
       />
@@ -80,7 +92,8 @@ export default function V1App() {
             onStopTracking={session.stopMoveTracking}
             onTryPlay={() => {
               session.stopMoveTracking();
-              onboarding.finishMoveAndGoNext();
+              onboarding.finishMoveAndShowNext();
+              navigate("next");
             }}
             onLearnMore={() => {
               session.stopMoveTracking();
@@ -88,7 +101,8 @@ export default function V1App() {
             }}
             onMoveComplete={(payload) => {
               session.applyMoveComplete(payload);
-              onboarding.finishMoveAndGoNext();
+              onboarding.finishMoveAndShowNext();
+              navigate("next");
             }}
             onMoveMilestone={session.applyMoveMilestone}
           />
@@ -99,12 +113,12 @@ export default function V1App() {
         path="play"
         element={
           <PlayOnboardingSequence
-            triedMove={onboarding.moveStarted}
             onLearnMore={onboarding.goToLearnMore}
             onStartPlay={onboarding.markPlayStarted}
             onComplete={(payload) => {
               session.applyPlayComplete(payload);
-              onboarding.finishPlayAndGoNext();
+              onboarding.finishPlayAndShowNext();
+              navigate("next");
             }}
           />
         }
@@ -115,8 +129,8 @@ export default function V1App() {
         element={
           onboarding.canEnterSignupGate() ? (
             <SignupGate
-              hasTriedMove={onboarding.moveStarted}
-              hasTriedPlay={onboarding.playStarted}
+              moveStarted={onboarding.moveStarted}
+              playCompleted={onboarding.playCompleted}
               onBeginAuth={() =>
                 onboarding.markSeenAndGo(V1_ONBOARDING_ROUTES.signup)
               }
@@ -166,9 +180,7 @@ export default function V1App() {
               user={session.dashboardUser}
               authUser={authUser}
               displayName={access.displayName || dashboardState.displayName}
-              subtext={
-                walletAddress || access.resolvedEmail || "Account active"
-              }
+              subtext={walletAddress || access.resolvedEmail || "Account active"}
               tier={access.tier}
               zptsBalance={dashboardState.zptsBalance}
               zwapBalance={0}
