@@ -3,7 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const VOICE_HOLD_MS = 1600;
 const REWARD_HOLD_MS = 1700;
 
-export default function usePlayOnboardingMachine({ triedMove = false, onComplete }) {
+export default function usePlayOnboardingMachine({
+  triedMove = false,
+  onComplete,
+}) {
   const [phase, setPhase] = useState("voice-start");
   const [voice, setVoice] = useState("Play a round.");
   const [showVoice, setShowVoice] = useState(true);
@@ -11,26 +14,24 @@ export default function usePlayOnboardingMachine({ triedMove = false, onComplete
   const completedRef = useRef(false);
   const timerRef = useRef(null);
 
-  const clearTimer = () => {
+  const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-  };
+  }, []);
 
   const completePlay = useCallback(
-    ({ routeToMove = false } = {}) => {
+    ({ shouldRouteToMove = false } = {}) => {
       if (completedRef.current) return;
 
       completedRef.current = true;
 
-      if (typeof onComplete === "function") {
-        onComplete({
-          triedPlay: true,
-          displayedZpts: 50,
-          shouldRouteToMove: routeToMove,
-        });
-      }
+      onComplete?.({
+        triedPlay: true,
+        displayedZpts: 50,
+        shouldRouteToMove,
+      });
     },
     [onComplete]
   );
@@ -63,25 +64,28 @@ export default function usePlayOnboardingMachine({ triedMove = false, onComplete
         setShowVoice(false);
 
         if (triedMove) {
-          completePlay({ routeToMove: false });
-        } else {
-          setPhase("move-offer");
+          completePlay({ shouldRouteToMove: false });
+          return;
         }
+
+        setPhase("move-offer");
       }, VOICE_HOLD_MS);
     }
 
     return () => {
       clearTimer();
     };
-  }, [phase, triedMove, completePlay]);
+  }, [phase, triedMove, completePlay, clearTimer]);
 
   const handleGameEnd = useCallback(() => {
+    if (completedRef.current) return;
+
     setShowVoice(false);
     setPhase("reward");
   }, []);
 
   const handleTryMove = useCallback(() => {
-    completePlay({ routeToMove: true });
+    completePlay({ shouldRouteToMove: true });
   }, [completePlay]);
 
   return {
