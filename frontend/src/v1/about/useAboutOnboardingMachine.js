@@ -12,15 +12,12 @@ function getNextStepIndex(index) {
   return Math.min(index + 1, ABOUT_STEPS.length - 1);
 }
 
-function shouldHoldStep({ isPaused, isFinal }) {
-  return Boolean(isPaused || isFinal);
-}
-
-export default function useAboutOnboardingMachine() {
+export default function useAboutOnboardingMachine({ onComplete } = {}) {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   const timerRef = useRef(null);
+  const completedRef = useRef(false);
 
   const currentStep = getStep(stepIndex);
   const isFinal = currentStep.id === "final";
@@ -50,6 +47,7 @@ export default function useAboutOnboardingMachine() {
 
   const restart = useCallback(() => {
     clearTimer();
+    completedRef.current = false;
     setIsPaused(false);
     setStepIndex(0);
   }, [clearTimer]);
@@ -57,21 +55,31 @@ export default function useAboutOnboardingMachine() {
   useEffect(() => {
     clearTimer();
 
-    const holdStep = shouldHoldStep({
-      isPaused,
-      isFinal,
-    });
+    if (isPaused) {
+      return () => {
+        clearTimer();
+      };
+    }
 
-    timerRef.current = holdStep
-      ? null
-      : setTimeout(() => {
-          goNext();
-        }, currentStep.duration + TRANSITION_GAP_MS);
+    if (isFinal) {
+      if (!completedRef.current) {
+        completedRef.current = true;
+        onComplete?.();
+      }
+
+      return () => {
+        clearTimer();
+      };
+    }
+
+    timerRef.current = setTimeout(() => {
+      goNext();
+    }, currentStep.duration + TRANSITION_GAP_MS);
 
     return () => {
       clearTimer();
     };
-  }, [currentStep, isPaused, isFinal, goNext, clearTimer]);
+  }, [currentStep, isPaused, isFinal, goNext, clearTimer, onComplete]);
 
   return {
     currentStep,
