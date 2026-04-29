@@ -20,8 +20,18 @@ import {
 const V1_BASE = "/v1";
 const STARTING_ONBOARDING_ZPTS = 100;
 const SHOP_UNLOCK_ZPTS = 1000;
+const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
 
-function buildDisplayName({ authUser, user, walletAddress }) {
+function getReviewAccessEnabled() {
+  try {
+    return window.localStorage.getItem(REVIEW_ACCESS_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function buildDisplayName({ authUser, user, walletAddress, isReviewAccess }) {
+  if (isReviewAccess) return "Reviewer";
   if (authUser?.email?.address) return authUser.email.address.split("@")[0];
   if (authUser?.email) return String(authUser.email).split("@")[0];
   if (user?.email) return String(user.email).split("@")[0];
@@ -41,15 +51,23 @@ export default function V1App() {
   });
 
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
+  const [isReviewAccess] = useState(() => getReviewAccessEnabled());
 
   const [todaySteps, setTodaySteps] = useState(0);
   const [moveActive, setMoveActive] = useState(false);
   const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
   const [zptsBalance, setZptsBalance] = useState(STARTING_ONBOARDING_ZPTS);
 
+  const canSeeDashboard = isAuthenticated || isReviewAccess;
+
   const displayName = useMemo(() => {
-    return buildDisplayName({ authUser, user, walletAddress });
-  }, [authUser, user, walletAddress]);
+    return buildDisplayName({
+      authUser,
+      user,
+      walletAddress,
+      isReviewAccess,
+    });
+  }, [authUser, user, walletAddress, isReviewAccess]);
 
   const tier = user?.subscription_tier === "plus" ? "zitizen" : "zwapper";
 
@@ -95,24 +113,23 @@ export default function V1App() {
 
   const taskStates = useMemo(() => {
     return [
-      { label: "Login", completed: Boolean(isAuthenticated) },
+      { label: "Login", completed: Boolean(canSeeDashboard) },
       { label: "Move", completed: triedMove },
       { label: "Play", completed: triedPlay },
       { label: shopUnlocked ? "Shop" : "Learn", completed: shopUnlocked },
     ];
-  }, [isAuthenticated, triedMove, triedPlay, shopUnlocked]);
+  }, [canSeeDashboard, triedMove, triedPlay, shopUnlocked]);
 
   const completedTasks = useMemo(() => {
-    return taskStates.filter((t) => t.completed).length;
+    return taskStates.filter((task) => task.completed).length;
   }, [taskStates]);
 
   return (
     <Routes>
-      {/* ENTRY */}
       <Route
         path=""
         element={
-          isAuthenticated ? (
+          canSeeDashboard ? (
             <Navigate to="dashboard" replace />
           ) : onboardingSeen ? (
             <Navigate to="signin" replace />
@@ -128,7 +145,6 @@ export default function V1App() {
         }
       />
 
-      {/* ABOUT */}
       <Route
         path="about"
         element={
@@ -144,7 +160,6 @@ export default function V1App() {
         }
       />
 
-      {/* MOVE */}
       <Route
         path="move"
         element={
@@ -166,18 +181,23 @@ export default function V1App() {
               setMoveActive(false);
               const next = markMoveTried();
 
-              setTodaySteps((p) => Math.max(p, displayedSteps));
-              setZptsBalance((p) =>
-                Math.max(p, STARTING_ONBOARDING_ZPTS + displayedZpts)
+              setTodaySteps((previous) => Math.max(previous, displayedSteps));
+              setZptsBalance((previous) =>
+                Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
 
               advanceOnboarding(next);
+            }}
+            onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
+              setTodaySteps((previous) => Math.max(previous, displayedSteps));
+              setZptsBalance((previous) =>
+                Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
+              );
             }}
           />
         }
       />
 
-      {/* PLAY */}
       <Route
         path="play"
         element={
@@ -187,13 +207,18 @@ export default function V1App() {
               markPlayTried();
               navigate(aboutRoute);
             }}
-            onComplete={({ displayedZpts = 50 } = {}) => {
+            onComplete={({ displayedZpts = 50, shouldRouteToMove = false } = {}) => {
               const next = markPlayTried();
 
-              setGamesPlayedToday((p) => p + 1);
-              setZptsBalance((p) =>
-                Math.max(p, STARTING_ONBOARDING_ZPTS + displayedZpts)
+              setGamesPlayedToday((previous) => previous + 1);
+              setZptsBalance((previous) =>
+                Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
+
+              if (shouldRouteToMove && !next.move) {
+                navigate(moveRoute);
+                return;
+              }
 
               advanceOnboarding(next);
             }}
@@ -201,7 +226,6 @@ export default function V1App() {
         }
       />
 
-      {/* SIGNUP GATE */}
       <Route
         path="signup-gate"
         element={
@@ -221,7 +245,6 @@ export default function V1App() {
         }
       />
 
-      {/* SIGNUP */}
       <Route
         path="signup"
         element={
@@ -236,7 +259,6 @@ export default function V1App() {
         }
       />
 
-      {/* SIGNIN */}
       <Route
         path="signin"
         element={
@@ -252,11 +274,10 @@ export default function V1App() {
 
       <Route path="signout" element={<SignOut nextRoute={signInRoute} />} />
 
-      {/* DASHBOARD */}
       <Route
         path="dashboard"
         element={
-          isAuthenticated ? (
+          canSeeDashboard ? (
             <SimplifiedDashboard
               displayName={displayName}
               tier={tier}
@@ -270,7 +291,7 @@ export default function V1App() {
               walletAddress={walletAddress}
             />
           ) : (
-            <Navigate to="signin" replace />
+            <Navigate to={signInRoute} replace />
           )
         }
       />
