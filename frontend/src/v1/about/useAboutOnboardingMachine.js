@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const TRANSITION_GAP_MS = 320;
 
@@ -14,22 +14,13 @@ const STEPS = [
   { id: "final", type: "final", duration: 0 },
 ];
 
-export default function useAboutOnboardingMachine({
-  hasTriedMove = false,
-  hasTriedPlay = false,
-}) {
+export default function useAboutOnboardingMachine() {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
 
   const currentStep = STEPS[stepIndex] ?? STEPS[0];
   const isFinal = currentStep.id === "final";
-
-  const nextTarget = useMemo(() => {
-    if (!hasTriedMove) return "move";
-    if (!hasTriedPlay) return "play";
-    return "signup";
-  }, [hasTriedMove, hasTriedPlay]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -41,9 +32,9 @@ export default function useAboutOnboardingMachine({
   const goNext = useCallback(() => {
     clearTimer();
 
-    setStepIndex((prev) => {
-      const next = prev + 1;
-      return next >= STEPS.length ? prev : next;
+    setStepIndex((previous) => {
+      const next = previous + 1;
+      return next >= STEPS.length ? previous : next;
     });
   }, [clearTimer]);
 
@@ -57,9 +48,9 @@ export default function useAboutOnboardingMachine({
   }, []);
 
   const togglePause = useCallback(() => {
-    setIsPaused((prev) => {
-      if (!prev) clearTimer();
-      return !prev;
+    setIsPaused((previous) => {
+      if (!previous) clearTimer();
+      return !previous;
     });
   }, [clearTimer]);
 
@@ -72,8 +63,7 @@ export default function useAboutOnboardingMachine({
   useEffect(() => {
     clearTimer();
 
-    if (isPaused) return undefined;
-    if (isFinal) return undefined;
+    if (isPaused || isFinal) return undefined;
 
     timerRef.current = setTimeout(() => {
       goNext();
@@ -90,7 +80,6 @@ export default function useAboutOnboardingMachine({
     totalSteps: STEPS.length,
     isPaused,
     isFinal,
-    nextTarget,
     goNext,
     pause,
     resume,
