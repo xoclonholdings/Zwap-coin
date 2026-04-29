@@ -1,39 +1,21 @@
 import React, { useMemo } from "react";
-import { CheckCircle2, Circle } from "lucide-react";
+
+import zapBubble from "@/assets/zap/zap-bubble.PNG";
+import zapHead from "@/assets/zap/zap-head.PNG";
+
+import ZapTasksPanel from "./zap/ZapTasksPanel";
 import { buildZapGuidance } from "./zap/zapGuidanceEngine";
-
-function buildTaskLabel(completed = 0, total = 4) {
-  return `${completed} of ${total} tasks complete`;
-}
-
-function buildTaskItems({
-  completedTaskCount = 0,
-  learnUnlocked = false,
-  shopUnlocked = false,
-  assistUnlocked = false,
-}) {
-  const fourthLabel = assistUnlocked
-    ? "Assist"
-    : learnUnlocked
-    ? "Learn"
-    : shopUnlocked
-    ? "Shop"
-    : "Complete Loop";
-
-  const labels = ["Login", "Move", "Play", fourthLabel];
-
-  return labels.map((label, index) => ({
-    id: `${label.toLowerCase().replace(/\s+/g, "-")}-${index}`,
-    label,
-    completed: index < completedTaskCount,
-  }));
-}
 
 function ZwapHeader() {
   return (
     <div className="relative z-10 flex items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/35 bg-violet-400/14 text-[18px] shadow-[0_0_18px_rgba(168,85,247,0.18)]">
-        <span className="translate-y-[1px]">🤖</span>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/35 bg-violet-400/14 shadow-[0_0_18px_rgba(168,85,247,0.18)]">
+        <img
+          src={zapHead}
+          alt="Zap"
+          className="h-8 w-8 object-contain"
+          draggable={false}
+        />
       </div>
 
       <div className="bg-gradient-to-r from-cyan-200 via-violet-200 to-fuchsia-200 bg-clip-text text-[13px] font-black uppercase tracking-[0.22em] text-transparent">
@@ -50,19 +32,46 @@ function GuidanceText({ guidance }) {
     .filter(Boolean);
 
   return (
-    <div>
+    <div className="relative z-10 px-4 py-3">
       {lines.map((line, index) => (
         <div
           key={`${line}-${index}`}
           className={
             index === 0
-              ? "text-[1.32rem] font-black leading-[1.04] tracking-[-0.06em] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.08)]"
-              : "mt-2 text-[0.76rem] font-bold leading-snug tracking-[-0.03em] text-white/64"
+              ? "text-[1.03rem] font-black leading-[1.04] tracking-[-0.05em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.08)]"
+              : "mt-1.5 text-[0.67rem] font-bold leading-snug tracking-[-0.025em] text-white/70"
           }
         >
           {line}
         </div>
       ))}
+    </div>
+  );
+}
+
+function ZapGuidanceStage({ guidance }) {
+  return (
+    <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-center pt-2">
+      <div className="relative min-h-[122px]">
+        <img
+          src={zapBubble}
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full object-fill opacity-95"
+          draggable={false}
+        />
+
+        <GuidanceText guidance={guidance} />
+      </div>
+
+      <div className="pointer-events-none relative mx-auto -mt-3 h-[76px] w-[104px]">
+        <div className="absolute inset-x-2 bottom-0 h-6 rounded-full bg-violet-500/20 blur-xl" />
+        <img
+          src={zapHead}
+          alt="Zap guide"
+          className="relative mx-auto h-full w-full object-contain drop-shadow-[0_0_18px_rgba(168,85,247,0.28)]"
+          draggable={false}
+        />
+      </div>
     </div>
   );
 }
@@ -96,8 +105,6 @@ export default function DashboardWindowZwap({
   onToggleAltView,
   className = "",
 }) {
-  const taskLabel = buildTaskLabel(completedTaskCount, totalTaskCount);
-
   const guidance = useMemo(() => {
     const result = buildZapGuidance({
       systemMessage,
@@ -136,15 +143,6 @@ export default function DashboardWindowZwap({
     swapUnlocked,
   ]);
 
-  const taskItems = useMemo(() => {
-    return buildTaskItems({
-      completedTaskCount,
-      learnUnlocked,
-      shopUnlocked,
-      assistUnlocked,
-    });
-  }, [completedTaskCount, learnUnlocked, shopUnlocked, assistUnlocked]);
-
   const handleToggle = () => {
     if (typeof onToggleAltView === "function") {
       onToggleAltView();
@@ -162,63 +160,14 @@ export default function DashboardWindowZwap({
 
   if (isAltView) {
     return (
-      <section
-        onClick={handleToggle}
-        className={shellClassName}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/14 blur-3xl" />
-          <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
-          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/28 to-transparent" />
-        </div>
-
-        <ZwapHeader />
-
-        <div className="relative z-10 mt-2 text-[0.96rem] font-black leading-tight tracking-[-0.045em] text-white">
-          Daily Tasks
-        </div>
-
-        <div className="relative z-10 mt-2 grid min-h-0 flex-1 grid-rows-4 gap-1.5 overflow-hidden">
-          {taskItems.map((task) => (
-            <div
-              key={task.id}
-              className="flex min-h-0 items-center justify-between rounded-[1.1rem] border border-white/10 bg-white/[0.045] px-2.5 py-1"
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                {task.completed ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
-                ) : (
-                  <Circle className="h-3.5 w-3.5 shrink-0 text-white/30" />
-                )}
-
-                <span
-                  className={[
-                    "whitespace-nowrap text-[0.72rem] font-bold tracking-[-0.025em]",
-                    task.completed ? "text-white" : "text-white/66",
-                  ].join(" ")}
-                >
-                  {task.label}
-                </span>
-              </div>
-
-              <span
-                className={[
-                  "ml-2 shrink-0 text-[8px] font-black uppercase tracking-[0.12em]",
-                  task.completed ? "text-cyan-300" : "text-white/38",
-                ].join(" ")}
-              >
-                {task.completed ? "Done" : "Open"}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="relative z-10 mt-2 shrink-0 whitespace-nowrap text-[8px] font-black uppercase tracking-[0.12em] text-white/50">
-          {taskLabel}
-        </div>
-      </section>
+      <div onClick={handleToggle} role="presentation" className="h-full min-h-0">
+        <ZapTasksPanel
+          completedTaskCount={completedTaskCount}
+          learnUnlocked={learnUnlocked}
+          shopUnlocked={shopUnlocked}
+          assistUnlocked={assistUnlocked}
+        />
+      </div>
     );
   }
 
@@ -237,15 +186,7 @@ export default function DashboardWindowZwap({
 
       <ZwapHeader />
 
-      <div className="relative z-10 flex flex-1 items-center py-4">
-        <div className="max-w-[220px]">
-          <GuidanceText guidance={guidance} />
-        </div>
-      </div>
-
-      <div className="relative z-10 mt-auto shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-white/50">
-        {taskLabel}
-      </div>
+      <ZapGuidanceStage guidance={guidance} />
     </section>
   );
 }
