@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
 
+import { useApp } from "@/app/AppProvider";
+import api from "@/lib/api";
+
 const REVIEW_EMAIL = "review@zwap.app";
 const REVIEW_PASSWORD = "ZwapReview2026!";
-const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
 
 function Shell({ children }) {
   return (
@@ -77,6 +79,7 @@ function ReviewerModal({
   onClose,
   onSubmit,
   statusText,
+  isWorking,
 }) {
   return (
     <motion.div
@@ -117,7 +120,9 @@ function ReviewerModal({
             type="password"
           />
 
-          <PrimaryButton onClick={onSubmit}>Enter Review Mode</PrimaryButton>
+          <PrimaryButton onClick={onSubmit} disabled={isWorking}>
+            {isWorking ? "Opening..." : "Enter Review Mode"}
+          </PrimaryButton>
 
           <button
             type="button"
@@ -141,6 +146,7 @@ function ReviewerModal({
 export default function SignIn({ onSuccess }) {
   const { ready, authenticated } = usePrivy();
   const { sendCode, loginWithCode } = useLoginWithEmail();
+  const { completeEmailAuth } = useApp();
 
   const [phase, setPhase] = useState("email");
   const [email, setEmail] = useState("");
@@ -204,7 +210,7 @@ export default function SignIn({ onSuccess }) {
     }
   };
 
-  const handleReviewerLogin = () => {
+  const handleReviewerLogin = async () => {
     const cleanEmail = reviewEmail.trim().toLowerCase();
     const cleanPassword = reviewPassword.trim();
 
@@ -219,20 +225,32 @@ export default function SignIn({ onSuccess }) {
     }
 
     try {
-      window.localStorage.setItem(REVIEW_ACCESS_STORAGE_KEY, "true");
-      window.localStorage.setItem("zwap_review_email", REVIEW_EMAIL);
-    } catch {
-      // Local storage can fail in rare private/browser states.
-      // Access still continues for this session.
+      setIsWorking(true);
+      setReviewStatusText("");
+
+      const reviewUser = await api.createOrUpdateEmailUser(REVIEW_EMAIL, {
+        username: "Reviewer",
+      });
+
+      completeEmailAuth?.({
+        ...reviewUser,
+        email: REVIEW_EMAIL,
+        authProvider: "review",
+      });
+
+      setIsReviewerModalOpen(false);
+      setPhase("success");
+
+      window.setTimeout(() => {
+        onSuccess?.();
+      }, 700);
+    } catch (error) {
+      setReviewStatusText(
+        error?.message || "Reviewer login failed. Try again."
+      );
+    } finally {
+      setIsWorking(false);
     }
-
-    setReviewStatusText("");
-    setIsReviewerModalOpen(false);
-    setPhase("success");
-
-    window.setTimeout(() => {
-      onSuccess?.();
-    }, 700);
   };
 
   return (
@@ -248,7 +266,9 @@ export default function SignIn({ onSuccess }) {
               You’re already signed in. Continue when you’re ready.
             </div>
 
-            <PrimaryButton onClick={onSuccess}>Continue to Dashboard</PrimaryButton>
+            <PrimaryButton onClick={onSuccess}>
+              Continue to Dashboard
+            </PrimaryButton>
           </Panel>
         )}
 
@@ -363,6 +383,7 @@ export default function SignIn({ onSuccess }) {
             }}
             onSubmit={handleReviewerLogin}
             statusText={reviewStatusText}
+            isWorking={isWorking}
           />
         ) : null}
       </AnimatePresence>
