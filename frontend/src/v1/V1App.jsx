@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
@@ -6,6 +6,7 @@ import { useApp } from "@/app/AppProvider";
 import useV1AccessState from "@/app/useV1AccessState";
 import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
 import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
+import useV1OnboardingSessionStats from "@/v1/onboarding/useV1OnboardingSessionStats";
 
 import OnboardingAboutPage from "@/v1/about/OnboardingAboutPage";
 import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
@@ -22,16 +23,9 @@ import {
   ONBOARDING_ACTIONS,
 } from "@/v1/onboarding/onboardingFlow";
 
-const STARTING_ONBOARDING_ZPTS = 100;
-
 export default function V1App() {
   const navigate = useNavigate();
   const { user, authUser, walletAddress, isAuthenticated } = useApp();
-
-  const [todaySteps, setTodaySteps] = useState(0);
-  const [moveActive, setMoveActive] = useState(false);
-  const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
-  const [zptsBalance, setZptsBalance] = useState(STARTING_ONBOARDING_ZPTS);
 
   const {
     canSeeDashboard,
@@ -48,25 +42,28 @@ export default function V1App() {
 
   const {
     onboardingSeen,
-    triedMove,
-    triedPlay,
+    moveStarted,
+    playStarted,
     startFromWelcome,
-    completeActionAndGoNext,
-    goToLearnMoreAfterAction,
+    markActionStarted,
+    startActionAndGoNext,
+    goToLearnMore,
     canEnterSignupGate,
     getSignupGateFallback,
     markSeenAndGo,
   } = useV1OnboardingController({ navigate });
 
-  const dashboardUser = {
-    ...(user || {}),
-    zptsBalance,
-    zpts_balance: zptsBalance,
-    dailySteps: todaySteps,
-    daily_steps: todaySteps,
+  const {
+    todaySteps,
+    moveActive,
     gamesPlayedToday,
-    games_played_today: gamesPlayedToday,
-  };
+    dashboardUser,
+    startMoveTracking,
+    stopMoveTracking,
+    applyMoveMilestone,
+    applyMoveComplete,
+    applyPlayComplete,
+  } = useV1OnboardingSessionStats({ user });
 
   const dashboardState = useV1DashboardState({
     user: dashboardUser,
@@ -94,8 +91,8 @@ export default function V1App() {
         path="about"
         element={
           <OnboardingAboutPage
-            hasTriedMove={triedMove}
-            hasTriedPlay={triedPlay}
+            hasTriedMove={moveStarted}
+            hasTriedPlay={playStarted}
             onMove={() => navigate(V1_ONBOARDING_ROUTES.move)}
             onPlay={() => navigate(V1_ONBOARDING_ROUTES.play)}
           />
@@ -108,35 +105,24 @@ export default function V1App() {
           <MoveOnboardingSequence
             totalSteps={todaySteps}
             progressPercent={Math.min((todaySteps / 20) * 100, 100)}
-            onStartTracking={() => setMoveActive(true)}
-            onStopTracking={() => setMoveActive(false)}
+            onStartTracking={() => {
+              startMoveTracking();
+              markActionStarted(ONBOARDING_ACTIONS.moveStarted);
+            }}
+            onStopTracking={stopMoveTracking}
             onTryPlay={() => {
-              setMoveActive(false);
-              completeActionAndGoNext(ONBOARDING_ACTIONS.move);
+              stopMoveTracking();
+              startActionAndGoNext(ONBOARDING_ACTIONS.moveStarted);
             }}
             onLearnMore={() => {
-              setMoveActive(false);
-              goToLearnMoreAfterAction(
-                ONBOARDING_ACTIONS.move,
-                V1_ONBOARDING_ROUTES.about
-              );
+              stopMoveTracking();
+              goToLearnMore();
             }}
-            onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
-              setMoveActive(false);
-
-              setTodaySteps((previous) => Math.max(previous, displayedSteps));
-              setZptsBalance((previous) =>
-                Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
-              );
-
-              completeActionAndGoNext(ONBOARDING_ACTIONS.move);
+            onMoveComplete={(payload) => {
+              applyMoveComplete(payload);
+              startActionAndGoNext(ONBOARDING_ACTIONS.moveStarted);
             }}
-            onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
-              setTodaySteps((previous) => Math.max(previous, displayedSteps));
-              setZptsBalance((previous) =>
-                Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
-              );
-            }}
+            onMoveMilestone={applyMoveMilestone}
           />
         }
       />
@@ -145,20 +131,14 @@ export default function V1App() {
         path="play"
         element={
           <PlayOnboardingSequence
-            triedMove={triedMove}
-            onLearnMore={() => {
-              goToLearnMoreAfterAction(
-                ONBOARDING_ACTIONS.play,
-                V1_ONBOARDING_ROUTES.about
-              );
+            triedMove={moveStarted}
+            onLearnMore={goToLearnMore}
+            onStartPlay={() => {
+              markActionStarted(ONBOARDING_ACTIONS.playStarted);
             }}
-            onComplete={({ displayedZpts = 50 } = {}) => {
-              setGamesPlayedToday((previous) => previous + 1);
-              setZptsBalance((previous) =>
-                Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
-              );
-
-              completeActionAndGoNext(ONBOARDING_ACTIONS.play);
+            onComplete={(payload) => {
+              applyPlayComplete(payload);
+              startActionAndGoNext(ONBOARDING_ACTIONS.playStarted);
             }}
           />
         }
@@ -169,8 +149,8 @@ export default function V1App() {
         element={
           canEnterSignupGate() ? (
             <SignupGate
-              hasTriedMove
-              hasTriedPlay
+              hasTriedMove={moveStarted}
+              hasTriedPlay={playStarted}
               onBeginAuth={() => markSeenAndGo(V1_ONBOARDING_ROUTES.signup)}
               onExitOnboarding={() => navigate(V1_ONBOARDING_ROUTES.root)}
             />
@@ -221,7 +201,7 @@ export default function V1App() {
               todaySteps={dashboardState.dailySteps}
               stepGoal={20}
               isMoveActive={moveActive}
-              gamesPlayedToday={dashboardState.gamesPlayedToday}
+              gamesPlayedToday={gamesPlayedToday}
               playGoal={1}
               completedTasks={dashboardState.completedTaskCount}
               totalTasks={dashboardState.totalTaskCount}
