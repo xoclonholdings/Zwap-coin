@@ -1,79 +1,84 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 
-import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
-import OnboardingShell from "@/v1/onboarding/OnboardingShell";
-import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
+import {
+  SignupGateShell,
+  SignupGateVoiceView,
+  SignupGateChoiceView,
+  SignupGateExitView,
+} from "./SignupGateViews";
 
-export function SignupGateShell({ children }) {
-  return <OnboardingShell>{children}</OnboardingShell>;
-}
+const VOICE_DURATION_MS = 2600;
+const RESPONSE_DURATION_MS = 1600;
+const TRANSITION_GAP_MS = 240;
 
-export function SignupGateVoiceView({ lines }) {
+export default function SignupGate({
+  moveStarted = false,
+  playCompleted = false,
+  onBeginAuth,
+  onExitOnboarding,
+}) {
+  const [phase, setPhase] = useState("voice");
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    if (phase === "voice") {
+      timeoutRef.current = setTimeout(() => {
+        setPhase("choice");
+      }, VOICE_DURATION_MS + TRANSITION_GAP_MS);
+    }
+
+    if (phase === "response_yes") {
+      timeoutRef.current = setTimeout(() => {
+        onBeginAuth?.();
+      }, RESPONSE_DURATION_MS + TRANSITION_GAP_MS);
+    }
+
+    if (phase === "response_no") {
+      timeoutRef.current = setTimeout(() => {
+        setPhase("exit");
+      }, RESPONSE_DURATION_MS + TRANSITION_GAP_MS);
+    }
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [phase, onBeginAuth]);
+
+  if (!moveStarted || !playCompleted) return null;
+
   return (
-    <motion.div
-      key={lines.join("-")}
-      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
-      transition={{ duration: 0.65 }}
-    >
-      <OnboardingVoiceText lines={lines} />
-    </motion.div>
-  );
-}
+    <SignupGateShell>
+      <AnimatePresence mode="wait">
+        {phase === "voice" && (
+          <SignupGateVoiceView
+            key="voice"
+            lines={["You earned 50 zPts.", "Would you like to keep earning?"]}
+          />
+        )}
 
-export function SignupGateChoiceView({ onKeepEarning, onNotNow }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
-      transition={{ duration: 0.6 }}
-      className="flex w-full max-w-[320px] flex-col items-center gap-5"
-    >
-      <OnboardingVoiceText
-        lines={["Keep earning?", "Sign up to save your progress."]}
-      />
+        {phase === "choice" && (
+          <SignupGateChoiceView
+            key="choice"
+            onKeepEarning={() => setPhase("response_yes")}
+            onNotNow={() => setPhase("response_no")}
+          />
+        )}
 
-      <div className="flex w-full gap-4">
-        <OnboardingActionButton
-          type="save"
-          label="Keep Earning"
-          eyebrow="SAVE PROGRESS"
-          onClick={onKeepEarning}
-        />
+        {phase === "response_yes" && (
+          <SignupGateVoiceView key="yes" lines={["Let’s keep going."]} />
+        )}
 
-        <OnboardingActionButton
-          type="secondary"
-          label="Not Now"
-          eyebrow="EXIT"
-          onClick={onNotNow}
-        />
-      </div>
-    </motion.div>
-  );
-}
+        {phase === "response_no" && (
+          <SignupGateVoiceView key="no" lines={["No pressure."]} />
+        )}
 
-export function SignupGateExitView({ onDone }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.65 }}
-      className="flex max-w-[320px] flex-col items-center gap-5"
-    >
-      <OnboardingVoiceText
-        lines={["ZWAP!", "We’ll be here when you’re ready."]}
-      />
-
-      <button
-        type="button"
-        onClick={onDone}
-        className="rounded-full border border-white/10 bg-white/5 px-6 py-2 text-sm font-bold text-white/70 shadow-[0_0_18px_rgba(255,255,255,0.05)] transition active:scale-[0.96]"
-      >
-        Done
-      </button>
-    </motion.div>
+        {phase === "exit" && (
+          <SignupGateExitView key="exit" onDone={onExitOnboarding} />
+        )}
+      </AnimatePresence>
+    </SignupGateShell>
   );
 }
