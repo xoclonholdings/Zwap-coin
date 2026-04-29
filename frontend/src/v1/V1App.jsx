@@ -113,7 +113,13 @@ export default function V1App() {
             }}
             onMoveComplete={(payload) => {
               session.applyMoveComplete(payload);
-              onboarding.finishMoveAndShowCompletion();
+
+              if (payload?.moveVerified) {
+                onboarding.verifyMoveAndShowCompletion();
+              } else {
+                onboarding.finishMoveAndShowCompletion();
+              }
+
               navigate(V1_ONBOARDING_ROUTES.completion);
             }}
             onMoveMilestone={session.applyMoveMilestone}
