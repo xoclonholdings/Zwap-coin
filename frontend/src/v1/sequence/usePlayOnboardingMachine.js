@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { PLAY_ONBOARDING_VOICE } from "./playOnboardingScript";
+
 const VOICE_HOLD_MS = 1600;
 const REWARD_HOLD_MS = 1700;
 
@@ -8,7 +10,7 @@ export default function usePlayOnboardingMachine({
   onComplete,
 }) {
   const [phase, setPhase] = useState("voice-start");
-  const [voice, setVoice] = useState("Play a round.");
+  const [voice, setVoice] = useState(PLAY_ONBOARDING_VOICE.start);
   const [showVoice, setShowVoice] = useState(true);
 
   const completedRef = useRef(false);
@@ -40,7 +42,7 @@ export default function usePlayOnboardingMachine({
     clearTimer();
 
     if (phase === "voice-start") {
-      setVoice("Play a round.");
+      setVoice(PLAY_ONBOARDING_VOICE.start);
       setShowVoice(true);
 
       timerRef.current = setTimeout(() => {
@@ -53,7 +55,11 @@ export default function usePlayOnboardingMachine({
       setShowVoice(false);
 
       timerRef.current = setTimeout(() => {
-        setVoice(triedMove ? "Nice." : "Now try Move.");
+        setVoice(
+          triedMove
+            ? PLAY_ONBOARDING_VOICE.success
+            : PLAY_ONBOARDING_VOICE.tryMove
+        );
         setShowVoice(true);
         setPhase("voice-complete");
       }, REWARD_HOLD_MS);
