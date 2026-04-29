@@ -55,7 +55,6 @@ export function createStackzEngine({
 
   let lastTime = 0;
   let dropAccumulator = 0;
-  let lockAccumulator = 0;
   let softDropping = false;
 
   function refreshLevelAndRound() {
@@ -65,6 +64,7 @@ export function createStackzEngine({
 
   function getGhostPiece() {
     const ghostY = getDropPosition(grid, activePiece);
+
     return {
       ...activePiece,
       y: ghostY,
@@ -91,16 +91,17 @@ export function createStackzEngine({
   }
 
   function spawnNextPiece() {
-    activePiece = {
-      ...nextPiece,
-      blocks: nextPiece.blocks.map(([x, y]) => [x, y]),
-    };
+    activePiece = clonePiece(nextPiece);
     nextPiece = getRandomPiece();
 
     if (!isValidPosition(grid, activePiece, 0, 0)) {
       phase = "gameover";
       gameOverUntil = nowMs() + STACKZ_FLOW.gameOverDelayMs;
+      return false;
     }
+
+    phase = "live";
+    return true;
   }
 
   function lockPiece() {
@@ -113,31 +114,28 @@ export function createStackzEngine({
       score += getStackzLineScore(clearedResult.cleared, level);
       lines += clearedResult.cleared;
       refreshLevelAndRound();
+
       phase = "line-clear";
       lineClearUntil = nowMs() + STACKZ_FLOW.lineClearDelayMs;
     } else {
       spawnNextPiece();
     }
 
-    lockAccumulator = 0;
     dropAccumulator = 0;
+    lastTime = nowMs();
   }
 
   function stepDown() {
+    if (phase !== "live") return false;
+
     const moved = movePiece(grid, activePiece, 0, 1);
 
     if (moved.y !== activePiece.y) {
       activePiece = moved;
-      lockAccumulator = 0;
       return true;
     }
 
-    lockAccumulator += 16.6667;
-
-    if (lockAccumulator >= STACKZ_FLOW.lockDelayMs) {
-      lockPiece();
-    }
-
+    lockPiece();
     return false;
   }
 
@@ -158,7 +156,6 @@ export function createStackzEngine({
     if (phase === "line-clear") {
       if (currentTime >= lineClearUntil) {
         spawnNextPiece();
-        phase = "live";
         lastTime = currentTime;
       }
 
@@ -177,7 +174,8 @@ export function createStackzEngine({
     lastTime = currentTime;
     dropAccumulator += dt;
 
-    const baseDropInterval = getStackzDropInterval(level) * safeDropSpeedMultiplier;
+    const baseDropInterval =
+      getStackzDropInterval(level) * safeDropSpeedMultiplier;
 
     const dropInterval = softDropping
       ? Math.max(25, baseDropInterval * 0.08)
@@ -190,8 +188,6 @@ export function createStackzEngine({
       if (softDropping && movedDown) {
         score += 1;
       }
-
-      if (phase !== "live") break;
     }
 
     return buildFrame();
