@@ -67,7 +67,21 @@ export function CounterView({ steps, zpts }) {
   );
 }
 
-export function RingView({ isTracking, onStart, progressPercent = 0 }) {
+export function RingView({
+  isTracking,
+  onStart,
+  onStop,
+  progressPercent = 0,
+}) {
+  const handleClick = () => {
+    if (isTracking) {
+      onStop?.();
+      return;
+    }
+
+    onStart?.();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96, filter: "blur(10px)" }}
@@ -78,7 +92,7 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
     >
       <button
         type="button"
-        onClick={onStart}
+        onClick={handleClick}
         className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
       >
         <div
@@ -98,6 +112,29 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
           Tap Start
         </div>
       )}
+    </motion.div>
+  );
+}
+
+export function MoveCompleteView({ verified = false }) {
+  return (
+    <motion.div
+      key="move-complete"
+      initial={{ opacity: 0, y: 18, scale: 0.96, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: 8, scale: 0.98, filter: "blur(8px)" }}
+      transition={{ duration: 0.6 }}
+      className="flex max-w-[320px] flex-col items-center gap-4 text-center"
+    >
+      <OnboardingVoiceText
+        lines={verified ? ["Move session", "complete."] : ["Move check", "complete."]}
+      />
+
+      <div className="text-sm font-bold leading-relaxed text-white/55">
+        {verified
+          ? "Nice. Your movement was detected."
+          : "That’s ok. You can try more movement later."}
+      </div>
     </motion.div>
   );
 }
