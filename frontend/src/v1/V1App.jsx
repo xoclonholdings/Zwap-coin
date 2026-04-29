@@ -18,6 +18,7 @@ import {
 } from "@/v1/V1OnboardingStorage";
 import {
   V1_ONBOARDING_ROUTES,
+  ONBOARDING_ACTIONS,
   getLandingTargetRoute,
   getNextOnboardingRoute,
   isOnboardingComplete,
@@ -113,14 +114,15 @@ export default function V1App() {
   const triedPlay = onboardingProgress.play;
 
   function setProgress(nextProgress) {
-    progressRef.current = {
+    const normalizedProgress = {
       move: Boolean(nextProgress?.move),
       play: Boolean(nextProgress?.play),
     };
 
-    setOnboardingProgress(progressRef.current);
+    progressRef.current = normalizedProgress;
+    setOnboardingProgress(normalizedProgress);
 
-    return progressRef.current;
+    return normalizedProgress;
   }
 
   function completeAction(action) {
@@ -186,19 +188,15 @@ export default function V1App() {
       <Route
         path="about"
         element={
-          isOnboardingComplete(onboardingProgress) ? (
-            <Navigate to={V1_ONBOARDING_ROUTES.signupGate} replace />
-          ) : (
-            <OnboardingAboutPage
-              hasTriedMove={triedMove}
-              hasTriedPlay={triedPlay}
-              onMove={() => navigate(V1_ONBOARDING_ROUTES.move)}
-              onPlay={() => navigate(V1_ONBOARDING_ROUTES.play)}
-              navigate={navigate}
-              moveRoute={V1_ONBOARDING_ROUTES.move}
-              playRoute={V1_ONBOARDING_ROUTES.play}
-            />
-          )
+          <OnboardingAboutPage
+            hasTriedMove={triedMove}
+            hasTriedPlay={triedPlay}
+            onMove={() => navigate(V1_ONBOARDING_ROUTES.move)}
+            onPlay={() => navigate(V1_ONBOARDING_ROUTES.play)}
+            navigate={navigate}
+            moveRoute={V1_ONBOARDING_ROUTES.move}
+            playRoute={V1_ONBOARDING_ROUTES.play}
+          />
         }
       />
 
@@ -212,12 +210,12 @@ export default function V1App() {
             onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
               setMoveActive(false);
-              const next = completeAction("move");
+              const next = completeAction(ONBOARDING_ACTIONS.move);
               navigateToNext(next);
             }}
             onLearnMore={() => {
               setMoveActive(false);
-              completeAction("move");
+              completeAction(ONBOARDING_ACTIONS.move);
               navigate(V1_ONBOARDING_ROUTES.about);
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
@@ -228,7 +226,7 @@ export default function V1App() {
                 Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
 
-              const next = completeAction("move");
+              const next = completeAction(ONBOARDING_ACTIONS.move);
               navigateToNext(next);
             }}
             onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
@@ -247,7 +245,7 @@ export default function V1App() {
           <PlayOnboardingSequence
             triedMove={triedMove}
             onLearnMore={() => {
-              completeAction("play");
+              completeAction(ONBOARDING_ACTIONS.play);
               navigate(V1_ONBOARDING_ROUTES.about);
             }}
             onComplete={({ displayedZpts = 50 } = {}) => {
@@ -256,7 +254,7 @@ export default function V1App() {
                 Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
 
-              const next = completeAction("play");
+              const next = completeAction(ONBOARDING_ACTIONS.play);
               navigateToNext(next);
             }}
           />
