@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
 
-import useV1AccessState from "@/v1/app/useV1AccessState";
+import useV1AccessState from "@/app/useV1AccessState";
 import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
 import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
 
