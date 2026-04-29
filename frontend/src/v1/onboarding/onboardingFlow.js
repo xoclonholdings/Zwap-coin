@@ -1,3 +1,9 @@
+import {
+  LEARN_MORE_ACTION,
+  getLearnMoreRoute,
+  getLearnMoreAvailableActions,
+} from "@/v1/onboarding/learnMoreFlow";
+
 export const V1_ONBOARDING_ROUTES = {
   root: "/v1",
   about: "/v1/about",
@@ -12,7 +18,7 @@ export const V1_ONBOARDING_ROUTES = {
 export const ONBOARDING_ACTIONS = {
   move: "move",
   play: "play",
-  learn: "learn",
+  learn: LEARN_MORE_ACTION,
 };
 
 export function normalizeOnboardingProgress(progress = {}) {
@@ -34,15 +40,15 @@ export function getNextOnboardingRoute(progress = {}) {
     return V1_ONBOARDING_ROUTES.signupGate;
   }
 
+  if (normalized.play && !normalized.move) {
+    return V1_ONBOARDING_ROUTES.move;
+  }
+
   if (normalized.move && !normalized.play) {
     return V1_ONBOARDING_ROUTES.play;
   }
 
-  if (!normalized.move && normalized.play) {
-    return V1_ONBOARDING_ROUTES.move;
-  }
-
-  return V1_ONBOARDING_ROUTES.about;
+  return null;
 }
 
 export function getLandingTargetRoute(target) {
@@ -55,10 +61,20 @@ export function getLandingTargetRoute(target) {
   }
 
   if (target === ONBOARDING_ACTIONS.learn) {
-    return V1_ONBOARDING_ROUTES.about;
+    return getLearnMoreRoute();
   }
 
   return V1_ONBOARDING_ROUTES.root;
+}
+
+export function getWelcomeStartResult(target) {
+  return {
+    progress: normalizeOnboardingProgress({
+      move: false,
+      play: false,
+    }),
+    route: getLandingTargetRoute(target),
+  };
 }
 
 export function markOnboardingActionTried(progress = {}, action) {
@@ -70,11 +86,15 @@ export function markOnboardingActionTried(progress = {}, action) {
   };
 }
 
-export function getAboutAvailableActions(progress = {}) {
-  const normalized = normalizeOnboardingProgress(progress);
+export function getActionCompletionResult(progress = {}, action) {
+  const nextProgress = markOnboardingActionTried(progress, action);
 
   return {
-    showMove: !normalized.move,
-    showPlay: !normalized.play,
+    progress: nextProgress,
+    route: getNextOnboardingRoute(nextProgress),
   };
+}
+
+export function getAboutAvailableActions(progress = {}) {
+  return getLearnMoreAvailableActions(normalizeOnboardingProgress(progress));
 }
