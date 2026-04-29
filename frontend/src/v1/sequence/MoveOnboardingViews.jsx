@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
+
 import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
+import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
 
 function buildRingStyle(progressPercent = 0) {
   const safePercent = Math.min(Math.max(Number(progressPercent || 0), 0), 100);
@@ -25,9 +27,8 @@ export function VoiceView({ text }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="text-center text-4xl font-black tracking-[-0.05em] text-white"
     >
-      {text}
+      <OnboardingVoiceText lines={[text]} />
     </motion.div>
   );
 }
