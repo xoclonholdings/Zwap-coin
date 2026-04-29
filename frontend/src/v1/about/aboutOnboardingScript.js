@@ -9,3 +9,14 @@ const ABOUT_VOICE_LINES = {
 export function getAboutVoiceLines(stepId) {
   return ABOUT_VOICE_LINES[stepId] || [];
 }
+
+export function getAboutGuidanceLines(progress = {}) {
+  const move = Boolean(progress?.move);
+  const play = Boolean(progress?.play);
+
+  if (move && !play) return ["Now try", "PLAY."];
+  if (!move && play) return ["Now try", "MOVE."];
+  if (!move && !play) return ["Choose your", "next action."];
+
+  return null;
+}
