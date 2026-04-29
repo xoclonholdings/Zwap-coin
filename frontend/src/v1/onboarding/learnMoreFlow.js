@@ -1,6 +1,13 @@
-import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingFlow";
+import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingRoutes";
 
 export const LEARN_MORE_ACTION = "learn";
+
+function normalize(progress = {}) {
+  return {
+    moveStarted: Boolean(progress?.moveStarted),
+    playStarted: Boolean(progress?.playStarted),
+  };
+}
 
 export function getLearnMoreStartResult(progress = {}) {
   return {
@@ -12,7 +19,6 @@ export function getLearnMoreStartResult(progress = {}) {
 export function getLearnMoreFinalState(progress = {}) {
   const { moveStarted, playStarted } = normalize(progress);
 
-  // both false → choose
   if (!moveStarted && !playStarted) {
     return {
       lines: ["Choose your", "next action."],
@@ -21,7 +27,6 @@ export function getLearnMoreFinalState(progress = {}) {
     };
   }
 
-  // move true, play false → show play
   if (moveStarted && !playStarted) {
     return {
       lines: ["Now try", "PLAY."],
@@ -30,17 +35,9 @@ export function getLearnMoreFinalState(progress = {}) {
     };
   }
 
-  // play true, move false → show move
   return {
     lines: ["Now try", "MOVE."],
     showMove: true,
     showPlay: false,
-  };
-}
-
-function normalize(progress = {}) {
-  return {
-    moveStarted: Boolean(progress?.moveStarted),
-    playStarted: Boolean(progress?.playStarted),
   };
 }
