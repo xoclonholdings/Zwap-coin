@@ -60,10 +60,6 @@ export default function V1App() {
         path="about"
         element={
           <OnboardingAboutPage
-            hasTriedMove={onboarding.moveStarted}
-            hasTriedPlay={onboarding.playCompleted}
-            onMove={onboarding.goToMove}
-            onPlay={onboarding.goToPlay}
             onComplete={() => {
               onboarding.finishLearnMoreAndShowCompletion();
               navigate(V1_ONBOARDING_ROUTES.completion);
@@ -77,7 +73,7 @@ export default function V1App() {
         element={
           <CompletionFlow
             type={onboarding.completionType}
-            moveStarted={onboarding.moveStarted}
+            moveVerified={onboarding.moveVerified}
             onComplete={onboarding.finishCompletionAndShowNext}
           />
         }
