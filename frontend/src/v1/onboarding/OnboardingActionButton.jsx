@@ -55,12 +55,11 @@ export default function OnboardingActionButton({
       whileTap={{ scale: 0.965 }}
       className={[
         "group relative mx-auto w-[270px] max-w-full overflow-hidden rounded-[24px] border px-5 py-4 transition active:scale-[0.965]",
-        "flex flex-col items-center justify-center text-center", // 🔒 hard center lock
+        "flex flex-col items-center justify-center text-center",
         config.shell,
         className,
       ].join(" ")}
     >
-      {/* Glow sweep */}
       <motion.div
         aria-hidden="true"
         className={[
@@ -69,22 +68,21 @@ export default function OnboardingActionButton({
         ].join(" ")}
         animate={{ x: ["0%", "320%", "0%"] }}
         transition={{
-          duration: 5.5, // 🧊 slowed down (was 3.2)
+          duration: 9.5,
           repeat: Infinity,
           ease: "easeInOut",
         }}
       />
 
-      {/* Content */}
       <div className="relative z-10 flex w-full flex-col items-center justify-center text-center">
         <div className="mb-1 flex items-center justify-center gap-2">
           <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
-          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50 text-center">
+          <span className="text-center text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
             {finalEyebrow}
           </span>
         </div>
 
-        <div className="text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white text-center">
+        <div className="text-center text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white">
           {finalLabel}
         </div>
       </div>
