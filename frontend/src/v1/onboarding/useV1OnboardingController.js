@@ -6,9 +6,12 @@ import {
 } from "@/v1/V1OnboardingStorage";
 
 import {
-  getActionCompletionResult,
-  getWelcomeStartResult,
+  getActionStartedResult,
+  getLandingTargetResult,
+  normalizeOnboardingProgress,
 } from "@/v1/onboarding/onboardingFlow";
+
+import { getLearnMoreStartResult } from "@/v1/onboarding/learnMoreFlow";
 
 import {
   canShowSignupGate,
@@ -16,20 +19,20 @@ import {
 } from "@/v1/onboarding/signupGateFlow";
 
 export default function useV1OnboardingController({ navigate }) {
-  const progressRef = useRef({ move: false, play: false });
+  const progressRef = useRef({
+    moveStarted: false,
+    playStarted: false,
+  });
 
   const [onboardingProgress, setOnboardingProgress] = useState({
-    move: false,
-    play: false,
+    moveStarted: false,
+    playStarted: false,
   });
 
   const [onboardingSeen] = useState(() => hasSeenV1Onboarding());
 
   function setProgress(nextProgress) {
-    const normalizedProgress = {
-      move: Boolean(nextProgress?.move),
-      play: Boolean(nextProgress?.play),
-    };
+    const normalizedProgress = normalizeOnboardingProgress(nextProgress);
 
     progressRef.current = normalizedProgress;
     setOnboardingProgress(normalizedProgress);
@@ -38,26 +41,30 @@ export default function useV1OnboardingController({ navigate }) {
   }
 
   function startFromWelcome(target) {
-    const result = getWelcomeStartResult(target);
+    const result = getLandingTargetResult(target);
+
     setProgress(result.progress);
     navigate(result.route);
-  }
-
-  function completeActionAndGoNext(action) {
-    const result = getActionCompletionResult(progressRef.current, action);
-    setProgress(result.progress);
-
-    if (result.route) {
-      navigate(result.route);
-    }
 
     return result;
   }
 
-  function goToLearnMoreAfterAction(action, route) {
-    const result = getActionCompletionResult(progressRef.current, action);
+  function startActionAndGoNext(action) {
+    const result = getActionStartedResult(progressRef.current, action);
+
     setProgress(result.progress);
-    navigate(route);
+    navigate(result.route);
+
+    return result;
+  }
+
+  function goToLearnMore() {
+    const result = getLearnMoreStartResult(progressRef.current);
+
+    setProgress(result.progress);
+    navigate(result.route);
+
+    return result;
   }
 
   function canEnterSignupGate() {
@@ -77,12 +84,12 @@ export default function useV1OnboardingController({ navigate }) {
     onboardingProgress,
     onboardingSeen,
 
-    triedMove: onboardingProgress.move,
-    triedPlay: onboardingProgress.play,
+    moveStarted: onboardingProgress.moveStarted,
+    playStarted: onboardingProgress.playStarted,
 
     startFromWelcome,
-    completeActionAndGoNext,
-    goToLearnMoreAfterAction,
+    startActionAndGoNext,
+    goToLearnMore,
     canEnterSignupGate,
     getSignupGateFallback,
     markSeenAndGo,
