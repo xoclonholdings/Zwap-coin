@@ -10,7 +10,6 @@ export function getLearnMoreFinalState(progress = {}) {
   const move = Boolean(progress?.move);
   const play = Boolean(progress?.play);
 
-  // Both not tried
   if (!move && !play) {
     return {
       lines: ["Choose your", "next action."],
@@ -19,7 +18,6 @@ export function getLearnMoreFinalState(progress = {}) {
     };
   }
 
-  // Move done → push Play
   if (move && !play) {
     return {
       lines: ["Now try", "PLAY."],
@@ -28,15 +26,9 @@ export function getLearnMoreFinalState(progress = {}) {
     };
   }
 
-  // Play done → push Move
-  if (play && !move) {
-    return {
-      lines: ["Now try", "MOVE."],
-      showMove: true,
-      showPlay: false,
-    };
-  }
-
-  // Both done → no Learn More needed
-  return null;
+  return {
+    lines: ["Now try", "MOVE."],
+    showMove: true,
+    showPlay: false,
+  };
 }
