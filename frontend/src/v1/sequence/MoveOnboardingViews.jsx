@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
 
 function buildRingStyle(progressPercent = 0) {
   const safePercent = Math.min(Math.max(Number(progressPercent || 0), 0), 100);
@@ -14,37 +15,6 @@ function buildRingStyle(progressPercent = 0) {
       rgba(255,255,255,0.08) 360deg
     )`,
   };
-}
-
-function PremiumPlayButton({ onClick }) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileTap={{ scale: 0.965 }}
-      className="group relative w-full overflow-hidden rounded-[24px] border border-violet-300/45 bg-[radial-gradient(circle_at_top,rgba(216,180,254,0.24),rgba(168,85,247,0.13)_42%,rgba(12,8,24,0.9)_100%)] px-4 py-4 text-left text-violet-50 shadow-[0_0_32px_rgba(168,85,247,0.28),inset_0_1px_0_rgba(255,255,255,0.16)] transition active:scale-[0.965]"
-    >
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-[-35%] top-0 h-full w-[45%] bg-gradient-to-r from-violet-200/0 via-fuchsia-200/45 to-violet-200/0 blur-md"
-        animate={{ x: ["0%", "310%", "0%"] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      <div className="relative z-10 flex min-h-[54px] flex-col justify-center">
-        <div className="mb-1 flex items-center justify-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-violet-200 shadow-[0_0_14px_rgba(168,85,247,0.75)]" />
-          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
-            ENTER THE ARCADE
-          </span>
-        </div>
-
-        <div className="text-center text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white">
-          Play
-        </div>
-      </div>
-    </motion.button>
-  );
 }
 
 export function VoiceView({ text }) {
@@ -103,7 +73,7 @@ export function RingView({ isTracking, onStart, progressPercent = 0 }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
       transition={{ duration: 0.55 }}
-      className="relative"
+      className={isTracking ? "relative" : "relative -translate-y-10"}
     >
       <button
         type="button"
@@ -140,7 +110,7 @@ export function PlayButton({ onClick, onLearnMore }) {
         transition={{ duration: 0.55 }}
         className="w-full"
       >
-        <PremiumPlayButton onClick={onClick} />
+        <OnboardingActionButton type="play" onClick={onClick} />
       </motion.div>
 
       <motion.div
