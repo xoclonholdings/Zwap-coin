@@ -6,7 +6,7 @@ const RESPONSE_DURATION_MS = 1600;
 const TRANSITION_GAP_MS = 240;
 
 function renderLine(line) {
-  const parts = String(line).split(/(100 zPts|ZWAP!)/g);
+  const parts = String(line).split(/(100 zPts|ZWAP!|Keep Earning|Not Now)/g);
 
   return parts.map((part, index) => {
     if (part === "100 zPts") {
@@ -27,6 +27,28 @@ function renderLine(line) {
           className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
         >
           ZWAP!
+        </span>
+      );
+    }
+
+    if (part === "Keep Earning") {
+      return (
+        <span
+          key={`${part}-${index}`}
+          className="text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,0.35)]"
+        >
+          Keep Earning
+        </span>
+      );
+    }
+
+    if (part === "Not Now") {
+      return (
+        <span
+          key={`${part}-${index}`}
+          className="text-white/70"
+        >
+          Not Now
         </span>
       );
     }
@@ -58,7 +80,7 @@ function VoiceView({ lines }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex flex-col items-center gap-3"
+      className="flex max-w-[320px] flex-col items-center gap-3"
     >
       {lines.map((line) => (
         <div
@@ -72,6 +94,59 @@ function VoiceView({ lines }) {
   );
 }
 
+function PremiumChoiceButton({
+  variant = "primary",
+  children,
+  eyebrow,
+  onClick,
+}) {
+  const isPrimary = variant === "primary";
+
+  const shellClass = isPrimary
+    ? "border-cyan-300/45 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.24),rgba(34,211,238,0.12)_42%,rgba(8,12,24,0.9)_100%)] text-cyan-50 shadow-[0_0_32px_rgba(34,211,238,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]"
+    : "border-white/12 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(255,255,255,0.045)_42%,rgba(8,10,18,0.86)_100%)] text-white/76 shadow-[0_0_24px_rgba(255,255,255,0.06),inset_0_1px_0_rgba(255,255,255,0.10)]";
+
+  const glowClass = isPrimary
+    ? "from-cyan-200/0 via-cyan-200/45 to-cyan-200/0"
+    : "from-white/0 via-white/20 to-white/0";
+
+  const dotClass = isPrimary
+    ? "bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.75)]"
+    : "bg-white/50 shadow-[0_0_10px_rgba(255,255,255,0.35)]";
+
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.965 }}
+      onClick={onClick}
+      className={[
+        "group relative flex-1 overflow-hidden rounded-[24px] border px-4 py-4 text-left transition active:scale-[0.965]",
+        shellClass,
+      ].join(" ")}
+    >
+      <motion.div
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-[-35%] top-0 h-full w-[45%] bg-gradient-to-r ${glowClass} blur-md`}
+        animate={{ x: ["0%", "310%", "0%"] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="relative z-10 flex min-h-[54px] flex-col justify-center">
+        <div className="mb-1 flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
+            {eyebrow}
+          </span>
+        </div>
+
+        <div className="text-[1.03rem] font-black leading-none tracking-[-0.055em] text-white">
+          {children}
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
 function ChoiceView({ onKeepEarning, onNotNow }) {
   return (
     <motion.div
@@ -79,26 +154,34 @@ function ChoiceView({ onKeepEarning, onNotNow }) {
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
       transition={{ duration: 0.6 }}
-      className="flex w-full flex-col items-center gap-5"
+      className="flex w-full max-w-[320px] flex-col items-center gap-5"
     >
+      <div className="flex max-w-[300px] flex-col items-center gap-2">
+        <div className="text-center text-[2.05rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
+          Keep earning?
+        </div>
+
+        <div className="text-center text-sm font-bold leading-relaxed tracking-[-0.02em] text-white/55">
+          Sign up to save your progress.
+        </div>
+      </div>
+
       <div className="flex w-full gap-4">
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.96 }}
+        <PremiumChoiceButton
+          variant="primary"
+          eyebrow="SAVE PROGRESS"
           onClick={onKeepEarning}
-          className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-5 py-4 text-base font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)]"
         >
           Keep Earning
-        </motion.button>
+        </PremiumChoiceButton>
 
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.96 }}
+        <PremiumChoiceButton
+          variant="secondary"
+          eyebrow="EXIT"
           onClick={onNotNow}
-          className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-base font-black text-white/75 shadow-[0_0_22px_rgba(255,255,255,0.05)]"
         >
           Not Now
-        </motion.button>
+        </PremiumChoiceButton>
       </div>
     </motion.div>
   );
@@ -110,7 +193,7 @@ function ExitView({ onDone }) {
       initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.65 }}
-      className="flex flex-col items-center gap-5"
+      className="flex max-w-[320px] flex-col items-center gap-5"
     >
       <div className="text-3xl font-black tracking-[-0.06em]">
         {renderLine("ZWAP!")}
@@ -124,7 +207,7 @@ function ExitView({ onDone }) {
         type="button"
         whileTap={{ scale: 0.96 }}
         onClick={onDone}
-        className="rounded-full border border-white/10 bg-white/5 px-6 py-2 text-sm font-bold text-white/70"
+        className="rounded-full border border-white/10 bg-white/5 px-6 py-2 text-sm font-bold text-white/70 shadow-[0_0_18px_rgba(255,255,255,0.05)]"
       >
         Done
       </motion.button>
