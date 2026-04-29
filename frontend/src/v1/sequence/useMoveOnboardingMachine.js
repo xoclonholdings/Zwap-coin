@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MOVE_ONBOARDING_VOICE } from "./moveOnboardingScript";
 
-const VOICE_HOLD_MS = 1600;
-const REDIRECT_VOICE_HOLD_MS = 1900;
+const VOICE_HOLD_MS = 1800;
 
-const FIRST_NO_MOVE_DELAY_MS = 6500;
-const SECOND_NO_MOVE_DELAY_MS = 7000;
-const PLAY_REDIRECT_DELAY_MS = 6500;
-const STOPPED_MOVING_DELAY_MS = 4500;
+// ⏳ Slower pacing (more human reaction time)
+const FIRST_NO_MOVE_DELAY_MS = 9000;
+const SECOND_NO_MOVE_DELAY_MS = 11000;
+const THIRD_NO_MOVE_DELAY_MS = 14000;
+
+const STOPPED_MOVING_DELAY_MS = 6000;
 
 export default function useMoveOnboardingMachine({
   totalSteps,
@@ -18,7 +19,6 @@ export default function useMoveOnboardingMachine({
   const [voice, setVoice] = useState(MOVE_ONBOARDING_VOICE.start);
   const [showVoice, setShowVoice] = useState(true);
   const [isTracking, setIsTracking] = useState(false);
-  const [showPlay, setShowPlay] = useState(false);
 
   const startStepsRef = useRef(0);
   const movedOnceRef = useRef(false);
@@ -46,7 +46,6 @@ export default function useMoveOnboardingMachine({
 
     setVoice(line);
     setShowVoice(true);
-    setShowPlay(false);
 
     voiceTimerRef.current = setTimeout(() => {
       setShowVoice(false);
@@ -60,7 +59,6 @@ export default function useMoveOnboardingMachine({
     clearAllTimers();
 
     setIsTracking(true);
-    setShowPlay(false);
     setMode("voice-move");
 
     startStepsRef.current = Number(totalSteps || 0);
@@ -72,19 +70,18 @@ export default function useMoveOnboardingMachine({
     showVoiceThen(MOVE_ONBOARDING_VOICE.move, "waiting");
   }, [isTracking, totalSteps, onStartTracking, clearAllTimers, showVoiceThen]);
 
+  // Initial intro
   useEffect(() => {
-    if (mode !== "voice-start") return undefined;
+    if (mode !== "voice-start") return;
 
     showVoiceThen(MOVE_ONBOARDING_VOICE.start, "ring-idle");
 
-    return () => {
-      clearTimer(voiceTimerRef);
-    };
+    return () => clearTimer(voiceTimerRef);
   }, [mode, showVoiceThen]);
 
+  // Movement detection
   useEffect(() => {
-    if (!isTracking) return;
-    if (showVoice) return;
+    if (!isTracking || showVoice) return;
 
     const currentSteps = Number(totalSteps || 0);
     const startSteps = Number(startStepsRef.current || 0);
@@ -94,7 +91,6 @@ export default function useMoveOnboardingMachine({
 
     clearTimer(idleTimerRef);
     clearTimer(stoppedTimerRef);
-    setShowPlay(false);
 
     if (!movedOnceRef.current) {
       movedOnceRef.current = true;
@@ -106,8 +102,6 @@ export default function useMoveOnboardingMachine({
     }
 
     if (mode === "active") {
-      clearTimer(stoppedTimerRef);
-
       stoppedTimerRef.current = setTimeout(() => {
         if (!movedOnceRef.current) return;
 
@@ -117,11 +111,12 @@ export default function useMoveOnboardingMachine({
     }
   }, [totalSteps, isTracking, mode, showVoice, showVoiceThen]);
 
+  // Idle nudges (NO REDIRECTS)
   useEffect(() => {
-    if (!isTracking) return undefined;
-    if (showVoice) return undefined;
-    if (mode !== "waiting") return undefined;
-    if (movedOnceRef.current) return undefined;
+    if (!isTracking) return;
+    if (showVoice) return;
+    if (mode !== "waiting") return;
+    if (movedOnceRef.current) return;
 
     clearTimer(idleTimerRef);
 
@@ -132,7 +127,7 @@ export default function useMoveOnboardingMachine({
     }
 
     if (idleNudgeCountRef.current >= 2) {
-      delay = PLAY_REDIRECT_DELAY_MS;
+      delay = THIRD_NO_MOVE_DELAY_MS;
     }
 
     idleTimerRef.current = setTimeout(() => {
@@ -152,25 +147,12 @@ export default function useMoveOnboardingMachine({
         return;
       }
 
-      setMode("voice-play-redirect");
-      showVoiceThen(
-        MOVE_ONBOARDING_VOICE.playRedirect,
-        "play-offer",
-        REDIRECT_VOICE_HOLD_MS
-      );
+      // After multiple nudges → stay idle, no redirect
+      setMode("waiting");
     }, delay);
 
-    return () => {
-      clearTimer(idleTimerRef);
-    };
+    return () => clearTimer(idleTimerRef);
   }, [isTracking, mode, showVoice, showVoiceThen]);
-
-  useEffect(() => {
-    if (mode !== "play-offer") return;
-
-    setShowVoice(false);
-    setShowPlay(true);
-  }, [mode]);
 
   useEffect(() => {
     return () => {
@@ -184,6 +166,5 @@ export default function useMoveOnboardingMachine({
     showVoice,
     isTracking,
     startTracking,
-    showPlay,
   };
 }
