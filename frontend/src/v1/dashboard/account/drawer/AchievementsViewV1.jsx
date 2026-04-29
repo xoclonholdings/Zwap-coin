@@ -1,9 +1,7 @@
 import React from "react";
 import {
   Award,
-  CalendarCheck,
   ChevronLeft,
-  Flame,
   Lock,
   Sparkles,
   Trophy,
@@ -14,10 +12,6 @@ function clampPercent(value = 0) {
   const safe = Number(value || 0);
   if (!Number.isFinite(safe)) return 0;
   return Math.max(0, Math.min(100, safe));
-}
-
-function toSafeNumber(value) {
-  return Math.max(Number(value || 0), 0);
 }
 
 function ProgressBar({ value = 0, max = 1, tone = "cyan" }) {
@@ -52,67 +46,6 @@ function HeaderButton({ children, label }) {
   );
 }
 
-function DailyLoopCard({
-  completedTasks = 0,
-  totalTasks = 4,
-  dailyStreak = 0,
-}) {
-  const safeCompleted = Math.min(
-    Math.max(toSafeNumber(completedTasks), 0),
-    Math.max(1, toSafeNumber(totalTasks))
-  );
-  const safeTotal = Math.max(1, toSafeNumber(totalTasks));
-  const safeStreak = toSafeNumber(dailyStreak);
-  const percent = clampPercent((safeCompleted / safeTotal) * 100);
-
-  return (
-    <div className="relative overflow-hidden rounded-[28px] border border-cyan-300/15 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.16),transparent_44%),radial-gradient(circle_at_85%_20%,rgba(168,85,247,0.10),transparent_36%),linear-gradient(180deg,rgba(12,20,32,0.96),rgba(5,9,18,0.98))] p-4 shadow-[0_16px_42px_rgba(0,0,0,0.36)]">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.065),transparent_34%,rgba(34,211,238,0.045))]" />
-
-      <div className="relative">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-400/10 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.16)]">
-              <CalendarCheck size={24} strokeWidth={2.3} />
-            </div>
-
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">
-                Daily Loop
-              </div>
-              <div className="mt-1 text-[20px] font-black tracking-[-0.06em] text-white">
-                {safeCompleted} / {safeTotal} Complete
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 rounded-full border border-amber-300/16 bg-amber-300/[0.08] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-amber-100">
-            <Flame size={12} strokeWidth={2.4} />
-            {safeStreak}d
-          </div>
-        </div>
-
-        <ProgressBar value={safeCompleted} max={safeTotal} />
-
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <div className="text-[11px] font-semibold text-white/48">
-            Tasks today
-          </div>
-
-          <div className="text-[11px] font-black tracking-[-0.03em] text-cyan-100">
-            {Math.round(percent)}%
-          </div>
-        </div>
-
-        <div className="mt-3 rounded-[16px] border border-white/8 bg-black/20 px-3 py-2 text-xs font-medium leading-5 text-white/55">
-          Complete all daily lanes to strengthen your streak and feed badge
-          progression.
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function TrophyCard({ trophyCount = 0, trophyBonusPercent = 0 }) {
   return (
     <div className="relative overflow-hidden rounded-[22px] border border-amber-300/16 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.13),transparent_48%),linear-gradient(180deg,rgba(24,18,8,0.94),rgba(8,9,12,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.24)]">
@@ -141,7 +74,9 @@ function TrophyCard({ trophyCount = 0, trophyBonusPercent = 0 }) {
 }
 
 function NextBadgeCard({ badge }) {
-  const percent = clampPercent((badge.progress / Math.max(1, badge.goal)) * 100);
+  const progress = Number(badge?.progress || 0);
+  const goal = Math.max(1, Number(badge?.goal || 1));
+  const percent = clampPercent((progress / goal) * 100);
 
   return (
     <div className="relative overflow-hidden rounded-[22px] border border-cyan-300/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_42%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.26)]">
@@ -159,21 +94,21 @@ function NextBadgeCard({ badge }) {
                 Next Badge
               </div>
               <div className="mt-0.5 text-[17px] font-black tracking-[-0.05em] text-white">
-                {badge.label}
+                {badge?.label || "Starter"}
               </div>
             </div>
           </div>
 
           <div className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/48">
-            {badge.category}
+            {badge?.category || "Consistency"}
           </div>
         </div>
 
-        <ProgressBar value={badge.progress} max={badge.goal} />
+        <ProgressBar value={progress} max={goal} />
 
         <div className="mt-2 flex items-center justify-between gap-3">
           <div className="text-[11px] font-semibold text-white/48">
-            {badge.progress} / {badge.goal}
+            {progress} / {goal}
           </div>
 
           <div className="text-[11px] font-black tracking-[-0.03em] text-cyan-100">
@@ -182,7 +117,7 @@ function NextBadgeCard({ badge }) {
         </div>
 
         <div className="mt-2 rounded-[14px] border border-white/8 bg-black/20 px-3 py-2 text-[11px] font-medium leading-4 text-white/52">
-          {badge.hint}
+          {badge?.hint || "Keep completing real activity to unlock badge progress."}
         </div>
       </div>
     </div>
@@ -214,8 +149,8 @@ function LockedIdentityCard() {
 function AchievementCard({ achievement }) {
   const name = achievement?.name || "";
   const level = achievement?.level || "";
-  const progress = achievement?.progress || 0;
-  const target = achievement?.target || 1;
+  const progress = Number(achievement?.progress || 0);
+  const target = Math.max(1, Number(achievement?.target || 1));
   const description = achievement?.description || "";
 
   return (
@@ -263,36 +198,9 @@ export default function AchievementsViewV1({
   achievements = [],
   trophyCount = 0,
   trophyBonusPercent = 0,
-  dailyStreak,
-  completedTasks,
-  totalTasks = 4,
 }) {
   const hasAchievements = Array.isArray(achievements) && achievements.length > 0;
   const nextBadge = getNextBadge(user || {});
-
-  const resolvedDailyStreak =
-    dailyStreak ??
-    user?.daily_streak ??
-    user?.dailyStreak ??
-    user?.streak_days ??
-    user?.streakDays ??
-    0;
-
-  const resolvedCompletedTasks =
-    completedTasks ??
-    user?.completedTasks ??
-    user?.completed_tasks ??
-    user?.daily_tasks_completed ??
-    user?.dailyTasksCompleted ??
-    0;
-
-  const resolvedTotalTasks =
-    totalTasks ??
-    user?.totalTasks ??
-    user?.total_tasks ??
-    user?.daily_tasks_total ??
-    user?.dailyTasksTotal ??
-    4;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
@@ -322,12 +230,6 @@ export default function AchievementsViewV1({
         </div>
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto pr-1">
-          <DailyLoopCard
-            completedTasks={resolvedCompletedTasks}
-            totalTasks={resolvedTotalTasks}
-            dailyStreak={resolvedDailyStreak}
-          />
-
           <TrophyCard
             trophyCount={trophyCount}
             trophyBonusPercent={trophyBonusPercent}
