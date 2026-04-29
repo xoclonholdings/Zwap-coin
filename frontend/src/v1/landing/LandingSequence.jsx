@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import zwapLogo from "@/assets/dashboard/activity_logo.PNG";
+import zwapLogo from "@/assets/dashboard/activity_logo.png";
 
 function OnboardingActionButton({ type = "move", onClick }) {
   const isMove = type === "move";

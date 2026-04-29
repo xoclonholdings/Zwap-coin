@@ -5,14 +5,14 @@ import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
 import OnboardingShell from "@/v1/onboarding/OnboardingShell";
 import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
 
-import moveBoost3h from "@/assets/shop/move/3H_move_boost_item.PNG";
-import moveBoost12h from "@/assets/shop/move/12h_move_boost_item.PNG";
-import playBoost3h from "@/assets/shop/play/3h_play_boost_item.PNG";
-import playBoost12h from "@/assets/shop/play/12h_play_boost_item.PNG";
-import ebookItem from "@/assets/shop/ebooks/tldr_ebook_item.PNG";
-import bronzeRing from "@/assets/shop/profile/bronze_ring_item.PNG";
-import goldRing from "@/assets/shop/profile/gold_ring_item.PNG";
-import diamondRing from "@/assets/shop/profile/diamond_ring_item.PNG";
+import moveBoost3h from "@/assets/shop/move/3H_move_boost_item.png";
+import moveBoost12h from "@/assets/shop/move/12h_move_boost_item.png";
+import playBoost3h from "@/assets/shop/play/3h_play_boost_item.png";
+import playBoost12h from "@/assets/shop/play/12h_play_boost_item.png";
+import ebookItem from "@/assets/shop/ebooks/tldr_ebook_item.png";
+import bronzeRing from "@/assets/shop/profile/bronze_ring_item.png";
+import goldRing from "@/assets/shop/profile/gold_ring_item.png";
+import diamondRing from "@/assets/shop/profile/diamond_ring_item.png";
 
 function ProofItem({ src, label, delay = 0 }) {
   return (

@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 
-import zapBubble from "@/assets/zap/zap-bubble.PNG";
-import zapHead from "@/assets/zap/zap-head.PNG";
+import zapBubble from "@/assets/zap/zap-bubble.png";
+import zapHead from "@/assets/zap/zap-head.png";
 
 import ZapTasksPanel from "./zap/ZapTasksPanel";
 import { buildZapGuidance } from "./zap/zapGuidanceEngine";
