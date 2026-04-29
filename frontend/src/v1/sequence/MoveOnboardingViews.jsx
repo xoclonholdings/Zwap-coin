@@ -73,6 +73,8 @@ export function RingView({
   onStop,
   progressPercent = 0,
 }) {
+  const isPaused = !isTracking && progressPercent > 0;
+
   const handleClick = () => {
     if (isTracking) {
       onStop?.();
@@ -95,21 +97,41 @@ export function RingView({
         onClick={handleClick}
         className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
       >
-        <div
+        <motion.div
+          animate={
+            isPaused
+              ? {
+                  boxShadow: [
+                    "0 0 40px rgba(34,211,238,0.14)",
+                    "0 0 64px rgba(34,211,238,0.28)",
+                    "0 0 40px rgba(34,211,238,0.14)",
+                  ],
+                }
+              : {}
+          }
+          transition={
+            isPaused
+              ? {
+                  duration: 2.4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }
+              : {}
+          }
           className="absolute inset-0 rounded-full p-[10px] shadow-[0_0_40px_rgba(34,211,238,0.14)] transition-transform duration-200 group-active:scale-[0.98]"
           style={buildRingStyle(progressPercent)}
         >
           <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),rgba(8,23,22,1)_55%)]">
             <div className="rounded-full bg-cyan-400/85 px-7 py-3 text-base font-semibold uppercase tracking-[0.18em] text-[#041214] shadow-[0_0_24px_rgba(34,211,238,0.35)]">
-              {isTracking ? "Stop" : "Start"}
+              {isTracking ? "Pause" : "Start"}
             </div>
           </div>
-        </div>
+        </motion.div>
       </button>
 
       {!isTracking && (
         <div className="pointer-events-none absolute left-1/2 top-full mt-5 -translate-x-1/2 whitespace-nowrap text-sm font-bold text-white/80">
-          Tap Start
+          {isPaused ? "Tap Start to resume" : "Tap Start"}
         </div>
       )}
     </motion.div>
@@ -127,7 +149,9 @@ export function MoveCompleteView({ verified = false }) {
       className="flex max-w-[320px] flex-col items-center gap-4 text-center"
     >
       <OnboardingVoiceText
-        lines={verified ? ["Move session", "complete."] : ["Move check", "complete."]}
+        lines={
+          verified ? ["Move session", "complete."] : ["Move check", "complete."]
+        }
       />
 
       <div className="text-sm font-bold leading-relaxed text-white/55">
