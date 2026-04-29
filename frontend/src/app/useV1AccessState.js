@@ -1,5 +1,3 @@
-import { useMemo, useState } from "react";
-
 const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
 const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
 
@@ -44,31 +42,46 @@ export default function useV1AccessState({
   walletAddress,
   isAuthenticated,
 }) {
-  const [isReviewAccess] = useState(() => getReviewAccessEnabled());
-
+  const isReviewAccess = getReviewAccessEnabled();
   const canSeeDashboard = Boolean(isAuthenticated || isReviewAccess);
 
-  const resolvedEmail = useMemo(() => {
-    return getResolvedEmail({ authUser, user, isReviewAccess });
-  }, [authUser, user, isReviewAccess]);
+  const resolvedEmail = getResolvedEmail({
+    authUser,
+    user,
+    isReviewAccess,
+  });
 
-  const isAdminPreviewUser = useMemo(() => {
-    return getIsAdminPreviewUser(resolvedEmail);
-  }, [resolvedEmail]);
+  const isAdminPreviewUser = getIsAdminPreviewUser(resolvedEmail);
 
-  const displayName = useMemo(() => {
-    return buildDisplayName({
-      authUser,
-      user,
-      walletAddress,
-      isReviewAccess,
-    });
-  }, [authUser, user, walletAddress, isReviewAccess]);
+  const displayName = buildDisplayName({
+    authUser,
+    user,
+    walletAddress,
+    isReviewAccess,
+  });
 
   const tier =
     isAdminPreviewUser || user?.subscription_tier === "plus"
       ? "zitizen"
       : "zwapper";
+
+  const reviewUser = isReviewAccess
+    ? {
+        id: "review-user",
+        email: "review@zwap.app",
+        username: "Reviewer",
+        zptsBalance: 100,
+        zpts_balance: 100,
+        zwap_balance: 0,
+        dailySteps: 20,
+        daily_steps: 20,
+        gamesPlayedToday: 1,
+        games_played_today: 1,
+        completed_task_count: 2,
+        total_task_count: 4,
+        tier,
+      }
+    : null;
 
   return {
     isReviewAccess,
@@ -77,5 +90,6 @@ export default function useV1AccessState({
     isAdminPreviewUser,
     displayName,
     tier,
+    reviewUser,
   };
 }
