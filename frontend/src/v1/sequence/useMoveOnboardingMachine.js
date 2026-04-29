@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { MOVE_ONBOARDING_VOICE } from "./moveOnboardingScript";
+
 const VOICE_HOLD_MS = 1600;
 const REDIRECT_VOICE_HOLD_MS = 1900;
 
@@ -8,9 +10,12 @@ const SECOND_NO_MOVE_DELAY_MS = 7000;
 const PLAY_REDIRECT_DELAY_MS = 6500;
 const STOPPED_MOVING_DELAY_MS = 4500;
 
-export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }) {
+export default function useMoveOnboardingMachine({
+  totalSteps,
+  onStartTracking,
+}) {
   const [mode, setMode] = useState("voice-start");
-  const [voice, setVoice] = useState("Tap to start.");
+  const [voice, setVoice] = useState(MOVE_ONBOARDING_VOICE.start);
   const [showVoice, setShowVoice] = useState(true);
   const [isTracking, setIsTracking] = useState(false);
   const [showPlay, setShowPlay] = useState(false);
@@ -62,17 +67,15 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
     movedOnceRef.current = false;
     idleNudgeCountRef.current = 0;
 
-    if (typeof onStartTracking === "function") {
-      onStartTracking();
-    }
+    onStartTracking?.();
 
-    showVoiceThen("Take a few steps.", "waiting");
+    showVoiceThen(MOVE_ONBOARDING_VOICE.move, "waiting");
   }, [isTracking, totalSteps, onStartTracking, clearAllTimers, showVoiceThen]);
 
   useEffect(() => {
     if (mode !== "voice-start") return undefined;
 
-    showVoiceThen("Tap to start.", "ring-idle");
+    showVoiceThen(MOVE_ONBOARDING_VOICE.start, "ring-idle");
 
     return () => {
       clearTimer(voiceTimerRef);
@@ -98,7 +101,7 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
       idleNudgeCountRef.current = 0;
 
       setMode("voice-success");
-      showVoiceThen("That’s it.", "active");
+      showVoiceThen(MOVE_ONBOARDING_VOICE.success, "active");
       return;
     }
 
@@ -109,7 +112,7 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
         if (!movedOnceRef.current) return;
 
         setMode("voice-continue");
-        showVoiceThen("Keep going.", "active");
+        showVoiceThen(MOVE_ONBOARDING_VOICE.continue, "active");
       }, STOPPED_MOVING_DELAY_MS);
     }
   }, [totalSteps, isTracking, mode, showVoice, showVoiceThen]);
@@ -139,18 +142,22 @@ export default function useMoveOnboardingMachine({ totalSteps, onStartTracking }
 
       if (idleNudgeCountRef.current === 1) {
         setMode("voice-nudge");
-        showVoiceThen("Just a few steps.", "waiting");
+        showVoiceThen(MOVE_ONBOARDING_VOICE.nudgeFirst, "waiting");
         return;
       }
 
       if (idleNudgeCountRef.current === 2) {
         setMode("voice-nudge");
-        showVoiceThen("Take your time.", "waiting");
+        showVoiceThen(MOVE_ONBOARDING_VOICE.nudgeSecond, "waiting");
         return;
       }
 
       setMode("voice-play-redirect");
-      showVoiceThen("Can’t move yet?\nTry Play.", "play-offer", REDIRECT_VOICE_HOLD_MS);
+      showVoiceThen(
+        MOVE_ONBOARDING_VOICE.playRedirect,
+        "play-offer",
+        REDIRECT_VOICE_HOLD_MS
+      );
     }, delay);
 
     return () => {
