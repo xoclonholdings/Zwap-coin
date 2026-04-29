@@ -39,15 +39,8 @@ export const ABOUT_STEPS = [
     duration: 3500,
   },
   {
-    id: "voice-5",
-    type: "voice",
-    lines: ["Ready to earn?"],
-    duration: 2900,
-  },
-  {
     id: "final",
     type: "final",
     duration: 0,
   },
-];  },
 ];
