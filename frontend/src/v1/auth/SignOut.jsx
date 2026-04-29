@@ -1,6 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+
+import { useApp } from "@/app/AppProvider";
 
 function Shell({ children }) {
   return (
@@ -19,14 +21,24 @@ function Shell({ children }) {
 
 export default function SignOut({ nextRoute = "/v1/signin" }) {
   const navigate = useNavigate();
+  const { logoutAll } = useApp();
+  const hasSignedOutRef = useRef(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      navigate(nextRoute, { replace: true });
-    }, 1400);
+    if (hasSignedOutRef.current) return;
 
-    return () => window.clearTimeout(timer);
-  }, [navigate, nextRoute]);
+    hasSignedOutRef.current = true;
+
+    async function signOutAndRoute() {
+      await logoutAll?.();
+
+      window.setTimeout(() => {
+        navigate(nextRoute, { replace: true });
+      }, 700);
+    }
+
+    signOutAndRoute();
+  }, [logoutAll, navigate, nextRoute]);
 
   return (
     <Shell>
