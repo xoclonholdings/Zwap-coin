@@ -1,3 +1,5 @@
+import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingRoutes";
+
 import {
   LEARN_MORE_ACTION,
   getLearnMoreStartResult,
@@ -7,17 +9,6 @@ import {
   canShowSignupGate,
   getSignupGateRoute,
 } from "@/v1/onboarding/signupGateFlow";
-
-export const V1_ONBOARDING_ROUTES = {
-  root: "/v1",
-  about: "/v1/about",
-  move: "/v1/move",
-  play: "/v1/play",
-  signupGate: "/v1/signup-gate",
-  signup: "/v1/signup",
-  signin: "/v1/signin",
-  dashboard: "/v1/dashboard",
-};
 
 export const ONBOARDING_ACTIONS = {
   moveStarted: "moveStarted",
@@ -47,7 +38,7 @@ export function getNextOnboardingRoute(progress = {}) {
     return V1_ONBOARDING_ROUTES.play;
   }
 
-  return null;
+  return V1_ONBOARDING_ROUTES.root;
 }
 
 export function getLandingTargetResult(target) {
