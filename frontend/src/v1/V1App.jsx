@@ -16,8 +16,14 @@ import {
   hasSeenV1Onboarding,
   markV1OnboardingSeen,
 } from "@/v1/V1OnboardingStorage";
+import {
+  V1_ONBOARDING_ROUTES,
+  getLandingTargetRoute,
+  getNextOnboardingRoute,
+  isOnboardingComplete,
+  markOnboardingActionTried,
+} from "@/v1/onboarding/onboardingFlow";
 
-const V1_BASE = "/v1";
 const STARTING_ONBOARDING_ZPTS = 100;
 const SHOP_UNLOCK_ZPTS = 1000;
 const ADMIN_PREVIEW_ZPTS = 5000;
@@ -106,40 +112,25 @@ export default function V1App() {
   const triedMove = onboardingProgress.move;
   const triedPlay = onboardingProgress.play;
 
-  const moveRoute = `${V1_BASE}/move`;
-  const playRoute = `${V1_BASE}/play`;
-  const aboutRoute = `${V1_BASE}/about`;
-  const signupGateRoute = `${V1_BASE}/signup-gate`;
-  const signupRoute = `${V1_BASE}/signup`;
-  const signInRoute = `${V1_BASE}/signin`;
-  const dashboardRoute = `${V1_BASE}/dashboard`;
+  function setProgress(nextProgress) {
+    progressRef.current = {
+      move: Boolean(nextProgress?.move),
+      play: Boolean(nextProgress?.play),
+    };
 
-  const setProgress = ({ move, play }) => {
-    const next = { move: !!move, play: !!play };
-    progressRef.current = next;
-    setOnboardingProgress(next);
-    return next;
-  };
+    setOnboardingProgress(progressRef.current);
 
-  const markMoveTried = () =>
-    setProgress({ move: true, play: progressRef.current.play });
+    return progressRef.current;
+  }
 
-  const markPlayTried = () =>
-    setProgress({ move: progressRef.current.move, play: true });
+  function completeAction(action) {
+    const nextProgress = markOnboardingActionTried(progressRef.current, action);
+    return setProgress(nextProgress);
+  }
 
-  const getNextOnboardingRoute = ({
-    move = progressRef.current.move,
-    play = progressRef.current.play,
-  } = {}) => {
-    if (move && play) return signupGateRoute;
-    if (move && !play) return playRoute;
-    if (!move && play) return moveRoute;
-    return V1_BASE;
-  };
-
-  const advanceOnboarding = (progress = progressRef.current) => {
+  function navigateToNext(progress = progressRef.current) {
     navigate(getNextOnboardingRoute(progress));
-  };
+  }
 
   const normalShopUnlocked = zptsBalance >= SHOP_UNLOCK_ZPTS;
   const shopUnlocked = isAdminPreviewUser || normalShopUnlocked;
@@ -186,11 +177,7 @@ export default function V1App() {
             <Navigate to="signin" replace />
           ) : (
             <LandingSequence
-              onSelect={(target) => {
-                if (target === "move") navigate(moveRoute);
-                if (target === "play") navigate(playRoute);
-                if (target === "learn") navigate(aboutRoute);
-              }}
+              onSelect={(target) => navigate(getLandingTargetRoute(target))}
             />
           )
         }
@@ -199,15 +186,19 @@ export default function V1App() {
       <Route
         path="about"
         element={
-          <OnboardingAboutPage
-            hasTriedMove={triedMove}
-            hasTriedPlay={triedPlay}
-            onMove={() => navigate(moveRoute)}
-            onPlay={() => navigate(playRoute)}
-            navigate={navigate}
-            moveRoute={moveRoute}
-            playRoute={playRoute}
-          />
+          isOnboardingComplete(onboardingProgress) ? (
+            <Navigate to={V1_ONBOARDING_ROUTES.signupGate} replace />
+          ) : (
+            <OnboardingAboutPage
+              hasTriedMove={triedMove}
+              hasTriedPlay={triedPlay}
+              onMove={() => navigate(V1_ONBOARDING_ROUTES.move)}
+              onPlay={() => navigate(V1_ONBOARDING_ROUTES.play)}
+              navigate={navigate}
+              moveRoute={V1_ONBOARDING_ROUTES.move}
+              playRoute={V1_ONBOARDING_ROUTES.play}
+            />
+          )
         }
       />
 
@@ -221,23 +212,24 @@ export default function V1App() {
             onStopTracking={() => setMoveActive(false)}
             onTryPlay={() => {
               setMoveActive(false);
-              advanceOnboarding(markMoveTried());
+              const next = completeAction("move");
+              navigateToNext(next);
             }}
             onLearnMore={() => {
               setMoveActive(false);
-              markMoveTried();
-              navigate(aboutRoute);
+              completeAction("move");
+              navigate(V1_ONBOARDING_ROUTES.about);
             }}
             onMoveComplete={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setMoveActive(false);
-              const next = markMoveTried();
 
               setTodaySteps((previous) => Math.max(previous, displayedSteps));
               setZptsBalance((previous) =>
                 Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
 
-              advanceOnboarding(next);
+              const next = completeAction("move");
+              navigateToNext(next);
             }}
             onMoveMilestone={({ displayedSteps = 0, displayedZpts = 0 } = {}) => {
               setTodaySteps((previous) => Math.max(previous, displayedSteps));
@@ -255,23 +247,17 @@ export default function V1App() {
           <PlayOnboardingSequence
             triedMove={triedMove}
             onLearnMore={() => {
-              markPlayTried();
-              navigate(aboutRoute);
+              completeAction("play");
+              navigate(V1_ONBOARDING_ROUTES.about);
             }}
-            onComplete={({ displayedZpts = 50, shouldRouteToMove = false } = {}) => {
-              const next = markPlayTried();
-
+            onComplete={({ displayedZpts = 50 } = {}) => {
               setGamesPlayedToday((previous) => previous + 1);
               setZptsBalance((previous) =>
                 Math.max(previous, STARTING_ONBOARDING_ZPTS + displayedZpts)
               );
 
-              if (shouldRouteToMove && !next.move) {
-                navigate(moveRoute);
-                return;
-              }
-
-              advanceOnboarding(next);
+              const next = completeAction("play");
+              navigateToNext(next);
             }}
           />
         }
@@ -280,18 +266,18 @@ export default function V1App() {
       <Route
         path="signup-gate"
         element={
-          progressRef.current.move && progressRef.current.play ? (
+          isOnboardingComplete(onboardingProgress) ? (
             <SignupGate
               hasTriedMove
               hasTriedPlay
               onBeginAuth={() => {
                 markV1OnboardingSeen();
-                navigate(signupRoute);
+                navigate(V1_ONBOARDING_ROUTES.signup);
               }}
-              onExitOnboarding={() => navigate(V1_BASE)}
+              onExitOnboarding={() => navigate(V1_ONBOARDING_ROUTES.root)}
             />
           ) : (
-            <Navigate to={getNextOnboardingRoute()} replace />
+            <Navigate to={getNextOnboardingRoute(onboardingProgress)} replace />
           )
         }
       />
@@ -301,10 +287,10 @@ export default function V1App() {
         element={
           <SignupOnboarding
             navigate={navigate}
-            dashboardRoute={dashboardRoute}
+            dashboardRoute={V1_ONBOARDING_ROUTES.dashboard}
             onAuthSuccess={() => {
               markV1OnboardingSeen();
-              navigate(dashboardRoute);
+              navigate(V1_ONBOARDING_ROUTES.dashboard);
             }}
           />
         }
@@ -314,16 +300,19 @@ export default function V1App() {
         path="signin"
         element={
           <SignIn
-            dashboardRoute={dashboardRoute}
+            dashboardRoute={V1_ONBOARDING_ROUTES.dashboard}
             onSuccess={() => {
               markV1OnboardingSeen();
-              navigate(dashboardRoute);
+              navigate(V1_ONBOARDING_ROUTES.dashboard);
             }}
           />
         }
       />
 
-      <Route path="signout" element={<SignOut nextRoute={signInRoute} />} />
+      <Route
+        path="signout"
+        element={<SignOut nextRoute={V1_ONBOARDING_ROUTES.signin} />}
+      />
 
       <Route
         path="dashboard"
@@ -355,22 +344,22 @@ export default function V1App() {
               isSwapUnlocked={isAdminPreviewUser}
               walletAddress={walletAddress}
               showUpgrade={!canSeeDashboard}
-              onOpenUpgrade={() => navigate(signupGateRoute)}
+              onOpenUpgrade={() => navigate(V1_ONBOARDING_ROUTES.signupGate)}
               onAdminTrigger={() => navigate("/admin")}
-              onOpenProfile={() => navigate(dashboardRoute)}
+              onOpenProfile={() => navigate(V1_ONBOARDING_ROUTES.dashboard)}
               onOpenContact={() => navigate("/contact")}
               onOpenPrivacy={() => navigate("/privacy")}
-              onOpenHelp={() => navigate(aboutRoute)}
+              onOpenHelp={() => navigate(V1_ONBOARDING_ROUTES.about)}
               onOpenTerms={() => navigate("/terms")}
-              onOpenZwapPanel={() => navigate(signupGateRoute)}
-              homeRoute={dashboardRoute}
-              moveRoute={moveRoute}
-              playRoute={playRoute}
-              tasksRoute={signupGateRoute}
-              shopRoute={dashboardRoute}
+              onOpenZwapPanel={() => navigate(V1_ONBOARDING_ROUTES.signupGate)}
+              homeRoute={V1_ONBOARDING_ROUTES.dashboard}
+              moveRoute={V1_ONBOARDING_ROUTES.move}
+              playRoute={V1_ONBOARDING_ROUTES.play}
+              tasksRoute={V1_ONBOARDING_ROUTES.signupGate}
+              shopRoute={V1_ONBOARDING_ROUTES.dashboard}
             />
           ) : (
-            <Navigate to={signInRoute} replace />
+            <Navigate to={V1_ONBOARDING_ROUTES.signin} replace />
           )
         }
       />
