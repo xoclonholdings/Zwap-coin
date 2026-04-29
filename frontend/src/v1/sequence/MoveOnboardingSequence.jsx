@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 
 import OnboardingShell from "@/v1/onboarding/OnboardingShell";
@@ -8,7 +8,7 @@ import {
   VoiceView,
   CounterView,
   RingView,
-  PlayButton,
+  MoveCompleteView,
 } from "./MoveOnboardingViews";
 
 function getZpts(steps) {
@@ -22,33 +22,75 @@ function getZpts(steps) {
 export default function MoveOnboardingSequence({
   totalSteps = 0,
   onStartTracking,
-  onTryPlay,
-  onLearnMore,
+  onStopTracking,
+  onMoveComplete,
+  onMoveMilestone,
 }) {
-  const { voice, showVoice, isTracking, startTracking, showPlay } =
-    useMoveOnboardingMachine({
-      totalSteps,
-      onStartTracking,
-    });
+  const completedRef = useRef(false);
+
+  const {
+    mode,
+    voice,
+    showVoice,
+    isTracking,
+    moveVerified,
+    startTracking,
+    stopTracking,
+  } = useMoveOnboardingMachine({
+    totalSteps,
+    onStartTracking,
+    onStopTracking,
+  });
 
   const displayedSteps = useMemo(() => {
-    return isTracking ? Math.min(totalSteps, 20) : 0;
-  }, [totalSteps, isTracking]);
+    return isTracking || mode === "complete" || mode === "done"
+      ? Math.min(totalSteps, 20)
+      : 0;
+  }, [totalSteps, isTracking, mode]);
 
   const displayedZpts = useMemo(() => {
-    return getZpts(displayedSteps);
-  }, [displayedSteps]);
+    return moveVerified ? getZpts(displayedSteps) : 0;
+  }, [displayedSteps, moveVerified]);
 
   const ringProgressPercent = useMemo(() => {
     return Math.min((displayedSteps / 20) * 100, 100);
   }, [displayedSteps]);
 
-  const showAction = !showVoice && !showPlay;
+  const showAction = !showVoice && mode !== "complete" && mode !== "done";
+
+  useEffect(() => {
+    if (mode !== "done") return;
+    if (completedRef.current) return;
+
+    completedRef.current = true;
+
+    onMoveComplete?.({
+      displayedSteps,
+      displayedZpts,
+      moveStarted: true,
+      moveVerified,
+    });
+  }, [mode, displayedSteps, displayedZpts, moveVerified, onMoveComplete]);
+
+  useEffect(() => {
+    if (!moveVerified) return;
+
+    onMoveMilestone?.({
+      displayedSteps,
+      displayedZpts,
+      moveStarted: true,
+      moveVerified: true,
+    });
+  }, [moveVerified, displayedSteps, displayedZpts, onMoveMilestone]);
 
   return (
     <OnboardingShell>
       <AnimatePresence mode="wait">
-        {showVoice && <VoiceView text={voice} />}
+        {showVoice && <VoiceView key={voice} text={voice} />}
+
+        {!showVoice && mode === "complete" && (
+          <MoveCompleteView key="move-complete" verified={moveVerified} />
+        )}
       </AnimatePresence>
 
       {showAction && <CounterView steps={displayedSteps} zpts={displayedZpts} />}
@@ -58,13 +100,10 @@ export default function MoveOnboardingSequence({
           <RingView
             isTracking={isTracking}
             onStart={startTracking}
+            onStop={stopTracking}
             progressPercent={ringProgressPercent}
           />
         </div>
-      )}
-
-      {showPlay && !showVoice && (
-        <PlayButton onClick={onTryPlay} onLearnMore={onLearnMore} />
       )}
     </OnboardingShell>
   );
