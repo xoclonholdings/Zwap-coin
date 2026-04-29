@@ -6,6 +6,8 @@ import {
 } from "@/v1/V1OnboardingStorage";
 
 import {
+  ONBOARDING_ACTIONS,
+  V1_ONBOARDING_ROUTES,
   getActionStartedResult,
   getLandingTargetResult,
   normalizeOnboardingProgress,
@@ -40,38 +42,54 @@ export default function useV1OnboardingController({ navigate }) {
     return normalizedProgress;
   }
 
+  function applyStartedAction(action) {
+    const result = getActionStartedResult(progressRef.current, action);
+    setProgress(result.progress);
+    return result;
+  }
+
+  function applyStartedActionAndNavigate(action) {
+    const result = getActionStartedResult(progressRef.current, action);
+    setProgress(result.progress);
+    navigate(result.route);
+    return result;
+  }
+
   function startFromWelcome(target) {
     const result = getLandingTargetResult(target);
-
     setProgress(result.progress);
     navigate(result.route);
-
     return result;
   }
 
-  function markActionStarted(action) {
-    const result = getActionStartedResult(progressRef.current, action);
-
-    setProgress(result.progress);
-
-    return result;
+  function goToMove() {
+    navigate(V1_ONBOARDING_ROUTES.move);
   }
 
-  function startActionAndGoNext(action) {
-    const result = getActionStartedResult(progressRef.current, action);
+  function goToPlay() {
+    navigate(V1_ONBOARDING_ROUTES.play);
+  }
 
-    setProgress(result.progress);
-    navigate(result.route);
+  function markMoveStarted() {
+    return applyStartedAction(ONBOARDING_ACTIONS.moveStarted);
+  }
 
-    return result;
+  function markPlayStarted() {
+    return applyStartedAction(ONBOARDING_ACTIONS.playStarted);
+  }
+
+  function finishMoveAndGoNext() {
+    return applyStartedActionAndNavigate(ONBOARDING_ACTIONS.moveStarted);
+  }
+
+  function finishPlayAndGoNext() {
+    return applyStartedActionAndNavigate(ONBOARDING_ACTIONS.playStarted);
   }
 
   function goToLearnMore() {
     const result = getLearnMoreStartResult(progressRef.current);
-
     setProgress(result.progress);
     navigate(result.route);
-
     return result;
   }
 
@@ -96,9 +114,17 @@ export default function useV1OnboardingController({ navigate }) {
     playStarted: onboardingProgress.playStarted,
 
     startFromWelcome,
-    markActionStarted,
-    startActionAndGoNext,
+
+    goToMove,
+    goToPlay,
     goToLearnMore,
+
+    markMoveStarted,
+    markPlayStarted,
+
+    finishMoveAndGoNext,
+    finishPlayAndGoNext,
+
     canEnterSignupGate,
     getSignupGateFallback,
     markSeenAndGo,
