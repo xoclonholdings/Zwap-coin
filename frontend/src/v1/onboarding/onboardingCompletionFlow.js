@@ -1,6 +1,7 @@
 export const NEXT_ACTION_TYPES = {
   move: "move",
   play: "play",
+  choose: "choose",
   continue: "continue",
 };
 
@@ -30,7 +31,7 @@ export function getNextOnboardingAction(progress = {}) {
 
   return {
     type: NEXT_ACTION_TYPES.continue,
-    };
+  };
 }
 
 export function canCompleteOnboarding(progress = {}) {
