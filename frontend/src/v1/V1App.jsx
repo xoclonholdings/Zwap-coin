@@ -2,74 +2,42 @@ import React from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
-
 import useV1AccessState from "@/app/useV1AccessState";
-import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
-import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
-import useV1OnboardingSessionStats from "@/v1/onboarding/useV1OnboardingSessionStats";
 
 import OnboardingAboutPage from "@/v1/about/OnboardingAboutPage";
-import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
 import SignIn from "@/v1/auth/SignIn";
 import SignOut from "@/v1/auth/SignOut";
+import SimplifiedDashboard from "@/v1/dashboard/SimplifiedDashboard";
+import useV1DashboardState from "@/v1/dashboard/useV1DashboardState";
 import LandingSequence from "@/v1/landing/LandingSequence";
+import useV1OnboardingController from "@/v1/onboarding/useV1OnboardingController";
+import useV1OnboardingSessionStats from "@/v1/onboarding/useV1OnboardingSessionStats";
+import { V1_ONBOARDING_ROUTES } from "@/v1/onboarding/onboardingFlow";
 import MoveOnboardingSequence from "@/v1/sequence/MoveOnboardingSequence";
 import PlayOnboardingSequence from "@/v1/sequence/PlayOnboardingSequence";
 import SignupGate from "@/v1/signup/SignupGate";
 import SignupOnboarding from "@/v1/signup/SignupOnboarding";
 
-import {
-  V1_ONBOARDING_ROUTES,
-  ONBOARDING_ACTIONS,
-} from "@/v1/onboarding/onboardingFlow";
-
 export default function V1App() {
   const navigate = useNavigate();
   const { user, authUser, walletAddress, isAuthenticated } = useApp();
 
-  const {
-    canSeeDashboard,
-    resolvedEmail,
-    isAdminPreviewUser,
-    displayName,
-    tier,
-  } = useV1AccessState({
+  const access = useV1AccessState({
     user,
     authUser,
     walletAddress,
     isAuthenticated,
   });
 
-  const {
-    onboardingSeen,
-    moveStarted,
-    playStarted,
-    startFromWelcome,
-    markActionStarted,
-    startActionAndGoNext,
-    goToLearnMore,
-    canEnterSignupGate,
-    getSignupGateFallback,
-    markSeenAndGo,
-  } = useV1OnboardingController({ navigate });
+  const onboarding = useV1OnboardingController({ navigate });
 
-  const {
-    todaySteps,
-    moveActive,
-    gamesPlayedToday,
-    dashboardUser,
-    startMoveTracking,
-    stopMoveTracking,
-    applyMoveMilestone,
-    applyMoveComplete,
-    applyPlayComplete,
-  } = useV1OnboardingSessionStats({ user });
+  const session = useV1OnboardingSessionStats({ user });
 
   const dashboardState = useV1DashboardState({
-    user: dashboardUser,
+    user: session.dashboardUser,
     authUser,
-    isAuthenticated: canSeeDashboard,
-    isAdminPreviewUser,
+    isAuthenticated: access.canSeeDashboard,
+    isAdminPreviewUser: access.isAdminPreviewUser,
   });
 
   return (
@@ -77,12 +45,12 @@ export default function V1App() {
       <Route
         path=""
         element={
-          canSeeDashboard ? (
+          access.canSeeDashboard ? (
             <Navigate to="dashboard" replace />
-          ) : onboardingSeen ? (
+          ) : onboarding.onboardingSeen ? (
             <Navigate to="signin" replace />
           ) : (
-            <LandingSequence onSelect={startFromWelcome} />
+            <LandingSequence onSelect={onboarding.startFromWelcome} />
           )
         }
       />
@@ -91,10 +59,10 @@ export default function V1App() {
         path="about"
         element={
           <OnboardingAboutPage
-            hasTriedMove={moveStarted}
-            hasTriedPlay={playStarted}
-            onMove={() => navigate(V1_ONBOARDING_ROUTES.move)}
-            onPlay={() => navigate(V1_ONBOARDING_ROUTES.play)}
+            hasTriedMove={onboarding.moveStarted}
+            hasTriedPlay={onboarding.playStarted}
+            onMove={onboarding.goToMove}
+            onPlay={onboarding.goToPlay}
           />
         }
       />
@@ -103,26 +71,26 @@ export default function V1App() {
         path="move"
         element={
           <MoveOnboardingSequence
-            totalSteps={todaySteps}
-            progressPercent={Math.min((todaySteps / 20) * 100, 100)}
+            totalSteps={session.todaySteps}
+            progressPercent={Math.min((session.todaySteps / 20) * 100, 100)}
             onStartTracking={() => {
-              startMoveTracking();
-              markActionStarted(ONBOARDING_ACTIONS.moveStarted);
+              session.startMoveTracking();
+              onboarding.markMoveStarted();
             }}
-            onStopTracking={stopMoveTracking}
+            onStopTracking={session.stopMoveTracking}
             onTryPlay={() => {
-              stopMoveTracking();
-              startActionAndGoNext(ONBOARDING_ACTIONS.moveStarted);
+              session.stopMoveTracking();
+              onboarding.finishMoveAndGoNext();
             }}
             onLearnMore={() => {
-              stopMoveTracking();
-              goToLearnMore();
+              session.stopMoveTracking();
+              onboarding.goToLearnMore();
             }}
             onMoveComplete={(payload) => {
-              applyMoveComplete(payload);
-              startActionAndGoNext(ONBOARDING_ACTIONS.moveStarted);
+              session.applyMoveComplete(payload);
+              onboarding.finishMoveAndGoNext();
             }}
-            onMoveMilestone={applyMoveMilestone}
+            onMoveMilestone={session.applyMoveMilestone}
           />
         }
       />
@@ -131,14 +99,12 @@ export default function V1App() {
         path="play"
         element={
           <PlayOnboardingSequence
-            triedMove={moveStarted}
-            onLearnMore={goToLearnMore}
-            onStartPlay={() => {
-              markActionStarted(ONBOARDING_ACTIONS.playStarted);
-            }}
+            triedMove={onboarding.moveStarted}
+            onLearnMore={onboarding.goToLearnMore}
+            onStartPlay={onboarding.markPlayStarted}
             onComplete={(payload) => {
-              applyPlayComplete(payload);
-              startActionAndGoNext(ONBOARDING_ACTIONS.playStarted);
+              session.applyPlayComplete(payload);
+              onboarding.finishPlayAndGoNext();
             }}
           />
         }
@@ -147,15 +113,17 @@ export default function V1App() {
       <Route
         path="signup-gate"
         element={
-          canEnterSignupGate() ? (
+          onboarding.canEnterSignupGate() ? (
             <SignupGate
-              hasTriedMove={moveStarted}
-              hasTriedPlay={playStarted}
-              onBeginAuth={() => markSeenAndGo(V1_ONBOARDING_ROUTES.signup)}
-              onExitOnboarding={() => navigate(V1_ONBOARDING_ROUTES.root)}
+              hasTriedMove={onboarding.moveStarted}
+              hasTriedPlay={onboarding.playStarted}
+              onBeginAuth={() =>
+                onboarding.markSeenAndGo(V1_ONBOARDING_ROUTES.signup)
+              }
+              onExitOnboarding={onboarding.goToRoot}
             />
           ) : (
-            <Navigate to={getSignupGateFallback()} replace />
+            <Navigate to={onboarding.getSignupGateFallback()} replace />
           )
         }
       />
@@ -166,7 +134,9 @@ export default function V1App() {
           <SignupOnboarding
             navigate={navigate}
             dashboardRoute={V1_ONBOARDING_ROUTES.dashboard}
-            onAuthSuccess={() => markSeenAndGo(V1_ONBOARDING_ROUTES.dashboard)}
+            onAuthSuccess={() =>
+              onboarding.markSeenAndGo(V1_ONBOARDING_ROUTES.dashboard)
+            }
           />
         }
       />
@@ -176,7 +146,9 @@ export default function V1App() {
         element={
           <SignIn
             dashboardRoute={V1_ONBOARDING_ROUTES.dashboard}
-            onSuccess={() => markSeenAndGo(V1_ONBOARDING_ROUTES.dashboard)}
+            onSuccess={() =>
+              onboarding.markSeenAndGo(V1_ONBOARDING_ROUTES.dashboard)
+            }
           />
         }
       />
@@ -189,19 +161,21 @@ export default function V1App() {
       <Route
         path="dashboard"
         element={
-          canSeeDashboard ? (
+          access.canSeeDashboard ? (
             <SimplifiedDashboard
-              user={dashboardUser}
+              user={session.dashboardUser}
               authUser={authUser}
-              displayName={displayName || dashboardState.displayName}
-              subtext={walletAddress || resolvedEmail || "Account active"}
-              tier={tier}
+              displayName={access.displayName || dashboardState.displayName}
+              subtext={
+                walletAddress || access.resolvedEmail || "Account active"
+              }
+              tier={access.tier}
               zptsBalance={dashboardState.zptsBalance}
               zwapBalance={0}
               todaySteps={dashboardState.dailySteps}
               stepGoal={20}
-              isMoveActive={moveActive}
-              gamesPlayedToday={gamesPlayedToday}
+              isMoveActive={session.moveActive}
+              gamesPlayedToday={session.gamesPlayedToday}
               playGoal={1}
               completedTasks={dashboardState.completedTaskCount}
               totalTasks={dashboardState.totalTaskCount}
@@ -215,15 +189,15 @@ export default function V1App() {
               badgeVisibilityUnlocked={dashboardState.badgeVisibilityUnlocked}
               isSwapUnlocked={dashboardState.isSwapUnlocked}
               walletAddress={walletAddress}
-              showUpgrade={!canSeeDashboard}
-              onOpenUpgrade={() => navigate(V1_ONBOARDING_ROUTES.signupGate)}
+              showUpgrade={!access.canSeeDashboard}
+              onOpenUpgrade={onboarding.goToSignupGate}
               onAdminTrigger={() => navigate("/admin")}
-              onOpenProfile={() => navigate(V1_ONBOARDING_ROUTES.dashboard)}
+              onOpenProfile={onboarding.goToDashboard}
               onOpenContact={() => navigate("/contact")}
               onOpenPrivacy={() => navigate("/privacy")}
-              onOpenHelp={() => navigate(V1_ONBOARDING_ROUTES.about)}
+              onOpenHelp={onboarding.goToLearnMore}
               onOpenTerms={() => navigate("/terms")}
-              onOpenZwapPanel={() => navigate(V1_ONBOARDING_ROUTES.signupGate)}
+              onOpenZwapPanel={onboarding.goToSignupGate}
               homeRoute={V1_ONBOARDING_ROUTES.dashboard}
               moveRoute={V1_ONBOARDING_ROUTES.move}
               playRoute={V1_ONBOARDING_ROUTES.play}
