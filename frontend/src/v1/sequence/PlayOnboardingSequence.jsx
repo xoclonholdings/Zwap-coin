@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 
 import StackzOnboardingGame from "@/v1/components/games/stackz/StackzOnboardingGame";
@@ -7,22 +7,37 @@ import usePlayOnboardingMachine from "./usePlayOnboardingMachine";
 import {
   PlayShell,
   PlayVoiceView,
-  PlayRewardView,
+  PlayCompleteView,
   PlayGameStage,
-  PlayMoveOfferView,
 } from "./PlayOnboardingViews";
 
 export default function PlayOnboardingSequence({
-  triedMove = false,
+  onStartPlay,
   onComplete,
-  onLearnMore,
   stackzLevel = 1,
 }) {
-  const { phase, voice, showVoice, handleGameEnd, handleTryMove } =
-    usePlayOnboardingMachine({
-      triedMove,
-      onComplete,
+  const completedRef = useRef(false);
+
+  const { phase, voice, showVoice, handleGameEnd } =
+    usePlayOnboardingMachine();
+
+  useEffect(() => {
+    if (phase !== "game") return;
+
+    onStartPlay?.();
+  }, [phase, onStartPlay]);
+
+  useEffect(() => {
+    if (phase !== "complete") return;
+    if (completedRef.current) return;
+
+    completedRef.current = true;
+
+    onComplete?.({
+      playStarted: true,
+      playCompleted: true,
     });
+  }, [phase, onComplete]);
 
   return (
     <AnimatePresence mode="wait">
@@ -43,18 +58,9 @@ export default function PlayOnboardingSequence({
         </PlayGameStage>
       )}
 
-      {!showVoice && phase === "reward" && (
-        <PlayShell key="play-reward">
-          <PlayRewardView amount={50} />
-        </PlayShell>
-      )}
-
-      {!showVoice && phase === "move-offer" && (
-        <PlayShell key="move-offer">
-          <PlayMoveOfferView
-            onTryMove={handleTryMove}
-            onLearnMore={onLearnMore}
-          />
+      {!showVoice && phase === "complete" && (
+        <PlayShell key="play-complete">
+          <PlayCompleteView />
         </PlayShell>
       )}
     </AnimatePresence>
