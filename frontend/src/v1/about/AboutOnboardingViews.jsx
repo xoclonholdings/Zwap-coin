@@ -1,13 +1,13 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+import { getAboutGuidanceLines } from "@/v1/about/aboutOnboardingScript";
 import OnboardingActionButton from "@/v1/onboarding/OnboardingActionButton";
-import OnboardingShell from "@/v1/onboarding/OnboardingShell";
-import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
 import {
   getAboutAvailableActions,
-  getAboutGuidanceLines,
 } from "@/v1/onboarding/onboardingFlow";
+import OnboardingShell from "@/v1/onboarding/OnboardingShell";
+import OnboardingVoiceText from "@/v1/onboarding/OnboardingVoiceText";
 
 export function AboutShell({ children }) {
   return <OnboardingShell>{children}</OnboardingShell>;
