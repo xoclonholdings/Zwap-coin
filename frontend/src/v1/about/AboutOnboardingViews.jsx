@@ -71,6 +71,74 @@ function renderGradientLine(line) {
   });
 }
 
+function getFinalGuidance({ hasTriedMove, hasTriedPlay }) {
+  if (hasTriedMove && !hasTriedPlay) {
+    return ["Now try", "PLAY."];
+  }
+
+  if (!hasTriedMove && hasTriedPlay) {
+    return ["Now try", "MOVE."];
+  }
+
+  if (!hasTriedMove && !hasTriedPlay) {
+    return ["Choose your", "next action."];
+  }
+
+  return null;
+}
+
+function OnboardingActionButton({ type = "move", onClick, full = false }) {
+  const isMove = type === "move";
+
+  const label = isMove ? "Move" : "Play";
+  const eyebrow = isMove ? "STEP INTO VALUE" : "ENTER THE ARCADE";
+
+  const shellClass = isMove
+    ? "border-cyan-300/45 bg-[radial-gradient(circle_at_top,rgba(103,232,249,0.24),rgba(34,211,238,0.12)_42%,rgba(8,12,24,0.9)_100%)] text-cyan-50 shadow-[0_0_32px_rgba(34,211,238,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]"
+    : "border-violet-300/45 bg-[radial-gradient(circle_at_top,rgba(216,180,254,0.24),rgba(168,85,247,0.13)_42%,rgba(12,8,24,0.9)_100%)] text-violet-50 shadow-[0_0_32px_rgba(168,85,247,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]";
+
+  const glowClass = isMove
+    ? "from-cyan-200/0 via-cyan-200/45 to-cyan-200/0"
+    : "from-violet-200/0 via-fuchsia-200/45 to-violet-200/0";
+
+  const dotClass = isMove
+    ? "bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.75)]"
+    : "bg-violet-200 shadow-[0_0_14px_rgba(168,85,247,0.75)]";
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.965 }}
+      className={[
+        "group relative overflow-hidden rounded-[24px] border px-4 py-4 text-left transition active:scale-[0.965]",
+        full ? "w-full" : "flex-1",
+        shellClass,
+      ].join(" ")}
+    >
+      <motion.div
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-[-35%] top-0 h-full w-[45%] bg-gradient-to-r ${glowClass} blur-md`}
+        animate={{ x: ["0%", "310%", "0%"] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div className="relative z-10 flex min-h-[54px] flex-col justify-center">
+        <div className="mb-1 flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+          <span className="text-[8px] font-black uppercase tracking-[0.22em] text-white/50">
+            {eyebrow}
+          </span>
+        </div>
+
+        <div className="text-[1.25rem] font-black leading-none tracking-[-0.055em] text-white">
+          {label}
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
 export function AboutShell({ children }) {
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
@@ -414,6 +482,13 @@ export function FinalContinueView({
   const showMove = !hasTriedMove;
   const showPlay = !hasTriedPlay;
 
+  const guidanceLines = getFinalGuidance({
+    hasTriedMove,
+    hasTriedPlay,
+  });
+
+  if (!guidanceLines) return null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
@@ -421,44 +496,30 @@ export function FinalContinueView({
       transition={{ duration: 0.65 }}
       className="flex w-full max-w-[320px] flex-col items-center gap-5"
     >
+      <div className="flex flex-col items-center gap-1">
+        {guidanceLines.map((line) => (
+          <div
+            key={line}
+            className="text-center text-[2.1rem] font-black leading-[1.03] tracking-[-0.065em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
+          >
+            {renderGradientLine(line)}
+          </div>
+        ))}
+      </div>
+
       {showMove && showPlay && (
         <div className="flex w-full gap-4">
-          <button
-            type="button"
-            onClick={onMove}
-            className="flex-1 rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition active:scale-[0.96]"
-          >
-            Move
-          </button>
-
-          <button
-            type="button"
-            onClick={onPlay}
-            className="flex-1 rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)] transition active:scale-[0.96]"
-          >
-            Play
-          </button>
+          <OnboardingActionButton type="move" onClick={onMove} />
+          <OnboardingActionButton type="play" onClick={onPlay} />
         </div>
       )}
 
       {showMove && !showPlay && (
-        <button
-          type="button"
-          onClick={onMove}
-          className="w-full rounded-2xl border border-cyan-300/45 bg-cyan-300/15 px-6 py-4 text-lg font-black text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition active:scale-[0.96]"
-        >
-          Move
-        </button>
+        <OnboardingActionButton type="move" onClick={onMove} full />
       )}
 
       {!showMove && showPlay && (
-        <button
-          type="button"
-          onClick={onPlay}
-          className="w-full rounded-2xl border border-purple-300/45 bg-purple-400/15 px-6 py-4 text-lg font-black text-purple-100 shadow-[0_0_28px_rgba(180,134,255,0.16)] transition active:scale-[0.96]"
-        >
-          Play
-        </button>
+        <OnboardingActionButton type="play" onClick={onPlay} full />
       )}
     </motion.div>
   );
