@@ -1,14 +1,78 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const STARTING_ONBOARDING_ZPTS = 100;
+export const PENDING_ONBOARDING_REWARD_KEY = "zwap_pending_onboarding_reward";
+
+const MOVE_ONBOARDING_ZPTS = 50;
+const PLAY_ONBOARDING_ZPTS = 50;
+
+function readPendingOnboardingReward() {
+  try {
+    const raw = localStorage.getItem(PENDING_ONBOARDING_REWARD_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+
+    return {
+      zptsBalance: Number(parsed?.zptsBalance || 0),
+      moveZpts: Number(parsed?.moveZpts || 0),
+      playZpts: Number(parsed?.playZpts || 0),
+      dailySteps: Number(parsed?.dailySteps || 0),
+      gamesPlayedToday: Number(parsed?.gamesPlayedToday || 0),
+      moveCompleted: Boolean(parsed?.moveCompleted),
+      playCompleted: Boolean(parsed?.playCompleted),
+    };
+  } catch {
+    return {
+      zptsBalance: 0,
+      moveZpts: 0,
+      playZpts: 0,
+      dailySteps: 0,
+      gamesPlayedToday: 0,
+      moveCompleted: false,
+      playCompleted: false,
+    };
+  }
+}
+
+function writePendingOnboardingReward(nextReward) {
+  localStorage.setItem(
+    PENDING_ONBOARDING_REWARD_KEY,
+    JSON.stringify(nextReward)
+  );
+}
+
+export function clearPendingOnboardingReward() {
+  localStorage.removeItem(PENDING_ONBOARDING_REWARD_KEY);
+}
 
 export default function useV1OnboardingSessionStats({ user }) {
-  const [todaySteps, setTodaySteps] = useState(0);
-  const [moveActive, setMoveActive] = useState(false);
-  const [gamesPlayedToday, setGamesPlayedToday] = useState(0);
-  const [zptsBalance, setZptsBalance] = useState(STARTING_ONBOARDING_ZPTS);
+  const [pendingReward, setPendingReward] = useState(() =>
+    readPendingOnboardingReward()
+  );
 
-  // ---- Actions (no routing, no onboarding decisions) ----
+  const [todaySteps, setTodaySteps] = useState(pendingReward.dailySteps);
+  const [moveActive, setMoveActive] = useState(false);
+  const [gamesPlayedToday, setGamesPlayedToday] = useState(
+    pendingReward.gamesPlayedToday
+  );
+
+  const [moveZpts, setMoveZpts] = useState(pendingReward.moveZpts);
+  const [playZpts, setPlayZpts] = useState(pendingReward.playZpts);
+
+  const zptsBalance = moveZpts + playZpts;
+
+  useEffect(() => {
+    const nextReward = {
+      zptsBalance,
+      moveZpts,
+      playZpts,
+      dailySteps: todaySteps,
+      gamesPlayedToday,
+      moveCompleted: moveZpts > 0,
+      playCompleted: playZpts > 0,
+    };
+
+    setPendingReward(nextReward);
+    writePendingOnboardingReward(nextReward);
+  }, [zptsBalance, moveZpts, playZpts, todaySteps, gamesPlayedToday]);
 
   function startMoveTracking() {
     setMoveActive(true);
@@ -18,26 +82,26 @@ export default function useV1OnboardingSessionStats({ user }) {
     setMoveActive(false);
   }
 
-  function applyMoveMilestone({ displayedSteps = 0, displayedZpts = 0 } = {}) {
+  function applyMoveMilestone({ displayedSteps = 0 } = {}) {
     setTodaySteps((prev) => Math.max(prev, displayedSteps));
-    setZptsBalance((prev) =>
-      Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
-    );
   }
 
-  function applyMoveComplete({ displayedSteps = 0, displayedZpts = 0 } = {}) {
+  function applyMoveComplete({
+    displayedSteps = 0,
+    moveVerified = false,
+  } = {}) {
     setMoveActive(false);
-    applyMoveMilestone({ displayedSteps, displayedZpts });
+    setTodaySteps((prev) => Math.max(prev, displayedSteps));
+
+    if (moveVerified) {
+      setMoveZpts(MOVE_ONBOARDING_ZPTS);
+    }
   }
 
-  function applyPlayComplete({ displayedZpts = 50 } = {}) {
-    setGamesPlayedToday((prev) => prev + 1);
-    setZptsBalance((prev) =>
-      Math.max(prev, STARTING_ONBOARDING_ZPTS + displayedZpts)
-    );
+  function applyPlayComplete() {
+    setGamesPlayedToday((prev) => Math.max(prev, 1));
+    setPlayZpts(PLAY_ONBOARDING_ZPTS);
   }
-
-  // ---- Derived ----
 
   const dashboardUser = useMemo(() => {
     return {
@@ -48,24 +112,24 @@ export default function useV1OnboardingSessionStats({ user }) {
       daily_steps: todaySteps,
       gamesPlayedToday,
       games_played_today: gamesPlayedToday,
+      onboardingReward: pendingReward,
+      onboarding_reward: pendingReward,
     };
-  }, [user, zptsBalance, todaySteps, gamesPlayedToday]);
+  }, [user, zptsBalance, todaySteps, gamesPlayedToday, pendingReward]);
 
   return {
-    // state
     todaySteps,
     moveActive,
     gamesPlayedToday,
     zptsBalance,
+    onboardingReward: pendingReward,
 
-    // actions
     startMoveTracking,
     stopMoveTracking,
     applyMoveMilestone,
     applyMoveComplete,
     applyPlayComplete,
 
-    // derived
     dashboardUser,
   };
 }
