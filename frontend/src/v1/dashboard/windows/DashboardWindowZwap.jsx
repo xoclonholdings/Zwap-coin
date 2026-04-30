@@ -10,7 +10,7 @@ import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
 const ZAP_IDLE_ROTATION_MS = 7000;
 const ZAP_RESPONSE_HOLD_MS = 5200;
-const ZAP_TYPE_SPEED_MS = 46;
+const ZAP_TYPE_SPEED_MS = 70;
 
 function WindowAltIndicator() {
   return (
@@ -101,11 +101,14 @@ function GuidanceText({ guidance, onTypingChange }) {
       .slice(0, index)
       .reduce((total, item) => total + item.length + 1, 0);
 
-    return visibleCount > previousLength && visibleCount <= previousLength + lines[index].length;
+    return (
+      visibleCount > previousLength &&
+      visibleCount <= previousLength + lines[index].length
+    );
   }
 
   return (
-    <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-4 pt-5 text-center">
+    <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-4 pt-6 text-center">
       {lines.map((line, index) => {
         const visibleLine = getVisibleLine(line, index);
         const isEdgeLine = index === 0 || index === lines.length - 1;
@@ -115,8 +118,8 @@ function GuidanceText({ guidance, onTypingChange }) {
             key={`${line}-${index}`}
             className={
               isEdgeLine
-                ? "text-[0.88rem] font-black uppercase leading-[1.08] tracking-[0.035em] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.12)]"
-                : "text-[0.72rem] font-extrabold leading-snug tracking-[-0.025em] text-white/76"
+                ? "text-[0.92rem] font-extrabold uppercase leading-[1.06] tracking-[0.06em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.16)]"
+                : "text-[0.72rem] font-semibold leading-snug tracking-[-0.02em] text-white/70"
             }
           >
             {visibleLine}
@@ -140,11 +143,18 @@ function ZapGuidanceStage({ guidance }) {
         className="relative mx-auto h-[150px] w-full max-w-[94%]"
         initial={{ scale: 0.985, opacity: 0.92 }}
         animate={{
-          scale: isTyping ? [1, 1.006, 1] : [0.985, 1.018, 1],
+          scale: isTyping ? [1, 1.004, 1] : [0.985, 1.014, 1],
           opacity: 1,
+          filter: isTyping
+            ? [
+                "drop-shadow(0 0 8px rgba(168,85,247,0.16))",
+                "drop-shadow(0 0 14px rgba(34,211,238,0.18))",
+                "drop-shadow(0 0 8px rgba(168,85,247,0.16))",
+              ]
+            : "drop-shadow(0 0 8px rgba(168,85,247,0.12))",
         }}
         transition={{
-          duration: isTyping ? 1.35 : 0.52,
+          duration: isTyping ? 1.6 : 0.52,
           repeat: isTyping ? Infinity : 0,
           ease: "easeInOut",
         }}
@@ -170,9 +180,9 @@ function ZapGuidanceStage({ guidance }) {
           animate={
             isTyping
               ? {
-                  y: [0, -2, 0, -1, 0],
-                  scale: [1, 1.022, 1, 1.016, 1],
-                  rotate: [0, -0.7, 0.6, -0.35, 0],
+                  y: [0, -1.5, 0, -0.8, 0],
+                  scale: [1, 1.018, 1, 1.012, 1],
+                  rotate: [0, -0.5, 0.4, -0.2, 0],
                 }
               : {
                   y: 0,
@@ -181,7 +191,7 @@ function ZapGuidanceStage({ guidance }) {
                 }
           }
           transition={{
-            duration: 1.15,
+            duration: 1.6,
             repeat: isTyping ? Infinity : 0,
             ease: "easeInOut",
           }}
