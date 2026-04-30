@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ChevronRight } from "lucide-react";
 
 import zapBubble from "@/assets/zap/zap-bubble.png";
 import zapHead from "@/assets/zap/zap-head.png";
@@ -6,9 +7,25 @@ import zapHead from "@/assets/zap/zap-head.png";
 import ZapTasksPanel from "./zap/ZapTasksPanel";
 import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
+const ZAP_IDLE_ROTATION_MS = 18000;
+
+function WindowAltIndicator({ label = "Tap for tasks" }) {
+  return (
+    <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5">
+      <div className="hidden rounded-full border border-white/10 bg-black/25 px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/45 backdrop-blur-md sm:block">
+        {label}
+      </div>
+
+      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.045] text-white/80 shadow-[0_0_18px_rgba(168,85,247,0.16)] backdrop-blur-md">
+        <ChevronRight size={18} strokeWidth={2.7} />
+      </div>
+    </div>
+  );
+}
+
 function ZwapHeader() {
   return (
-    <div className="relative z-10 flex items-center gap-3">
+    <div className="relative z-10 flex items-center gap-3 pr-10">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-violet-300/35 bg-violet-400/14 shadow-[0_0_18px_rgba(168,85,247,0.18)]">
         <img
           src={zapHead}
@@ -38,8 +55,8 @@ function GuidanceText({ guidance }) {
           key={`${line}-${index}`}
           className={
             index === 0
-              ? "text-[1.05rem] font-black leading-[1.08] tracking-[-0.05em] text-white"
-              : "mt-2 text-[0.72rem] font-bold leading-snug tracking-[-0.025em] text-white/70"
+              ? "text-[1.02rem] font-black leading-[1.08] tracking-[-0.05em] text-white"
+              : "mt-2 text-[0.7rem] font-bold leading-snug tracking-[-0.025em] text-white/72"
           }
         >
           {line}
@@ -51,10 +68,8 @@ function GuidanceText({ guidance }) {
 
 function ZapGuidanceStage({ guidance }) {
   return (
-    <div className="relative z-10 flex flex-1 flex-col justify-between pt-2">
-      
-      {/* BUBBLE */}
-      <div className="relative mx-auto w-full max-w-[92%] min-h-[150px]">
+    <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between pt-2">
+      <div className="relative mx-auto min-h-[150px] w-full max-w-[94%]">
         <img
           src={zapBubble}
           alt=""
@@ -65,14 +80,13 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} />
       </div>
 
-      {/* ZAP HEAD */}
-      <div className="relative flex justify-center -mt-4">
-        <div className="absolute bottom-0 h-8 w-28 rounded-full bg-violet-500/25 blur-xl" />
+      <div className="relative -mt-5 flex justify-center">
+        <div className="absolute bottom-0 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
         <img
           src={zapHead}
           alt="Zap guide"
-          className="relative h-[92px] w-[120px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
+          className="relative h-[104px] w-[134px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
           draggable={false}
         />
       </div>
@@ -109,6 +123,16 @@ export default function DashboardWindowZwap({
   onToggleAltView,
   className = "",
 }) {
+  const [idleTick, setIdleTick] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setIdleTick((current) => current + 1);
+    }, ZAP_IDLE_ROTATION_MS);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
   const guidance = useMemo(() => {
     const result = buildZapGuidance({
       systemMessage,
@@ -126,6 +150,7 @@ export default function DashboardWindowZwap({
       shopUnlocked,
       learnUnlocked,
       swapUnlocked,
+      idleTick,
     });
 
     return result?.text || "";
@@ -145,6 +170,7 @@ export default function DashboardWindowZwap({
     shopUnlocked,
     learnUnlocked,
     swapUnlocked,
+    idleTick,
   ]);
 
   const handleToggle = () => {
@@ -164,7 +190,14 @@ export default function DashboardWindowZwap({
 
   if (isAltView) {
     return (
-      <div onClick={handleToggle} className="h-full">
+      <div
+        onClick={handleToggle}
+        role="button"
+        tabIndex={0}
+        className="relative h-full"
+      >
+        <WindowAltIndicator label="Back to Zap" />
+
         <ZapTasksPanel
           completedTaskCount={completedTaskCount}
           learnUnlocked={learnUnlocked}
@@ -176,12 +209,19 @@ export default function DashboardWindowZwap({
   }
 
   return (
-    <section onClick={handleToggle} className={shellClassName}>
+    <section
+      onClick={handleToggle}
+      className={shellClassName}
+      role="button"
+      tabIndex={0}
+    >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/16 blur-3xl" />
         <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
         <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/30 to-transparent" />
       </div>
+
+      <WindowAltIndicator label="Tap for tasks" />
 
       <ZwapHeader />
       <ZapGuidanceStage guidance={guidance} />
