@@ -39,24 +39,6 @@ function WindowAltIndicator({ onClick }) {
   );
 }
 
-function ZapManLogoFallback({ isSwitching = false, locked = false }) {
-  return (
-    <div
-      className={[
-        "flex h-full w-full items-center justify-center transition-all duration-200",
-        isSwitching ? "scale-95 opacity-40 blur-[1px]" : "scale-100 opacity-100",
-        locked ? "opacity-30" : "",
-      ].join(" ")}
-    >
-      <div className="rounded-[18px] border border-fuchsia-300/18 bg-black/20 px-4 py-3 shadow-[0_0_18px_rgba(236,72,153,0.12)]">
-        <div className="bg-gradient-to-r from-fuchsia-100 via-pink-300 to-fuchsia-500 bg-clip-text text-[1.55rem] font-black uppercase leading-none tracking-[-0.055em] text-transparent drop-shadow-[0_0_8px_rgba(236,72,153,0.25)]">
-          ZAP-MAN
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function DashboardWindowPlay({
   games = DEFAULT_GAMES,
   highScores = {},
@@ -174,24 +156,17 @@ export default function DashboardWindowPlay({
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center">
             <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center overflow-visible">
-              {activeGame.id === "zap-man" ? (
-                <ZapManLogoFallback
-                  isSwitching={isSwitching}
-                  locked={activeGame.locked}
-                />
-              ) : (
-                <img
-                  src={activeGame.logo}
-                  alt={activeGame.name}
-                  className={[
-                    "block h-full max-h-full w-auto max-w-none object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
-                    isSwitching
-                      ? "scale-95 opacity-40 blur-[1px]"
-                      : "scale-100 opacity-100",
-                    activeGame.locked ? "opacity-30" : "",
-                  ].join(" ")}
-                />
-              )}
+              <img
+                src={activeGame.logo}
+                alt={activeGame.name}
+                className={[
+                  "block h-full max-h-full w-auto max-w-none object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
+                  isSwitching
+                    ? "scale-95 opacity-40 blur-[1px]"
+                    : "scale-100 opacity-100",
+                  activeGame.locked ? "opacity-30" : "",
+                ].join(" ")}
+              />
 
               {activeGame.locked && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
