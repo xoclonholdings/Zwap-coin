@@ -179,6 +179,7 @@ export default function DashboardV1({ user, authUser }) {
   const [activeView, setActiveView] = useState("dashboard");
 
   const [localGamesPlayedToday, setLocalGamesPlayedToday] = useState(0);
+  const [localZptsBalance, setLocalZptsBalance] = useState(null);
 
   const [shopCategories, setShopCategories] = useState([]);
   const [shopItems, setShopItems] = useState([]);
@@ -237,18 +238,70 @@ export default function DashboardV1({ user, authUser }) {
     }
   };
 
+  const submitPlayResult = async (result) => {
+    if (!resolvedEmail) return null;
+
+    const gameType = result?.gameId || result?.game_type || result?.game || "";
+    const score = Number(result?.score || 0);
+    const level = Number(result?.level || 1);
+
+    if (!gameType) return null;
+
+    const res = await fetch(
+      `${API_BASE}/games/result/${encodeURIComponent(resolvedEmail)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          game_type: gameType,
+          score,
+          level,
+          blocks_destroyed: Number(result?.blocksDestroyed || 0),
+          session_duration_seconds: Number(result?.sessionDurationSeconds || 0),
+          completed: true,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Game result failed");
+    }
+
+    return res.json();
+  };
+
   const handleGameEnd = async (result) => {
     console.log("Game ended:", result);
 
     setActiveGameId(null);
     setLocalGamesPlayedToday((current) => Math.max(current, 1));
 
-    setActivitySignal({
-      type: "play",
-      game: result?.gameId || "",
-      zpts: 0,
-      created_at: new Date().toISOString(),
-    });
+    try {
+      const playResult = await submitPlayResult(result);
+
+      if (playResult?.new_zpts_balance !== undefined) {
+        setLocalZptsBalance(Number(playResult.new_zpts_balance || 0));
+      }
+
+      setActivitySignal({
+        type: "play",
+        game: result?.gameId || playResult?.game || "",
+        zpts: Number(playResult?.zpts_earned || 0),
+        created_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Play result submit failed:", error);
+
+      setActivitySignal({
+        type: "play",
+        game: result?.gameId || "",
+        zpts: 0,
+        created_at: new Date().toISOString(),
+      });
+    }
 
     await refreshActivitySnapshot();
   };
@@ -387,6 +440,12 @@ export default function DashboardV1({ user, authUser }) {
 
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
+  const resolvedZptsBalance = Math.max(
+    Number(activitySnapshot?.zptsBalance || 0),
+    Number(zptsBalance || 0),
+    Number(localZptsBalance || 0)
+  );
+
   const resolvedDailySteps = Math.max(
     Number(activitySnapshot?.dailySteps || 0),
     Number(dailySteps || 0),
@@ -455,7 +514,7 @@ export default function DashboardV1({ user, authUser }) {
           user={user}
           authUser={authUser}
           tier={resolvedTier}
-          zptsBalance={zptsBalance}
+          zptsBalance={resolvedZptsBalance}
           displayName={displayName}
           gardenUnlocked={previewGardenUnlocked}
           learnUnlocked={previewLearnUnlocked}
@@ -485,7 +544,7 @@ export default function DashboardV1({ user, authUser }) {
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowShop
-            zptsBalance={zptsBalance}
+            zptsBalance={resolvedZptsBalance}
             shopUnlocked={previewShopUnlocked}
             categories={shopCategories}
             items={shopItems}
@@ -506,7 +565,7 @@ export default function DashboardV1({ user, authUser }) {
             completedTaskCount={resolvedCompletedTaskCount}
             totalTaskCount={resolvedTotalTaskCount}
             taskStates={resolvedTaskStates}
-            zptsBalance={zptsBalance}
+            zptsBalance={resolvedZptsBalance}
             shopUnlocked={previewShopUnlocked}
             gardenUnlocked={previewGardenUnlocked}
             learnUnlocked={previewLearnUnlocked}
