@@ -1,5 +1,3 @@
-import { setSteps } from "@/services/stepService";
-
 /**
  * ZWAP! V1 STEP FEEDER
  * Real device-step bridge only.
