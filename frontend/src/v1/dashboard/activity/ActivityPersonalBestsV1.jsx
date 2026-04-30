@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   ChevronRight,
   Footprints,
@@ -7,10 +7,46 @@ import {
   Trophy,
 } from "lucide-react";
 
+const DEFAULT_GAME_BESTS = [
+  { id: "stackz", label: "STACKZ High Score" },
+  { id: "breakerz", label: "BREAKERZ High Score" },
+  { id: "pulze", label: "PULZE High Score" },
+  { id: "zap-man", label: "ZAP-MAN High Score" },
+];
+
 function formatValue(value) {
   if (value === null || value === undefined || value === "") return "--";
   if (typeof value === "number") return value.toLocaleString();
   return value;
+}
+
+function normalizeGameId(value = "") {
+  return String(value || "").toLowerCase().trim();
+}
+
+function buildPersonalBestRows(personalBests = []) {
+  const bestsByGame = {};
+
+  if (Array.isArray(personalBests)) {
+    personalBests.forEach((item) => {
+      const gameId = normalizeGameId(item?.gameId || item?.game || item?.id);
+
+      if (item?.type === "game" && gameId) {
+        bestsByGame[gameId] = item;
+      }
+    });
+  }
+
+  return DEFAULT_GAME_BESTS.map((game) => {
+    const saved = bestsByGame[game.id];
+
+    return {
+      type: "trophy",
+      label: game.label,
+      value: saved?.value ?? saved?.score ?? 0,
+      date: saved?.date || "",
+    };
+  });
 }
 
 const ICONS = {
@@ -18,15 +54,21 @@ const ICONS = {
   calories: Flame,
   time: Clock3,
   trophy: Trophy,
+  game: Trophy,
 };
 
 export default function ActivityPersonalBestsV1({
-  personalBests = [], // [{ type, label, value, date }]
+  personalBests = [],
   onViewAll,
 }) {
+  const rows = useMemo(
+    () => buildPersonalBestRows(personalBests),
+    [personalBests]
+  );
+
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between">
         <div className="text-sm font-semibold text-white/70">
           Personal Bests
         </div>
@@ -43,43 +85,37 @@ export default function ActivityPersonalBestsV1({
         ) : null}
       </div>
 
-      <div className="grid gap-3">
-        {personalBests.length > 0 ? (
-          personalBests.map((item, index) => {
-            const Icon = ICONS[item.type] || Trophy;
+      <div className="grid gap-2">
+        {rows.map((item, index) => {
+          const Icon = ICONS[item.type] || Trophy;
 
-            return (
-              <div
-                key={`${item.label || "best"}-${index}`}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-cyan-300">
-                  <Icon size={18} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs text-white/50">
-                    {item.label || "Personal Best"}
-                  </div>
-
-                  <div className="mt-0.5 truncate text-sm font-semibold text-white">
-                    {formatValue(item.value)}
-                  </div>
-
-                  {item.date ? (
-                    <div className="mt-0.5 truncate text-[10px] text-white/35">
-                      {item.date}
-                    </div>
-                  ) : null}
-                </div>
+          return (
+            <div
+              key={`${item.label || "best"}-${index}`}
+              className="flex items-center gap-2.5 rounded-[1.15rem] border border-white/10 bg-white/[0.03] px-3 py-2"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-cyan-300">
+                <Icon size={16} />
               </div>
-            );
-          })
-        ) : (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-xs text-white/40">
-            No personal bests yet.
-          </div>
-        )}
+
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[11px] font-semibold text-white/58">
+                  {item.label || "Personal Best"}
+                </div>
+
+                <div className="mt-0.5 truncate text-[13px] font-black text-white">
+                  {formatValue(item.value)}
+                </div>
+
+                {item.date ? (
+                  <div className="mt-0.5 truncate text-[9px] text-white/35">
+                    {item.date}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
