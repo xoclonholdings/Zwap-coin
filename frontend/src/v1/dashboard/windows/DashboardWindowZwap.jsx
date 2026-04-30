@@ -32,14 +32,14 @@ function GuidanceText({ guidance }) {
     .filter(Boolean);
 
   return (
-    <div className="relative z-10 px-4 py-3">
+    <div className="relative z-10 px-5 py-4 text-center">
       {lines.map((line, index) => (
         <div
           key={`${line}-${index}`}
           className={
             index === 0
-              ? "text-[1.03rem] font-black leading-[1.04] tracking-[-0.05em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.08)]"
-              : "mt-1.5 text-[0.67rem] font-bold leading-snug tracking-[-0.025em] text-white/70"
+              ? "text-[1.05rem] font-black leading-[1.08] tracking-[-0.05em] text-white"
+              : "mt-2 text-[0.72rem] font-bold leading-snug tracking-[-0.025em] text-white/70"
           }
         >
           {line}
@@ -51,8 +51,10 @@ function GuidanceText({ guidance }) {
 
 function ZapGuidanceStage({ guidance }) {
   return (
-    <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-center pt-2">
-      <div className="relative min-h-[122px]">
+    <div className="relative z-10 flex flex-1 flex-col justify-between pt-2">
+      
+      {/* BUBBLE */}
+      <div className="relative mx-auto w-full max-w-[92%] min-h-[150px]">
         <img
           src={zapBubble}
           alt=""
@@ -63,12 +65,14 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} />
       </div>
 
-      <div className="pointer-events-none relative mx-auto -mt-3 h-[76px] w-[104px]">
-        <div className="absolute inset-x-2 bottom-0 h-6 rounded-full bg-violet-500/20 blur-xl" />
+      {/* ZAP HEAD */}
+      <div className="relative flex justify-center -mt-4">
+        <div className="absolute bottom-0 h-8 w-28 rounded-full bg-violet-500/25 blur-xl" />
+
         <img
           src={zapHead}
           alt="Zap guide"
-          className="relative mx-auto h-full w-full object-contain drop-shadow-[0_0_18px_rgba(168,85,247,0.28)]"
+          className="relative h-[92px] w-[120px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
           draggable={false}
         />
       </div>
@@ -150,7 +154,7 @@ export default function DashboardWindowZwap({
   };
 
   const shellClassName = [
-    "relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
+    "relative flex h-full w-full flex-col overflow-hidden rounded-[26px] border border-violet-300/16 p-4 text-left",
     "bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.2),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.1),transparent_38%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(7,10,18,1))]",
     "shadow-[0_16px_38px_rgba(0,0,0,0.34),0_0_28px_rgba(168,85,247,0.1)]",
     className,
@@ -160,7 +164,7 @@ export default function DashboardWindowZwap({
 
   if (isAltView) {
     return (
-      <div onClick={handleToggle} role="presentation" className="h-full min-h-0">
+      <div onClick={handleToggle} className="h-full">
         <ZapTasksPanel
           completedTaskCount={completedTaskCount}
           learnUnlocked={learnUnlocked}
@@ -172,12 +176,7 @@ export default function DashboardWindowZwap({
   }
 
   return (
-    <section
-      onClick={handleToggle}
-      className={shellClassName}
-      role="button"
-      tabIndex={0}
-    >
+    <section onClick={handleToggle} className={shellClassName}>
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/16 blur-3xl" />
         <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
@@ -185,7 +184,6 @@ export default function DashboardWindowZwap({
       </div>
 
       <ZwapHeader />
-
       <ZapGuidanceStage guidance={guidance} />
     </section>
   );
