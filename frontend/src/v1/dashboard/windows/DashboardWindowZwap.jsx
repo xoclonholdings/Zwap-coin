@@ -7,18 +7,16 @@ import zapHead from "@/assets/zap/zap-head.png";
 import ZapTasksPanel from "./zap/ZapTasksPanel";
 import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
-const ZAP_IDLE_ROTATION_MS = 18000;
+const ZAP_IDLE_ROTATION_MS = 7000;
 
-function WindowAltIndicator({ label = "Tap for tasks" }) {
+function WindowAltIndicator() {
   return (
-    <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5">
-      <div className="hidden rounded-full border border-white/10 bg-black/25 px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/45 backdrop-blur-md sm:block">
-        {label}
-      </div>
-
-      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.045] text-white/80 shadow-[0_0_18px_rgba(168,85,247,0.16)] backdrop-blur-md">
-        <ChevronRight size={18} strokeWidth={2.7} />
-      </div>
+    <div className="absolute right-3 top-3 z-20">
+      <ChevronRight
+        size={22}
+        strokeWidth={2.8}
+        className="text-white/70 drop-shadow-[0_0_10px_rgba(168,85,247,0.25)]"
+      />
     </div>
   );
 }
@@ -69,6 +67,7 @@ function GuidanceText({ guidance }) {
 function ZapGuidanceStage({ guidance }) {
   return (
     <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between pt-2">
+      {/* BUBBLE */}
       <div className="relative mx-auto min-h-[150px] w-full max-w-[94%]">
         <img
           src={zapBubble}
@@ -80,6 +79,7 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} />
       </div>
 
+      {/* ZAP HEAD */}
       <div className="relative -mt-5 flex justify-center">
         <div className="absolute bottom-0 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
@@ -125,6 +125,7 @@ export default function DashboardWindowZwap({
 }) {
   const [idleTick, setIdleTick] = useState(0);
 
+  // Faster rotation
   useEffect(() => {
     const interval = window.setInterval(() => {
       setIdleTick((current) => current + 1);
@@ -132,6 +133,21 @@ export default function DashboardWindowZwap({
 
     return () => window.clearInterval(interval);
   }, []);
+
+  // Immediate response on user activity
+  useEffect(() => {
+    setIdleTick((current) => current + 1);
+  }, [
+    activitySignal,
+    completedTaskCount,
+    zptsBalance,
+    dailySteps,
+    gamesPlayedToday,
+    lessonsCompletedToday,
+    shopUnlocked,
+    learnUnlocked,
+    swapUnlocked,
+  ]);
 
   const guidance = useMemo(() => {
     const result = buildZapGuidance({
@@ -196,7 +212,7 @@ export default function DashboardWindowZwap({
         tabIndex={0}
         className="relative h-full"
       >
-        <WindowAltIndicator label="Back to Zap" />
+        <WindowAltIndicator />
 
         <ZapTasksPanel
           completedTaskCount={completedTaskCount}
@@ -221,7 +237,7 @@ export default function DashboardWindowZwap({
         <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/30 to-transparent" />
       </div>
 
-      <WindowAltIndicator label="Tap for tasks" />
+      <WindowAltIndicator />
 
       <ZwapHeader />
       <ZapGuidanceStage guidance={guidance} />
