@@ -155,7 +155,8 @@ export default function DashboardWindowPlay({
           onTouchEnd={handleTouchEnd}
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center">
-            <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center overflow-visible">
+            {/* 🔥 UPDATED SIZE HERE */}
+            <div className="relative flex h-[140px] w-full max-w-[260px] items-center justify-center overflow-visible">
               <img
                 src={activeGame.logo}
                 alt={activeGame.name}
@@ -193,10 +194,7 @@ export default function DashboardWindowPlay({
             {activeGame.locked ? "Locked" : "Start"}
           </button>
 
-          <div
-            className="mt-2 flex shrink-0 justify-center gap-1.5 pb-0.5"
-            aria-hidden="true"
-          >
+          <div className="mt-2 flex shrink-0 justify-center gap-1.5 pb-0.5">
             {safeGames.map((_, index) => (
               <span
                 key={index}
