@@ -10,6 +10,7 @@ import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
 const ZAP_IDLE_ROTATION_MS = 7000;
 const ZAP_RESPONSE_HOLD_MS = 5200;
+const ZAP_TYPE_SPEED_MS = 24;
 
 function WindowAltIndicator() {
   return (
@@ -43,25 +44,78 @@ function ZwapHeader() {
 }
 
 function GuidanceText({ guidance }) {
-  const lines = String(guidance || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const lines = useMemo(() => {
+    return String(guidance || "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+  }, [guidance]);
+
+  const fullText = lines.join("\n");
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    setVisibleCount(0);
+
+    if (!fullText) return undefined;
+
+    const interval = window.setInterval(() => {
+      setVisibleCount((current) => {
+        if (current >= fullText.length) {
+          window.clearInterval(interval);
+          return current;
+        }
+
+        return current + 1;
+      });
+    }, ZAP_TYPE_SPEED_MS);
+
+    return () => window.clearInterval(interval);
+  }, [fullText]);
+
+  function getVisibleLine(line, index) {
+    const previousLength = lines
+      .slice(0, index)
+      .reduce((total, item) => total + item.length + 1, 0);
+
+    const available = visibleCount - previousLength;
+
+    if (available <= 0) return "";
+    return line.slice(0, available);
+  }
 
   return (
-    <div className="relative z-10 px-5 py-4 text-center">
-      {lines.map((line, index) => (
-        <div
-          key={`${line}-${index}`}
-          className={
-            index === 0
-              ? "text-[1.02rem] font-black leading-[1.08] tracking-[-0.05em] text-white"
-              : "mt-2 text-[0.7rem] font-bold leading-snug tracking-[-0.025em] text-white/72"
-          }
-        >
-          {line}
-        </div>
-      ))}
+    <div className="relative z-10 flex h-full flex-col justify-between px-5 py-4 text-center">
+      {lines.map((line, index) => {
+        const visibleLine = getVisibleLine(line, index);
+        const isLastVisibleLine =
+          visibleLine.length > 0 &&
+          visibleCount < fullText.length &&
+          index === lines.findIndex((item, itemIndex) => {
+            const previousLength = lines
+              .slice(0, itemIndex)
+              .reduce((total, prev) => total + prev.length + 1, 0);
+
+            return visibleCount <= previousLength + item.length;
+          });
+
+        return (
+          <div
+            key={`${line}-${index}`}
+            className={
+              index === 0
+                ? "text-[1.02rem] font-black leading-[1.08] tracking-[-0.05em] text-white"
+                : "text-[0.7rem] font-bold leading-snug tracking-[-0.025em] text-white/72"
+            }
+          >
+            {visibleLine}
+            {isLastVisibleLine ? (
+              <span className="ml-0.5 animate-pulse text-cyan-200">|</span>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -71,7 +125,7 @@ function ZapGuidanceStage({ guidance }) {
     <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between pt-2">
       <motion.div
         key={`bubble-${guidance}`}
-        className="relative mx-auto min-h-[150px] w-full max-w-[94%]"
+        className="relative mx-auto h-[150px] w-full max-w-[94%]"
         initial={{ scale: 0.985, opacity: 0.92 }}
         animate={{ scale: [0.985, 1.018, 1], opacity: 1 }}
         transition={{ duration: 0.52, ease: "easeOut" }}
