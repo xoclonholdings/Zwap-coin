@@ -7,12 +7,47 @@ import React, {
 } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import api from "@/lib/api";
+import { generateUsername } from "@/lib/utils/generateUsername";
 
 export const AppContext = createContext();
 export const useApp = () => useContext(AppContext);
 
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
+}
+
+function getEmailPrefix(email) {
+  return normalizeEmail(email).split("@")[0] || "";
+}
+
+/**
+ * V1 Identity Normalization
+ * - Email is the ONLY identity input
+ * - Username is generated if missing or still equal to email prefix
+ * - No wallet logic allowed in V1
+ */
+function normalizeV1UserIdentity(userData, emailFallback = "") {
+  const normalizedEmail = normalizeEmail(userData?.email || emailFallback);
+  const emailPrefix = getEmailPrefix(normalizedEmail);
+  const currentUsername = String(userData?.username || "").trim();
+
+  const shouldGenerateUsername =
+    !currentUsername ||
+    currentUsername.toLowerCase() === emailPrefix.toLowerCase();
+
+  const resolvedUsername = shouldGenerateUsername
+    ? generateUsername({ email: normalizedEmail })
+    : currentUsername;
+
+  return {
+    ...(userData || {}),
+    email: normalizedEmail,
+    username: resolvedUsername,
+    displayName:
+      userData?.displayName || userData?.display_name || resolvedUsername,
+    display_name:
+      userData?.display_name || userData?.displayName || resolvedUsername,
+  };
 }
 
 function buildPrivyAuthUser(privyUser) {
@@ -92,16 +127,32 @@ export function AppProvider({ children }) {
 
       const userData = await api.getUserByEmail(normalizedEmail);
 
-      setUser(userData);
-      return userData;
+      const normalizedUser = normalizeV1UserIdentity(
+        userData,
+        normalizedEmail
+      );
+
+      setUser(normalizedUser);
+      return normalizedUser;
     } catch {
       try {
-        const newUser = await api.createOrUpdateEmailUser(normalizedEmail, {
-          username: normalizedEmail.split("@")[0],
+        const generatedUsername = generateUsername({
+          email: normalizedEmail,
         });
 
-        setUser(newUser);
-        return newUser;
+        const newUser = await api.createOrUpdateEmailUser(normalizedEmail, {
+          username: generatedUsername,
+          displayName: generatedUsername,
+          display_name: generatedUsername,
+        });
+
+        const normalizedUser = normalizeV1UserIdentity(
+          newUser,
+          normalizedEmail
+        );
+
+        setUser(normalizedUser);
+        return normalizedUser;
       } catch (error) {
         console.log("Failed to load/create email user:", error);
         setUser(null);
@@ -118,13 +169,12 @@ export function AppProvider({ children }) {
     if (savedAuthUser) {
       try {
         const parsedAuthUser = JSON.parse(savedAuthUser);
-        const normalizedAuthUser = {
-          ...parsedAuthUser,
-          email: normalizeEmail(parsedAuthUser?.email),
-        };
+
+        const normalizedAuthUser = normalizeV1UserIdentity(parsedAuthUser);
 
         setIsSigningOut(false);
         setAuthUser(normalizedAuthUser);
+
         localStorage.setItem(
           "zwap_auth_user",
           JSON.stringify(normalizedAuthUser)
@@ -150,26 +200,38 @@ export function AppProvider({ children }) {
     if (isSigningOut) return;
     if (!privyAuthUser?.email) return;
 
-    setAuthUser(privyAuthUser);
-    localStorage.setItem("zwap_auth_user", JSON.stringify(privyAuthUser));
-    localStorage.setItem("zwap_email", privyAuthUser.email);
+    const normalizedPrivyAuthUser =
+      normalizeV1UserIdentity(privyAuthUser);
+
+    setAuthUser(normalizedPrivyAuthUser);
+
+    localStorage.setItem(
+      "zwap_auth_user",
+      JSON.stringify(normalizedPrivyAuthUser)
+    );
+    localStorage.setItem("zwap_email", normalizedPrivyAuthUser.email);
+
     closeAllAuthModals();
 
-    loadEmailUser(privyAuthUser.email);
+    loadEmailUser(normalizedPrivyAuthUser.email);
   }, [isSigningOut, privyAuthUser]);
 
   const completeEmailAuth = (emailUser) => {
-    const normalizedEmailUser = {
+    const normalizedEmailUser = normalizeV1UserIdentity({
       ...(emailUser || {}),
-      email: normalizeEmail(emailUser?.email),
       authProvider: emailUser?.authProvider || "email",
-    };
+    });
 
     setIsSigningOut(false);
     setAuthUser(normalizedEmailUser);
     setUser(normalizedEmailUser);
-    localStorage.setItem("zwap_auth_user", JSON.stringify(normalizedEmailUser));
+
+    localStorage.setItem(
+      "zwap_auth_user",
+      JSON.stringify(normalizedEmailUser)
+    );
     localStorage.setItem("zwap_email", normalizedEmailUser.email);
+
     closeAllAuthModals();
   };
 
@@ -178,6 +240,7 @@ export function AppProvider({ children }) {
       setIsSigningOut(true);
       setAuthUser(null);
       setUser(null);
+
       localStorage.removeItem("zwap_auth_user");
       localStorage.removeItem("zwap_email");
 
@@ -214,6 +277,7 @@ export function AppProvider({ children }) {
     }
   };
 
+  // V1: Wallet completely disabled
   const requireWallet = () => false;
 
   const connectWallet = async () => {
