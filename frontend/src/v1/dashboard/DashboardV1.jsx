@@ -55,18 +55,27 @@ function getResolvedEmail({ authUser, user }) {
     .toLowerCase();
 }
 
-function mergeMoveTaskState(taskStates = [], hasMoveActivity = false) {
+function mergeTaskState(taskStates = [], updates = {}) {
   if (!Array.isArray(taskStates)) return taskStates;
 
   return taskStates.map((task) => {
-    if (String(task?.label || "").toLowerCase() !== "move") {
-      return task;
+    const label = String(task?.label || "").toLowerCase();
+
+    if (label === "move") {
+      return {
+        ...task,
+        completed: Boolean(task?.completed || updates.move),
+      };
     }
 
-    return {
-      ...task,
-      completed: Boolean(task?.completed || hasMoveActivity),
-    };
+    if (label === "play") {
+      return {
+        ...task,
+        completed: Boolean(task?.completed || updates.play),
+      };
+    }
+
+    return task;
   });
 }
 
@@ -169,6 +178,8 @@ export default function DashboardV1({ user, authUser }) {
   const [activeGameId, setActiveGameId] = useState(null);
   const [activeView, setActiveView] = useState("dashboard");
 
+  const [localGamesPlayedToday, setLocalGamesPlayedToday] = useState(0);
+
   const [shopCategories, setShopCategories] = useState([]);
   const [shopItems, setShopItems] = useState([]);
   const [shopLoading, setShopLoading] = useState(false);
@@ -228,7 +239,17 @@ export default function DashboardV1({ user, authUser }) {
 
   const handleGameEnd = async (result) => {
     console.log("Game ended:", result);
+
     setActiveGameId(null);
+    setLocalGamesPlayedToday((current) => Math.max(current, 1));
+
+    setActivitySignal({
+      type: "play",
+      game: result?.gameId || "",
+      zpts: 0,
+      created_at: new Date().toISOString(),
+    });
+
     await refreshActivitySnapshot();
   };
 
@@ -372,8 +393,11 @@ export default function DashboardV1({ user, authUser }) {
     Number(sessionSteps || 0)
   );
 
-  const resolvedGamesPlayedToday =
-    activitySnapshot?.gamesPlayedToday ?? gamesPlayedToday;
+  const resolvedGamesPlayedToday = Math.max(
+    Number(activitySnapshot?.gamesPlayedToday || 0),
+    Number(gamesPlayedToday || 0),
+    Number(localGamesPlayedToday || 0)
+  );
 
   const resolvedLessonsCompletedToday =
     activitySnapshot?.lessonsCompletedToday ?? lessonsCompletedToday;
@@ -387,10 +411,10 @@ export default function DashboardV1({ user, authUser }) {
       ? activitySnapshot.taskStates
       : taskStates;
 
-  const resolvedTaskStates = mergeMoveTaskState(
-    baseResolvedTaskStates,
-    resolvedDailySteps > 0 || sessionSteps > 0
-  );
+  const resolvedTaskStates = mergeTaskState(baseResolvedTaskStates, {
+    move: resolvedDailySteps > 0 || sessionSteps > 0,
+    play: resolvedGamesPlayedToday > 0,
+  });
 
   const resolvedCompletedTaskCount = Math.max(
     Number(activitySnapshot?.completedTaskCount || 0),
