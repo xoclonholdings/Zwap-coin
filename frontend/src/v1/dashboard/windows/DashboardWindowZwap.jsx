@@ -8,8 +8,9 @@ import zapHead from "@/assets/zap/zap-head.png";
 import ZapTasksPanel from "./zap/ZapTasksPanel";
 import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
-const ZAP_IDLE_ROTATION_MS = 7000;
-const ZAP_RESPONSE_HOLD_MS = 5200;
+const ZAP_FIRST_IDLE_WAIT_MS = 30000;
+const ZAP_NEXT_IDLE_WAIT_MS = 60000;
+const ZAP_RESPONSE_HOLD_MS = 9000;
 const ZAP_TYPE_SPEED_MS = 115;
 
 function WindowAltIndicator() {
@@ -234,6 +235,8 @@ export default function DashboardWindowZwap({
   const [idleTick, setIdleTick] = useState(0);
   const responseHoldUntilRef = useRef(0);
   const didMountRef = useRef(false);
+  const idleTimeoutRef = useRef(null);
+  const nextIdleDelayRef = useRef(ZAP_FIRST_IDLE_WAIT_MS);
 
   const activityFingerprint = useMemo(() => {
     const stepBucket = Math.floor(Number(dailySteps || 0) / 25);
@@ -263,13 +266,28 @@ export default function DashboardWindowZwap({
   ]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      if (Date.now() < responseHoldUntilRef.current) return;
+    function scheduleNextIdleMessage() {
+      if (idleTimeoutRef.current) {
+        window.clearTimeout(idleTimeoutRef.current);
+      }
 
-      setIdleTick((current) => current + 1);
-    }, ZAP_IDLE_ROTATION_MS);
+      idleTimeoutRef.current = window.setTimeout(() => {
+        if (Date.now() >= responseHoldUntilRef.current) {
+          setIdleTick((current) => current + 1);
+          nextIdleDelayRef.current = ZAP_NEXT_IDLE_WAIT_MS;
+        }
 
-    return () => window.clearInterval(interval);
+        scheduleNextIdleMessage();
+      }, nextIdleDelayRef.current);
+    }
+
+    scheduleNextIdleMessage();
+
+    return () => {
+      if (idleTimeoutRef.current) {
+        window.clearTimeout(idleTimeoutRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -279,6 +297,7 @@ export default function DashboardWindowZwap({
     }
 
     responseHoldUntilRef.current = Date.now() + ZAP_RESPONSE_HOLD_MS;
+    nextIdleDelayRef.current = ZAP_FIRST_IDLE_WAIT_MS;
     setIdleTick((current) => current + 1);
   }, [activityFingerprint]);
 
