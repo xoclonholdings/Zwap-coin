@@ -199,29 +199,6 @@ export default function DashboardV1({ user, authUser }) {
     setActiveView("dashboard");
   }
 
-  const handleToggleMove = () => {
-    setMoveIsActive((current) => {
-      const next = !current;
-
-      if (next) {
-        sessionStartStepsRef.current = getCurrentSteps();
-        setSessionSteps(0);
-        setTimerSeconds(0);
-      }
-
-      return next;
-    });
-  };
-
-  const handleToggleZwapAltView = () => {
-    setIsZwapAltView((current) => !current);
-  };
-
-  const handleStartGame = (game) => {
-    if (!game || game.locked) return;
-    setActiveGameId(game.id);
-  };
-
   const refreshActivitySnapshot = async () => {
     if (!resolvedEmail) return null;
 
@@ -236,6 +213,86 @@ export default function DashboardV1({ user, authUser }) {
       console.error("Activity snapshot failed:", error);
       return null;
     }
+  };
+
+  const submitMoveSteps = async (steps) => {
+    const safeSteps = Math.max(0, Number(steps || 0));
+
+    if (!resolvedEmail || safeSteps <= 0) return null;
+
+    const res = await fetch(
+      `${API_BASE}/move/steps/${encodeURIComponent(resolvedEmail)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          steps: safeSteps,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || "Move submission failed");
+    }
+
+    return res.json();
+  };
+
+  const handleToggleMove = async () => {
+    const wasActive = moveIsActive;
+    const stepsToSubmit = Number(sessionSteps || 0);
+
+    setMoveIsActive((current) => {
+      const next = !current;
+
+      if (next) {
+        sessionStartStepsRef.current = getCurrentSteps();
+        setSessionSteps(0);
+        setTimerSeconds(0);
+      }
+
+      return next;
+    });
+
+    if (!wasActive) return;
+
+    try {
+      const moveResult = await submitMoveSteps(stepsToSubmit);
+
+      if (moveResult?.new_balance !== undefined) {
+        setLocalZptsBalance(Number(moveResult.new_balance || 0));
+      }
+
+      setActivitySignal({
+        type: "move",
+        steps: stepsToSubmit,
+        zpts: Number(moveResult?.rewards_earned || 0),
+        created_at: new Date().toISOString(),
+      });
+
+      await refreshActivitySnapshot();
+    } catch (error) {
+      console.error("Move submit failed:", error);
+
+      setActivitySignal({
+        type: "move",
+        steps: stepsToSubmit,
+        zpts: 0,
+        created_at: new Date().toISOString(),
+      });
+    }
+  };
+
+  const handleToggleZwapAltView = () => {
+    setIsZwapAltView((current) => !current);
+  };
+
+  const handleStartGame = (game) => {
+    if (!game || game.locked) return;
+    setActiveGameId(game.id);
   };
 
   const submitPlayResult = async (result) => {
