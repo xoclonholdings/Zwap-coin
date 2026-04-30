@@ -266,6 +266,12 @@ function buildIdleGuidance({
           "Take one bite.",
           "medium"
         ),
+        makeGuidance(
+          "Soft win waiting.",
+          "One lesson keeps it light.",
+          "Start small.",
+          "medium"
+        ),
         general[2],
       ],
       idleTick
@@ -324,6 +330,7 @@ export function buildZapGuidance({
   const safeSteps = toNumber(dailySteps, 0);
   const safeGames = toNumber(gamesPlayedToday, 0);
   const safePlayGoal = Math.max(1, toNumber(playGoal, 1));
+  const safeLessons = toNumber(lessonsCompletedToday, 0);
 
   const moveComplete = safeSteps > 0;
   const playComplete = safeGames >= safePlayGoal;
@@ -397,20 +404,11 @@ export function buildZapGuidance({
     );
   }
 
-  if (learnUnlocked && lessonsCompletedToday === 0) {
+  if (learnUnlocked && safeLessons > 0) {
     return makeGuidance(
-      "Learn is open.",
-      "Quiet upgrades live here.",
-      "Try one lesson.",
-      "medium"
-    );
-  }
-
-  if (safeCompleted > 0) {
-    return makeGuidance(
-      `${safeCompleted}/${safeTotal} tasks.`,
-      `${formatNumber(safeZpts)} zPts.`,
-      "Keep it moving.",
+      "Lesson logged.",
+      `${safeLessons} learned today.`,
+      "Good little stack.",
       "medium"
     );
   }
