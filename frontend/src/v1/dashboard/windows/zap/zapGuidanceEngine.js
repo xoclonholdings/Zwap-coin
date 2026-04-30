@@ -1,3 +1,9 @@
+let lastMessageKey = "";
+let idleStage = 0;
+let lastIdleChange = Date.now();
+
+const IDLE_STAGE_TIMINGS = [0, 30000, 60000, 90000];
+
 function toNumber(value, fallback = 0) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
@@ -18,6 +24,33 @@ function pickByTick(messages = [], idleTick = 0) {
   if (!messages.length) return "";
   const index = Math.abs(toNumber(idleTick, 0)) % messages.length;
   return messages[index];
+}
+
+function advanceIdleStage() {
+  const now = Date.now();
+  const elapsed = now - lastIdleChange;
+
+  if (idleStage < IDLE_STAGE_TIMINGS.length - 1) {
+    if (elapsed >= IDLE_STAGE_TIMINGS[idleStage + 1]) {
+      idleStage += 1;
+    }
+  }
+}
+
+function resetIdleStage() {
+  idleStage = 0;
+  lastIdleChange = Date.now();
+}
+
+function uniqueMessage(message) {
+  if (!message?.text) return message;
+
+  if (message.text === lastMessageKey) {
+    return null;
+  }
+
+  lastMessageKey = message.text;
+  return message;
 }
 
 function getNextUnlock({
@@ -178,6 +211,8 @@ function buildIdleGuidance({
   nextUnlock,
   idleTick,
 }) {
+  advanceIdleStage();
+
   const intro = [
     makeGuidance("Hey, I’m Zap.", "I guide this system.", "Tap a window."),
     makeGuidance("See the arrows?", "More lives behind them.", "Tap to switch."),
@@ -188,7 +223,7 @@ function buildIdleGuidance({
     return pickByTick(intro, idleTick);
   }
 
-  const general = [
+  const stageOne = [
     makeGuidance(
       "Small moves matter.",
       `${safeCompleted}/${safeTotal} tasks lit.`,
@@ -209,97 +244,171 @@ function buildIdleGuidance({
     ),
   ];
 
+  const stageTwo = [
+    makeGuidance(
+      "Still here.",
+      `${safeCompleted}/${safeTotal} tasks lit.`,
+      "One tap can move it.",
+      "medium"
+    ),
+    makeGuidance(
+      "The board is waiting.",
+      `${formatNumber(safeZpts)} zPts ready.`,
+      "Move or play.",
+      "medium"
+    ),
+    makeGuidance(
+      "Peek behind a window.",
+      "The arrows show layers.",
+      "Try one.",
+      "low"
+    ),
+  ];
+
+  const stageThree = [
+    makeGuidance(
+      "Momentum matters.",
+      `${formatNumber(safeSteps)} steps logged.`,
+      safeGames > 0 ? "Keep the loop warm." : "Add one game.",
+      "medium"
+    ),
+    makeGuidance(
+      "Don’t let it cool.",
+      `${safeCompleted}/${safeTotal} tasks done.`,
+      "Finish one more.",
+      "medium"
+    ),
+    makeGuidance(
+      "Tiny push.",
+      `Next: ${nextUnlock.label}`,
+      "Keep stacking.",
+      "medium"
+    ),
+  ];
+
+  const stageFour = [
+    makeGuidance(
+      "Don’t break flow.",
+      "You were building.",
+      "Finish it.",
+      "medium"
+    ),
+    makeGuidance(
+      "One more action.",
+      `${safeCompleted}/${safeTotal} tasks lit.`,
+      "Close the loop.",
+      "medium"
+    ),
+    makeGuidance(
+      "System’s ready.",
+      `Next: ${nextUnlock.label}`,
+      "Push through.",
+      "medium"
+    ),
+  ];
+
+  let pool = stageOne;
+
+  if (idleStage === 1) {
+    pool = stageTwo;
+  }
+
+  if (idleStage === 2) {
+    pool = stageThree;
+  }
+
+  if (idleStage >= 3) {
+    pool = stageFour;
+  }
+
   if (!shopUnlocked && nextUnlock.remaining > 0) {
-    return pickByTick(
-      [
-        makeGuidance(
-          "Shop locked.",
-          `${formatNumber(nextUnlock.remaining)} to unlock.`,
-          "Move + Play.",
-          "medium"
-        ),
-        general[0],
-        makeGuidance(
-          "Door’s not open yet.",
-          `${formatNumber(safeZpts)} zPts saved.`,
-          "Keep stacking.",
-          "medium"
-        ),
-      ],
-      idleTick
-    );
+    pool = [
+      ...pool,
+      makeGuidance(
+        "Shop locked.",
+        `${formatNumber(nextUnlock.remaining)} to unlock.`,
+        "Move + Play.",
+        "medium"
+      ),
+      makeGuidance(
+        "Door’s not open yet.",
+        `${formatNumber(safeZpts)} zPts saved.`,
+        "Keep stacking.",
+        "medium"
+      ),
+    ];
   }
 
   if (shopUnlocked && !learnUnlocked) {
-    return pickByTick(
-      [
-        makeGuidance(
-          "Shop is open.",
-          `${formatNumber(safeZpts)} zPts ready.`,
-          "Spend smart.",
-          "medium"
-        ),
-        makeGuidance(
-          "First value layer.",
-          "Effort became options.",
-          "Check Shop.",
-          "medium"
-        ),
-        general[1],
-      ],
-      idleTick
-    );
+    pool = [
+      ...pool,
+      makeGuidance(
+        "Shop is open.",
+        `${formatNumber(safeZpts)} zPts ready.`,
+        "Spend smart.",
+        "medium"
+      ),
+      makeGuidance(
+        "First value layer.",
+        "Effort became options.",
+        "Check Shop.",
+        "medium"
+      ),
+    ];
   }
 
   if (learnUnlocked && !swapUnlocked) {
-    return pickByTick(
-      [
-        makeGuidance(
-          "Learn is open.",
-          "Quiet upgrades live here.",
-          "Try one lesson.",
-          "medium"
-        ),
-        makeGuidance(
-          "Brain room unlocked.",
-          "No rush needed.",
-          "Take one bite.",
-          "medium"
-        ),
-        makeGuidance(
-          "Soft win waiting.",
-          "One lesson keeps it light.",
-          "Start small.",
-          "medium"
-        ),
-        general[2],
-      ],
-      idleTick
-    );
+    pool = [
+      ...pool,
+      makeGuidance(
+        "Learn is open.",
+        "Quiet upgrades live here.",
+        "Try one lesson.",
+        "medium"
+      ),
+      makeGuidance(
+        "Brain room unlocked.",
+        "No rush needed.",
+        "Take one bite.",
+        "medium"
+      ),
+      makeGuidance(
+        "Soft win waiting.",
+        "One lesson keeps it light.",
+        "Start small.",
+        "medium"
+      ),
+    ];
   }
 
   if (swapUnlocked) {
-    return pickByTick(
-      [
-        makeGuidance(
-          "Swap is ready.",
-          `${formatNumber(safeZpts)} zPts available.`,
-          "Move with intent.",
-          "medium"
-        ),
-        makeGuidance(
-          "Value is live.",
-          "No need to rush.",
-          "Read the board.",
-          "medium"
-        ),
-        general[1],
-      ],
-      idleTick
-    );
+    pool = [
+      ...pool,
+      makeGuidance(
+        "Swap is ready.",
+        `${formatNumber(safeZpts)} zPts available.`,
+        "Move with intent.",
+        "medium"
+      ),
+      makeGuidance(
+        "Value is live.",
+        "No need to rush.",
+        "Read the board.",
+        "medium"
+      ),
+    ];
   }
 
-  return pickByTick(general, idleTick);
+  const startIndex = Math.abs(toNumber(idleTick, 0)) % pool.length;
+
+  for (let offset = 0; offset < pool.length; offset += 1) {
+    const candidate = pool[(startIndex + offset) % pool.length];
+    const unique = uniqueMessage(candidate);
+
+    if (unique) return unique;
+  }
+
+  return pool[startIndex] || stageOne[0];
 }
 
 export function buildZapGuidance({
@@ -347,10 +456,12 @@ export function buildZapGuidance({
   });
 
   if (systemMessage) {
+    resetIdleStage();
     return makeGuidance(systemMessage, nextStep, "", "high");
   }
 
   if (nextStep) {
+    resetIdleStage();
     return makeGuidance(nextStep, "", "", "medium");
   }
 
@@ -366,7 +477,10 @@ export function buildZapGuidance({
     nextUnlock,
   });
 
-  if (signalGuidance) return signalGuidance;
+  if (signalGuidance) {
+    resetIdleStage();
+    return signalGuidance;
+  }
 
   if (loopComplete) {
     return makeGuidance(
@@ -378,6 +492,7 @@ export function buildZapGuidance({
   }
 
   if (signalType === "milestone") {
+    resetIdleStage();
     return makeGuidance(
       "Milestone hit.",
       `${formatNumber(safeZpts)} zPts stacked.`,
