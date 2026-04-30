@@ -10,7 +10,7 @@ import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
 const ZAP_IDLE_ROTATION_MS = 7000;
 const ZAP_RESPONSE_HOLD_MS = 5200;
-const ZAP_TYPE_SPEED_MS = 24;
+const ZAP_TYPE_SPEED_MS = 46;
 
 function WindowAltIndicator() {
   return (
@@ -43,7 +43,7 @@ function ZwapHeader() {
   );
 }
 
-function GuidanceText({ guidance }) {
+function GuidanceText({ guidance, onTypingChange }) {
   const lines = useMemo(() => {
     return String(guidance || "")
       .split("\n")
@@ -58,12 +58,18 @@ function GuidanceText({ guidance }) {
   useEffect(() => {
     setVisibleCount(0);
 
-    if (!fullText) return undefined;
+    if (!fullText) {
+      onTypingChange?.(false);
+      return undefined;
+    }
+
+    onTypingChange?.(true);
 
     const interval = window.setInterval(() => {
       setVisibleCount((current) => {
         if (current >= fullText.length) {
           window.clearInterval(interval);
+          onTypingChange?.(false);
           return current;
         }
 
@@ -71,8 +77,11 @@ function GuidanceText({ guidance }) {
       });
     }, ZAP_TYPE_SPEED_MS);
 
-    return () => window.clearInterval(interval);
-  }, [fullText]);
+    return () => {
+      window.clearInterval(interval);
+      onTypingChange?.(false);
+    };
+  }, [fullText, onTypingChange]);
 
   function getVisibleLine(line, index) {
     const previousLength = lines
@@ -85,32 +94,33 @@ function GuidanceText({ guidance }) {
     return line.slice(0, available);
   }
 
+  function isTypingLine(index) {
+    if (visibleCount >= fullText.length) return false;
+
+    const previousLength = lines
+      .slice(0, index)
+      .reduce((total, item) => total + item.length + 1, 0);
+
+    return visibleCount > previousLength && visibleCount <= previousLength + lines[index].length;
+  }
+
   return (
-    <div className="relative z-10 flex h-full flex-col justify-between px-5 py-4 text-center">
+    <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-4 pt-5 text-center">
       {lines.map((line, index) => {
         const visibleLine = getVisibleLine(line, index);
-        const isLastVisibleLine =
-          visibleLine.length > 0 &&
-          visibleCount < fullText.length &&
-          index === lines.findIndex((item, itemIndex) => {
-            const previousLength = lines
-              .slice(0, itemIndex)
-              .reduce((total, prev) => total + prev.length + 1, 0);
-
-            return visibleCount <= previousLength + item.length;
-          });
+        const isEdgeLine = index === 0 || index === lines.length - 1;
 
         return (
           <div
             key={`${line}-${index}`}
             className={
-              index === 0
-                ? "text-[1.02rem] font-black leading-[1.08] tracking-[-0.05em] text-white"
-                : "text-[0.7rem] font-bold leading-snug tracking-[-0.025em] text-white/72"
+              isEdgeLine
+                ? "text-[0.88rem] font-black uppercase leading-[1.08] tracking-[0.035em] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.12)]"
+                : "text-[0.72rem] font-extrabold leading-snug tracking-[-0.025em] text-white/76"
             }
           >
             {visibleLine}
-            {isLastVisibleLine ? (
+            {isTypingLine(index) ? (
               <span className="ml-0.5 animate-pulse text-cyan-200">|</span>
             ) : null}
           </div>
@@ -121,14 +131,23 @@ function GuidanceText({ guidance }) {
 }
 
 function ZapGuidanceStage({ guidance }) {
+  const [isTyping, setIsTyping] = useState(false);
+
   return (
     <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between pt-2">
       <motion.div
         key={`bubble-${guidance}`}
         className="relative mx-auto h-[150px] w-full max-w-[94%]"
         initial={{ scale: 0.985, opacity: 0.92 }}
-        animate={{ scale: [0.985, 1.018, 1], opacity: 1 }}
-        transition={{ duration: 0.52, ease: "easeOut" }}
+        animate={{
+          scale: isTyping ? [1, 1.006, 1] : [0.985, 1.018, 1],
+          opacity: 1,
+        }}
+        transition={{
+          duration: isTyping ? 1.35 : 0.52,
+          repeat: isTyping ? Infinity : 0,
+          ease: "easeInOut",
+        }}
       >
         <img
           src={zapBubble}
@@ -137,25 +156,35 @@ function ZapGuidanceStage({ guidance }) {
           draggable={false}
         />
 
-        <GuidanceText guidance={guidance} />
+        <GuidanceText guidance={guidance} onTypingChange={setIsTyping} />
       </motion.div>
 
       <div className="relative -mt-5 flex justify-center">
         <div className="absolute bottom-0 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
         <motion.img
-          key={`zap-${guidance}`}
           src={zapHead}
           alt="Zap guide"
           className="relative h-[104px] w-[134px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
           draggable={false}
-          initial={{ y: 2, scale: 0.99, rotate: 0 }}
-          animate={{
-            y: [2, -3, 1, -1, 0],
-            scale: [0.99, 1.045, 1.01, 1.03, 1],
-            rotate: [0, -1.2, 1.1, -0.6, 0],
+          animate={
+            isTyping
+              ? {
+                  y: [0, -2, 0, -1, 0],
+                  scale: [1, 1.022, 1, 1.016, 1],
+                  rotate: [0, -0.7, 0.6, -0.35, 0],
+                }
+              : {
+                  y: 0,
+                  scale: 1,
+                  rotate: 0,
+                }
+          }
+          transition={{
+            duration: 1.15,
+            repeat: isTyping ? Infinity : 0,
+            ease: "easeInOut",
           }}
-          transition={{ duration: 0.58, ease: "easeOut" }}
         />
       </div>
     </div>
