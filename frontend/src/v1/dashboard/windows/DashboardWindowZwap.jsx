@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 
 import zapBubble from "@/assets/zap/zap-bubble.png";
@@ -8,6 +8,7 @@ import ZapTasksPanel from "./zap/ZapTasksPanel";
 import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
 const ZAP_IDLE_ROTATION_MS = 7000;
+const ZAP_RESPONSE_HOLD_MS = 5200;
 
 function WindowAltIndicator() {
   return (
@@ -67,7 +68,6 @@ function GuidanceText({ guidance }) {
 function ZapGuidanceStage({ guidance }) {
   return (
     <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between pt-2">
-      {/* BUBBLE */}
       <div className="relative mx-auto min-h-[150px] w-full max-w-[94%]">
         <img
           src={zapBubble}
@@ -79,7 +79,6 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} />
       </div>
 
-      {/* ZAP HEAD */}
       <div className="relative -mt-5 flex justify-center">
         <div className="absolute bottom-0 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
@@ -124,19 +123,24 @@ export default function DashboardWindowZwap({
   className = "",
 }) {
   const [idleTick, setIdleTick] = useState(0);
+  const responseHoldUntilRef = useRef(0);
+  const didMountRef = useRef(false);
 
-  // Faster rotation
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setIdleTick((current) => current + 1);
-    }, ZAP_IDLE_ROTATION_MS);
+  const activityFingerprint = useMemo(() => {
+    const stepBucket = Math.floor(Number(dailySteps || 0) / 25);
 
-    return () => window.clearInterval(interval);
-  }, []);
-
-  // Immediate response on user activity
-  useEffect(() => {
-    setIdleTick((current) => current + 1);
+    return [
+      activitySignal?.type || "",
+      activitySignal?.created_at || activitySignal?.createdAt || "",
+      completedTaskCount,
+      zptsBalance,
+      stepBucket,
+      gamesPlayedToday,
+      lessonsCompletedToday,
+      shopUnlocked ? "shop-open" : "shop-locked",
+      learnUnlocked ? "learn-open" : "learn-locked",
+      swapUnlocked ? "swap-open" : "swap-locked",
+    ].join("|");
   }, [
     activitySignal,
     completedTaskCount,
@@ -148,6 +152,26 @@ export default function DashboardWindowZwap({
     learnUnlocked,
     swapUnlocked,
   ]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      if (Date.now() < responseHoldUntilRef.current) return;
+
+      setIdleTick((current) => current + 1);
+    }, ZAP_IDLE_ROTATION_MS);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    responseHoldUntilRef.current = Date.now() + ZAP_RESPONSE_HOLD_MS;
+    setIdleTick((current) => current + 1);
+  }, [activityFingerprint]);
 
   const guidance = useMemo(() => {
     const result = buildZapGuidance({
