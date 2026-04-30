@@ -32,6 +32,16 @@ async function safeFetch(path) {
   }
 }
 
+function normalizeScoreData(scoreData = {}) {
+  return {
+    score: Number(scoreData.score || scoreData.highScore || 0),
+    highScore: Number(scoreData.highScore || scoreData.score || 0),
+    level: Number(scoreData.level || scoreData.highScoreLevel || 1),
+    plays: Number(scoreData.plays || scoreData.playCount || 0),
+    playCount: Number(scoreData.playCount || scoreData.plays || 0),
+  };
+}
+
 function normalizeHighScoresMap(highScores = {}) {
   if (!highScores || typeof highScores !== "object" || Array.isArray(highScores)) {
     return {};
@@ -40,13 +50,7 @@ function normalizeHighScoresMap(highScores = {}) {
   return Object.entries(highScores).reduce((acc, [gameId, scoreData]) => {
     if (!gameId || !scoreData || typeof scoreData !== "object") return acc;
 
-    acc[gameId] = {
-      score: Number(scoreData.score || scoreData.highScore || 0),
-      highScore: Number(scoreData.highScore || scoreData.score || 0),
-      level: Number(scoreData.level || 1),
-      plays: Number(scoreData.plays || scoreData.playCount || 0),
-      playCount: Number(scoreData.playCount || scoreData.plays || 0),
-    };
+    acc[gameId] = normalizeScoreData(scoreData);
 
     return acc;
   }, {});
@@ -62,16 +66,34 @@ function buildHighScores(personalBests = []) {
   personalBests.forEach((item) => {
     if (item?.type !== "game" || !item?.gameId) return;
 
-    highScores[item.gameId] = {
-      score: Number(item.value || item.score || 0),
-      highScore: Number(item.value || item.score || 0),
-      level: Number(item.level || 1),
-      plays: Number(item.plays || item.playCount || 0),
-      playCount: Number(item.playCount || item.plays || 0),
-    };
+    highScores[item.gameId] = normalizeScoreData({
+      score: item.value || item.score || 0,
+      highScore: item.value || item.score || 0,
+      level: item.level || 1,
+      plays: item.plays || item.playCount || 0,
+      playCount: item.playCount || item.plays || 0,
+    });
   });
 
   return highScores;
+}
+
+function mergeHighScores(primary = {}, fallback = {}) {
+  const merged = { ...fallback };
+
+  Object.entries(primary).forEach(([gameId, primaryData]) => {
+    const fallbackData = fallback?.[gameId] || {};
+
+    merged[gameId] = normalizeScoreData({
+      score: primaryData.score || fallbackData.score || 0,
+      highScore: primaryData.highScore || fallbackData.highScore || 0,
+      level: primaryData.level || fallbackData.level || 1,
+      plays: primaryData.plays || fallbackData.plays || 0,
+      playCount: primaryData.playCount || fallbackData.playCount || 0,
+    });
+  });
+
+  return merged;
 }
 
 function buildEmptyActivity() {
@@ -130,11 +152,7 @@ export async function getActivityDashboard(email) {
 
   const backendHighScores = normalizeHighScoresMap(data.highScores);
   const fallbackHighScores = buildHighScores(personalBests);
-
-  const highScores =
-    Object.keys(backendHighScores).length > 0
-      ? backendHighScores
-      : fallbackHighScores;
+  const highScores = mergeHighScores(backendHighScores, fallbackHighScores);
 
   return {
     totalSteps: Number(data.totalSteps || 0),
