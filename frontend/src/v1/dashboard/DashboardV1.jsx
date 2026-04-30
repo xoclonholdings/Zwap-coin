@@ -55,6 +55,21 @@ function getResolvedEmail({ authUser, user }) {
     .toLowerCase();
 }
 
+function mergeMoveTaskState(taskStates = [], hasMoveActivity = false) {
+  if (!Array.isArray(taskStates)) return taskStates;
+
+  return taskStates.map((task) => {
+    if (String(task?.label || "").toLowerCase() !== "move") {
+      return task;
+    }
+
+    return {
+      ...task,
+      completed: Boolean(task?.completed || hasMoveActivity),
+    };
+  });
+}
+
 function GameLoadingScreen() {
   return (
     <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050816] text-white">
@@ -77,11 +92,13 @@ export default function DashboardV1({ user, authUser }) {
   );
 
   const isDashboardAuthenticated = Boolean(resolvedEmail);
+  const isAdminPreviewUser = ADMIN_PREVIEW_EMAILS.includes(resolvedEmail);
 
   const state = useV1DashboardState({
     user,
     authUser,
     isAuthenticated: isDashboardAuthenticated,
+    isAdminPreviewUser,
   });
 
   const {
@@ -135,8 +152,6 @@ export default function DashboardV1({ user, authUser }) {
   } = state;
 
   const resolvedTier = user?.tier || user?.accountTier || "zwapper";
-
-  const isAdminPreviewUser = ADMIN_PREVIEW_EMAILS.includes(resolvedEmail);
 
   const previewShopUnlocked = isAdminPreviewUser || shopUnlocked;
   const previewGardenUnlocked = isAdminPreviewUser || gardenUnlocked;
@@ -351,19 +366,11 @@ export default function DashboardV1({ user, authUser }) {
 
   const calories = estimateCaloriesFromSteps(sessionSteps);
 
-  const resolvedCompletedTaskCount =
-    activitySnapshot?.completedTaskCount ?? completedTaskCount;
-
-  const resolvedTotalTaskCount =
-    activitySnapshot?.totalTaskCount ?? totalTaskCount;
-
-  const resolvedTaskStates =
-    Array.isArray(activitySnapshot?.taskStates) &&
-    activitySnapshot.taskStates.length > 0
-      ? activitySnapshot.taskStates
-      : taskStates;
-
-  const resolvedDailySteps = activitySnapshot?.dailySteps ?? dailySteps;
+  const resolvedDailySteps = Math.max(
+    Number(activitySnapshot?.dailySteps || 0),
+    Number(dailySteps || 0),
+    Number(sessionSteps || 0)
+  );
 
   const resolvedGamesPlayedToday =
     activitySnapshot?.gamesPlayedToday ?? gamesPlayedToday;
@@ -373,6 +380,26 @@ export default function DashboardV1({ user, authUser }) {
 
   const resolvedFullLoopCompleted =
     activitySnapshot?.fullLoopCompleted ?? fullLoopCompleted;
+
+  const baseResolvedTaskStates =
+    Array.isArray(activitySnapshot?.taskStates) &&
+    activitySnapshot.taskStates.length > 0
+      ? activitySnapshot.taskStates
+      : taskStates;
+
+  const resolvedTaskStates = mergeMoveTaskState(
+    baseResolvedTaskStates,
+    resolvedDailySteps > 0 || sessionSteps > 0
+  );
+
+  const resolvedCompletedTaskCount = Math.max(
+    Number(activitySnapshot?.completedTaskCount || 0),
+    Number(completedTaskCount || 0),
+    resolvedTaskStates.filter((task) => task?.completed).length
+  );
+
+  const resolvedTotalTaskCount =
+    activitySnapshot?.totalTaskCount ?? totalTaskCount;
 
   if (activeGameId) {
     return (
