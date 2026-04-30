@@ -18,6 +18,11 @@ import ActivityPageV1 from "./activity/ActivityPageV1";
 import { getActivityDashboard } from "./activity/activityApi";
 
 import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
+import {
+  resetStepFeeder,
+  startStepFeeder,
+  stopStepFeeder,
+} from "@/lib/steps/stepFeeder";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
@@ -249,9 +254,13 @@ export default function DashboardV1({ user, authUser }) {
       const next = !current;
 
       if (next) {
+        resetStepFeeder();
         sessionStartStepsRef.current = getCurrentSteps();
         setSessionSteps(0);
         setTimerSeconds(0);
+        startStepFeeder();
+      } else {
+        stopStepFeeder();
       }
 
       return next;
@@ -412,6 +421,12 @@ export default function DashboardV1({ user, authUser }) {
 
     return () => window.clearInterval(interval);
   }, [moveIsActive]);
+
+  useEffect(() => {
+    return () => {
+      stopStepFeeder();
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
