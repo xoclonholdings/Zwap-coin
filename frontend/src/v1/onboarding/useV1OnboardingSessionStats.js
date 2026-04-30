@@ -5,17 +5,34 @@ export const PENDING_ONBOARDING_REWARD_KEY = "zwap_pending_onboarding_reward";
 const MOVE_ONBOARDING_ZPTS = 50;
 const PLAY_ONBOARDING_ZPTS = 50;
 
+function asNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function getFirstNumber(user, keys, fallback = 0) {
+  for (const key of keys) {
+    const value = user?.[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      return asNumber(value, fallback);
+    }
+  }
+
+  return fallback;
+}
+
 function readPendingOnboardingReward() {
   try {
     const raw = localStorage.getItem(PENDING_ONBOARDING_REWARD_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
 
     return {
-      zptsBalance: Number(parsed?.zptsBalance || 0),
-      moveZpts: Number(parsed?.moveZpts || 0),
-      playZpts: Number(parsed?.playZpts || 0),
-      dailySteps: Number(parsed?.dailySteps || 0),
-      gamesPlayedToday: Number(parsed?.gamesPlayedToday || 0),
+      zptsBalance: asNumber(parsed?.zptsBalance, 0),
+      moveZpts: asNumber(parsed?.moveZpts, 0),
+      playZpts: asNumber(parsed?.playZpts, 0),
+      dailySteps: asNumber(parsed?.dailySteps, 0),
+      gamesPlayedToday: asNumber(parsed?.gamesPlayedToday, 0),
       moveCompleted: Boolean(parsed?.moveCompleted),
       playCompleted: Boolean(parsed?.playCompleted),
     };
@@ -57,11 +74,11 @@ export default function useV1OnboardingSessionStats({ user }) {
   const [moveZpts, setMoveZpts] = useState(pendingReward.moveZpts);
   const [playZpts, setPlayZpts] = useState(pendingReward.playZpts);
 
-  const zptsBalance = moveZpts + playZpts;
+  const pendingZptsBalance = moveZpts + playZpts;
 
   useEffect(() => {
     const nextReward = {
-      zptsBalance,
+      zptsBalance: pendingZptsBalance,
       moveZpts,
       playZpts,
       dailySteps: todaySteps,
@@ -72,7 +89,7 @@ export default function useV1OnboardingSessionStats({ user }) {
 
     setPendingReward(nextReward);
     writePendingOnboardingReward(nextReward);
-  }, [zptsBalance, moveZpts, playZpts, todaySteps, gamesPlayedToday]);
+  }, [pendingZptsBalance, moveZpts, playZpts, todaySteps, gamesPlayedToday]);
 
   function startMoveTracking() {
     setMoveActive(true);
@@ -104,24 +121,73 @@ export default function useV1OnboardingSessionStats({ user }) {
   }
 
   const dashboardUser = useMemo(() => {
+    const userZptsBalance = getFirstNumber(
+      user,
+      ["zptsBalance", "zpts_balance", "zPts", "zpts"],
+      0
+    );
+
+    const userLifetimeZpts = getFirstNumber(
+      user,
+      ["lifetimeZpts", "lifetime_zpts"],
+      userZptsBalance
+    );
+
+    const userDailySteps = getFirstNumber(
+      user,
+      ["dailySteps", "daily_steps", "todaySteps", "stepsToday", "steps"],
+      0
+    );
+
+    const userGamesPlayedToday = getFirstNumber(
+      user,
+      ["gamesPlayedToday", "games_played_today", "gamesPlayed"],
+      0
+    );
+
+    const resolvedZptsBalance = Math.max(
+      userZptsBalance,
+      pendingZptsBalance
+    );
+
+    const resolvedLifetimeZpts = Math.max(
+      userLifetimeZpts,
+      resolvedZptsBalance
+    );
+
+    const resolvedDailySteps = Math.max(userDailySteps, todaySteps);
+
+    const resolvedGamesPlayedToday = Math.max(
+      userGamesPlayedToday,
+      gamesPlayedToday
+    );
+
     return {
       ...(user || {}),
-      zptsBalance,
-      zpts_balance: zptsBalance,
-      dailySteps: todaySteps,
-      daily_steps: todaySteps,
-      gamesPlayedToday,
-      games_played_today: gamesPlayedToday,
+      zptsBalance: resolvedZptsBalance,
+      zpts_balance: resolvedZptsBalance,
+      lifetimeZpts: resolvedLifetimeZpts,
+      lifetime_zpts: resolvedLifetimeZpts,
+      dailySteps: resolvedDailySteps,
+      daily_steps: resolvedDailySteps,
+      gamesPlayedToday: resolvedGamesPlayedToday,
+      games_played_today: resolvedGamesPlayedToday,
       onboardingReward: pendingReward,
       onboarding_reward: pendingReward,
     };
-  }, [user, zptsBalance, todaySteps, gamesPlayedToday, pendingReward]);
+  }, [
+    user,
+    pendingZptsBalance,
+    todaySteps,
+    gamesPlayedToday,
+    pendingReward,
+  ]);
 
   return {
     todaySteps,
     moveActive,
     gamesPlayedToday,
-    zptsBalance,
+    zptsBalance: pendingZptsBalance,
     onboardingReward: pendingReward,
 
     startMoveTracking,
