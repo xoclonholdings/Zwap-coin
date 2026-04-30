@@ -1,150 +1,398 @@
-/**
- * Activity API Layer
- * Safe wrapper around backend activity endpoints.
- */
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Any, Optional
 
-const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
-const API = `${BACKEND_URL}/api`;
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
-async function parseJsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
 
-async function safeFetch(path) {
-  try {
-    const res = await fetch(`${API}${path}`);
-    const data = await parseJsonSafe(res);
+def normalize_email(email: str) -> str:
+    return str(email or "").lower().strip()
 
-    if (!res.ok) {
-      throw new Error(data?.detail || "Request failed");
+
+def safe_int(value, fallback=0):
+    try:
+        return int(value or fallback)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def calculate_calories_from_steps(steps: int) -> int:
+    return round(max(0, steps) * 0.04)
+
+
+def parse_dt(value: Optional[Any]) -> Optional[datetime]:
+    if value is None:
+        return None
+
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    return None
+
+
+def build_task_states(user: Dict[str, Any]) -> List[Dict[str, Any]]:
+    daily_steps = safe_int(user.get("daily_steps"))
+    games_played_today = safe_int(user.get("games_played_today"))
+    lessons_completed_today = safe_int(user.get("lessons_completed_today"))
+    lifetime_zpts = safe_int(
+        user.get("lifetime_zpts")
+        or user.get("zpts_lifetime")
+        or user.get("zpts_balance")
+    )
+
+    shop_unlocked = bool(user.get("shop_unlocked")) or lifetime_zpts >= 1000
+    learn_unlocked = bool(user.get("learn_unlocked"))
+    assist_unlocked = bool(user.get("assist_unlocked"))
+
+    fourth_label = (
+        "Assist"
+        if assist_unlocked
+        else "Learn"
+        if learn_unlocked
+        else "Shop"
+        if shop_unlocked
+        else "Learn"
+    )
+
+    return [
+        {
+            "label": "Login",
+            "completed": True,
+        },
+        {
+            "label": "Move",
+            "completed": daily_steps > 0,
+        },
+        {
+            "label": "Play",
+            "completed": games_played_today > 0,
+        },
+        {
+            "label": fourth_label,
+            "completed": (
+                bool(user.get("assist_completed_today"))
+                if assist_unlocked
+                else lessons_completed_today > 0
+                if learn_unlocked
+                else shop_unlocked
+            ),
+        },
+    ]
+
+
+def build_game_high_scores(user: Dict[str, Any]) -> Dict[str, Dict[str, int]]:
+    game_ids = ["stackz", "breakerz", "pulze", "zap-man"]
+    high_scores = {}
+
+    for game_id in game_ids:
+        safe_game_id = game_id.replace("-", "_")
+
+        score = safe_int(user.get(f"personal_best_{safe_game_id}"))
+        level = safe_int(user.get(f"personal_best_level_{safe_game_id}"), 1)
+        plays = safe_int(user.get(f"games_played_{safe_game_id}"))
+
+        high_scores[game_id] = {
+            "score": score,
+            "highScore": score,
+            "level": level,
+            "plays": plays,
+            "playCount": plays,
+        }
+
+    return high_scores
+
+
+async def get_activity_dashboard(db, email: str) -> Dict[str, Any]:
+    safe_email = normalize_email(email)
+
+    user = await db.users.find_one({"email": safe_email})
+
+    if not user:
+        return empty_activity_dashboard()
+
+    daily_steps = safe_int(user.get("daily_steps"))
+    total_steps = safe_int(user.get("total_steps") or daily_steps)
+    step_goal = safe_int(user.get("daily_step_goal") or user.get("stepGoal"), 10000)
+
+    zpts_balance = safe_int(user.get("zpts_balance"))
+    daily_zpts = safe_int(user.get("daily_zpts_earned"))
+
+    streak_days = safe_int(user.get("daily_streak"))
+    calories = calculate_calories_from_steps(daily_steps)
+
+    weekly_steps = await build_weekly_steps(db, safe_email, daily_steps)
+    consistency = await build_consistency(db, safe_email, user)
+    latest_signal = await get_latest_activity_signal(db, safe_email)
+
+    avg_steps = calculate_average_steps(weekly_steps)
+    task_states = build_task_states(user)
+    completed_task_count = len([task for task in task_states if task.get("completed")])
+    total_task_count = len(task_states)
+
+    personal_bests = build_personal_bests(user)
+    high_scores = build_game_high_scores(user)
+
+    return {
+        "totalSteps": total_steps,
+        "stepGoal": step_goal,
+        "stepChangePercent": 0,
+        "avgSteps": avg_steps,
+        "calories": calories,
+        "activeTime": user.get("active_time") or "0m",
+        "zptsEarned": daily_zpts,
+        "zptsBalance": zpts_balance,
+        "avgStepsChangePercent": 0,
+        "caloriesChangePercent": 0,
+        "activeTimeChangePercent": 0,
+        "zptsChangePercent": 0,
+        "weeklySteps": weekly_steps,
+        "consistency": consistency,
+        "streakDays": streak_days,
+        "personalBests": personal_bests,
+        "highScores": high_scores,
+        "latestActivitySignal": latest_signal,
+        "completedTaskCount": completed_task_count,
+        "totalTaskCount": total_task_count,
+        "taskStates": task_states,
+        "fullLoopCompleted": bool(user.get("full_loop_completed", False)),
+        "dailySteps": daily_steps,
+        "gamesPlayedToday": safe_int(user.get("games_played_today")),
+        "lessonsCompletedToday": safe_int(user.get("lessons_completed_today")),
     }
 
-    return data;
-  } catch (err) {
-    console.warn("Activity API fallback:", err.message);
-    return null;
-  }
-}
 
-function buildHighScores(personalBests = []) {
-  const highScores = {};
+def empty_activity_dashboard() -> Dict[str, Any]:
+    return {
+        "totalSteps": 0,
+        "stepGoal": 10000,
+        "stepChangePercent": 0,
+        "avgSteps": 0,
+        "calories": 0,
+        "activeTime": "0m",
+        "zptsEarned": 0,
+        "zptsBalance": 0,
+        "avgStepsChangePercent": 0,
+        "caloriesChangePercent": 0,
+        "activeTimeChangePercent": 0,
+        "zptsChangePercent": 0,
+        "weeklySteps": [],
+        "consistency": [],
+        "streakDays": 0,
+        "personalBests": [],
+        "highScores": {},
+        "latestActivitySignal": None,
+        "completedTaskCount": 0,
+        "totalTaskCount": 4,
+        "taskStates": [],
+        "fullLoopCompleted": False,
+        "dailySteps": 0,
+        "gamesPlayedToday": 0,
+        "lessonsCompletedToday": 0,
+    }
 
-  if (!Array.isArray(personalBests)) {
-    return highScores;
-  }
 
-  personalBests.forEach((item) => {
-    if (item?.type !== "game" || !item?.gameId) return;
+async def build_weekly_steps(
+    db,
+    email: str,
+    fallback_today_steps: int = 0,
+) -> List[Dict[str, Any]]:
+    since = utc_now() - timedelta(days=6)
 
-    highScores[item.gameId] = {
-      score: Number(item.value || item.score || 0),
-      highScore: Number(item.value || item.score || 0),
-      level: Number(item.level || 1),
-      plays: Number(item.plays || item.playCount || 0),
-    };
-  });
+    cursor = db.activity_logs.find(
+        {
+            "email": email,
+            "created_at": {"$gte": since.isoformat()},
+            "type": "move",
+        },
+        {"_id": 0, "created_at": 1, "steps": 1},
+    ).sort("created_at", 1)
 
-  return highScores;
-}
+    totals_by_day: Dict[str, int] = {}
 
-function buildEmptyActivity() {
-  return {
-    totalSteps: 0,
-    stepGoal: 10000,
-    stepChangePercent: 0,
+    async for item in cursor:
+        created_at = parse_dt(item.get("created_at"))
+        if not created_at:
+            continue
 
-    avgSteps: 0,
-    calories: 0,
-    activeTime: "0m",
-    zptsEarned: 0,
-    zptsBalance: 0,
+        day_key = created_at.date().isoformat()
+        totals_by_day[day_key] = totals_by_day.get(day_key, 0) + safe_int(
+            item.get("steps")
+        )
 
-    avgStepsChangePercent: 0,
-    caloriesChangePercent: 0,
-    activeTimeChangePercent: 0,
-    zptsChangePercent: 0,
+    rows = []
+    today = utc_now().date()
 
-    weeklySteps: [],
-    consistency: [],
-    streakDays: 0,
+    for offset in range(6, -1, -1):
+        day = today - timedelta(days=offset)
+        day_key = day.isoformat()
+        steps = totals_by_day.get(day_key, 0)
 
-    personalBests: [],
-    highScores: {},
-    latestActivitySignal: null,
+        if offset == 0 and steps == 0 and fallback_today_steps > 0:
+            steps = fallback_today_steps
 
-    completedTaskCount: 0,
-    totalTaskCount: 4,
-    fullLoopCompleted: false,
-    dailySteps: 0,
-    gamesPlayedToday: 0,
-    lessonsCompletedToday: 0,
-    taskStates: [],
-  };
-}
+        rows.append(
+            {
+                "day": day.strftime("%a")[0],
+                "steps": steps,
+            }
+        )
 
-export async function getActivityDashboard(email) {
-  const safeEmail = String(email || "").trim().toLowerCase();
+    return rows
 
-  if (!safeEmail) {
-    return buildEmptyActivity();
-  }
 
-  const data = await safeFetch(
-    `/activity/${encodeURIComponent(safeEmail)}/dashboard`
-  );
+async def build_consistency(
+    db,
+    email: str,
+    user: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    since = utc_now() - timedelta(days=6)
 
-  if (!data) {
-    return buildEmptyActivity();
-  }
+    cursor = db.activity_logs.find(
+        {
+            "email": email,
+            "created_at": {"$gte": since.isoformat()},
+        },
+        {"_id": 0, "created_at": 1, "steps": 1, "completed": 1, "type": 1},
+    ).sort("created_at", 1)
 
-  const personalBests = Array.isArray(data.personalBests)
-    ? data.personalBests
-    : [];
+    completed_by_day: Dict[str, bool] = {}
 
-  return {
-    totalSteps: Number(data.totalSteps || 0),
-    stepGoal: Number(data.stepGoal || 10000),
-    stepChangePercent: Number(data.stepChangePercent || 0),
+    async for item in cursor:
+        created_at = parse_dt(item.get("created_at"))
+        if not created_at:
+            continue
 
-    avgSteps: Number(data.avgSteps || 0),
-    calories: Number(data.calories || 0),
-    activeTime: data.activeTime || "0m",
-    zptsEarned: Number(data.zptsEarned || 0),
-    zptsBalance: Number(data.zptsBalance || 0),
+        day_key = created_at.date().isoformat()
+        completed = (
+            bool(item.get("completed"))
+            or safe_int(item.get("steps")) > 0
+            or item.get("type") in {"login", "play", "learn", "shop_purchase"}
+        )
 
-    avgStepsChangePercent: Number(data.avgStepsChangePercent || 0),
-    caloriesChangePercent: Number(data.caloriesChangePercent || 0),
-    activeTimeChangePercent: Number(data.activeTimeChangePercent || 0),
-    zptsChangePercent: Number(data.zptsChangePercent || 0),
+        completed_by_day[day_key] = completed_by_day.get(day_key, False) or completed
 
-    weeklySteps: Array.isArray(data.weeklySteps) ? data.weeklySteps : [],
-    consistency: Array.isArray(data.consistency) ? data.consistency : [],
-    streakDays: Number(data.streakDays || 0),
+    rows = []
+    today = utc_now().date()
 
-    personalBests,
-    highScores: buildHighScores(personalBests),
+    for offset in range(6, -1, -1):
+        day = today - timedelta(days=offset)
+        day_key = day.isoformat()
 
-    latestActivitySignal:
-      data.latestActivitySignal && typeof data.latestActivitySignal === "object"
-        ? data.latestActivitySignal
-        : null,
+        complete = completed_by_day.get(day_key, False)
 
-    completedTaskCount: Number(data.completedTaskCount || 0),
-    totalTaskCount: Number(data.totalTaskCount || 4),
-    fullLoopCompleted: data.fullLoopCompleted === true,
-    dailySteps: Number(data.dailySteps || 0),
-    gamesPlayedToday: Number(data.gamesPlayedToday || 0),
-    lessonsCompletedToday: Number(data.lessonsCompletedToday || 0),
+        if offset == 0:
+            complete = complete or safe_int(user.get("daily_steps")) > 0
+            complete = complete or safe_int(user.get("games_played_today")) > 0
+            complete = complete or bool(user.get("last_daily_claim"))
+            complete = complete or bool(user.get("daily_learn_completed"))
 
-    taskStates:
-      Array.isArray(data.taskStates) && data.taskStates.length > 0
-        ? data.taskStates
-        : [],
-  };
-}
+        rows.append(
+            {
+                "day": day.strftime("%a")[0],
+                "complete": complete,
+            }
+        )
+
+    return rows
+
+
+async def get_latest_activity_signal(db, email: str) -> Optional[Dict[str, Any]]:
+    event = await db.activity_logs.find_one(
+        {"email": email},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+
+    if not event:
+        return None
+
+    return {
+        "type": event.get("type", ""),
+        "message": event.get("message", ""),
+        "priority": event.get("priority", "normal"),
+        "zpts": event.get("zpts", 0),
+        "zwap": event.get("zwap", 0),
+        "steps": event.get("steps", 0),
+        "game": event.get("game"),
+        "item_id": event.get("item_id"),
+        "item_name": event.get("item_name"),
+        "created_at": event.get("created_at"),
+    }
+
+
+def calculate_average_steps(weekly_steps: List[Dict[str, Any]]) -> int:
+    if not weekly_steps:
+        return 0
+
+    total = sum(safe_int(item.get("steps")) for item in weekly_steps)
+    return round(total / max(1, len(weekly_steps)))
+
+
+def build_personal_bests(user: Dict[str, Any]) -> List[Dict[str, Any]]:
+    bests = []
+
+    best_steps = safe_int(user.get("best_steps"))
+    if best_steps > 0:
+        bests.append(
+            {
+                "type": "steps",
+                "label": "Most Steps",
+                "value": best_steps,
+                "date": user.get("best_steps_date"),
+            }
+        )
+
+    best_calories = safe_int(user.get("best_calories"))
+    if best_calories > 0:
+        bests.append(
+            {
+                "type": "calories",
+                "label": "Most Calories",
+                "value": best_calories,
+                "date": user.get("best_calories_date"),
+            }
+        )
+
+    best_active_time = user.get("best_active_time")
+    if best_active_time:
+        bests.append(
+            {
+                "type": "time",
+                "label": "Longest Active",
+                "value": best_active_time,
+                "date": user.get("best_active_time_date"),
+            }
+        )
+
+    game_ids = ["stackz", "breakerz", "pulze", "zap-man"]
+
+    for game_id in game_ids:
+        safe_game_id = game_id.replace("-", "_")
+        score = safe_int(user.get(f"personal_best_{safe_game_id}"))
+
+        if score > 0:
+            bests.append(
+                {
+                    "type": "game",
+                    "gameId": game_id,
+                    "label": f"{game_id.upper()} High Score",
+                    "value": score,
+                    "score": score,
+                    "level": safe_int(user.get(f"personal_best_level_{safe_game_id}"), 1),
+                    "plays": safe_int(user.get(f"games_played_{safe_game_id}")),
+                }
+            )
+
+    return bests
