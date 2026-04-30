@@ -20,6 +20,18 @@ const DEFAULT_GAMES = [
   { id: "werdz", name: "WERDZ", logo: werdzLogo, locked: true },
 ];
 
+function WindowAltIndicator() {
+  return (
+    <div className="absolute right-3 top-3 z-20">
+      <ChevronRight
+        size={22}
+        strokeWidth={2.8}
+        className="text-white/70 drop-shadow-[0_0_10px_rgba(168,85,247,0.25)]"
+      />
+    </div>
+  );
+}
+
 export default function DashboardWindowPlay({
   games = DEFAULT_GAMES,
   onOpenPlay,
@@ -79,14 +91,6 @@ export default function DashboardWindowPlay({
     }
   }
 
-  function handleOpenPlay(event) {
-    event.stopPropagation();
-
-    if (onOpenPlay) {
-      onOpenPlay(activeGame);
-    }
-  }
-
   return (
     <section
       className={[
@@ -101,8 +105,10 @@ export default function DashboardWindowPlay({
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.12),transparent_42%,rgba(34,211,238,0.08))]" />
 
+      <WindowAltIndicator />
+
       <div className="relative z-10 flex min-h-0 w-full flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3">
+        <div className="flex shrink-0 items-center justify-between gap-3 pr-10">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-violet-400/20 bg-violet-400/10 text-violet-200">
               <Gamepad2 className="h-[17px] w-[17px]" strokeWidth={2.1} />
@@ -112,15 +118,6 @@ export default function DashboardWindowPlay({
               PLAY
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleOpenPlay}
-            className="shrink-0 text-white/32 transition hover:text-white/56"
-            aria-label={`Open ${activeGame.name}`}
-          >
-            <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.1} />
-          </button>
         </div>
 
         <div
