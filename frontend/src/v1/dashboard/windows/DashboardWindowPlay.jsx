@@ -9,6 +9,8 @@ import triplezLogo from "@/assets/games/triplez_game_logo.png";
 import werdzLogo from "@/assets/games/werdz_game_logo.png";
 import zapManLogo from "@/assets/games/zap_man_logo.png";
 
+import PlayHighScores from "./play/PlayHighScores";
+
 const DEFAULT_GAMES = [
   { id: "stackz", name: "STACKZ", logo: stackzLogo, locked: false },
   { id: "breakerz", name: "BREAKERZ", logo: breakerzLogo, locked: false },
@@ -20,20 +22,26 @@ const DEFAULT_GAMES = [
   { id: "werdz", name: "WERDZ", logo: werdzLogo, locked: true },
 ];
 
-function WindowAltIndicator() {
+function WindowAltIndicator({ onClick }) {
   return (
-    <div className="absolute right-3 top-3 z-20">
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute right-3 top-3 z-30"
+      aria-label="Toggle Play high scores"
+    >
       <ChevronRight
         size={22}
         strokeWidth={2.8}
         className="text-white/70 drop-shadow-[0_0_10px_rgba(168,85,247,0.25)]"
       />
-    </div>
+    </button>
   );
 }
 
 export default function DashboardWindowPlay({
   games = DEFAULT_GAMES,
+  highScores = {},
   onOpenPlay,
   onStartGame,
   className = "",
@@ -41,11 +49,17 @@ export default function DashboardWindowPlay({
   const [activeIndex, setActiveIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState(null);
   const [isSwitching, setIsSwitching] = useState(false);
+  const [isAltView, setIsAltView] = useState(false);
 
   const safeGames =
     Array.isArray(games) && games.length > 0 ? games : DEFAULT_GAMES;
 
   const activeGame = safeGames[activeIndex] || safeGames[0];
+
+  function handleToggleAltView(event) {
+    event.stopPropagation();
+    setIsAltView((current) => !current);
+  }
 
   function switchToGame(nextIndex) {
     setIsSwitching(true);
@@ -91,6 +105,20 @@ export default function DashboardWindowPlay({
     }
   }
 
+  if (isAltView) {
+    return (
+      <div className="relative h-full">
+        <WindowAltIndicator onClick={handleToggleAltView} />
+
+        <PlayHighScores
+          games={safeGames}
+          highScores={highScores}
+          className={className}
+        />
+      </div>
+    );
+  }
+
   return (
     <section
       className={[
@@ -105,7 +133,7 @@ export default function DashboardWindowPlay({
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(139,92,246,0.12),transparent_42%,rgba(34,211,238,0.08))]" />
 
-      <WindowAltIndicator />
+      <WindowAltIndicator onClick={handleToggleAltView} />
 
       <div className="relative z-10 flex min-h-0 w-full flex-col">
         <div className="flex shrink-0 items-center justify-between gap-3 pr-10">
@@ -127,12 +155,12 @@ export default function DashboardWindowPlay({
           onTouchEnd={handleTouchEnd}
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center">
-            <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center overflow-visible">
+            <div className="relative flex h-[96px] w-full max-w-[240px] items-center justify-center overflow-visible">
               <img
                 src={activeGame.logo}
                 alt={activeGame.name}
                 className={[
-                  "block h-full max-h-full w-auto max-w-none object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
+                  "block h-[70px] w-full max-w-[210px] object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
                   isSwitching
                     ? "scale-95 opacity-40 blur-[1px]"
                     : "scale-100 opacity-100",
