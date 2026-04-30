@@ -1,343 +1,65 @@
-import React, {
-  useState,
-  useEffect,
-  createContext,
-  useContext,
-  useMemo,
-} from "react";
-import { usePrivy } from "@privy-io/react-auth";
-import api from "@/lib/api";
-import { generateUsername } from "@/lib/utils/generateUsername";
+import React from "react";
 
-export const AppContext = createContext();
-export const useApp = () => useContext(AppContext);
+function buildInitials(name = "") {
+  const safe = String(name || "").trim();
+  if (!safe) return "";
 
-function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
+  const parts = safe.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
 
-function getEmailPrefix(email) {
-  return normalizeEmail(email).split("@")[0] || "";
-}
-
-/**
- * V1 Identity Normalization
- * - Email is the ONLY identity input
- * - Username is generated if missing or still equal to email prefix
- * - No wallet logic allowed in V1
- */
-function normalizeV1UserIdentity(userData, emailFallback = "") {
-  const normalizedEmail = normalizeEmail(userData?.email || emailFallback);
-  const emailPrefix = getEmailPrefix(normalizedEmail);
-  const currentUsername = String(userData?.username || "").trim();
-
-  const shouldGenerateUsername =
-    !currentUsername ||
-    currentUsername.toLowerCase() === emailPrefix.toLowerCase();
-
-  const resolvedUsername = shouldGenerateUsername
-    ? generateUsername({ email: normalizedEmail })
-    : currentUsername;
-
-  return {
-    ...(userData || {}),
-    email: normalizedEmail,
-    username: resolvedUsername,
-    displayName:
-      userData?.displayName || userData?.display_name || resolvedUsername,
-    display_name:
-      userData?.display_name || userData?.displayName || resolvedUsername,
-  };
-}
-
-function buildPrivyAuthUser(privyUser) {
-  if (!privyUser) return null;
-
-  const email =
-    privyUser?.email?.address ||
-    privyUser?.google?.email ||
-    privyUser?.apple?.email ||
-    null;
-
-  return {
-    id: privyUser.id,
-    email: normalizeEmail(email),
-    authProvider: "privy",
-  };
-}
-
-export function AppProvider({ children }) {
-  const {
-    ready: privyReady,
-    authenticated: privyAuthenticated,
-    user: privyUser,
-    logout: privyLogout,
-  } = usePrivy();
-
-  const [user, setUser] = useState(null);
-  const [authUser, setAuthUser] = useState(null);
-
-  const [isReturningUserPromptOpen, setIsReturningUserPromptOpen] =
-    useState(false);
-  const [isEmailAuthModalOpen, setIsEmailAuthModalOpen] = useState(false);
-
-  const [pendingAction, setPendingAction] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
-  const privyAuthUser = useMemo(() => {
-    if (isSigningOut) return null;
-    if (!privyReady || !privyAuthenticated) return null;
-    return buildPrivyAuthUser(privyUser);
-  }, [isSigningOut, privyReady, privyAuthenticated, privyUser]);
-
-  const effectiveAuthUser = authUser || privyAuthUser;
-  const isAuthenticated = Boolean(effectiveAuthUser);
-
-  const closeAllAuthModals = () => {
-    setIsReturningUserPromptOpen(false);
-    setIsEmailAuthModalOpen(false);
-  };
-
-  const clearLocalAuthStorage = () => {
-    localStorage.removeItem("zwap_auth_user");
-    localStorage.removeItem("zwap_email");
-  };
-
-  const clearAuthState = () => {
-    setUser(null);
-    setAuthUser(null);
-    setPendingAction(null);
-    closeAllAuthModals();
-  };
-
-  const loadEmailUser = async (email) => {
-    const normalizedEmail = normalizeEmail(email);
-
-    if (!normalizedEmail) {
-      setUser(null);
-      setIsLoading(false);
-      return null;
-    }
-
-    try {
-      setIsLoading(true);
-
-      const userData = await api.getUserByEmail(normalizedEmail);
-
-      const normalizedUser = normalizeV1UserIdentity(
-        userData,
-        normalizedEmail
-      );
-
-      setUser(normalizedUser);
-      return normalizedUser;
-    } catch {
-      try {
-        const generatedUsername = generateUsername({
-          email: normalizedEmail,
-        });
-
-        const newUser = await api.createOrUpdateEmailUser(normalizedEmail, {
-          username: generatedUsername,
-          displayName: generatedUsername,
-          display_name: generatedUsername,
-        });
-
-        const normalizedUser = normalizeV1UserIdentity(
-          newUser,
-          normalizedEmail
-        );
-
-        setUser(normalizedUser);
-        return normalizedUser;
-      } catch (error) {
-        console.log("Failed to load/create email user:", error);
-        setUser(null);
-        return null;
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const savedAuthUser = localStorage.getItem("zwap_auth_user");
-
-    if (savedAuthUser) {
-      try {
-        const parsedAuthUser = JSON.parse(savedAuthUser);
-
-        const normalizedAuthUser = normalizeV1UserIdentity(parsedAuthUser);
-
-        setIsSigningOut(false);
-        setAuthUser(normalizedAuthUser);
-
-        localStorage.setItem(
-          "zwap_auth_user",
-          JSON.stringify(normalizedAuthUser)
-        );
-
-        if (normalizedAuthUser.email) {
-          loadEmailUser(normalizedAuthUser.email).finally(() =>
-            setInitialized(true)
-          );
-          return;
-        }
-      } catch {
-        console.log("Failed to parse saved auth user");
-        localStorage.removeItem("zwap_auth_user");
-      }
-    }
-
-    setIsLoading(false);
-    setInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (isSigningOut) return;
-    if (!privyAuthUser?.email) return;
-
-    const normalizedPrivyAuthUser =
-      normalizeV1UserIdentity(privyAuthUser);
-
-    setAuthUser(normalizedPrivyAuthUser);
-
-    localStorage.setItem(
-      "zwap_auth_user",
-      JSON.stringify(normalizedPrivyAuthUser)
-    );
-    localStorage.setItem("zwap_email", normalizedPrivyAuthUser.email);
-
-    closeAllAuthModals();
-
-    loadEmailUser(normalizedPrivyAuthUser.email);
-  }, [isSigningOut, privyAuthUser]);
-
-  const completeEmailAuth = (emailUser) => {
-    const normalizedEmailUser = normalizeV1UserIdentity({
-      ...(emailUser || {}),
-      authProvider: emailUser?.authProvider || "email",
-    });
-
-    setIsSigningOut(false);
-    setAuthUser(normalizedEmailUser);
-    setUser(normalizedEmailUser);
-
-    localStorage.setItem(
-      "zwap_auth_user",
-      JSON.stringify(normalizedEmailUser)
-    );
-    localStorage.setItem("zwap_email", normalizedEmailUser.email);
-
-    closeAllAuthModals();
-  };
-
-  const logoutEmailUser = async () => {
-    try {
-      setIsSigningOut(true);
-      setAuthUser(null);
-      setUser(null);
-
-      localStorage.removeItem("zwap_auth_user");
-      localStorage.removeItem("zwap_email");
-
-      if (privyAuthenticated) {
-        await privyLogout?.();
-      }
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
-
-  const logoutAll = async () => {
-    try {
-      setIsSigningOut(true);
-      setIsLoading(true);
-
-      clearAuthState();
-      clearLocalAuthStorage();
-
-      if (privyAuthenticated) {
-        await privyLogout?.();
-      }
-    } finally {
-      clearAuthState();
-      clearLocalAuthStorage();
-      setIsSigningOut(false);
-      setIsLoading(false);
-    }
-  };
-
-  const refreshUser = async () => {
-    if (effectiveAuthUser?.email) {
-      await loadEmailUser(effectiveAuthUser.email);
-    }
-  };
-
-  // V1: Wallet completely disabled
-  const requireWallet = () => false;
-
-  const connectWallet = async () => {
-    throw new Error("Wallets are not enabled in ZWAP! V1.");
-  };
-
-  const disconnectWallet = () => {};
-
-  const openWalletUpgradeFlow = () => {};
-
-  const fetchOnchainBalance = async () => {};
+function TierPill({ tier = "zwapper" }) {
+  const isPlus = String(tier || "").toLowerCase() === "zitizen";
 
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        setUser,
-        authUser: effectiveAuthUser,
-        setAuthUser,
-
-        walletAddress: null,
-        isAuthenticated,
-
-        privyReady,
-        privyAuthenticated,
-        privyUser,
-
-        isReturningUserPromptOpen,
-        setIsReturningUserPromptOpen,
-
-        isEmailAuthModalOpen,
-        setIsEmailAuthModalOpen,
-
-        isWalletModalOpen: false,
-        setIsWalletModalOpen: () => {},
-
-        pendingAction,
-        setPendingAction,
-
-        connectWallet,
-        completeEmailAuth,
-        disconnectWallet,
-        logoutEmailUser,
-        logoutAll,
-        refreshUser,
-        requireWallet,
-
-        closeAllAuthModals,
-        openWalletUpgradeFlow,
-
-        isLoading,
-        initialized,
-        showSplash,
-        setShowSplash,
-
-        onchainBalance: null,
-        fetchOnchainBalance,
-      }}
+    <div
+      className={[
+        "inline-flex items-center rounded-full border px-3 py-1",
+        "text-[10px] font-black uppercase tracking-[0.18em]",
+        isPlus
+          ? "border-violet-300/30 bg-violet-400/10 text-violet-100"
+          : "border-cyan-300/30 bg-cyan-400/10 text-cyan-100",
+      ].join(" ")}
     >
-      {children}
-    </AppContext.Provider>
+      {isPlus ? "Zitizen" : "Zwapper"}
+    </div>
+  );
+}
+
+export default function AccountProfileCardV1({
+  username = "",
+  initials = "",
+  tier = "zwapper",
+}) {
+  const safeUsername = String(username || "").trim();
+  const resolvedInitials = initials || buildInitials(safeUsername);
+
+  return (
+    <div className="relative min-h-[116px] overflow-hidden rounded-[26px] border border-cyan-300/15 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.16),transparent_38%),radial-gradient(circle_at_88%_12%,rgba(168,85,247,0.12),transparent_34%),linear-gradient(180deg,rgba(12,20,32,0.96),rgba(5,9,18,0.98))] px-4 py-4 shadow-[0_16px_42px_rgba(0,0,0,0.38)]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.07),transparent_34%,rgba(34,211,238,0.06))]" />
+
+      <div className="relative flex h-full items-center gap-3">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.24),rgba(8,14,24,0.96))] text-[17px] font-black tracking-[-0.04em] text-white shadow-[0_0_24px_rgba(34,211,238,0.16)]">
+          {resolvedInitials}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[17px] font-black tracking-[-0.05em] text-white">
+            {safeUsername}
+          </div>
+
+          <div className="mt-2">
+            <TierPill tier={tier} />
+          </div>
+        </div>
+
+        <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.8)]" />
+      </div>
+    </div>
   );
 }
