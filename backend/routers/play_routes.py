@@ -1,602 +1,455 @@
-import React, {
-  Suspense,
-  lazy,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+"""
+ZWAP! V1 Play Router
+====================
+Submits V1 game results and awards controlled zPts.
 
-import useV1DashboardState from "./useV1DashboardState";
-import AppHeaderV1 from "./AppHeaderV1";
-import DashboardWindowMove from "./windows/DashboardWindowMove";
-import DashboardWindowPlay from "./windows/DashboardWindowPlay";
-import DashboardWindowShop from "./windows/DashboardWindowShop";
-import DashboardWindowZwap from "./windows/DashboardWindowZwap";
+V1 behavior:
+- Email is the primary user identity
+- Privy wallet is optional metadata only
+- PLAY earns controlled zPts
+- PLAY writes rewards_ledger
+- PLAY writes activity_logs for Activity + Zap
+- Full daily loop processing runs after valid play results
 
-import ActivityPageV1 from "./activity/ActivityPageV1";
-import { getActivityDashboard } from "./activity/activityApi";
+V1 game registry:
+- available now: stackz, breakerz, pulze, zap-man
+- locked future games: brainz, triplez, werdz
+"""
 
-import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
+import logging
+from datetime import datetime, timezone
+from typing import Any, Optional
+import uuid
 
-const StackzGame = lazy(() =>
-  import("@/v1/components/games/stackz/StackzGame")
-);
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 
-const BreakerzGame = lazy(() =>
-  import("@/v1/components/games/breakerz/BreakerzGame")
-);
+from services.reward_service import (
+    calculate_play_reward,
+    enforce_daily_caps,
+    get_tier_multipliers,
+)
+from services.badge_service import evaluate_badges, persist_badge_updates
+from services.daily_task_service import maybe_process_full_daily_loop
 
-const PulzeGame = lazy(() =>
-  import("@/v1/components/games/pulze/PulzeGame")
-);
+router = APIRouter(prefix="/games", tags=["Play"])
 
-const ZapManGame = lazy(() =>
-  import("@/v1/components/games/zapman/ZapManGame")
-);
-
-const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
-
-const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
-
-function estimateCaloriesFromSteps(steps) {
-  return Math.round(Math.max(0, Number(steps || 0)) * 0.04);
+GAME_REGISTRY = {
+    "stackz": {"locked": False},
+    "breakerz": {"locked": False},
+    "pulze": {"locked": False},
+    "zap-man": {"locked": False},
+    "brainz": {"locked": True},
+    "triplez": {"locked": True},
+    "werdz": {"locked": True},
 }
 
-function getResolvedEmail({ authUser, user }) {
-  return String(
-    authUser?.email?.address ||
-      authUser?.email ||
-      user?.email ||
-      user?.email_address ||
-      ""
-  )
-    .trim()
-    .toLowerCase();
-}
+class GameResultRequest(BaseModel):
+    game_type: str
+    score: int
+    level: int = 1
+    blocks_destroyed: int = 0
+    session_duration_seconds: int = 0
+    completed: bool = True
 
-function mergeTaskState(taskStates = [], updates = {}) {
-  if (!Array.isArray(taskStates)) return taskStates;
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
-  return taskStates.map((task) => {
-    const label = String(task?.label || "").toLowerCase();
+def utc_now_iso() -> str:
+    return utc_now().isoformat()
 
-    if (label === "move") {
-      return {
-        ...task,
-        completed: Boolean(task?.completed || updates.move),
-      };
+def today_key() -> str:
+    return utc_now().date().isoformat()
+
+def normalize_email(email: Optional[str]) -> str:
+    return str(email or "").lower().strip()
+
+def safe_int(value: Any, fallback: int = 0) -> int:
+    try:
+        return int(value or fallback)
+    except Exception:
+        return fallback
+
+def parse_datetime(value: Optional[Any]) -> Optional[datetime]:
+    if value is None:
+        return None
+
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+
+        return value.astimezone(timezone.utc)
+
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+
+            return parsed.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    return None
+
+def normalize_tier_key(tier: str) -> str:
+    safe = str(tier or "").lower().strip()
+
+    if safe in {"plus", "zitizen"}:
+        return "zitizen"
+
+    return "zwapper"
+
+def normalize_game_id(game_type: str) -> str:
+    return str(game_type or "").lower().strip()
+
+def safe_game_field(game_type: str) -> str:
+    return game_type.replace("-", "_")
+
+def get_personal_best_field(game_type: str) -> str:
+    return f"personal_best_{safe_game_field(game_type)}"
+
+def get_daily_best_field(game_type: str) -> str:
+    return f"daily_best_{safe_game_field(game_type)}"
+
+def get_daily_best_count_field(game_type: str) -> str:
+    return f"daily_best_count_{safe_game_field(game_type)}"
+
+def get_personal_best_rewarded_day_field(game_type: str) -> str:
+    return f"personal_best_rewarded_day_{safe_game_field(game_type)}"
+
+def get_user_persist_id(user: dict):
+    return user.get("id") or user.get("_id")
+
+async def persist_badges_safely(db, user: dict) -> dict:
+    badge_result = evaluate_badges(user)
+    updates = badge_result.get("updates", {})
+    user_id = get_user_persist_id(user)
+
+    if user_id and updates:
+        await persist_badge_updates(db, user_id, updates)
+        user.update(updates)
+
+    return user
+
+async def check_and_reset_daily_zpts(db, user: dict) -> dict:
+    now = utc_now()
+    now_iso = now.isoformat()
+    current_day = today_key()
+
+    last_reset = parse_datetime(user.get("last_zpts_reset"))
+    stored_daily_key = user.get("daily_zpts_date")
+
+    should_reset = False
+
+    if stored_daily_key and stored_daily_key != current_day:
+        should_reset = True
+    elif last_reset and last_reset.date() < now.date():
+        should_reset = True
+    elif not stored_daily_key and not last_reset:
+        should_reset = True
+
+    if should_reset:
+        await db.users.update_one(
+            {"email": user["email"]},
+            {
+                "$set": {
+                    "daily_zpts_earned": 0,
+                    "games_played_today": 0,
+                    "daily_zpts_date": current_day,
+                    "last_zpts_reset": now_iso,
+                    "updated_at": now_iso,
+                }
+            },
+        )
+
+        user["daily_zpts_earned"] = 0
+        user["games_played_today"] = 0
+        user["daily_zpts_date"] = current_day
+        user["last_zpts_reset"] = now_iso
+        user["updated_at"] = now_iso
+
+    return user
+
+def get_session_diminishing_multiplier(games_played_today: int) -> float:
+    next_session_number = int(games_played_today or 0) + 1
+
+    if next_session_number <= 3:
+        return 1.0
+
+    if next_session_number <= 6:
+        return 0.5
+
+    return 0.1
+
+def get_move_dependency_multiplier(today_steps: int) -> float:
+    safe_steps = int(today_steps or 0)
+
+    if safe_steps < 1000:
+        return 0.2
+
+    if safe_steps < 2000:
+        return 0.5
+
+    return 1.0
+
+@router.get("/registry")
+async def get_game_registry():
+    return {
+        "games": [
+            {"id": game_id, "locked": config["locked"]}
+            for game_id, config in GAME_REGISTRY.items()
+        ]
     }
 
-    if (label === "play") {
-      return {
-        ...task,
-        completed: Boolean(task?.completed || updates.play),
-      };
+@router.post("/result/{email}")
+async def submit_game_result(
+    email: str,
+    game_data: GameResultRequest,
+    request: Request,
+):
+    db = request.app.state.db
+    safe_email = normalize_email(email)
+    canonical_game_type = normalize_game_id(game_data.game_type)
+
+    if not safe_email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    game_config = GAME_REGISTRY.get(canonical_game_type)
+
+    if not game_config:
+        raise HTTPException(status_code=400, detail="Unknown game type")
+
+    if game_config["locked"]:
+        raise HTTPException(status_code=403, detail="Game is locked")
+
+    if game_data.score < 0:
+        raise HTTPException(status_code=400, detail="Invalid score")
+
+    if game_data.level < 1:
+        raise HTTPException(status_code=400, detail="Invalid level")
+
+    if game_data.session_duration_seconds < 0:
+        raise HTTPException(status_code=400, detail="Invalid session duration")
+
+    user = await db.users.find_one({"email": safe_email})
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    tier = normalize_tier_key(user.get("tier", "zwapper"))
+    user = await check_and_reset_daily_zpts(db, user)
+
+    daily_zpts = safe_int(user.get("daily_zpts_earned"), 0)
+    games_played_today = safe_int(user.get("games_played_today"), 0)
+    today_steps = safe_int(user.get("daily_steps"), 0)
+
+    tier_reward_config = await get_tier_multipliers(tier)
+    zpts_cap = safe_int(tier_reward_config.get("daily_zpts_cap"), 0)
+
+    cap_check = await enforce_daily_caps(
+        email=safe_email,
+        tier=tier,
+        earned_today=daily_zpts,
+        cap_type="zpts",
+    )
+
+    if cap_check.get("capped"):
+        raise HTTPException(
+            status_code=429,
+            detail="Daily zPts earning limit reached. Come back tomorrow!",
+        )
+
+    try:
+        rewards = await calculate_play_reward(
+            game_type=canonical_game_type,
+            score=game_data.score,
+            level=game_data.level,
+            tier=tier,
+            blocks_destroyed=game_data.blocks_destroyed,
+        )
+    except ValueError as error:
+        logging.warning(
+            "Game reward validation failed for %s / %s: %s",
+            safe_email,
+            canonical_game_type,
+            str(error),
+        )
+        raise HTTPException(status_code=400, detail=str(error))
+
+    base_zpts = safe_int(rewards.get("zpts"), 0)
+
+    session_multiplier = get_session_diminishing_multiplier(games_played_today)
+    move_multiplier = get_move_dependency_multiplier(today_steps)
+
+    adjusted_base_zpts = int(round(base_zpts * session_multiplier * move_multiplier))
+    adjusted_base_zpts = max(adjusted_base_zpts, 0)
+
+    current_day = today_key()
+    now_iso = utc_now_iso()
+
+    personal_best_field = get_personal_best_field(canonical_game_type)
+    daily_best_field = get_daily_best_field(canonical_game_type)
+    daily_best_count_field = get_daily_best_count_field(canonical_game_type)
+    personal_best_rewarded_day_field = get_personal_best_rewarded_day_field(
+        canonical_game_type
+    )
+
+    previous_personal_best = safe_int(user.get(personal_best_field), 0)
+    previous_daily_best = safe_int(user.get(daily_best_field), 0)
+    previous_daily_best_count = safe_int(user.get(daily_best_count_field), 0)
+    previous_personal_best_rewarded_day = user.get(personal_best_rewarded_day_field)
+
+    personal_best_achieved = game_data.score > previous_personal_best
+    personal_best_bonus = 0
+
+    if personal_best_achieved and previous_personal_best_rewarded_day != current_day:
+        personal_best_bonus = 10
+
+    daily_best_achieved = game_data.score > previous_daily_best
+    daily_best_bonus = 0
+
+    if daily_best_achieved and previous_daily_best_count < 3:
+        daily_best_bonus = 5
+
+    total_requested_zpts = adjusted_base_zpts + personal_best_bonus + daily_best_bonus
+    zpts_to_add = max(
+        0,
+        min(total_requested_zpts, safe_int(cap_check.get("remaining"), 0)),
+    )
+
+    achievement_bonus_requested = personal_best_bonus + daily_best_bonus
+    achievement_bonus_awarded = max(0, zpts_to_add - adjusted_base_zpts)
+    achievement_bonus_awarded = min(
+        achievement_bonus_awarded,
+        achievement_bonus_requested,
+    )
+
+    set_updates = {
+        "daily_zpts_date": current_day,
+        "last_zpts_reset": now_iso,
+        "updated_at": now_iso,
     }
 
-    return task;
-  });
-}
+    if personal_best_achieved:
+        set_updates[personal_best_field] = game_data.score
 
-function GameLoadingScreen() {
-  return (
-    <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050816] text-white">
-      <div className="rounded-[24px] border border-cyan-300/15 bg-white/[0.04] px-5 py-4 text-center shadow-[0_0_32px_rgba(34,211,238,0.10)]">
-        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/70">
-          Loading Game
-        </div>
-        <div className="mt-2 text-sm font-semibold text-white/70">
-          Powering up the arcade…
-        </div>
-      </div>
-    </div>
-  );
-}
+        if personal_best_bonus > 0:
+            set_updates[personal_best_rewarded_day_field] = current_day
 
-export default function DashboardV1({ user, authUser }) {
-  const resolvedEmail = useMemo(
-    () => getResolvedEmail({ authUser, user }),
-    [authUser, user]
-  );
+    if daily_best_achieved:
+        set_updates[daily_best_field] = game_data.score
 
-  const isDashboardAuthenticated = Boolean(resolvedEmail);
-  const isAdminPreviewUser = ADMIN_PREVIEW_EMAILS.includes(resolvedEmail);
+        if daily_best_bonus > 0:
+            set_updates[daily_best_count_field] = previous_daily_best_count + 1
 
-  const state = useV1DashboardState({
-    user,
-    authUser,
-    isAuthenticated: isDashboardAuthenticated,
-    isAdminPreviewUser,
-  });
-
-  const {
-    zptsBalance,
-    displayName,
-
-    isZwapAltView,
-    setIsZwapAltView,
-
-    shopUnlocked,
-    gardenUnlocked,
-    rarePlantUnlocked,
-    isSwapUnlocked,
-
-    badgeVisibilityUnlocked,
-    learnUnlocked,
-    streamUnlocked,
-    assistUnlocked,
-
-    profileNeedsSetup,
-    hasNewHighScore,
-    canSpendZpts,
-    shouldSaveZpts,
-
-    completedTaskCount,
-    totalTaskCount,
-    taskStates,
-
-    streakDays,
-    dailySteps,
-    gamesPlayedToday,
-    lessonsCompletedToday,
-    lastActiveAt,
-    fullLoopCompleted,
-
-    healthPercent,
-    growthStage,
-    plantName,
-
-    longestStreak,
-    totalBlooms,
-    activeDays,
-    missedDays,
-    daysUntilNextBloom,
-    nextRareUnlock,
-    streakGraceDaysRemaining,
-
-    zwapMode,
-    zwapMessage,
-    zwapHint,
-  } = state;
-
-  const resolvedTier = user?.tier || user?.accountTier || "zwapper";
-
-  const previewShopUnlocked = isAdminPreviewUser || shopUnlocked;
-  const previewGardenUnlocked = isAdminPreviewUser || gardenUnlocked;
-  const previewRarePlantUnlocked = isAdminPreviewUser || rarePlantUnlocked;
-  const previewSwapUnlocked = isAdminPreviewUser || isSwapUnlocked;
-  const previewBadgeVisibilityUnlocked =
-    isAdminPreviewUser || badgeVisibilityUnlocked;
-  const previewLearnUnlocked = isAdminPreviewUser || learnUnlocked;
-  const previewStreamUnlocked = isAdminPreviewUser || streamUnlocked;
-  const previewAssistUnlocked = isAdminPreviewUser || assistUnlocked;
-
-  const [moveIsActive, setMoveIsActive] = useState(false);
-  const [sessionSteps, setSessionSteps] = useState(0);
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [activeGameId, setActiveGameId] = useState(null);
-  const [activeView, setActiveView] = useState("dashboard");
-
-  const [localGamesPlayedToday, setLocalGamesPlayedToday] = useState(0);
-  const [localZptsBalance, setLocalZptsBalance] = useState(null);
-
-  const [shopCategories, setShopCategories] = useState([]);
-  const [shopItems, setShopItems] = useState([]);
-  const [shopLoading, setShopLoading] = useState(false);
-  const [shopError, setShopError] = useState("");
-
-  const [activitySignal, setActivitySignal] = useState(null);
-  const [activitySnapshot, setActivitySnapshot] = useState(null);
-
-  const sessionStartStepsRef = useRef(0);
-
-  function handleOpenActivity() {
-    setActiveView("activity");
-  }
-
-  function handleBackFromActivity() {
-    setActiveView("dashboard");
-  }
-
-  const handleToggleMove = () => {
-    setMoveIsActive((current) => {
-      const next = !current;
-
-      if (next) {
-        sessionStartStepsRef.current = getCurrentSteps();
-        setSessionSteps(0);
-        setTimerSeconds(0);
-      }
-
-      return next;
-    });
-  };
-
-  const handleToggleZwapAltView = () => {
-    setIsZwapAltView((current) => !current);
-  };
-
-  const handleStartGame = (game) => {
-    if (!game || game.locked) return;
-    setActiveGameId(game.id);
-  };
-
-  const refreshActivitySnapshot = async () => {
-    if (!resolvedEmail) return null;
-
-    try {
-      const data = await getActivityDashboard(resolvedEmail);
-
-      setActivitySnapshot(data || null);
-      setActivitySignal(data?.latestActivitySignal || null);
-
-      return data;
-    } catch (error) {
-      console.error("Activity snapshot failed:", error);
-      return null;
-    }
-  };
-
-  const submitPlayResult = async (result) => {
-    if (!resolvedEmail) return null;
-
-    const gameType = result?.gameId || result?.game_type || result?.game || "";
-    const score = Number(result?.score || 0);
-    const level = Number(result?.level || 1);
-
-    if (!gameType) return null;
-
-    const res = await fetch(
-      `${API_BASE}/games/result/${encodeURIComponent(resolvedEmail)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    await db.users.update_one(
+        {"email": safe_email},
+        {
+            "$inc": {
+                "zpts_balance": zpts_to_add,
+                "lifetime_zpts": zpts_to_add,
+                "games_played": 1,
+                "games_played_today": 1,
+                "daily_zpts_earned": zpts_to_add,
+                "badge_zpts_earned": zpts_to_add,
+                "badge_deep_engagement": 1,
+            },
+            "$set": set_updates,
         },
-        body: JSON.stringify({
-          game_type: gameType,
-          score,
-          level,
-          blocks_destroyed: Number(result?.blocksDestroyed || 0),
-          session_duration_seconds: Number(result?.sessionDurationSeconds || 0),
-          completed: true,
-        }),
-      }
-    );
+    )
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Game result failed");
-    }
-
-    return res.json();
-  };
-
-  const handleGameEnd = async (result) => {
-    console.log("Game ended:", result);
-
-    setActiveGameId(null);
-    setLocalGamesPlayedToday((current) => Math.max(current, 1));
-
-    try {
-      const playResult = await submitPlayResult(result);
-
-      if (playResult?.new_zpts_balance !== undefined) {
-        setLocalZptsBalance(Number(playResult.new_zpts_balance || 0));
-      }
-
-      setActivitySignal({
-        type: "play",
-        game: result?.gameId || playResult?.game || "",
-        zpts: Number(playResult?.zpts_earned || 0),
-        created_at: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("Play result submit failed:", error);
-
-      setActivitySignal({
-        type: "play",
-        game: result?.gameId || "",
-        zpts: 0,
-        created_at: new Date().toISOString(),
-      });
-    }
-
-    await refreshActivitySnapshot();
-  };
-
-  const handlePurchaseShopItem = async (item) => {
-    const itemId = item?.id || item?._id;
-    const paymentType = item?.payment_method || "zpts";
-
-    if (!resolvedEmail || !itemId) return null;
-
-    const res = await fetch(`${API_BASE}/shop/purchase`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: resolvedEmail,
-        item_id: itemId,
-        payment_type: paymentType,
-      }),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Purchase failed");
-    }
-
-    const data = await res.json();
-    await refreshActivitySnapshot();
-
-    return data;
-  };
-
-  useEffect(() => {
-    if (!moveIsActive) return undefined;
-
-    const unsubscribe = subscribeToSteps((deviceSteps) => {
-      const start = Number(sessionStartStepsRef.current || 0);
-      setSessionSteps(Math.max(0, Number(deviceSteps || 0) - start));
-    });
-
-    return () => unsubscribe();
-  }, [moveIsActive]);
-
-  useEffect(() => {
-    if (!moveIsActive) return undefined;
-
-    const interval = window.setInterval(() => {
-      setTimerSeconds((current) => current + 1);
-    }, 1000);
-
-    return () => window.clearInterval(interval);
-  }, [moveIsActive]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadShop() {
-      setShopLoading(true);
-      setShopError("");
-
-      try {
-        const [categoriesResponse, itemsResponse] = await Promise.all([
-          fetch(`${API_BASE}/shop/categories`),
-          fetch(`${API_BASE}/shop/items`),
-        ]);
-
-        if (!categoriesResponse.ok) {
-          throw new Error("Shop categories failed to load");
+    await db.rewards_ledger.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "email": safe_email,
+            "currency": "zpts",
+            "amount": zpts_to_add,
+            "uncapped_amount": total_requested_zpts,
+            "source": "play",
+            "reward_type": "game_result",
+            "game": canonical_game_type,
+            "score": game_data.score,
+            "level": game_data.level,
+            "daily_cap": zpts_cap,
+            "created_at": now_iso,
         }
+    )
 
-        if (!itemsResponse.ok) {
-          throw new Error("Shop items failed to load");
+    await db.activity_logs.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "email": safe_email,
+            "type": "play",
+            "game": canonical_game_type,
+            "zpts": zpts_to_add,
+            "message": f"+{zpts_to_add} zPts from {canonical_game_type}",
+            "priority": "normal",
+            "completed": True,
+            "created_at": now_iso,
+            "metadata": {
+                "score": game_data.score,
+                "level": game_data.level,
+                "base_zpts": adjusted_base_zpts,
+                "uncapped_zpts": total_requested_zpts,
+                "daily_cap": zpts_cap,
+                "personal_best_achieved": personal_best_achieved,
+                "daily_best_achieved": daily_best_achieved,
+                "session_diminishing_multiplier": session_multiplier,
+                "move_dependency_multiplier": move_multiplier,
+            },
         }
+    )
 
-        const categories = await categoriesResponse.json();
-        const items = await itemsResponse.json();
+    updated_user = await db.users.find_one({"email": safe_email})
 
-        if (!mounted) return;
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="User missing after play update")
 
-        setShopCategories(Array.isArray(categories) ? categories : []);
-        setShopItems(Array.isArray(items) ? items : []);
-      } catch (error) {
-        if (!mounted) return;
+    updated_user = await persist_badges_safely(db, updated_user)
 
-        console.error("Shop load failed:", error);
-        setShopError(error?.message || "Shop failed to load");
-        setShopCategories([]);
-        setShopItems([]);
-      } finally {
-        if (mounted) {
-          setShopLoading(false);
-        }
-      }
+    full_loop_result = await maybe_process_full_daily_loop(db, email=safe_email)
+
+    if (
+        full_loop_result.get("awarded")
+        or full_loop_result.get("reason") == "daily_cap_reached_loop_counted"
+        or full_loop_result.get("reason") == "cap_reached_loop_counted"
+    ):
+        refreshed_user = await db.users.find_one({"email": safe_email})
+
+        if refreshed_user:
+            updated_user = refreshed_user
+
+    return {
+        "success": True,
+        "game": canonical_game_type,
+        "score": game_data.score,
+        "level": game_data.level,
+        "zpts_earned": zpts_to_add,
+        "base_zpts": adjusted_base_zpts,
+        "achievement_bonus_zpts": achievement_bonus_awarded,
+        "personal_best_achieved": personal_best_achieved,
+        "daily_best_achieved": daily_best_achieved,
+        "session_diminishing_multiplier": session_multiplier,
+        "move_dependency_multiplier": move_multiplier,
+        "zpts_capped": zpts_to_add < total_requested_zpts,
+        "full_loop_awarded": full_loop_result.get("awarded", False),
+        "full_loop_bonus": full_loop_result.get("full_loop_bonus", 0),
+        "daily_zpts_remaining": max(
+            0,
+            zpts_cap - safe_int(updated_user.get("daily_zpts_earned"), 0),
+        ),
+        "new_zpts_balance": safe_int(updated_user.get("zpts_balance"), 0),
+        "games_played_today": safe_int(updated_user.get("games_played_today"), 0),
+        "daily_zpts_earned": safe_int(updated_user.get("daily_zpts_earned"), 0),
+        "badge_deep_engagement": updated_user.get("badge_deep_engagement", 0),
+        "badge_zpts_earned": updated_user.get("badge_zpts_earned", 0),
+        "badge_earner_level": updated_user.get("badge_earner_level", 0),
+        "badge_earner_mastered": updated_user.get("badge_earner_mastered", False),
+        "badge_finisher_level": updated_user.get("badge_finisher_level", 0),
+        "badge_finisher_mastered": updated_user.get("badge_finisher_mastered", False),
+        "badge_trophies": updated_user.get("badge_trophies", 0),
+        "badge_trophy_bonus_percent": updated_user.get("badge_trophy_bonus_percent", 0),
+        "message": f"Earned {zpts_to_add} zPts!",
     }
-
-    loadShop();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadActivity() {
-      if (!resolvedEmail) {
-        setActivitySnapshot(null);
-        setActivitySignal(null);
-        return;
-      }
-
-      try {
-        const data = await getActivityDashboard(resolvedEmail);
-
-        if (!mounted) return;
-
-        setActivitySnapshot(data || null);
-        setActivitySignal(data?.latestActivitySignal || null);
-      } catch (error) {
-        if (!mounted) return;
-
-        console.error("Activity load failed:", error);
-        setActivitySnapshot(null);
-        setActivitySignal(null);
-      }
-    }
-
-    loadActivity();
-
-    return () => {
-      mounted = false;
-    };
-  }, [resolvedEmail]);
-
-  const calories = estimateCaloriesFromSteps(sessionSteps);
-
-  const resolvedZptsBalance = Math.max(
-    Number(activitySnapshot?.zptsBalance || 0),
-    Number(zptsBalance || 0),
-    Number(localZptsBalance || 0)
-  );
-
-  const resolvedDailySteps = Math.max(
-    Number(activitySnapshot?.dailySteps || 0),
-    Number(dailySteps || 0),
-    Number(sessionSteps || 0)
-  );
-
-  const resolvedGamesPlayedToday = Math.max(
-    Number(activitySnapshot?.gamesPlayedToday || 0),
-    Number(gamesPlayedToday || 0),
-    Number(localGamesPlayedToday || 0)
-  );
-
-  const resolvedLessonsCompletedToday =
-    activitySnapshot?.lessonsCompletedToday ?? lessonsCompletedToday;
-
-  const resolvedFullLoopCompleted =
-    activitySnapshot?.fullLoopCompleted ?? fullLoopCompleted;
-
-  const baseResolvedTaskStates =
-    Array.isArray(activitySnapshot?.taskStates) &&
-    activitySnapshot.taskStates.length > 0
-      ? activitySnapshot.taskStates
-      : taskStates;
-
-  const resolvedTaskStates = mergeTaskState(baseResolvedTaskStates, {
-    move: resolvedDailySteps > 0 || sessionSteps > 0,
-    play: resolvedGamesPlayedToday > 0,
-  });
-
-  const resolvedCompletedTaskCount = Math.max(
-    Number(activitySnapshot?.completedTaskCount || 0),
-    Number(completedTaskCount || 0),
-    resolvedTaskStates.filter((task) => task?.completed).length
-  );
-
-  const resolvedTotalTaskCount =
-    activitySnapshot?.totalTaskCount ?? totalTaskCount;
-
-  if (activeGameId) {
-    return (
-      <Suspense fallback={<GameLoadingScreen />}>
-        {activeGameId === "stackz" && (
-          <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-        {activeGameId === "breakerz" && (
-          <BreakerzGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-        {activeGameId === "pulze" && (
-          <PulzeGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-        {activeGameId === "zap-man" && (
-          <ZapManGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-      </Suspense>
-    );
-  }
-
-  if (activeView === "activity") {
-    return <ActivityPageV1 onBack={handleBackFromActivity} email={resolvedEmail} />;
-  }
-
-  return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
-      <div className="shrink-0">
-        <AppHeaderV1
-          user={user}
-          authUser={authUser}
-          tier={resolvedTier}
-          zptsBalance={resolvedZptsBalance}
-          displayName={displayName}
-          gardenUnlocked={previewGardenUnlocked}
-          learnUnlocked={previewLearnUnlocked}
-          streamUnlocked={previewStreamUnlocked}
-          badgesUnlocked={previewBadgeVisibilityUnlocked}
-          onActivityClick={handleOpenActivity}
-        />
-      </div>
-
-      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowMove
-            isActive={moveIsActive}
-            sessionSteps={sessionSteps}
-            calories={calories}
-            timerSeconds={timerSeconds}
-            onToggleMove={handleToggleMove}
-          />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowPlay
-            onStartGame={handleStartGame}
-            onOpenPlay={handleStartGame}
-          />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop
-            zptsBalance={resolvedZptsBalance}
-            shopUnlocked={previewShopUnlocked}
-            categories={shopCategories}
-            items={shopItems}
-            loading={shopLoading}
-            error={shopError}
-            onPurchaseItem={handlePurchaseShopItem}
-          />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowZwap
-            isAltView={isZwapAltView}
-            onToggleAltView={handleToggleZwapAltView}
-            systemMessage={zwapMessage}
-            eventType={zwapMode}
-            nextStep={zwapHint}
-            activitySignal={activitySignal}
-            completedTaskCount={resolvedCompletedTaskCount}
-            totalTaskCount={resolvedTotalTaskCount}
-            taskStates={resolvedTaskStates}
-            zptsBalance={resolvedZptsBalance}
-            shopUnlocked={previewShopUnlocked}
-            gardenUnlocked={previewGardenUnlocked}
-            learnUnlocked={previewLearnUnlocked}
-            assistUnlocked={previewAssistUnlocked}
-            swapUnlocked={previewSwapUnlocked}
-            badgeVisibilityUnlocked={previewBadgeVisibilityUnlocked}
-            streamUnlocked={previewStreamUnlocked}
-            profileNeedsSetup={profileNeedsSetup}
-            hasNewHighScore={hasNewHighScore}
-            canSpendZpts={canSpendZpts}
-            shouldSaveZpts={shouldSaveZpts}
-            streakDays={streakDays}
-            dailySteps={resolvedDailySteps}
-            gamesPlayedToday={resolvedGamesPlayedToday}
-            lessonsCompletedToday={resolvedLessonsCompletedToday}
-            lastActiveAt={lastActiveAt}
-            fullLoopCompleted={resolvedFullLoopCompleted}
-            healthPercent={healthPercent}
-            growthStage={growthStage}
-            plantName={plantName}
-            rarePlantUnlocked={previewRarePlantUnlocked}
-            longestStreak={longestStreak}
-            totalBlooms={totalBlooms}
-            activeDays={activeDays}
-            missedDays={missedDays}
-            daysUntilNextBloom={daysUntilNextBloom}
-            nextRareUnlock={nextRareUnlock}
-            streakGraceDaysRemaining={streakGraceDaysRemaining}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
