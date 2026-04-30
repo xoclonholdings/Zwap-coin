@@ -4,6 +4,7 @@ import React, {
   createContext,
   useContext,
   useMemo,
+  useRef,
 } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import api from "@/lib/api";
@@ -18,6 +19,10 @@ function normalizeEmail(email) {
 
 function getEmailPrefix(email) {
   return normalizeEmail(email).split("@")[0] || "";
+}
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /**
@@ -87,6 +92,8 @@ export function AppProvider({ children }) {
   const [showSplash, setShowSplash] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  const dailyClaimRef = useRef({});
+
   const privyAuthUser = useMemo(() => {
     if (isSigningOut) return null;
     if (!privyReady || !privyAuthenticated) return null;
@@ -113,8 +120,29 @@ export function AppProvider({ children }) {
     closeAllAuthModals();
   };
 
-  const loadEmailUser = async (email) => {
+  const claimDailyRewardOnce = async (email) => {
     const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) return null;
+
+    const claimKey = `${normalizedEmail}:${todayKey()}`;
+
+    if (dailyClaimRef.current[claimKey]) {
+      return null;
+    }
+
+    dailyClaimRef.current[claimKey] = true;
+
+    try {
+      return await api.claimDailyReward(normalizedEmail);
+    } catch (error) {
+      console.log("Daily reward claim skipped:", error?.message || error);
+      return null;
+    }
+  };
+
+  const loadEmailUser = async (email, options = {}) => {
+    const normalizedEmail = normalizeEmail(email);
+    const shouldClaimDaily = options.claimDaily !== false;
 
     if (!normalizedEmail) {
       setUser(null);
@@ -127,12 +155,28 @@ export function AppProvider({ children }) {
 
       const userData = await api.getUserByEmail(normalizedEmail);
 
-      const normalizedUser = normalizeV1UserIdentity(
+      let normalizedUser = normalizeV1UserIdentity(
         userData,
         normalizedEmail
       );
 
       setUser(normalizedUser);
+
+      if (shouldClaimDaily) {
+        const claimResult = await claimDailyRewardOnce(normalizedEmail);
+
+        if (claimResult?.success) {
+          const refreshedUser = await api.getUserByEmail(normalizedEmail);
+
+          normalizedUser = normalizeV1UserIdentity(
+            refreshedUser,
+            normalizedEmail
+          );
+
+          setUser(normalizedUser);
+        }
+      }
+
       return normalizedUser;
     } catch {
       try {
@@ -146,12 +190,28 @@ export function AppProvider({ children }) {
           display_name: generatedUsername,
         });
 
-        const normalizedUser = normalizeV1UserIdentity(
+        let normalizedUser = normalizeV1UserIdentity(
           newUser,
           normalizedEmail
         );
 
         setUser(normalizedUser);
+
+        if (shouldClaimDaily) {
+          const claimResult = await claimDailyRewardOnce(normalizedEmail);
+
+          if (claimResult?.success) {
+            const refreshedUser = await api.getUserByEmail(normalizedEmail);
+
+            normalizedUser = normalizeV1UserIdentity(
+              refreshedUser,
+              normalizedEmail
+            );
+
+            setUser(normalizedUser);
+          }
+        }
+
         return normalizedUser;
       } catch (error) {
         console.log("Failed to load/create email user:", error);
@@ -216,7 +276,7 @@ export function AppProvider({ children }) {
     loadEmailUser(normalizedPrivyAuthUser.email);
   }, [isSigningOut, privyAuthUser]);
 
-  const completeEmailAuth = (emailUser) => {
+  const completeEmailAuth = async (emailUser) => {
     const normalizedEmailUser = normalizeV1UserIdentity({
       ...(emailUser || {}),
       authProvider: emailUser?.authProvider || "email",
@@ -233,6 +293,10 @@ export function AppProvider({ children }) {
     localStorage.setItem("zwap_email", normalizedEmailUser.email);
 
     closeAllAuthModals();
+
+    if (normalizedEmailUser.email) {
+      await loadEmailUser(normalizedEmailUser.email);
+    }
   };
 
   const logoutEmailUser = async () => {
@@ -273,7 +337,7 @@ export function AppProvider({ children }) {
 
   const refreshUser = async () => {
     if (effectiveAuthUser?.email) {
-      await loadEmailUser(effectiveAuthUser.email);
+      await loadEmailUser(effectiveAuthUser.email, { claimDaily: false });
     }
   };
 
