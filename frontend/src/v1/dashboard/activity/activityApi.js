@@ -32,6 +32,27 @@ async function safeFetch(path) {
   }
 }
 
+function buildHighScores(personalBests = []) {
+  const highScores = {};
+
+  if (!Array.isArray(personalBests)) {
+    return highScores;
+  }
+
+  personalBests.forEach((item) => {
+    if (item?.type !== "game" || !item?.gameId) return;
+
+    highScores[item.gameId] = {
+      score: Number(item.value || item.score || 0),
+      highScore: Number(item.value || item.score || 0),
+      level: Number(item.level || 1),
+      plays: Number(item.plays || item.playCount || 0),
+    };
+  });
+
+  return highScores;
+}
+
 function buildEmptyActivity() {
   return {
     totalSteps: 0,
@@ -54,6 +75,7 @@ function buildEmptyActivity() {
     streakDays: 0,
 
     personalBests: [],
+    highScores: {},
     latestActivitySignal: null,
 
     completedTaskCount: 0,
@@ -62,8 +84,6 @@ function buildEmptyActivity() {
     dailySteps: 0,
     gamesPlayedToday: 0,
     lessonsCompletedToday: 0,
-
-    // ✅ NEW (safe fallback)
     taskStates: [],
   };
 }
@@ -82,6 +102,10 @@ export async function getActivityDashboard(email) {
   if (!data) {
     return buildEmptyActivity();
   }
+
+  const personalBests = Array.isArray(data.personalBests)
+    ? data.personalBests
+    : [];
 
   return {
     totalSteps: Number(data.totalSteps || 0),
@@ -103,7 +127,8 @@ export async function getActivityDashboard(email) {
     consistency: Array.isArray(data.consistency) ? data.consistency : [],
     streakDays: Number(data.streakDays || 0),
 
-    personalBests: Array.isArray(data.personalBests) ? data.personalBests : [],
+    personalBests,
+    highScores: buildHighScores(personalBests),
 
     latestActivitySignal:
       data.latestActivitySignal && typeof data.latestActivitySignal === "object"
@@ -117,7 +142,6 @@ export async function getActivityDashboard(email) {
     gamesPlayedToday: Number(data.gamesPlayedToday || 0),
     lessonsCompletedToday: Number(data.lessonsCompletedToday || 0),
 
-    // ✅ NEW (only if backend provides it)
     taskStates:
       Array.isArray(data.taskStates) && data.taskStates.length > 0
         ? data.taskStates
