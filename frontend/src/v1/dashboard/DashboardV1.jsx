@@ -71,7 +71,18 @@ function GameLoadingScreen() {
 }
 
 export default function DashboardV1({ user, authUser }) {
-  const state = useV1DashboardState({ user, authUser });
+  const resolvedEmail = useMemo(
+    () => getResolvedEmail({ authUser, user }),
+    [authUser, user]
+  );
+
+  const isDashboardAuthenticated = Boolean(resolvedEmail);
+
+  const state = useV1DashboardState({
+    user,
+    authUser,
+    isAuthenticated: isDashboardAuthenticated,
+  });
 
   const {
     zptsBalance,
@@ -97,6 +108,7 @@ export default function DashboardV1({ user, authUser }) {
 
     completedTaskCount,
     totalTaskCount,
+    taskStates,
 
     streakDays,
     dailySteps,
@@ -121,11 +133,6 @@ export default function DashboardV1({ user, authUser }) {
     zwapMessage,
     zwapHint,
   } = state;
-
-  const resolvedEmail = useMemo(
-    () => getResolvedEmail({ authUser, user }),
-    [authUser, user]
-  );
 
   const resolvedTier = user?.tier || user?.accountTier || "zwapper";
 
@@ -350,6 +357,12 @@ export default function DashboardV1({ user, authUser }) {
   const resolvedTotalTaskCount =
     activitySnapshot?.totalTaskCount ?? totalTaskCount;
 
+  const resolvedTaskStates =
+    Array.isArray(activitySnapshot?.taskStates) &&
+    activitySnapshot.taskStates.length > 0
+      ? activitySnapshot.taskStates
+      : taskStates;
+
   const resolvedDailySteps = activitySnapshot?.dailySteps ?? dailySteps;
 
   const resolvedGamesPlayedToday =
@@ -441,6 +454,7 @@ export default function DashboardV1({ user, authUser }) {
             activitySignal={activitySignal}
             completedTaskCount={resolvedCompletedTaskCount}
             totalTaskCount={resolvedTotalTaskCount}
+            taskStates={resolvedTaskStates}
             zptsBalance={zptsBalance}
             shopUnlocked={previewShopUnlocked}
             gardenUnlocked={previewGardenUnlocked}
