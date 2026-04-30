@@ -62,6 +62,9 @@ function buildEmptyActivity() {
     dailySteps: 0,
     gamesPlayedToday: 0,
     lessonsCompletedToday: 0,
+
+    // ✅ NEW (safe fallback)
+    taskStates: [],
   };
 }
 
@@ -113,5 +116,11 @@ export async function getActivityDashboard(email) {
     dailySteps: Number(data.dailySteps || 0),
     gamesPlayedToday: Number(data.gamesPlayedToday || 0),
     lessonsCompletedToday: Number(data.lessonsCompletedToday || 0),
+
+    // ✅ NEW (only if backend provides it)
+    taskStates:
+      Array.isArray(data.taskStates) && data.taskStates.length > 0
+        ? data.taskStates
+        : [],
   };
 }
