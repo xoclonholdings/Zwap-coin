@@ -55,6 +55,7 @@ export default function DashboardWindowPlay({
     Array.isArray(games) && games.length > 0 ? games : DEFAULT_GAMES;
 
   const activeGame = safeGames[activeIndex] || safeGames[0];
+  const isZapMan = activeGame.id === "zap-man";
 
   function handleToggleAltView(event) {
     event.stopPropagation();
@@ -162,8 +163,12 @@ export default function DashboardWindowPlay({
                 className={[
                   "block h-full max-h-full w-auto max-w-none object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
                   isSwitching
-                    ? "scale-95 opacity-40 blur-[1px]"
-                    : "scale-100 opacity-100",
+                    ? isZapMan
+                      ? "scale-95 opacity-40 blur-[1px]"
+                      : "scale-[1.2] opacity-40 blur-[1px]"
+                    : isZapMan
+                    ? "scale-100 opacity-100"
+                    : "scale-[1.28] opacity-100",
                   activeGame.locked ? "opacity-30" : "",
                 ].join(" ")}
               />
