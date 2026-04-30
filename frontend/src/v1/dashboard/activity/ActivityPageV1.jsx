@@ -27,7 +27,7 @@ function ProgressBar({ value = 0, max = 1 }) {
   const percent = clampPercent((safeValue / safeMax) * 100);
 
   return (
-    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/8">
+    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
       <div
         className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-400 shadow-[0_0_14px_rgba(34,211,238,0.22)] transition-all duration-300"
         style={{ width: `${percent}%` }}
@@ -47,21 +47,21 @@ function DailyLoopCard({
   const percent = clampPercent((safeCompleted / safeTotal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-cyan-300/15 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.16),transparent_44%),radial-gradient(circle_at_85%_20%,rgba(168,85,247,0.10),transparent_36%),linear-gradient(180deg,rgba(12,20,32,0.96),rgba(5,9,18,0.98))] p-4 shadow-[0_16px_42px_rgba(0,0,0,0.36)]">
+    <div className="relative overflow-hidden rounded-[22px] border border-cyan-300/15 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.16),transparent_44%),radial-gradient(circle_at_85%_20%,rgba(168,85,247,0.10),transparent_36%),linear-gradient(180deg,rgba(12,20,32,0.96),rgba(5,9,18,0.98))] px-3 py-2.5 shadow-[0_16px_42px_rgba(0,0,0,0.28)]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.065),transparent_34%,rgba(34,211,238,0.045))]" />
 
       <div className="relative">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-400/10 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.16)]">
-              <CalendarCheck size={21} strokeWidth={2.3} />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-400/10 text-cyan-100 shadow-[0_0_20px_rgba(34,211,238,0.14)]">
+              <CalendarCheck size={18} strokeWidth={2.3} />
             </div>
 
             <div className="min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/65">
+              <div className="text-[9px] font-black uppercase tracking-[0.18em] text-cyan-100/65">
                 Daily Loop
               </div>
-              <div className="mt-1 text-[18px] font-black tracking-[-0.06em] text-white">
+              <div className="mt-0.5 text-[16px] font-black leading-none tracking-[-0.06em] text-white">
                 {safeCompleted} / {safeTotal}
               </div>
             </div>
@@ -75,12 +75,12 @@ function DailyLoopCard({
 
         <ProgressBar value={safeCompleted} max={safeTotal} />
 
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <div className="text-[11px] font-semibold text-white/48">
+        <div className="mt-1.5 flex items-center justify-between gap-3">
+          <div className="text-[10px] font-semibold text-white/48">
             Tasks today
           </div>
 
-          <div className="text-[11px] font-black tracking-[-0.03em] text-cyan-100">
+          <div className="text-[10px] font-black tracking-[-0.03em] text-cyan-100">
             {Math.round(percent)}%
           </div>
         </div>
@@ -296,7 +296,7 @@ export default function ActivityPageV1({ onBack, email }) {
         </div>
       ) : (
         <>
-          <div className="mb-3 grid shrink-0 grid-cols-2 gap-2">
+          <div className="mb-2.5 grid shrink-0 grid-cols-2 gap-2">
             {panels.map((panel, index) => (
               <button
                 key={panel.id}
@@ -327,7 +327,7 @@ export default function ActivityPageV1({ onBack, email }) {
               {panels.map((panel) => (
                 <div
                   key={panel.id}
-                  className="flex min-w-full flex-col justify-start gap-3 pt-3"
+                  className="flex min-w-full flex-col justify-start gap-2.5 pt-2.5"
                 >
                   {panel.content}
                 </div>
@@ -335,7 +335,7 @@ export default function ActivityPageV1({ onBack, email }) {
             </div>
           </div>
 
-          <div className="mt-3 shrink-0">
+          <div className="mt-2.5 shrink-0">
             <PageDots activeIndex={panelIndex} total={panels.length} />
           </div>
         </>
