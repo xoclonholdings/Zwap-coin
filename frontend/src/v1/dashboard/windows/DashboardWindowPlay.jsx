@@ -43,16 +43,15 @@ function ZapManLogoFallback({ isSwitching = false, locked = false }) {
   return (
     <div
       className={[
-        "relative flex h-[72px] w-[190px] items-center justify-center transition-all duration-200",
+        "relative flex h-[96px] w-[230px] items-center justify-center transition-all duration-200",
         isSwitching ? "scale-95 opacity-40 blur-[1px]" : "scale-100 opacity-100",
         locked ? "opacity-30" : "",
       ].join(" ")}
     >
-      <div className="absolute left-1/2 top-1/2 h-[2px] w-[172px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-300/70 shadow-[0_0_12px_rgba(236,72,153,0.42)]" />
+      <div className="absolute left-1/2 top-1/2 h-[2px] w-[188px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-300/80 shadow-[0_0_16px_rgba(236,72,153,0.55)]" />
+      <div className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.72),0_0_32px_rgba(236,72,153,0.48)]" />
 
-      <div className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_16px_rgba(255,255,255,0.58),0_0_24px_rgba(236,72,153,0.36)]" />
-
-      <div className="relative bg-gradient-to-r from-fuchsia-100 via-pink-300 to-fuchsia-500 bg-clip-text text-[1.45rem] font-black uppercase leading-none tracking-[-0.07em] text-transparent drop-shadow-[0_0_12px_rgba(236,72,153,0.35)]">
+      <div className="relative bg-gradient-to-r from-fuchsia-100 via-pink-300 to-fuchsia-500 bg-clip-text text-[2.05rem] font-black uppercase leading-none tracking-[-0.09em] text-transparent drop-shadow-[0_0_16px_rgba(236,72,153,0.48)]">
         ZAP-MAN
       </div>
     </div>
@@ -175,7 +174,7 @@ export default function DashboardWindowPlay({
           onTouchEnd={handleTouchEnd}
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center">
-            <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center overflow-visible">
+            <div className="relative flex h-[104px] w-full max-w-[250px] items-center justify-center overflow-visible">
               {activeGame.id === "zap-man" ? (
                 <ZapManLogoFallback
                   isSwitching={isSwitching}
@@ -186,7 +185,7 @@ export default function DashboardWindowPlay({
                   src={activeGame.logo}
                   alt={activeGame.name}
                   className={[
-                    "block h-full max-h-full w-auto max-w-none object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
+                    "block h-full max-h-full w-auto max-w-[240px] object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
                     isSwitching
                       ? "scale-95 opacity-40 blur-[1px]"
                       : "scale-100 opacity-100",
