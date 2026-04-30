@@ -190,18 +190,6 @@ export default function ActivityPageV1({ onBack, email }) {
   const panels = useMemo(
     () => [
       {
-        id: "progress",
-        label: "Progress",
-        content: (
-          <ActivityProgressCardV1
-            totalSteps={activityData.totalSteps}
-            stepGoal={activityData.weeklyGoal || activityData.stepGoal}
-            stepChangePercent={activityData.stepChangePercent}
-            weeklySteps={activityData.weeklySteps}
-          />
-        ),
-      },
-      {
         id: "overview",
         label: "Overview",
         content: (
@@ -240,6 +228,18 @@ export default function ActivityPageV1({ onBack, email }) {
               }
             />
           </>
+        ),
+      },
+      {
+        id: "progress",
+        label: "Progress",
+        content: (
+          <ActivityProgressCardV1
+            totalSteps={activityData.totalSteps}
+            stepGoal={activityData.weeklyGoal || activityData.stepGoal}
+            stepChangePercent={activityData.stepChangePercent}
+            weeklySteps={activityData.weeklySteps}
+          />
         ),
       },
       {
@@ -291,7 +291,7 @@ export default function ActivityPageV1({ onBack, email }) {
       <ActivityHeaderV1
         onBack={onBack}
         title="Activity"
-        subtitle={activePanel?.label || "Your Progress"}
+        subtitle={activePanel?.label || "Overview"}
         className="shrink-0"
       />
 
@@ -332,7 +332,7 @@ export default function ActivityPageV1({ onBack, email }) {
               {panels.map((panel) => (
                 <div
                   key={panel.id}
-                  className="flex min-w-full flex-col justify-center gap-3"
+                  className="flex min-w-full flex-col justify-start gap-3 pt-4"
                 >
                   {panel.content}
                 </div>
