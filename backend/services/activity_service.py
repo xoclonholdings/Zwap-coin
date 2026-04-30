@@ -42,6 +42,46 @@ def parse_dt(value: Optional[Any]) -> Optional[datetime]:
     return None
 
 
+def build_task_states(user: Dict[str, Any]) -> List[Dict[str, Any]]:
+    daily_steps = safe_int(user.get("daily_steps"))
+    games_played_today = safe_int(user.get("games_played_today"))
+    lessons_completed_today = safe_int(user.get("lessons_completed_today"))
+    lifetime_zpts = safe_int(
+        user.get("lifetime_zpts") or user.get("zpts_lifetime") or user.get("zpts_balance")
+    )
+
+    shop_unlocked = bool(user.get("shop_unlocked")) or lifetime_zpts >= 1000
+    learn_unlocked = bool(user.get("learn_unlocked"))
+    assist_unlocked = bool(user.get("assist_unlocked"))
+
+    fourth_label = "Assist" if assist_unlocked else "Learn" if learn_unlocked else "Shop" if shop_unlocked else "Learn"
+
+    return [
+        {
+            "label": "Login",
+            "completed": True,
+        },
+        {
+            "label": "Move",
+            "completed": daily_steps > 0,
+        },
+        {
+            "label": "Play",
+            "completed": games_played_today > 0,
+        },
+        {
+            "label": fourth_label,
+            "completed": (
+                bool(user.get("assist_completed_today"))
+                if assist_unlocked
+                else lessons_completed_today > 0
+                if learn_unlocked
+                else shop_unlocked
+            ),
+        },
+    ]
+
+
 async def get_activity_dashboard(db, email: str) -> Dict[str, Any]:
     safe_email = normalize_email(email)
 
@@ -65,6 +105,9 @@ async def get_activity_dashboard(db, email: str) -> Dict[str, Any]:
     latest_signal = await get_latest_activity_signal(db, safe_email)
 
     avg_steps = calculate_average_steps(weekly_steps)
+    task_states = build_task_states(user)
+    completed_task_count = len([task for task in task_states if task.get("completed")])
+    total_task_count = len(task_states)
 
     return {
         "totalSteps": total_steps,
@@ -84,8 +127,9 @@ async def get_activity_dashboard(db, email: str) -> Dict[str, Any]:
         "streakDays": streak_days,
         "personalBests": build_personal_bests(user),
         "latestActivitySignal": latest_signal,
-        "completedTaskCount": safe_int(user.get("completed_task_count")),
-        "totalTaskCount": safe_int(user.get("total_task_count"), 4),
+        "completedTaskCount": completed_task_count,
+        "totalTaskCount": total_task_count,
+        "taskStates": task_states,
         "fullLoopCompleted": bool(user.get("full_loop_completed", False)),
         "dailySteps": daily_steps,
         "gamesPlayedToday": safe_int(user.get("games_played_today")),
@@ -114,6 +158,7 @@ def empty_activity_dashboard() -> Dict[str, Any]:
         "latestActivitySignal": None,
         "completedTaskCount": 0,
         "totalTaskCount": 4,
+        "taskStates": [],
         "fullLoopCompleted": False,
         "dailySteps": 0,
         "gamesPlayedToday": 0,
