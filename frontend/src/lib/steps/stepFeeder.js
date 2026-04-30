@@ -18,6 +18,7 @@ export function startStepFeeder() {
   interval = window.setInterval(() => {
     // simulate 1–4 steps per tick
     const increment = Math.floor(Math.random() * 4) + 1;
+
     current += increment;
 
     setSteps(current);
@@ -34,6 +35,21 @@ export function stopStepFeeder() {
 }
 
 export function resetStepFeeder() {
+  // DO NOT touch isRunning or interval
+  // Only reset step count
+
   current = 0;
   setSteps(0);
+}
+
+/**
+ * Optional safety (prevents runaway state during hot reload/dev)
+ */
+export function forceStopStepFeeder() {
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+  }
+
+  isRunning = false;
 }
