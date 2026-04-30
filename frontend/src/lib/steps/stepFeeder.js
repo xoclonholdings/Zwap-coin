@@ -1,111 +1,81 @@
 import { setSteps } from "../../services/stepService";
+import { Health } from "@capgo/capacitor-health";
 
 /**
- * ZWAP! V1 STEP FEEDER
- * Real device-step bridge only.
+ * ZWAP! V1 STEP FEEDER (REAL DEVICE)
+ * Uses HealthKit (iOS) + Health Connect (Android)
  *
- * No simulated steps.
- * No fake movement.
- *
- * Requires native iOS/Android bridge:
- * window.ZwapStepBridge
+ * No simulation.
+ * Real step data only.
  */
 
-let unsubscribe = null;
+let interval = null;
 let isRunning = false;
 
-function getNativeStepBridge() {
-  if (typeof window === "undefined") return null;
-
-  const bridge = window.ZwapStepBridge;
-
-  if (!bridge || typeof bridge !== "object") {
-    return null;
+async function requestPermissions() {
+  try {
+    await Health.requestPermissions({
+      read: ["steps"],
+      write: [],
+    });
+  } catch (err) {
+    console.warn("Health permission denied:", err);
   }
-
-  return bridge;
 }
 
-function publishSteps(steps) {
-  const safeSteps = Math.max(0, Number(steps || 0));
-  setSteps(safeSteps);
-}
-
-export function startStepFeeder() {
-  if (isRunning) return;
-
-  const bridge = getNativeStepBridge();
-
-  if (!bridge) {
-    console.warn(
-      "ZWAP! real step bridge is not available. MOVE requires native iOS/Android step access."
+async function getTodaySteps() {
+  try {
+    const now = new Date();
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
     );
-    return;
+
+    const result = await Health.queryAggregated({
+      startDate: startOfDay.toISOString(),
+      endDate: now.toISOString(),
+      metrics: ["steps"],
+    });
+
+    return Number(result?.steps || 0);
+  } catch (err) {
+    console.warn("Failed to fetch steps:", err);
+    return 0;
   }
+}
+
+export async function startStepFeeder() {
+  if (isRunning) return;
 
   isRunning = true;
 
-  if (typeof bridge.subscribe === "function") {
-    unsubscribe = bridge.subscribe((steps) => {
-      publishSteps(steps);
-    });
-  }
+  // 🔐 This triggers the permission prompt on real device
+  await requestPermissions();
 
-  if (typeof bridge.start === "function") {
-    bridge.start();
-  }
+  // Initial read
+  const initialSteps = await getTodaySteps();
+  setSteps(initialSteps);
 
-  if (typeof bridge.getCurrentSteps === "function") {
-    Promise.resolve(bridge.getCurrentSteps())
-      .then((steps) => {
-        publishSteps(steps);
-      })
-      .catch((error) => {
-        console.warn("ZWAP! step bridge read failed:", error);
-      });
-  }
+  // Poll every 2 seconds
+  interval = window.setInterval(async () => {
+    const steps = await getTodaySteps();
+    setSteps(steps);
+  }, 2000);
 }
 
 export function stopStepFeeder() {
-  const bridge = getNativeStepBridge();
-
-  if (typeof unsubscribe === "function") {
-    unsubscribe();
-    unsubscribe = null;
-  }
-
-  if (bridge && typeof bridge.stop === "function") {
-    bridge.stop();
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
   }
 
   isRunning = false;
 }
 
-export function resetStepFeeder() {
-  const bridge = getNativeStepBridge();
-
-  if (!bridge) {
-    publishSteps(0);
-    return;
-  }
-
-  if (typeof bridge.reset === "function") {
-    bridge.reset();
-  }
-
-  if (typeof bridge.getCurrentSteps === "function") {
-    Promise.resolve(bridge.getCurrentSteps())
-      .then((steps) => {
-        publishSteps(steps);
-      })
-      .catch(() => {
-        publishSteps(0);
-      });
-
-    return;
-  }
-
-  publishSteps(0);
+export async function resetStepFeeder() {
+  const steps = await getTodaySteps();
+  setSteps(steps);
 }
 
 export function forceStopStepFeeder() {
