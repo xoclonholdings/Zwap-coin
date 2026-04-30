@@ -10,7 +10,7 @@ import { buildZapGuidance } from "./zap/zapGuidanceEngine";
 
 const ZAP_IDLE_ROTATION_MS = 7000;
 const ZAP_RESPONSE_HOLD_MS = 5200;
-const ZAP_TYPE_SPEED_MS = 70;
+const ZAP_TYPE_SPEED_MS = 115;
 
 function WindowAltIndicator() {
   return (
@@ -143,18 +143,18 @@ function ZapGuidanceStage({ guidance }) {
         className="relative mx-auto h-[150px] w-full max-w-[94%]"
         initial={{ scale: 0.985, opacity: 0.92 }}
         animate={{
-          scale: isTyping ? [1, 1.004, 1] : [0.985, 1.014, 1],
+          scale: isTyping ? [1, 1.003, 1] : [0.985, 1.014, 1],
           opacity: 1,
           filter: isTyping
             ? [
-                "drop-shadow(0 0 8px rgba(168,85,247,0.16))",
-                "drop-shadow(0 0 14px rgba(34,211,238,0.18))",
-                "drop-shadow(0 0 8px rgba(168,85,247,0.16))",
+                "drop-shadow(0 0 8px rgba(168,85,247,0.14))",
+                "drop-shadow(0 0 12px rgba(34,211,238,0.16))",
+                "drop-shadow(0 0 8px rgba(168,85,247,0.14))",
               ]
             : "drop-shadow(0 0 8px rgba(168,85,247,0.12))",
         }}
         transition={{
-          duration: isTyping ? 1.6 : 0.52,
+          duration: isTyping ? 2.2 : 0.52,
           repeat: isTyping ? Infinity : 0,
           ease: "easeInOut",
         }}
@@ -180,9 +180,9 @@ function ZapGuidanceStage({ guidance }) {
           animate={
             isTyping
               ? {
-                  y: [0, -1.5, 0, -0.8, 0],
-                  scale: [1, 1.018, 1, 1.012, 1],
-                  rotate: [0, -0.5, 0.4, -0.2, 0],
+                  y: [0, -1.2, 0, -0.6, 0],
+                  scale: [1, 1.014, 1, 1.01, 1],
+                  rotate: [0, -0.35, 0.3, -0.15, 0],
                 }
               : {
                   y: 0,
@@ -191,7 +191,7 @@ function ZapGuidanceStage({ guidance }) {
                 }
           }
           transition={{
-            duration: 1.6,
+            duration: 2.2,
             repeat: isTyping ? Infinity : 0,
             ease: "easeInOut",
           }}
