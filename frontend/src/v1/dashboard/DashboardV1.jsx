@@ -127,6 +127,8 @@ export default function DashboardV1({ user, authUser }) {
     [authUser, user]
   );
 
+  const resolvedTier = user?.tier || user?.accountTier || "zwapper";
+
   const isAdminPreviewUser = ADMIN_PREVIEW_EMAILS.includes(resolvedEmail);
 
   const previewShopUnlocked = isAdminPreviewUser || shopUnlocked;
@@ -345,7 +347,8 @@ export default function DashboardV1({ user, authUser }) {
   const resolvedCompletedTaskCount =
     activitySnapshot?.completedTaskCount ?? completedTaskCount;
 
-  const resolvedTotalTaskCount = activitySnapshot?.totalTaskCount ?? totalTaskCount;
+  const resolvedTotalTaskCount =
+    activitySnapshot?.totalTaskCount ?? totalTaskCount;
 
   const resolvedDailySteps = activitySnapshot?.dailySteps ?? dailySteps;
 
@@ -378,18 +381,16 @@ export default function DashboardV1({ user, authUser }) {
   }
 
   if (activeView === "activity") {
-    return (
-      <ActivityPageV1
-        onBack={handleBackFromActivity}
-        email={resolvedEmail}
-      />
-    );
+    return <ActivityPageV1 onBack={handleBackFromActivity} email={resolvedEmail} />;
   }
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
       <div className="shrink-0">
         <AppHeaderV1
+          user={user}
+          authUser={authUser}
+          tier={resolvedTier}
           zptsBalance={zptsBalance}
           displayName={displayName}
           gardenUnlocked={previewGardenUnlocked}
