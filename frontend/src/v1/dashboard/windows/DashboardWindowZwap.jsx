@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
 import zapBubble from "@/assets/zap/zap-bubble.png";
@@ -68,7 +69,13 @@ function GuidanceText({ guidance }) {
 function ZapGuidanceStage({ guidance }) {
   return (
     <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between pt-2">
-      <div className="relative mx-auto min-h-[150px] w-full max-w-[94%]">
+      <motion.div
+        key={`bubble-${guidance}`}
+        className="relative mx-auto min-h-[150px] w-full max-w-[94%]"
+        initial={{ scale: 0.985, opacity: 0.92 }}
+        animate={{ scale: [0.985, 1.018, 1], opacity: 1 }}
+        transition={{ duration: 0.52, ease: "easeOut" }}
+      >
         <img
           src={zapBubble}
           alt=""
@@ -77,16 +84,24 @@ function ZapGuidanceStage({ guidance }) {
         />
 
         <GuidanceText guidance={guidance} />
-      </div>
+      </motion.div>
 
       <div className="relative -mt-5 flex justify-center">
         <div className="absolute bottom-0 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
-        <img
+        <motion.img
+          key={`zap-${guidance}`}
           src={zapHead}
           alt="Zap guide"
           className="relative h-[104px] w-[134px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
           draggable={false}
+          initial={{ y: 2, scale: 0.99, rotate: 0 }}
+          animate={{
+            y: [2, -3, 1, -1, 0],
+            scale: [0.99, 1.045, 1.01, 1.03, 1],
+            rotate: [0, -1.2, 1.1, -0.6, 0],
+          }}
+          transition={{ duration: 0.58, ease: "easeOut" }}
         />
       </div>
     </div>
@@ -103,6 +118,7 @@ export default function DashboardWindowZwap({
 
   completedTaskCount = 0,
   totalTaskCount = 4,
+  taskStates = [],
 
   zptsBalance = 0,
 
@@ -240,6 +256,7 @@ export default function DashboardWindowZwap({
 
         <ZapTasksPanel
           completedTaskCount={completedTaskCount}
+          taskStates={taskStates}
           learnUnlocked={learnUnlocked}
           shopUnlocked={shopUnlocked}
           assistUnlocked={assistUnlocked}
