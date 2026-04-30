@@ -19,7 +19,7 @@ Daily task categories:
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
-from services.reward_service import enforce_daily_caps, get_tier_multipliers
+from services.reward_service import enforce_daily_caps
 from services.badge_service import evaluate_badges, persist_badge_updates
 
 
@@ -27,7 +27,9 @@ LOGIN_TASK_REWARD = 10
 MOVE_TASK_REWARD = 25
 PLAY_TASK_REWARD = 20
 LEARN_TASK_REWARD = 20
-FULL_LOOP_BONUS = 25
+
+# 🔥 UPDATED — anchor reward (as defined in your system)
+FULL_LOOP_BONUS = 50
 
 
 def utc_now():
@@ -53,7 +55,10 @@ def _get_lookup(user: dict) -> dict:
 
 def get_daily_task_state(user: dict) -> Dict[str, Any]:
     login_complete = bool(user.get("last_daily_claim"))
+
+    # 🔥 MOVE FIX — strictly tied to real stored steps
     move_complete = _safe_int(user.get("daily_steps")) > 0
+
     play_complete = _safe_int(user.get("games_played_today")) > 0
     learn_complete = bool(user.get("daily_learn_completed"))
 
@@ -180,6 +185,7 @@ async def maybe_process_full_daily_loop(
 
     lookup = _get_lookup(user)
 
+    # 🔥 LOOP COUNTS EVEN IF CAPPED (critical behavior)
     if cap_check["capped"]:
         await db.users.update_one(
             lookup,
@@ -220,6 +226,20 @@ async def maybe_process_full_daily_loop(
                 "updated_at": utc_now().isoformat(),
             },
         },
+    )
+
+    # 🔥 WRITE ACTIVITY SIGNAL (this was missing → critical for Zap + Activity)
+    await db.activity_logs.insert_one(
+        {
+            "id": str(datetime.utcnow().timestamp()),
+            "email": identity,
+            "type": "full_loop",
+            "zpts": reward,
+            "message": f"+{reward} zPts full loop bonus",
+            "priority": "high",
+            "completed": True,
+            "created_at": utc_now().isoformat(),
+        }
     )
 
     updated_user = await db.users.find_one(lookup)
