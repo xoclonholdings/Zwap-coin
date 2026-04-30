@@ -194,17 +194,6 @@ export default function ActivityPageV1({ onBack, email }) {
         label: "Overview",
         content: (
           <>
-            <ActivityOverviewGridV1
-              avgSteps={activityData.avgSteps}
-              calories={activityData.calories}
-              activeTime={activityData.activeTime}
-              zptsEarned={activityData.zptsEarned}
-              avgStepsChangePercent={activityData.avgStepsChangePercent}
-              caloriesChangePercent={activityData.caloriesChangePercent}
-              activeTimeChangePercent={activityData.activeTimeChangePercent}
-              zptsChangePercent={activityData.zptsChangePercent}
-            />
-
             <DailyLoopCard
               completedTasks={
                 activityData.completedTasks ??
@@ -227,26 +216,7 @@ export default function ActivityPageV1({ onBack, email }) {
                 activityData.streak_days
               }
             />
-          </>
-        ),
-      },
-      {
-        id: "progress",
-        label: "Progress",
-        content: (
-          <ActivityProgressCardV1
-            totalSteps={activityData.totalSteps}
-            stepGoal={activityData.weeklyGoal || activityData.stepGoal}
-            stepChangePercent={activityData.stepChangePercent}
-            weeklySteps={activityData.weeklySteps}
-          />
-        ),
-      },
-      {
-        id: "rhythm",
-        label: "Rhythm",
-        content: (
-          <>
+
             <ActivityConsistencyV1
               consistency={activityData.consistency}
               streakDays={activityData.streakDays}
@@ -254,6 +224,31 @@ export default function ActivityPageV1({ onBack, email }) {
 
             <ActivityPersonalBestsV1
               personalBests={activityData.personalBests}
+            />
+          </>
+        ),
+      },
+      {
+        id: "progress",
+        label: "Progress",
+        content: (
+          <>
+            <ActivityProgressCardV1
+              totalSteps={activityData.totalSteps}
+              stepGoal={activityData.weeklyGoal || activityData.stepGoal}
+              stepChangePercent={activityData.stepChangePercent}
+              weeklySteps={activityData.weeklySteps}
+            />
+
+            <ActivityOverviewGridV1
+              avgSteps={activityData.avgSteps}
+              calories={activityData.calories}
+              activeTime={activityData.activeTime}
+              zptsEarned={activityData.zptsEarned}
+              avgStepsChangePercent={activityData.avgStepsChangePercent}
+              caloriesChangePercent={activityData.caloriesChangePercent}
+              activeTimeChangePercent={activityData.activeTimeChangePercent}
+              zptsChangePercent={activityData.zptsChangePercent}
             />
           </>
         ),
@@ -301,7 +296,7 @@ export default function ActivityPageV1({ onBack, email }) {
         </div>
       ) : (
         <>
-          <div className="mb-3 grid shrink-0 grid-cols-3 gap-2">
+          <div className="mb-3 grid shrink-0 grid-cols-2 gap-2">
             {panels.map((panel, index) => (
               <button
                 key={panel.id}
@@ -332,7 +327,7 @@ export default function ActivityPageV1({ onBack, email }) {
               {panels.map((panel) => (
                 <div
                   key={panel.id}
-                  className="flex min-w-full flex-col justify-start gap-3 pt-4"
+                  className="flex min-w-full flex-col justify-start gap-3 pt-3"
                 >
                   {panel.content}
                 </div>
