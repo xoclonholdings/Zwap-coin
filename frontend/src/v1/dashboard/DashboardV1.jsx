@@ -458,6 +458,11 @@ export default function DashboardV1({ user, authUser }) {
     Number(localGamesPlayedToday || 0)
   );
 
+  const resolvedHighScores =
+    activitySnapshot?.highScores && typeof activitySnapshot.highScores === "object"
+      ? activitySnapshot.highScores
+      : {};
+
   const resolvedLessonsCompletedToday =
     activitySnapshot?.lessonsCompletedToday ?? lessonsCompletedToday;
 
@@ -537,6 +542,7 @@ export default function DashboardV1({ user, authUser }) {
 
         <div className="min-h-0 overflow-hidden [&>*]:h-full">
           <DashboardWindowPlay
+            highScores={resolvedHighScores}
             onStartGame={handleStartGame}
             onOpenPlay={handleStartGame}
           />
