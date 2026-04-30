@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 
-function buildTaskItems({
+function buildFallbackTaskItems({
   completedTaskCount = 0,
   learnUnlocked = false,
   shopUnlocked = false,
@@ -24,6 +24,22 @@ function buildTaskItems({
   }));
 }
 
+function normalizeTaskItems(taskStates = []) {
+  if (!Array.isArray(taskStates) || taskStates.length === 0) return [];
+
+  return taskStates.slice(0, 4).map((task, index) => {
+    const label = task?.label || `Task ${index + 1}`;
+
+    return {
+      id:
+        task?.id ||
+        `${String(label).toLowerCase().replace(/\s+/g, "-")}-${index}`,
+      label,
+      completed: Boolean(task?.completed),
+    };
+  });
+}
+
 function ZwapHeader() {
   return (
     <div className="flex items-center gap-3">
@@ -40,19 +56,32 @@ function ZwapHeader() {
 
 export default function ZapTasksPanel({
   completedTaskCount = 0,
+  taskStates = [],
   learnUnlocked = false,
   shopUnlocked = false,
   assistUnlocked = false,
   className = "",
 }) {
   const taskItems = useMemo(() => {
-    return buildTaskItems({
+    const normalizedItems = normalizeTaskItems(taskStates);
+
+    if (normalizedItems.length > 0) {
+      return normalizedItems;
+    }
+
+    return buildFallbackTaskItems({
       completedTaskCount,
       learnUnlocked,
       shopUnlocked,
       assistUnlocked,
     });
-  }, [completedTaskCount, learnUnlocked, shopUnlocked, assistUnlocked]);
+  }, [
+    taskStates,
+    completedTaskCount,
+    learnUnlocked,
+    shopUnlocked,
+    assistUnlocked,
+  ]);
 
   return (
     <section
@@ -65,7 +94,6 @@ export default function ZapTasksPanel({
         .filter(Boolean)
         .join(" ")}
     >
-      {/* Glow */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-10 left-1/2 h-28 w-40 -translate-x-1/2 rounded-full bg-violet-400/14 blur-3xl" />
         <div className="absolute bottom-0 right-3 h-20 w-24 rounded-full bg-cyan-400/8 blur-2xl" />
@@ -77,7 +105,6 @@ export default function ZapTasksPanel({
         Daily Tasks
       </div>
 
-      {/* 4 fixed rows — no scroll ever */}
       <div className="relative z-10 mt-2 grid flex-1 grid-rows-4 gap-1.5">
         {taskItems.map((task) => (
           <div
