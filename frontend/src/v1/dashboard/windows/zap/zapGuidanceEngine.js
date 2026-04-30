@@ -60,11 +60,12 @@ function normalizeActivitySignal(activitySignal) {
   };
 }
 
-function makeGuidance(headline, detail, action) {
+function makeGuidance(headline, detail, action, priority = "low") {
   return {
     headline,
     detail,
     action,
+    priority,
     text: [headline, detail, action].filter(Boolean).join("\n"),
   };
 }
@@ -85,8 +86,6 @@ function buildSignalGuidance({
   safeGames,
   safePlayGoal,
   moveComplete,
-  playComplete,
-  loopComplete,
   nextUnlock,
 }) {
   if (!signal || !isFreshSignal(signal)) return null;
@@ -97,7 +96,8 @@ function buildSignalGuidance({
       signal.zpts > 0
         ? `+${formatNumber(signal.zpts)} zPts landed.`
         : "Check-in counted.",
-      "Move or play."
+      "Pick your move.",
+      "high"
     );
   }
 
@@ -107,7 +107,8 @@ function buildSignalGuidance({
       signal.zpts > 0
         ? `+${formatNumber(signal.zpts)} zPts`
         : `${formatNumber(signal.steps || safeSteps)} steps`,
-      "Play finishes it."
+      "Play can close it.",
+      "high"
     );
   }
 
@@ -119,7 +120,8 @@ function buildSignalGuidance({
       signal.zpts > 0
         ? `+${formatNumber(signal.zpts)} zPts`
         : `${safeGames}/${safePlayGoal} games`,
-      moveComplete ? "Loop forming." : "Add movement."
+      moveComplete ? "Loop forming." : "Add movement.",
+      "high"
     );
   }
 
@@ -129,7 +131,8 @@ function buildSignalGuidance({
       signal.zpts > 0
         ? `+${formatNumber(signal.zpts)} zPts`
         : "Knowledge added.",
-      "Quiet progress."
+      "Quiet progress.",
+      "high"
     );
   }
 
@@ -137,7 +140,8 @@ function buildSignalGuidance({
     return makeGuidance(
       "Item secured.",
       signal.itemName || "Purchase complete.",
-      `${formatNumber(safeZpts)} zPts left.`
+      `${formatNumber(safeZpts)} zPts left.`,
+      "high"
     );
   }
 
@@ -145,7 +149,8 @@ function buildSignalGuidance({
     return makeGuidance(
       "Loop complete.",
       `${formatNumber(safeZpts)} zPts ready.`,
-      "That’s the rhythm."
+      "That’s the rhythm.",
+      "high"
     );
   }
 
@@ -153,7 +158,8 @@ function buildSignalGuidance({
     return makeGuidance(
       "Milestone hit.",
       `${formatNumber(safeZpts)} zPts stacked.`,
-      `Next: ${nextUnlock.label}`
+      `Next: ${nextUnlock.label}`,
+      "high"
     );
   }
 
@@ -174,8 +180,8 @@ function buildIdleGuidance({
 }) {
   const intro = [
     makeGuidance("Hey, I’m Zap.", "I guide this system.", "Tap a window."),
-    makeGuidance("See the arrows?", "There’s more behind them.", "Tap to switch."),
-    makeGuidance("Quick tip.", "Each window has layers.", "Explore them."),
+    makeGuidance("See the arrows?", "More lives behind them.", "Tap to switch."),
+    makeGuidance("Quick tip.", "Each window has layers.", "Peek around."),
   ];
 
   if (!safeCompleted && !safeZpts && !safeSteps && !safeGames) {
@@ -186,17 +192,20 @@ function buildIdleGuidance({
     makeGuidance(
       "Small moves matter.",
       `${safeCompleted}/${safeTotal} tasks lit.`,
-      "One more shifts it."
+      "One more shifts it.",
+      "medium"
     ),
     makeGuidance(
       "You’re building.",
       `${formatNumber(safeZpts)} zPts stacked.`,
-      "Keep it simple."
+      "Keep it simple.",
+      "medium"
     ),
     makeGuidance(
       "Check the windows.",
-      "Each one shows something new.",
-      "Tap around."
+      "Each one shows more.",
+      "Tap around.",
+      "low"
     ),
   ];
 
@@ -206,9 +215,16 @@ function buildIdleGuidance({
         makeGuidance(
           "Shop locked.",
           `${formatNumber(nextUnlock.remaining)} to unlock.`,
-          "Move + Play."
+          "Move + Play.",
+          "medium"
         ),
         general[0],
+        makeGuidance(
+          "Door’s not open yet.",
+          `${formatNumber(safeZpts)} zPts saved.`,
+          "Keep stacking.",
+          "medium"
+        ),
       ],
       idleTick
     );
@@ -220,7 +236,14 @@ function buildIdleGuidance({
         makeGuidance(
           "Shop is open.",
           `${formatNumber(safeZpts)} zPts ready.`,
-          "Spend smart."
+          "Spend smart.",
+          "medium"
+        ),
+        makeGuidance(
+          "First value layer.",
+          "Effort became options.",
+          "Check Shop.",
+          "medium"
         ),
         general[1],
       ],
@@ -234,7 +257,14 @@ function buildIdleGuidance({
         makeGuidance(
           "Learn is open.",
           "Quiet upgrades live here.",
-          "Try one lesson."
+          "Try one lesson.",
+          "medium"
+        ),
+        makeGuidance(
+          "Brain room unlocked.",
+          "No rush needed.",
+          "Take one bite.",
+          "medium"
         ),
         general[2],
       ],
@@ -248,7 +278,14 @@ function buildIdleGuidance({
         makeGuidance(
           "Swap is ready.",
           `${formatNumber(safeZpts)} zPts available.`,
-          "Move with intent."
+          "Move with intent.",
+          "medium"
+        ),
+        makeGuidance(
+          "Value is live.",
+          "No need to rush.",
+          "Read the board.",
+          "medium"
         ),
         general[1],
       ],
@@ -286,9 +323,10 @@ export function buildZapGuidance({
 
   const safeSteps = toNumber(dailySteps, 0);
   const safeGames = toNumber(gamesPlayedToday, 0);
+  const safePlayGoal = Math.max(1, toNumber(playGoal, 1));
 
   const moveComplete = safeSteps > 0;
-  const playComplete = safeGames >= playGoal;
+  const playComplete = safeGames >= safePlayGoal;
   const loopComplete = safeCompleted >= safeTotal;
 
   const signal = normalizeActivitySignal(activitySignal);
@@ -301,15 +339,20 @@ export function buildZapGuidance({
     swapUnlocked,
   });
 
-  if (systemMessage) return makeGuidance(systemMessage, nextStep, "");
-  if (nextStep) return makeGuidance(nextStep, "", "");
+  if (systemMessage) {
+    return makeGuidance(systemMessage, nextStep, "", "high");
+  }
+
+  if (nextStep) {
+    return makeGuidance(nextStep, "", "", "medium");
+  }
 
   const signalGuidance = buildSignalGuidance({
     signal,
     safeZpts,
     safeSteps,
     safeGames,
-    safePlayGoal: playGoal,
+    safePlayGoal,
     moveComplete,
     playComplete,
     loopComplete,
@@ -322,7 +365,8 @@ export function buildZapGuidance({
     return makeGuidance(
       "Loop complete.",
       `${formatNumber(safeZpts)} zPts ready.`,
-      "Nice rhythm."
+      "Nice rhythm.",
+      "high"
     );
   }
 
@@ -330,15 +374,17 @@ export function buildZapGuidance({
     return makeGuidance(
       "Milestone hit.",
       `${formatNumber(safeZpts)} zPts stacked.`,
-      `Next: ${nextUnlock.label}`
+      `Next: ${nextUnlock.label}`,
+      "high"
     );
   }
 
   if (safeGames > 0 && safeSteps === 0) {
     return makeGuidance(
       "Game counted.",
-      `${safeGames}/${playGoal} done.`,
-      "Add movement."
+      `${safeGames}/${safePlayGoal} done.`,
+      "Add movement.",
+      "high"
     );
   }
 
@@ -346,7 +392,8 @@ export function buildZapGuidance({
     return makeGuidance(
       "Movement in.",
       `${formatNumber(safeSteps)} steps.`,
-      "Play one game."
+      "Play one game.",
+      "high"
     );
   }
 
@@ -354,7 +401,8 @@ export function buildZapGuidance({
     return makeGuidance(
       "Learn is open.",
       "Quiet upgrades live here.",
-      "Try one lesson."
+      "Try one lesson.",
+      "medium"
     );
   }
 
@@ -362,7 +410,8 @@ export function buildZapGuidance({
     return makeGuidance(
       `${safeCompleted}/${safeTotal} tasks.`,
       `${formatNumber(safeZpts)} zPts.`,
-      "Keep it moving."
+      "Keep it moving.",
+      "medium"
     );
   }
 
