@@ -16,7 +16,7 @@ import useNetworkStatus from "@/hooks/useNetworkStatus";
 import { queuePendingReward } from "@/hooks/pendingRewards";
 
 const BACKEND_URL =
-  process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
+  import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 const API = `${BACKEND_URL}/api`;
 
 const categoryColors = {
@@ -61,11 +61,16 @@ function getUserId(user, authUser) {
   );
 }
 
-export default function ModuleCard({
-  module,
-  index,
-  defaultOpen = false,
-}) {
+function shouldLoadRemoteDetails(module) {
+  return Boolean(
+    module?.loadRemoteDetails ||
+      module?.load_remote_details ||
+      module?.remoteDetails ||
+      module?.remote_details
+  );
+}
+
+export default function ModuleCard({ module, index, defaultOpen = false }) {
   const { user, authUser } = useApp();
   const { isOnline } = useNetworkStatus();
 
@@ -77,20 +82,29 @@ export default function ModuleCard({
   const [pendingSync, setPendingSync] = useState(false);
 
   const userId = getUserId(user, authUser);
-  const colors = categoryColors[module.category] || categoryColors.foundations;
-  const display = details || module;
+  const safeModule = module || {};
+  const colors =
+    categoryColors[safeModule.category] || categoryColors.foundations;
+  const display = details || safeModule;
 
   async function loadDetails() {
-    if (details || loading || !isOnline) return;
+    if (!shouldLoadRemoteDetails(safeModule)) return;
+    if (details || loading || !isOnline || !safeModule.id) return;
 
     setLoading(true);
+
     try {
-      const res = await fetch(`${API}/learn/modules/${module.id}`);
-      if (!res.ok) throw new Error("Failed to load module");
+      const res = await fetch(`${API}/learn/modules/${safeModule.id}`);
+
+      if (!res.ok) {
+        setDetails(null);
+        return;
+      }
+
       const data = await res.json();
       setDetails(data);
     } catch (err) {
-      console.error("Error loading learn module:", err);
+      console.log("Learn module details unavailable:", err?.message || err);
     } finally {
       setLoading(false);
     }
@@ -124,8 +138,8 @@ export default function ModuleCard({
           source: "learn",
           userId: userId || null,
           payload: {
-            moduleId: module.id,
-            title: module.title,
+            moduleId: safeModule.id,
+            title: safeModule.title,
           },
         });
 
@@ -134,7 +148,7 @@ export default function ModuleCard({
         return;
       }
 
-      const result = await api.completeLearnModule(userId, module.id);
+      const result = await api.completeLearnModule(userId, safeModule.id);
       setCompletedReward(result?.reward ?? 0);
     } catch (err) {
       console.error("Error completing learn module:", err);
@@ -144,8 +158,8 @@ export default function ModuleCard({
         source: "learn",
         userId: userId || null,
         payload: {
-          moduleId: module.id,
-          title: module.title,
+          moduleId: safeModule.id,
+          title: safeModule.title,
         },
       });
 
@@ -164,9 +178,10 @@ export default function ModuleCard({
       transition={{ delay: index * 0.06 }}
     >
       <button
+        type="button"
         onClick={handleToggle}
         className="w-full flex items-center gap-3 p-4 text-left"
-        data-testid={`learn-module-${module.id}`}
+        data-testid={`learn-module-${safeModule.id}`}
       >
         <div
           className={`w-10 h-10 rounded-xl ${colors.iconBg} flex items-center justify-center flex-shrink-0`}
@@ -176,12 +191,16 @@ export default function ModuleCard({
 
         <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-500 uppercase tracking-wider">
-            {module.level} • {module.category}
+            {safeModule.level} • {safeModule.category}
           </p>
-          <h3 className="text-white font-bold text-sm">{module.title}</h3>
-          {!expanded && module.short_description && (
+
+          <h3 className="text-white font-bold text-sm">
+            {safeModule.title || "Learn Module"}
+          </h3>
+
+          {!expanded && safeModule.short_description && (
             <p className="text-gray-400 text-xs mt-1 truncate">
-              {module.short_description}
+              {safeModule.short_description}
             </p>
           )}
         </div>
@@ -214,7 +233,7 @@ export default function ModuleCard({
                     <p className="text-gray-300 text-sm leading-relaxed">
                       {display.core ||
                         display.content?.overview ||
-                        module.short_description}
+                        safeModule.short_description}
                     </p>
                   </div>
 
@@ -226,8 +245,9 @@ export default function ModuleCard({
                         <Lightbulb className="w-3 h-3" />
                         Think of it this way
                       </p>
+
                       <p className={`${colors.panelText} text-sm italic`}>
-                        "{display.analogy}"
+                        &quot;{display.analogy}&quot;
                       </p>
                     </div>
                   )}
@@ -237,6 +257,7 @@ export default function ModuleCard({
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
                         Did You Know?
                       </p>
+
                       <ul className="space-y-1.5">
                         {display.did_you_know.map((fact, i) => (
                           <li
@@ -259,6 +280,7 @@ export default function ModuleCard({
                         <Sparkles className="w-3 h-3" />
                         Why it matters in ZWAP!
                       </p>
+
                       <p className={`${colors.panelText} text-sm`}>
                         {display.content.zwap_context}
                       </p>
@@ -270,6 +292,7 @@ export default function ModuleCard({
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
                         Key Points
                       </p>
+
                       <ul className="space-y-1.5">
                         {display.content.key_points.map((point, i) => (
                           <li
@@ -286,8 +309,11 @@ export default function ModuleCard({
 
                   <div className="pt-2">
                     <button
+                      type="button"
                       onClick={handleComplete}
-                      disabled={completing || completedReward !== null || pendingSync}
+                      disabled={
+                        completing || completedReward !== null || pendingSync
+                      }
                       className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm font-medium text-cyan-300 transition hover:bg-cyan-500/20 disabled:opacity-60"
                     >
                       {completing
@@ -332,9 +358,11 @@ export default function ModuleCard({
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
                         Quick Check
                       </p>
+
                       <p className={`text-sm ${colors.text} font-medium`}>
                         Q: {display.quick_check.question}
                       </p>
+
                       <p className="text-gray-400 text-xs mt-1">
                         A: {display.quick_check.answer}
                       </p>
