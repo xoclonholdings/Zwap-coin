@@ -185,6 +185,10 @@ export const ebooks = [
   },
 ];
 
+// ---------------------------
+// RELEASE LOGIC
+// ---------------------------
+
 export function getReleasedEbooks({
   currentMonth = 1,
   currentPart = 1,
@@ -194,7 +198,6 @@ export function getReleasedEbooks({
     if (ebook.releaseMonth === currentMonth) {
       return ebook.releasePart <= currentPart;
     }
-
     return false;
   });
 }
@@ -216,12 +219,33 @@ export function getArchivedRecommendedEbooks({
   currentPart = 1,
 } = {}) {
   const releasedIds = new Set(
-    getReleasedEbooks({ currentMonth, currentPart }).map((ebook) => ebook.id)
+    getReleasedEbooks({ currentMonth, currentPart }).map((e) => e.id)
   );
 
   return getEbooksByIds(recommendedEbookIds).filter((ebook) =>
     releasedIds.has(ebook.id)
   );
+}
+
+// ---------------------------
+// CAROUSEL BUILDER (NEW)
+// ---------------------------
+
+export function getEbookCarousel({
+  recommendedEbookIds = [],
+  currentMonth = 1,
+  currentPart = 1,
+} = {}) {
+  return getArchivedRecommendedEbooks({
+    recommendedEbookIds,
+    currentMonth,
+    currentPart,
+  }).map((ebook) => ({
+    id: ebook.id,
+    title: `TLDR: ${ebook.title}`,
+    action: "Read",
+    route: `/learn/ebook/${ebook.id}`,
+  }));
 }
 
 export default ebooks;
