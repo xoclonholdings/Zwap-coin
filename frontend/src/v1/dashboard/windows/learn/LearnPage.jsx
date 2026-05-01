@@ -9,7 +9,7 @@ import {
   Target,
 } from "lucide-react";
 
-import { learnModules } from "@/data/learnModules";
+import { learnModules } from "./data/learnModules";
 import ModuleCard from "./ModuleCard";
 import SectionHeader from "./SectionHeader";
 
