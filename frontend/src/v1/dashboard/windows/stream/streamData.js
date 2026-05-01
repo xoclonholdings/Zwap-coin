@@ -1,76 +1,136 @@
-export const watchItems = [
+export const streamModes = [
   {
-    id: "watch-featured",
-    title: "ZWAP! Feature Drop",
-    subtitle: "Platform update preview",
-    type: "video",
-    duration: "01:18",
-    reward: "+5 zPts",
+    id: "zwap-radio",
+    label: "ZWAP! Radio",
+    title: "ZWAP! Radio",
+    subtitle: "PoeTrees Music on Bandcamp",
+    type: "bandcamp",
+    status: "READY",
     description:
-      "Feature drops, creator content, sponsor media, and campaign previews can live here in a visual lane.",
-    accent: "from-fuchsia-500/20 via-cyan-500/10 to-purple-500/20",
+      "The native ZWAP! Radio lane. This is where PoeTrees Music lives as the first embedded Stream experience.",
+    embedProvider: "bandcamp",
+    embedUrl: "",
+    externalUrl: "",
+    accent: "from-cyan-500/20 via-sky-500/10 to-purple-500/20",
   },
   {
-    id: "watch-recap",
-    title: "Move Challenge Recap",
-    subtitle: "Community highlight reel",
-    type: "video",
-    duration: "00:42",
-    reward: "+3 zPts",
-    description:
-      "Short-form highlight content keeps the platform feeling active and gives events a stronger pulse.",
-    accent: "from-cyan-500/20 via-sky-500/10 to-blue-500/20",
-  },
-];
-
-export const listenItems = [
-  {
-    id: "listen-spotify",
+    id: "spotify",
+    label: "Spotify",
     title: "Spotify",
-    subtitle: "Connect your personal audio source",
+    subtitle: "Playlist bridge",
     type: "spotify",
-    duration: "CONNECT",
-    reward: null,
+    status: "CONNECT",
     description:
-      "Bring your playlists into ZWAP! and soundtrack MOVE, PLAY, and focused sessions without leaving the experience.",
+      "Spotify playlists can soundtrack MOVE, PLAY, focus, and chill sessions from inside the Stream surface.",
+    embedProvider: "spotify",
+    embedUrl: "",
+    externalUrl: "",
     accent: "from-green-500/20 via-emerald-500/10 to-lime-500/20",
   },
   {
-    id: "listen-radio",
-    title: "ZWAP! Radio",
-    subtitle: "Curated stations and branded mixes",
-    type: "radio",
-    duration: "SOON",
-    reward: null,
+    id: "apple-music",
+    label: "Apple Music",
+    title: "Apple Music",
+    subtitle: "Playlist bridge",
+    type: "apple-music",
+    status: "CONNECT",
     description:
-      "Mood lanes like MOVE, PLAY, FOCUS, and AFTER DARK can live here as native listening experiences.",
-    accent: "from-cyan-500/20 via-sky-500/10 to-purple-500/20",
+      "Apple Music support gives users another major listening path without changing the ZWAP! Stream structure.",
+    embedProvider: "apple-music",
+    embedUrl: "",
+    externalUrl: "",
+    accent: "from-pink-500/20 via-purple-500/10 to-cyan-500/20",
   },
 ];
 
-export const liveItems = [];
-
-export const libraryItems = [
+export const playlistItems = [
   {
-    id: "library-saved",
-    title: "Saved Media",
-    subtitle: "Your ZWAP collection lives here",
-    type: "library",
-    duration: "READY",
+    id: "playlist-move-motivate",
+    title: "ZWAP! Move Motivate",
+    subtitle: "Movement energy",
+    type: "playlist",
+    category: "move",
+    duration: "PLAYLIST",
     reward: null,
     description:
-      "Saved videos, unlocked content, premium drops, continue-watching states, and future ZWAP-exclusive media all land here.",
+      "High-energy music for walking, training, and getting the body moving.",
+    spotifyUrl: "",
+    appleMusicUrl: "",
+    bandcampUrl: "",
+    accent: "from-cyan-500/20 via-sky-500/10 to-blue-500/20",
+  },
+  {
+    id: "playlist-play-activate",
+    title: "ZWAP! Play Activate",
+    subtitle: "Game mode energy",
+    type: "playlist",
+    category: "play",
+    duration: "PLAYLIST",
+    reward: null,
+    description:
+      "Upbeat music for PLAY sessions, arcade energy, and quick reward loops.",
+    spotifyUrl: "",
+    appleMusicUrl: "",
+    bandcampUrl: "",
+    accent: "from-fuchsia-500/20 via-cyan-500/10 to-purple-500/20",
+  },
+  {
+    id: "playlist-focus",
+    title: "ZWAP! Focus",
+    subtitle: "Lock in",
+    type: "playlist",
+    category: "focus",
+    duration: "PLAYLIST",
+    reward: null,
+    description:
+      "Focused audio for learning, building, reading, and steady execution.",
+    spotifyUrl: "",
+    appleMusicUrl: "",
+    bandcampUrl: "",
     accent: "from-violet-500/20 via-purple-500/10 to-cyan-500/20",
   },
   {
-    id: "library-audio",
-    title: "Owned Audio",
-    subtitle: "Future premium and unlocked audio",
-    type: "library",
-    duration: "VAULT",
+    id: "playlist-chill",
+    title: "ZWAP! Chill",
+    subtitle: "Cool down",
+    type: "playlist",
+    category: "chill",
+    duration: "PLAYLIST",
     reward: null,
     description:
-      "Audiobooks, spoken-word content, exclusive drops, and purchased audio can live here as ZWAP expands.",
+      "Lower-energy music for recovery, reflection, cooldowns, and calm sessions.",
+    spotifyUrl: "",
+    appleMusicUrl: "",
+    bandcampUrl: "",
     accent: "from-cyan-500/20 via-indigo-500/10 to-purple-500/20",
   },
 ];
+
+export const watchItems = [];
+
+export const listenItems = streamModes;
+
+export const liveItems = [];
+
+export const libraryItems = playlistItems;
+
+export function getStreamModeById(id) {
+  return streamModes.find((item) => item.id === id) || streamModes[0];
+}
+
+export function getPlaylistById(id) {
+  return playlistItems.find((item) => item.id === id) || null;
+}
+
+export function getStreamLibraryItems() {
+  return playlistItems;
+}
+
+export default {
+  streamModes,
+  playlistItems,
+  watchItems,
+  listenItems,
+  liveItems,
+  libraryItems,
+};
