@@ -4,7 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 
 import { learnModules } from "./data/learnModules";
-import { getEbookCarousel, getReleasedEbooks } from "./data/ebooks";
+import {
+  archiveEbookById,
+  getEbookCarousel,
+  getReleasedEbookCarousel,
+} from "./data/ebooks";
 
 const LESSON_COUNT = 3;
 const CURRENT_ARCHIVE_MONTH = 5;
@@ -380,30 +384,25 @@ function buildLessons(module) {
   });
 }
 
-function buildReleasedEbookCarousel({ module }) {
+function buildReleasedEbookCarousel({ module, archiveVersion = 0 }) {
   const recommended = getEbookCarousel({
     recommendedEbookIds: module?.recommendedEbookIds || [],
     currentMonth: CURRENT_ARCHIVE_MONTH,
     currentPart: CURRENT_ARCHIVE_PART,
   });
 
-  const released = getReleasedEbooks({
+  const released = getReleasedEbookCarousel({
     currentMonth: CURRENT_ARCHIVE_MONTH,
     currentPart: CURRENT_ARCHIVE_PART,
-  }).map((ebook) => ({
-    id: ebook.id,
-    title: `TLDR: ${ebook.title}`,
-    action: "Read",
-    route: `/learn/ebook/${ebook.id}`,
-    tags: ebook.tags || [],
-    releaseOrder: ebook.releaseOrder || 999,
-  }));
+  });
 
   const recommendedIds = new Set(recommended.map((ebook) => ebook.id));
   const merged = [
     ...recommended,
     ...released.filter((ebook) => !recommendedIds.has(ebook.id)),
   ];
+
+  archiveVersion;
 
   return merged.slice(0, 6);
 }
@@ -535,33 +534,53 @@ function LessonToggles({ lessonIndex, setLessonIndex }) {
   );
 }
 
-function RecommendedEbookCard({ item, onRead }) {
+function RecommendedEbookCard({ item, onRead, onArchive }) {
   const image = item?.image || item?.cover || item?.coverImage || "";
 
   return (
-    <button
-      type="button"
-      onClick={() => onRead(item)}
-      className="w-[31%] shrink-0 rounded-[18px] border border-white/10 bg-white/[0.04] p-2 text-left active:scale-[0.98]"
-    >
-      <div className="h-[70px] overflow-hidden rounded-[12px] bg-white/[0.04]">
-        {image ? (
-          <img
-            src={image}
-            alt={item?.title || "Ebook"}
-            className="h-full w-full object-cover"
-          />
-        ) : null}
-      </div>
+    <div className="w-[31%] shrink-0 rounded-[18px] border border-white/10 bg-white/[0.04] p-2 text-left">
+      <button
+        type="button"
+        onClick={() => onRead(item)}
+        className="block w-full text-left active:scale-[0.98]"
+      >
+        <div className="h-[70px] overflow-hidden rounded-[12px] bg-white/[0.04]">
+          {image ? (
+            <img
+              src={image}
+              alt={item?.title || "Ebook"}
+              className="h-full w-full object-cover"
+            />
+          ) : null}
+        </div>
 
-      <div className="mt-2 line-clamp-2 text-[11px] font-black text-white">
-        {item?.title || "TLDR"}
-      </div>
+        <div className="mt-2 line-clamp-2 text-[11px] font-black text-white">
+          {item?.title || "TLDR"}
+        </div>
+      </button>
 
-      <div className="mt-1 text-[10px] font-black text-cyan-300">
-        {item?.action || "Read"}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => onRead(item)}
+          className="text-[10px] font-black text-cyan-300 active:scale-[0.97]"
+        >
+          {item?.action || "Read"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onArchive(item)}
+          disabled={item?.archived}
+          className={[
+            "text-[10px] font-black active:scale-[0.97]",
+            item?.archived ? "text-white/35" : "text-purple-300",
+          ].join(" ")}
+        >
+          {item?.archiveAction || (item?.archived ? "Archived" : "Archive")}
+        </button>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -581,6 +600,7 @@ export default function LearnPage({
   const [lessonIndex, setLessonIndex] = useState(0);
   const [activeEbook, setActiveEbook] = useState(initialEbook);
   const [completingModule, setCompletingModule] = useState(false);
+  const [archiveVersion, setArchiveVersion] = useState(0);
 
   const modules = useMemo(() => normalizeModules(learnModules), []);
 
@@ -589,8 +609,11 @@ export default function LearnPage({
   const currentLesson = lessons[lessonIndex];
 
   const ebooks = useMemo(() => {
-    return buildReleasedEbookCarousel({ module: currentModule });
-  }, [currentModule]);
+    return buildReleasedEbookCarousel({
+      module: currentModule,
+      archiveVersion,
+    });
+  }, [currentModule, archiveVersion]);
 
   useEffect(() => {
     if (mode === "archive" && initialEbook) {
@@ -629,6 +652,13 @@ export default function LearnPage({
 
   function handleReadEbook(ebook) {
     setActiveEbook(ebook);
+  }
+
+  function handleArchiveEbook(ebook) {
+    if (!ebook?.id || ebook?.archived) return;
+
+    archiveEbookById(ebook.id);
+    setArchiveVersion((current) => current + 1);
   }
 
   const displayLesson = activeEbook
@@ -692,6 +722,7 @@ export default function LearnPage({
                 key={item.id}
                 item={item}
                 onRead={handleReadEbook}
+                onArchive={handleArchiveEbook}
               />
             ))}
           </div>
