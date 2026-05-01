@@ -11,6 +11,7 @@ import {
   Activity,
   Award,
   Settings,
+  BookOpen,
   X,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ import AdminPlaySectionV1 from "./AdminPlaySectionV1";
 import AdminShopSectionV1 from "./AdminShopSectionV1";
 import AdminActivitySectionV1 from "./AdminActivitySectionV1";
 import AdminBadgesSectionV1 from "./AdminBadgesSectionV1";
+import AdminLearnSection from "./AdminLearnSection";
 import AdminSettingsSectionV1 from "./AdminSettingsSectionV1";
 
 export default function AdminPanelV1({ isOpen = false, onClose }) {
@@ -46,6 +48,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
       { id: "shop", label: "Shop", icon: ShoppingBag },
       { id: "activity", label: "Activity", icon: Activity },
       { id: "badges", label: "Badges", icon: Award },
+      { id: "learn", label: "Learn", icon: BookOpen },
       { id: "settings", label: "Settings", icon: Settings },
     ],
     []
@@ -153,6 +156,9 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
 
       case "badges":
         return <AdminBadgesSectionV1 />;
+
+      case "learn":
+        return <AdminLearnSection />;
 
       case "settings":
         return <AdminSettingsSectionV1 onLogout={handleLogout} />;
