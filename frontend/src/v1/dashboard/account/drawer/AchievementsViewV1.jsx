@@ -2,7 +2,7 @@ import React from "react";
 import { Award, ChevronLeft, Trophy } from "lucide-react";
 import { getNextBadge } from "@/lib/badges/getNextBadge";
 
-import BadgeCarouselV1 from "./badges/BadgeCarouselV1";
+import BadgeCarouselV1 from "./badges/BadgeCarousel";
 
 function clampPercent(value = 0) {
   const safe = Number(value || 0);
