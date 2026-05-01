@@ -49,7 +49,7 @@ function HeaderIconButton({ onClick, children, label }) {
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/75 shadow-[0_0_10px_rgba(255,255,255,0.06)] transition active:scale-[0.97]"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-200/15 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),rgba(255,255,255,0.04))] text-cyan-100/78 shadow-[0_0_14px_rgba(34,211,238,0.08)] transition active:scale-[0.97]"
     >
       {children}
     </button>
@@ -66,11 +66,11 @@ function AccountDrawerHeaderV1({
   onStreamOpen,
 }) {
   return (
-    <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-white/8 px-4">
+    <div className="flex h-[58px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
       <button
         type="button"
         onClick={onAdminTap}
-        className="text-left text-[15px] font-black tracking-[-0.04em] text-white/92"
+        className="text-left text-[17px] font-black tracking-[-0.035em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.14)]"
       >
         {title}
       </button>
@@ -89,7 +89,7 @@ function AccountDrawerHeaderV1({
         ) : null}
 
         <HeaderIconButton onClick={onClose} label="Close account drawer">
-          <X size={15} strokeWidth={2.4} />
+          <X size={16} strokeWidth={2.5} />
         </HeaderIconButton>
       </div>
     </div>
@@ -113,11 +113,9 @@ export default function AccountPanelContentV1({
   user,
   authUser,
   username = "",
-  initials = "",
   tier = "zwapper",
   zptsBalance = 0,
   zwapBalance = 0,
-  walletAddress = "",
 
   inventoryItems = [],
   achievements = [],
@@ -135,9 +133,6 @@ export default function AccountPanelContentV1({
 
   const canLogout = isAuthenticated || isReviewAccess;
 
-  const resolvedWalletAddress =
-    walletAddress || user?.walletAddress || user?.wallet_address || "";
-
   const resolvedEmail =
     authUser?.email?.address ||
     authUser?.email ||
@@ -146,7 +141,6 @@ export default function AccountPanelContentV1({
 
   const resolvedUsername = generateUsername({
     username: user?.username || username,
-    walletAddress: resolvedWalletAddress,
     email: resolvedEmail,
   });
 
@@ -214,7 +208,6 @@ export default function AccountPanelContentV1({
         }}
         username={resolvedUsername}
         email={resolvedEmail}
-        walletAddress={resolvedWalletAddress}
         tier={tier}
         memberSince={user?.created_at || ""}
         trophyCount={trophyCount}
@@ -271,7 +264,7 @@ export default function AccountPanelContentV1({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
+    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(3,9,16,0.99),rgba(4,8,15,1))] text-white">
       <AccountDrawerHeaderV1
         title="Account"
         onClose={onClose}
@@ -284,15 +277,14 @@ export default function AccountPanelContentV1({
 
       <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-3">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-0 h-24 w-44 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-violet-400/10 blur-2xl" />
+          <div className="absolute left-1/2 top-0 h-28 w-52 -translate-x-1/2 rounded-full bg-cyan-400/12 blur-3xl" />
+          <div className="absolute bottom-16 right-0 h-28 w-28 rounded-full bg-violet-400/12 blur-2xl" />
         </div>
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5">
           <div className="grid shrink-0 grid-cols-[1.12fr_0.88fr] gap-2.5">
             <AccountProfileCardV1
               username={resolvedUsername}
-              initials={initials}
               tier={tier}
             />
 
@@ -343,7 +335,7 @@ export default function AccountPanelContentV1({
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-white/6 bg-black/20 backdrop-blur-md">
+      <div className="shrink-0 border-t border-cyan-200/10 bg-black/24 backdrop-blur-md">
         <AccountFooterLinksV1
           onHelp={() => setActiveView("help")}
           onPrivacy={() => setActiveView("privacy")}
