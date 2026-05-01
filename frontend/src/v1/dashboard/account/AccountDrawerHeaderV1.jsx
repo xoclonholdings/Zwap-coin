@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, PlayCircle, X } from "lucide-react";
+
+import { getSavedArchivedEbookCards } from "../windows/learn/data/ebooks";
 
 function HeaderIconButton({ onClick, children, label, active = false }) {
   return (
@@ -29,10 +31,21 @@ export default function AccountDrawerHeaderV1({
   onStreamOpen,
 }) {
   const [learnArchiveOpen, setLearnArchiveOpen] = useState(false);
+  const [archiveVersion, setArchiveVersion] = useState(0);
   const learnMenuRef = useRef(null);
+
+  const archivedEbooks = useMemo(() => {
+    archiveVersion;
+
+    return getSavedArchivedEbookCards().sort((a, b) => {
+      return Number(a?.releaseOrder || 999) - Number(b?.releaseOrder || 999);
+    });
+  }, [archiveVersion]);
 
   useEffect(() => {
     if (!learnArchiveOpen) return undefined;
+
+    setArchiveVersion((current) => current + 1);
 
     function handlePointerDown(event) {
       if (
@@ -54,9 +67,13 @@ export default function AccountDrawerHeaderV1({
     setLearnArchiveOpen((current) => !current);
   };
 
-  const handleOpenLearnArchive = () => {
+  const handleOpenArchivedEbook = (ebook) => {
     setLearnArchiveOpen(false);
-    onLearnOpen?.();
+
+    onLearnOpen?.({
+      mode: "archive",
+      ebook,
+    });
   };
 
   return (
@@ -107,22 +124,46 @@ export default function AccountDrawerHeaderV1({
             </HeaderIconButton>
 
             {learnArchiveOpen ? (
-              <div className="absolute right-0 top-11 z-[40] w-[180px] overflow-hidden rounded-2xl border border-cyan-200/15 bg-[#06111d]/95 p-2 shadow-[0_0_28px_rgba(34,211,238,0.12)] backdrop-blur-xl">
-                <button
-                  type="button"
-                  onClick={handleOpenLearnArchive}
-                  className="w-full rounded-xl border border-cyan-200/10 bg-cyan-400/8 px-3 py-2 text-left transition active:scale-[0.98]"
-                >
+              <div className="absolute right-0 top-11 z-[60] w-[238px] overflow-hidden rounded-2xl border border-cyan-200/15 bg-[#06111d]/95 p-2 shadow-[0_0_28px_rgba(34,211,238,0.12)] backdrop-blur-xl">
+                <div className="px-2 pb-2 pt-1">
                   <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200/70">
-                    Learn
+                    Learn Archive
                   </div>
-                  <div className="mt-0.5 text-xs font-black text-white">
-                    Archive
+                  <div className="mt-0.5 text-[10px] leading-3 text-white/45">
+                    Saved eBooks appear here.
                   </div>
-                  <div className="mt-1 text-[10px] leading-3 text-white/45">
-                    Open released lessons and eBooks.
-                  </div>
-                </button>
+                </div>
+
+                <div className="max-h-[260px] overflow-y-auto pr-1">
+                  {archivedEbooks.length > 0 ? (
+                    archivedEbooks.map((ebook) => (
+                      <button
+                        key={ebook.id}
+                        type="button"
+                        onClick={() => handleOpenArchivedEbook(ebook)}
+                        className="mb-1 w-full rounded-xl border border-cyan-200/10 bg-white/[0.035] px-3 py-2 text-left transition active:scale-[0.98]"
+                      >
+                        <div className="line-clamp-1 text-xs font-black text-white">
+                          {ebook.title}
+                        </div>
+
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <span className="text-[9px] uppercase tracking-[0.12em] text-white/35">
+                            Archived
+                          </span>
+
+                          <span className="text-[10px] font-black text-cyan-300">
+                            Read
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3 text-[11px] leading-4 text-white/45">
+                      No saved eBooks yet.
+                    </div>
+                  )}
+                </div>
               </div>
             ) : null}
           </div>
