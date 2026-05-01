@@ -7,7 +7,6 @@ import {
   Lightbulb,
   Loader2,
   Sparkles,
-  WifiOff,
 } from "lucide-react";
 
 import { useApp } from "@/app/AppProvider";
@@ -330,8 +329,7 @@ export default function ModuleCard({ module, index, defaultOpen = false }) {
                     </button>
 
                     {pendingSync && (
-                      <p className="mt-2 text-center text-xs text-yellow-400 flex items-center justify-center gap-1">
-                        <WifiOff className="w-3 h-3" />
+                      <p className="mt-2 text-center text-xs text-yellow-400">
                         Saved offline • Pending sync
                       </p>
                     )}
