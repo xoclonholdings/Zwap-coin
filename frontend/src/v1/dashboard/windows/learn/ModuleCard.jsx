@@ -12,7 +12,6 @@ import {
 
 import { useApp } from "@/app/AppProvider";
 import api from "@/lib/api";
-import useNetworkStatus from "@/hooks/useNetworkStatus";
 import { queuePendingReward } from "@/hooks/pendingRewards";
 
 const BACKEND_URL =
@@ -61,6 +60,11 @@ function getUserId(user, authUser) {
   );
 }
 
+function getIsOnline() {
+  if (typeof navigator === "undefined") return true;
+  return navigator.onLine;
+}
+
 function shouldLoadRemoteDetails(module) {
   return Boolean(
     module?.loadRemoteDetails ||
@@ -72,7 +76,6 @@ function shouldLoadRemoteDetails(module) {
 
 export default function ModuleCard({ module, index, defaultOpen = false }) {
   const { user, authUser } = useApp();
-  const { isOnline } = useNetworkStatus();
 
   const [expanded, setExpanded] = useState(defaultOpen);
   const [details, setDetails] = useState(null);
@@ -81,6 +84,7 @@ export default function ModuleCard({ module, index, defaultOpen = false }) {
   const [completedReward, setCompletedReward] = useState(null);
   const [pendingSync, setPendingSync] = useState(false);
 
+  const isOnline = getIsOnline();
   const userId = getUserId(user, authUser);
   const safeModule = module || {};
   const colors =
