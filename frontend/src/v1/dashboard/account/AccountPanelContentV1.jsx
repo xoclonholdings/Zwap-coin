@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
 import { generateUsername } from "@/lib/utils/generateUsername";
-import { clearV1OnboardingSeen } from "@/v1/V1OnboardingStorage";
 
 import AccountDrawerHeaderV1 from "./AccountDrawerHeaderV1";
 import AccountProfileCardV1 from "./AccountProfileCardV1";
@@ -19,6 +18,11 @@ import SettingsViewV1 from "./drawer/SettingsViewV1";
 import HelpViewV1 from "./drawer/HelpViewV1";
 import PrivacyViewV1 from "./drawer/PrivacyViewV1";
 import TermsViewV1 from "./drawer/TermsViewV1";
+
+import EditProfileView from "./buttons/EditProfileView";
+import EditInventoryView from "./buttons/EditInventoryView";
+import EditAchievementsView from "./buttons/EditAchievementsView";
+import EditSettingsView from "./buttons/EditSettingsView";
 
 const ADMIN_TAP_THRESHOLD = 3;
 const ADMIN_TAP_RESET_MS = 1200;
@@ -75,19 +79,38 @@ export default function AccountPanelContentV1({
   const [activeView, setActiveView] = useState("home");
   const [isReviewAccess] = useState(() => getReviewAccessEnabled());
 
+  const [profileOverrides, setProfileOverrides] = useState({
+    username: "",
+    email: "",
+  });
+
+  const [inventorySettings, setInventorySettings] = useState({
+    showOwnedOnly: true,
+    showLockedItems: false,
+    groupByCategory: true,
+  });
+
+  const [achievementSettings, setAchievementSettings] = useState({
+    showLockedBadges: true,
+    showTrophyProgress: true,
+    showBadgeHints: true,
+  });
+
   const adminTapCountRef = useRef(0);
   const adminTapResetRef = useRef(null);
 
   const canLogout = isAuthenticated || isReviewAccess;
 
-  const resolvedEmail =
+  const baseEmail =
     authUser?.email?.address ||
     authUser?.email ||
     user?.email ||
     (isReviewAccess ? "review@zwap.app" : "");
 
+  const resolvedEmail = profileOverrides.email || baseEmail;
+
   const resolvedUsername = generateUsername({
-    username: user?.username || username,
+    username: profileOverrides.username || user?.username || username,
     email: resolvedEmail,
   });
 
@@ -138,17 +161,18 @@ export default function AccountPanelContentV1({
     }
   };
 
-  const handleResetOnboarding = () => {
-    clearReviewAccess();
-    clearV1OnboardingSeen();
-    onClose?.();
-    window.location.href = "/v1";
+  const handleSaveProfile = ({ username: nextUsername, email: nextEmail }) => {
+    setProfileOverrides({
+      username: String(nextUsername || "").trim(),
+      email: String(nextEmail || "").trim(),
+    });
   };
 
   if (activeView === "profile") {
     return (
       <ProfileViewV1
         onBack={() => setActiveView("home")}
+        onEditProfile={() => setActiveView("editProfile")}
         user={{
           ...(user || {}),
           username: resolvedUsername,
@@ -162,11 +186,36 @@ export default function AccountPanelContentV1({
     );
   }
 
+  if (activeView === "editProfile") {
+    return (
+      <EditProfileView
+        onBack={() => setActiveView("profile")}
+        onSave={handleSaveProfile}
+        username={resolvedUsername}
+        email={resolvedEmail}
+      />
+    );
+  }
+
   if (activeView === "inventory") {
     return (
       <InventoryViewV1
         onBack={() => setActiveView("home")}
+        onOpenInventorySettings={() => setActiveView("editInventory")}
         items={inventoryItems}
+        inventorySettings={inventorySettings}
+      />
+    );
+  }
+
+  if (activeView === "editInventory") {
+    return (
+      <EditInventoryView
+        onBack={() => setActiveView("inventory")}
+        onSave={setInventorySettings}
+        showOwnedOnly={inventorySettings.showOwnedOnly}
+        showLockedItems={inventorySettings.showLockedItems}
+        groupByCategory={inventorySettings.groupByCategory}
       />
     );
   }
@@ -175,6 +224,7 @@ export default function AccountPanelContentV1({
     return (
       <AchievementsViewV1
         onBack={() => setActiveView("home")}
+        onOpenAchievementSettings={() => setActiveView("editAchievements")}
         user={{
           ...(user || {}),
           username: resolvedUsername,
@@ -182,12 +232,34 @@ export default function AccountPanelContentV1({
         trophyCount={trophyCount}
         trophyBonusPercent={trophyBonusPercent}
         achievements={achievements}
+        achievementSettings={achievementSettings}
+      />
+    );
+  }
+
+  if (activeView === "editAchievements") {
+    return (
+      <EditAchievementsView
+        onBack={() => setActiveView("achievements")}
+        onSave={setAchievementSettings}
+        showLockedBadges={achievementSettings.showLockedBadges}
+        showTrophyProgress={achievementSettings.showTrophyProgress}
+        showBadgeHints={achievementSettings.showBadgeHints}
       />
     );
   }
 
   if (activeView === "settings") {
-    return <SettingsViewV1 onBack={() => setActiveView("home")} />;
+    return (
+      <SettingsViewV1
+        onBack={() => setActiveView("home")}
+        onOpenAdvancedSettings={() => setActiveView("editSettings")}
+      />
+    );
+  }
+
+  if (activeView === "editSettings") {
+    return <EditSettingsView onBack={() => setActiveView("settings")} />;
   }
 
   if (activeView === "help") {
@@ -268,14 +340,11 @@ export default function AccountPanelContentV1({
                 onClick={handleLogout}
               />
             ) : null}
-
-            <AccountActionRowV1
-              label="Reset Onboarding"
-              onClick={handleResetOnboarding}
-            />
           </div>
 
-          <AccountShieldCardV1 onClick={handleAdminTap} />
+          <div className="pb-4">
+            <AccountShieldCardV1 onClick={handleAdminTap} />
+          </div>
         </div>
       </div>
 
