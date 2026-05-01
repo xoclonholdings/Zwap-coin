@@ -14,6 +14,7 @@ import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 import ActivityPageV1 from "./activity/ActivityPageV1";
+import LearnPage from "./learn/LearnPage";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
@@ -238,6 +239,14 @@ export default function DashboardV1({ user, authUser }) {
     setActiveView("dashboard");
   }
 
+  function handleOpenLearn() {
+    setActiveView("learn");
+  }
+
+  function handleBackFromLearn() {
+    setActiveView("dashboard");
+  }
+
   function handleToggleZwapAltView() {
     setIsZwapAltView((current) => !current);
   }
@@ -270,6 +279,10 @@ export default function DashboardV1({ user, authUser }) {
     );
   }
 
+  if (activeView === "learn") {
+    return <LearnPage onBack={handleBackFromLearn} />;
+  }
+
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
       <div className="shrink-0">
@@ -282,8 +295,9 @@ export default function DashboardV1({ user, authUser }) {
           gardenUnlocked={previewGardenUnlocked}
           learnUnlocked={previewLearnUnlocked}
           streamUnlocked={previewStreamUnlocked}
-          badgesUnlocked={previewBadgeVisibilityUnlocked}
+          swapUnlocked={previewSwapUnlocked}
           onActivityClick={handleOpenActivity}
+          onLearnClick={handleOpenLearn}
         />
       </div>
 
