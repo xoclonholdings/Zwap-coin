@@ -1,37 +1,72 @@
-import { getTermDefinition } from "@/data/terms";
+import { TERM_DEFINITIONS, getTermDefinition } from "@/data/terms";
 
-// Build dynamic term set from definitions
-function getAllTerms() {
-  try {
-    const { TERM_DEFINITIONS } = require("@/data/terms");
-    return Object.keys(TERM_DEFINITIONS || {}).map((t) => t.toLowerCase());
-  } catch {
-    return [];
+// Build term keys once
+const TERM_KEYS = Object.keys(TERM_DEFINITIONS);
+
+// Map concepts → terms (semantic matching)
+const TERM_ALIASES = {
+  wallet: ["wallet", "key", "access"],
+  zwap: ["zwap"],
+  zpts: ["zpts", "points"],
+  swap: ["swap", "exchange"],
+  ownership: ["ownership", "own", "control"],
+
+  web3: ["web3"],
+  cryptocurrency: ["crypto", "cryptocurrency"],
+  blockchain: ["blockchain"],
+  token: ["token"],
+
+  value: ["value"],
+  utility: ["utility", "use"],
+  progression: ["progress", "progression"],
+  reward: ["reward", "earn"],
+  loop: ["loop", "cycle"],
+
+  habit: ["habit"],
+  consistency: ["consistency", "repeat"],
+  focus: ["focus", "attention"],
+  discipline: ["discipline"],
+  identity: ["identity"],
+
+  ai: ["ai"],
+  automation: ["automation"],
+  prompt: ["prompt"],
+};
+
+// Flatten alias lookup
+function resolveTerm(cleanWord) {
+  for (const termKey of TERM_KEYS) {
+    const aliases = TERM_ALIASES[termKey] || [];
+    if (aliases.includes(cleanWord)) {
+      return termKey;
+    }
   }
+  return null;
 }
-
-const TERM_SET = new Set(getAllTerms());
 
 export function parseLessonText(text = "") {
   if (!text) return [];
 
-  const words = text.split(/(\s+)/); // preserve spacing
+  const words = text.split(/(\s+)/);
+
+  const usedTerms = new Set(); // prevent over-highlighting
 
   return words.map((word, index) => {
-    // Strip punctuation but keep original word intact
-    const clean = word
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
+    const clean = word.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    if (TERM_SET.has(clean)) {
-      const term = getTermDefinition(clean);
+    const matchedTermKey = resolveTerm(clean);
+
+    if (matchedTermKey && !usedTerms.has(matchedTermKey)) {
+      const term = getTermDefinition(matchedTermKey);
 
       if (term) {
+        usedTerms.add(matchedTermKey);
+
         return {
           type: "term",
-          value: word, // keep original formatting
+          value: word,
           term,
-          key: `${clean}-${index}`,
+          key: `${matchedTermKey}-${index}`,
         };
       }
     }
