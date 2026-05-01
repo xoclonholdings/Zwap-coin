@@ -280,7 +280,16 @@ export default function DashboardV1({ user, authUser }) {
   }
 
   if (activeView === "learn") {
-    return <LearnPage onBack={handleBackFromLearn} />;
+    return (
+      <LearnPage
+        onBack={handleBackFromLearn}
+        email={resolvedEmail}
+        apiBase={API_BASE}
+        refreshActivitySnapshot={refreshActivitySnapshot}
+        setActivitySignal={setActivitySignal}
+        onBalanceUpdate={setLocalZptsBalance}
+      />
+    );
   }
 
   return (
