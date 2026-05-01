@@ -6,12 +6,21 @@ export default function AccountActionRowV1({
   onClick,
   danger = false,
 }) {
+  const isAchievements = label === "Achievements";
+
   const tone = danger
     ? {
         button:
           "border-rose-300/20 bg-[linear-gradient(135deg,rgba(64,20,36,0.78),rgba(20,12,20,0.96))] text-rose-50 shadow-[0_10px_24px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]",
         glow: "bg-rose-300/10",
         arrow: "text-rose-100/45",
+      }
+    : isAchievements
+    ? {
+        button:
+          "border-amber-300/25 bg-[radial-gradient(circle_at_20%_20%,rgba(251,191,36,0.18),transparent_40%),linear-gradient(135deg,rgba(60,44,18,0.9),rgba(20,16,10,0.98))] text-amber-100 shadow-[0_10px_24px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08),0_0_14px_rgba(251,191,36,0.12)]",
+        glow: "bg-amber-300/20",
+        arrow: "text-amber-100/60",
       }
     : {
         button:
@@ -31,6 +40,7 @@ export default function AccountActionRowV1({
         tone.button,
       ].join(" ")}
     >
+      {/* subtle top glow */}
       <span
         className={[
           "pointer-events-none absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 blur-[0.5px]",
@@ -38,8 +48,10 @@ export default function AccountActionRowV1({
         ].join(" ")}
       />
 
+      {/* label */}
       <span className="relative mx-auto text-white/92">{label}</span>
 
+      {/* arrow */}
       {!danger ? (
         <ChevronRight
           size={18}
