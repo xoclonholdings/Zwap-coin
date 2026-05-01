@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, PlayCircle, X } from "lucide-react";
 
 import { useApp } from "@/app/AppProvider";
 import { generateUsername } from "@/lib/utils/generateUsername";
 import { clearV1OnboardingSeen } from "@/v1/V1OnboardingStorage";
 
+import AccountDrawerHeaderV1 from "./AccountDrawerHeaderV1";
 import AccountProfileCardV1 from "./AccountProfileCardV1";
 import AccountBalanceCardV1 from "./AccountBalanceCardV1";
 import AccountActionRowV1 from "./AccountActionRowV1";
@@ -41,59 +41,6 @@ function clearReviewAccess() {
   } catch {
     // Ignore storage failures.
   }
-}
-
-function HeaderIconButton({ onClick, children, label }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-200/15 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),rgba(255,255,255,0.04))] text-cyan-100/78 shadow-[0_0_14px_rgba(34,211,238,0.08)] transition active:scale-[0.97]"
-    >
-      {children}
-    </button>
-  );
-}
-
-function AccountDrawerHeaderV1({
-  title = "Account",
-  onClose,
-  onAdminTap,
-  learnUnlocked = false,
-  streamUnlocked = false,
-  onLearnOpen,
-  onStreamOpen,
-}) {
-  return (
-    <div className="flex h-[58px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
-      <button
-        type="button"
-        onClick={onAdminTap}
-        className="text-left text-[17px] font-black tracking-[-0.035em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.14)]"
-      >
-        {title}
-      </button>
-
-      <div className="flex items-center gap-2">
-        {learnUnlocked ? (
-          <HeaderIconButton onClick={onLearnOpen} label="Open Learn">
-            <BookOpen size={15} strokeWidth={2.2} />
-          </HeaderIconButton>
-        ) : null}
-
-        {streamUnlocked ? (
-          <HeaderIconButton onClick={onStreamOpen} label="Open Stream">
-            <PlayCircle size={15} strokeWidth={2.2} />
-          </HeaderIconButton>
-        ) : null}
-
-        <HeaderIconButton onClick={onClose} label="Close account drawer">
-          <X size={16} strokeWidth={2.5} />
-        </HeaderIconButton>
-      </div>
-    </div>
-  );
 }
 
 export default function AccountPanelContentV1({
@@ -283,10 +230,7 @@ export default function AccountPanelContentV1({
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5">
           <div className="grid shrink-0 grid-cols-[1.12fr_0.88fr] gap-2.5">
-            <AccountProfileCardV1
-              username={resolvedUsername}
-              tier={tier}
-            />
+            <AccountProfileCardV1 username={resolvedUsername} tier={tier} />
 
             <AccountBalanceCardV1
               zptsBalance={zptsBalance}
