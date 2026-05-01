@@ -9,6 +9,41 @@ import ActivityPersonalBestsV1 from "./ActivityPersonalBestsV1";
 
 import { getActivityDashboard } from "./activityApi";
 
+const PROGRESS_RANGES = [
+  {
+    id: "day",
+    label: "Today",
+    totalKey: "todaySteps",
+    goalKey: "dailyGoal",
+    dataKeys: ["hourlySteps", "todayStepsData", "dailyStepsData"],
+    fallbackLabels: ["6A", "9A", "12P", "3P", "6P", "9P"],
+  },
+  {
+    id: "week",
+    label: "This Week",
+    totalKey: "totalSteps",
+    goalKey: "weeklyGoal",
+    dataKeys: ["weeklySteps"],
+    fallbackLabels: ["S", "M", "T", "W", "T", "F", "S"],
+  },
+  {
+    id: "month",
+    label: "This Month",
+    totalKey: "monthlySteps",
+    goalKey: "monthlyGoal",
+    dataKeys: ["monthlyStepsData", "monthSteps", "dailyMonthSteps"],
+    fallbackLabels: ["W1", "W2", "W3", "W4"],
+  },
+  {
+    id: "year",
+    label: "This Year",
+    totalKey: "yearlySteps",
+    goalKey: "yearlyGoal",
+    dataKeys: ["yearlyStepsData", "yearSteps", "monthlyYearSteps"],
+    fallbackLabels: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+  },
+];
+
 function clampPercent(value = 0) {
   const safe = Number(value || 0);
   if (!Number.isFinite(safe)) return 0;
@@ -45,6 +80,62 @@ function resolveCompletedTasks(activityData = {}) {
   }
 
   return directCompleted;
+}
+
+function normalizeStepsData(value, fallbackLabels = []) {
+  if (Array.isArray(value) && value.length > 0) {
+    return value.map((item, index) => {
+      if (typeof item === "number") {
+        return {
+          day: fallbackLabels[index] || `${index + 1}`,
+          steps: item,
+        };
+      }
+
+      return {
+        ...item,
+        day: item.day || item.label || fallbackLabels[index] || `${index + 1}`,
+        steps: Number(item.steps || item.value || 0),
+      };
+    });
+  }
+
+  return fallbackLabels.map((label) => ({
+    day: label,
+    steps: 0,
+  }));
+}
+
+function resolveStepsData(activityData = {}, range = PROGRESS_RANGES[1]) {
+  const foundKey = range.dataKeys.find((key) => Array.isArray(activityData[key]));
+  const rawData = foundKey ? activityData[foundKey] : [];
+
+  return normalizeStepsData(rawData, range.fallbackLabels);
+}
+
+function resolveProgressTotal(activityData = {}, range = PROGRESS_RANGES[1], stepsData = []) {
+  const directValue = activityData[range.totalKey];
+
+  if (toSafeNumber(directValue) > 0) {
+    return toSafeNumber(directValue);
+  }
+
+  return stepsData.reduce((sum, item) => sum + toSafeNumber(item.steps), 0);
+}
+
+function resolveProgressGoal(activityData = {}, range = PROGRESS_RANGES[1]) {
+  const directGoal = activityData[range.goalKey];
+
+  if (toSafeNumber(directGoal) > 0) {
+    return toSafeNumber(directGoal);
+  }
+
+  if (range.id === "day") return toSafeNumber(activityData.dailyGoal || 10000);
+  if (range.id === "week") return toSafeNumber(activityData.weeklyGoal || activityData.stepGoal || 70000);
+  if (range.id === "month") return toSafeNumber(activityData.monthlyGoal || 300000);
+  if (range.id === "year") return toSafeNumber(activityData.yearlyGoal || 3650000);
+
+  return toSafeNumber(activityData.stepGoal || 70000);
 }
 
 function ProgressBar({ value = 0, max = 1 }) {
@@ -123,10 +214,22 @@ function PageDots({ activeIndex = 0, total = 1 }) {
 
 const EMPTY_ACTIVITY_DATA = {
   totalSteps: 0,
+  todaySteps: 0,
+  monthlySteps: 0,
+  yearlySteps: 0,
+
+  dailyGoal: 10000,
   weeklyGoal: 70000,
+  monthlyGoal: 300000,
+  yearlyGoal: 3650000,
   stepGoal: 70000,
+
   stepChangePercent: 0,
+
+  hourlySteps: [],
   weeklySteps: [0, 0, 0, 0, 0, 0, 0],
+  monthlyStepsData: [],
+  yearlyStepsData: [],
 
   avgSteps: 0,
   calories: 0,
@@ -154,6 +257,7 @@ export default function ActivityPageV1({ onBack, email }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [panelIndex, setPanelIndex] = useState(0);
+  const [progressRangeIndex, setProgressRangeIndex] = useState(1);
   const [touchStartX, setTouchStartX] = useState(null);
 
   useEffect(() => {
@@ -201,6 +305,28 @@ export default function ActivityPageV1({ onBack, email }) {
     [data]
   );
 
+  const progressRange =
+    PROGRESS_RANGES[progressRangeIndex] || PROGRESS_RANGES[1];
+
+  const progressStepsData = useMemo(
+    () => resolveStepsData(activityData, progressRange),
+    [activityData, progressRange]
+  );
+
+  const progressTotalSteps = useMemo(
+    () => resolveProgressTotal(activityData, progressRange, progressStepsData),
+    [activityData, progressRange, progressStepsData]
+  );
+
+  const progressStepGoal = useMemo(
+    () => resolveProgressGoal(activityData, progressRange),
+    [activityData, progressRange]
+  );
+
+  function handleProgressRangeChange() {
+    setProgressRangeIndex((current) => (current + 1) % PROGRESS_RANGES.length);
+  }
+
   const panels = useMemo(
     () => [
       {
@@ -236,10 +362,12 @@ export default function ActivityPageV1({ onBack, email }) {
         content: (
           <>
             <ActivityProgressCardV1
-              totalSteps={activityData.totalSteps}
-              stepGoal={activityData.weeklyGoal || activityData.stepGoal}
+              totalSteps={progressTotalSteps}
+              stepGoal={progressStepGoal}
               stepChangePercent={activityData.stepChangePercent}
-              weeklySteps={activityData.weeklySteps}
+              stepsData={progressStepsData}
+              rangeLabel={progressRange.label}
+              onRangeChange={handleProgressRangeChange}
             />
 
             <ActivityOverviewGridV1
@@ -256,7 +384,13 @@ export default function ActivityPageV1({ onBack, email }) {
         ),
       },
     ],
-    [activityData]
+    [
+      activityData,
+      progressRange.label,
+      progressStepGoal,
+      progressStepsData,
+      progressTotalSteps,
+    ]
   );
 
   function showNextPanel() {
