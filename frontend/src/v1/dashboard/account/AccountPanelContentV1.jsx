@@ -19,10 +19,10 @@ import HelpViewV1 from "./drawer/HelpViewV1";
 import PrivacyViewV1 from "./drawer/PrivacyViewV1";
 import TermsViewV1 from "./drawer/TermsViewV1";
 
-import EditProfileView from "./buttons/EditProfileView";
-import EditInventoryView from "./buttons/EditInventoryView";
-import EditAchievementsView from "./buttons/EditAchievementsView";
-import EditSettingsView from "./buttons/EditSettingsView";
+import EditProfileView from "./drawer/buttons/EditProfileView";
+import EditInventoryView from "./drawer/buttons/EditInventoryView";
+import EditAchievementsView from "./drawer/buttons/EditAchievementsView";
+import EditSettingsView from "./drawer/buttons/EditSettingsView";
 
 const ADMIN_TAP_THRESHOLD = 3;
 const ADMIN_TAP_RESET_MS = 1200;
