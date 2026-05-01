@@ -185,6 +185,39 @@ export const ebooks = [
   },
 ];
 
+const SAVED_EBOOK_ARCHIVE_KEY = "zwap_saved_ebook_archive_ids";
+
+function canUseStorage() {
+  return typeof window !== "undefined" && Boolean(window.localStorage);
+}
+
+function normalizeSavedIds(ids = []) {
+  return Array.from(
+    new Set(
+      ids
+        .map((id) => String(id || "").trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function buildEbookCard(ebook, archived = false) {
+  return {
+    id: ebook.id,
+    title: `TLDR: ${ebook.title}`,
+    rawTitle: ebook.title,
+    action: "Read",
+    archiveAction: archived ? "Archived" : "Archive",
+    archived,
+    route: `/learn/ebook/${ebook.id}`,
+    tags: ebook.tags || [],
+    releaseMonth: ebook.releaseMonth,
+    releasePart: ebook.releasePart,
+    releaseOrder: ebook.releaseOrder || 999,
+    priceZpts: ebook.priceZpts || 0,
+  };
+}
+
 // ---------------------------
 // RELEASE LOGIC
 // ---------------------------
@@ -195,9 +228,11 @@ export function getReleasedEbooks({
 } = {}) {
   return ebooks.filter((ebook) => {
     if (ebook.releaseMonth < currentMonth) return true;
+
     if (ebook.releaseMonth === currentMonth) {
       return ebook.releasePart <= currentPart;
     }
+
     return false;
   });
 }
@@ -219,7 +254,7 @@ export function getArchivedRecommendedEbooks({
   currentPart = 1,
 } = {}) {
   const releasedIds = new Set(
-    getReleasedEbooks({ currentMonth, currentPart }).map((e) => e.id)
+    getReleasedEbooks({ currentMonth, currentPart }).map((ebook) => ebook.id)
   );
 
   return getEbooksByIds(recommendedEbookIds).filter((ebook) =>
@@ -228,7 +263,74 @@ export function getArchivedRecommendedEbooks({
 }
 
 // ---------------------------
-// CAROUSEL BUILDER (NEW)
+// USER ARCHIVE LOGIC
+// ---------------------------
+
+export function getSavedArchiveIds() {
+  if (!canUseStorage()) return [];
+
+  try {
+    const raw = window.localStorage.getItem(SAVED_EBOOK_ARCHIVE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+
+    return normalizeSavedIds(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return [];
+  }
+}
+
+export function saveArchiveIds(ids = []) {
+  const safeIds = normalizeSavedIds(ids);
+
+  if (!canUseStorage()) return safeIds;
+
+  try {
+    window.localStorage.setItem(
+      SAVED_EBOOK_ARCHIVE_KEY,
+      JSON.stringify(safeIds)
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+
+  return safeIds;
+}
+
+export function isEbookArchived(id) {
+  const safeId = String(id || "").trim();
+
+  if (!safeId) return false;
+
+  return getSavedArchiveIds().includes(safeId);
+}
+
+export function archiveEbookById(id) {
+  const ebook = getEbookById(id);
+
+  if (!ebook) return getSavedArchiveIds();
+
+  const currentIds = getSavedArchiveIds();
+  return saveArchiveIds([...currentIds, ebook.id]);
+}
+
+export function removeArchivedEbookById(id) {
+  const safeId = String(id || "").trim();
+
+  if (!safeId) return getSavedArchiveIds();
+
+  return saveArchiveIds(getSavedArchiveIds().filter((ebookId) => ebookId !== safeId));
+}
+
+export function getSavedArchivedEbooks() {
+  return getEbooksByIds(getSavedArchiveIds());
+}
+
+export function getSavedArchivedEbookCards() {
+  return getSavedArchivedEbooks().map((ebook) => buildEbookCard(ebook, true));
+}
+
+// ---------------------------
+// CAROUSEL BUILDER
 // ---------------------------
 
 export function getEbookCarousel({
@@ -236,16 +338,27 @@ export function getEbookCarousel({
   currentMonth = 1,
   currentPart = 1,
 } = {}) {
+  const savedIds = new Set(getSavedArchiveIds());
+
   return getArchivedRecommendedEbooks({
     recommendedEbookIds,
     currentMonth,
     currentPart,
-  }).map((ebook) => ({
-    id: ebook.id,
-    title: `TLDR: ${ebook.title}`,
-    action: "Read",
-    route: `/learn/ebook/${ebook.id}`,
-  }));
+  }).map((ebook) => buildEbookCard(ebook, savedIds.has(ebook.id)));
+}
+
+export function getReleasedEbookCarousel({
+  currentMonth = 1,
+  currentPart = 1,
+} = {}) {
+  const savedIds = new Set(getSavedArchiveIds());
+
+  return getReleasedEbooks({
+    currentMonth,
+    currentPart,
+  })
+    .sort((a, b) => a.releaseOrder - b.releaseOrder)
+    .map((ebook) => buildEbookCard(ebook, savedIds.has(ebook.id)));
 }
 
 export default ebooks;
