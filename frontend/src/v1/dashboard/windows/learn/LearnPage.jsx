@@ -13,6 +13,40 @@ import { learnModules } from "./data/learnModules";
 import ModuleCard from "./ModuleCard";
 import SectionHeader from "./SectionHeader";
 
+const LEARN_PROGRESSION_ORDER = [
+  "microlearning-basics",
+  "prosperity-foundation",
+  "new-economy-readiness",
+
+  "movement-benefits",
+  "breaking-a-sweat",
+  "consistency-over-intensity",
+
+  "emotional-regulation-basics",
+  "stress-awareness",
+  "confidence-through-action",
+
+  "habit-building-basics",
+  "identity-based-progress",
+  "focus-and-execution",
+
+  "ai-fears-reality",
+  "ai-practical-use",
+  "ai-safety-awareness",
+
+  "web3-basics",
+  "wallet-basics",
+  "nft-reframe",
+  "web3-safety-basics",
+
+  "zpts-basics",
+  "zwap-token-utility",
+  "move-play-earn-loop",
+  "shop-before-swap",
+  "conversion-basics",
+  "token-design-systems",
+];
+
 function normalizeModules(source) {
   if (Array.isArray(source)) return source;
 
@@ -22,17 +56,6 @@ function normalizeModules(source) {
     ...(source?.advanced || []),
     ...(source?.expert || []),
   ];
-}
-
-function getLevelRank(level = "") {
-  const safe = String(level || "").toLowerCase();
-
-  if (safe === "beginner") return 1;
-  if (safe === "intermediate") return 2;
-  if (safe === "advanced") return 3;
-  if (safe === "expert") return 4;
-
-  return 99;
 }
 
 function getModuleProgress(module) {
@@ -64,6 +87,15 @@ function getModuleProgress(module) {
     total: safeTotal,
     percent: Math.max(0, Math.min(100, (safeCompleted / safeTotal) * 100)),
   };
+}
+
+function orderModulesByProgression(modules) {
+  const map = new Map(modules.map((module) => [module.id, module]));
+  const ordered = LEARN_PROGRESSION_ORDER.map((id) => map.get(id)).filter(Boolean);
+  const orderedIds = new Set(ordered.map((module) => module.id));
+  const remaining = modules.filter((module) => !orderedIds.has(module.id));
+
+  return [...ordered, ...remaining];
 }
 
 function CurrentModuleCard({ module }) {
@@ -189,13 +221,7 @@ export default function LearnPage() {
   const modules = useMemo(() => normalizeModules(learnModules), []);
 
   const orderedModules = useMemo(() => {
-    return [...modules].sort((a, b) => {
-      const levelDiff = getLevelRank(a?.level) - getLevelRank(b?.level);
-
-      if (levelDiff !== 0) return levelDiff;
-
-      return String(a?.title || "").localeCompare(String(b?.title || ""));
-    });
+    return orderModulesByProgression(modules);
   }, [modules]);
 
   const currentModule = orderedModules[0];
