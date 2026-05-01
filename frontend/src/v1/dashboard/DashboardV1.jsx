@@ -1,13 +1,12 @@
-import React, {
-  Suspense,
-  lazy,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { Suspense, lazy, useMemo, useState } from "react";
 
 import useV1DashboardState from "./useV1DashboardState";
+import useDashboardActivity from "./hooks/useDashboardActivity";
+import useDashboardMove from "./hooks/useDashboardMove";
+import useDashboardPlay from "./hooks/useDashboardPlay";
+import useDashboardShop from "./hooks/useDashboardShop";
+import useDashboardZwap from "./hooks/useDashboardZwap";
+
 import AppHeaderV1 from "./AppHeaderV1";
 import DashboardWindowMove from "./windows/DashboardWindowMove";
 import DashboardWindowPlay from "./windows/DashboardWindowPlay";
@@ -15,14 +14,6 @@ import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 import ActivityPageV1 from "./activity/ActivityPageV1";
-import { getActivityDashboard } from "./activity/activityApi";
-
-import { getCurrentSteps, subscribeToSteps } from "@/services/stepService";
-import {
-  resetStepFeeder,
-  startStepFeeder,
-  stopStepFeeder,
-} from "@/lib/steps/stepFeeder";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
@@ -44,10 +35,6 @@ const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
-function estimateCaloriesFromSteps(steps) {
-  return Math.round(Math.max(0, Number(steps || 0)) * 0.04);
-}
-
 function getResolvedEmail({ authUser, user }) {
   return String(
     authUser?.email?.address ||
@@ -58,30 +45,6 @@ function getResolvedEmail({ authUser, user }) {
   )
     .trim()
     .toLowerCase();
-}
-
-function mergeTaskState(taskStates = [], updates = {}) {
-  if (!Array.isArray(taskStates)) return taskStates;
-
-  return taskStates.map((task) => {
-    const label = String(task?.label || "").toLowerCase();
-
-    if (label === "move") {
-      return {
-        ...task,
-        completed: Boolean(task?.completed || updates.move),
-      };
-    }
-
-    if (label === "play") {
-      return {
-        ...task,
-        completed: Boolean(task?.completed || updates.play),
-      };
-    }
-
-    return task;
-  });
 }
 
 function GameLoadingScreen() {
@@ -100,6 +63,9 @@ function GameLoadingScreen() {
 }
 
 export default function DashboardV1({ user, authUser }) {
+  const [activeView, setActiveView] = useState("dashboard");
+  const [localZptsBalance, setLocalZptsBalance] = useState(null);
+
   const resolvedEmail = useMemo(
     () => getResolvedEmail({ authUser, user }),
     [authUser, user]
@@ -167,34 +133,102 @@ export default function DashboardV1({ user, authUser }) {
 
   const resolvedTier = user?.tier || user?.accountTier || "zwapper";
 
-  const previewShopUnlocked = isAdminPreviewUser || shopUnlocked;
-  const previewGardenUnlocked = isAdminPreviewUser || gardenUnlocked;
-  const previewRarePlantUnlocked = isAdminPreviewUser || rarePlantUnlocked;
-  const previewSwapUnlocked = isAdminPreviewUser || isSwapUnlocked;
-  const previewBadgeVisibilityUnlocked =
-    isAdminPreviewUser || badgeVisibilityUnlocked;
-  const previewLearnUnlocked = isAdminPreviewUser || learnUnlocked;
-  const previewStreamUnlocked = isAdminPreviewUser || streamUnlocked;
-  const previewAssistUnlocked = isAdminPreviewUser || assistUnlocked;
+  const {
+    activitySnapshot,
+    activitySignal,
+    setActivitySignal,
+    refreshActivitySnapshot,
+  } = useDashboardActivity({ resolvedEmail });
 
-  const [moveIsActive, setMoveIsActive] = useState(false);
-  const [sessionSteps, setSessionSteps] = useState(0);
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [activeGameId, setActiveGameId] = useState(null);
-  const [activeView, setActiveView] = useState("dashboard");
+  const {
+    moveIsActive,
+    sessionSteps,
+    timerSeconds,
+    calories,
+    handleToggleMove,
+  } = useDashboardMove({
+    resolvedEmail,
+    apiBase: API_BASE,
+    refreshActivitySnapshot,
+    setActivitySignal,
+    onBalanceUpdate: setLocalZptsBalance,
+  });
 
-  const [localGamesPlayedToday, setLocalGamesPlayedToday] = useState(0);
-  const [localZptsBalance, setLocalZptsBalance] = useState(null);
+  const {
+    activeGameId,
+    localGamesPlayedToday,
+    handleStartGame,
+    handleGameEnd,
+  } = useDashboardPlay({
+    resolvedEmail,
+    apiBase: API_BASE,
+    refreshActivitySnapshot,
+    setActivitySignal,
+    onBalanceUpdate: setLocalZptsBalance,
+  });
 
-  const [shopCategories, setShopCategories] = useState([]);
-  const [shopItems, setShopItems] = useState([]);
-  const [shopLoading, setShopLoading] = useState(false);
-  const [shopError, setShopError] = useState("");
+  const {
+    shopCategories,
+    shopItems,
+    shopLoading,
+    shopError,
+    handlePurchaseShopItem,
+  } = useDashboardShop({
+    apiBase: API_BASE,
+    resolvedEmail,
+    refreshActivitySnapshot,
+    onBalanceUpdate: setLocalZptsBalance,
+  });
 
-  const [activitySignal, setActivitySignal] = useState(null);
-  const [activitySnapshot, setActivitySnapshot] = useState(null);
+  const {
+    previewShopUnlocked,
+    previewGardenUnlocked,
+    previewRarePlantUnlocked,
+    previewSwapUnlocked,
+    previewBadgeVisibilityUnlocked,
+    previewLearnUnlocked,
+    previewStreamUnlocked,
+    previewAssistUnlocked,
 
-  const sessionStartStepsRef = useRef(0);
+    resolvedZptsBalance,
+    resolvedDailySteps,
+    resolvedGamesPlayedToday,
+    resolvedHighScores,
+    resolvedLessonsCompletedToday,
+    resolvedFullLoopCompleted,
+    resolvedTaskStates,
+    resolvedCompletedTaskCount,
+    resolvedTotalTaskCount,
+  } = useDashboardZwap({
+    isAdminPreviewUser,
+
+    shopUnlocked,
+    gardenUnlocked,
+    rarePlantUnlocked,
+    isSwapUnlocked,
+    badgeVisibilityUnlocked,
+    learnUnlocked,
+    streamUnlocked,
+    assistUnlocked,
+
+    activitySnapshot,
+
+    zptsBalance,
+    localZptsBalance,
+
+    dailySteps,
+    sessionSteps,
+
+    gamesPlayedToday,
+    localGamesPlayedToday,
+
+    lessonsCompletedToday,
+    fullLoopCompleted,
+
+    completedTaskCount,
+    totalTaskCount,
+    taskStates,
+  });
 
   function handleOpenActivity() {
     setActiveView("activity");
@@ -204,362 +238,9 @@ export default function DashboardV1({ user, authUser }) {
     setActiveView("dashboard");
   }
 
-  const refreshActivitySnapshot = async () => {
-    if (!resolvedEmail) return null;
-
-    try {
-      const data = await getActivityDashboard(resolvedEmail);
-
-      setActivitySnapshot(data || null);
-      setActivitySignal(data?.latestActivitySignal || null);
-
-      return data;
-    } catch (error) {
-      console.error("Activity snapshot failed:", error);
-      return null;
-    }
-  };
-
-  const submitMoveSteps = async (steps) => {
-    const safeSteps = Math.max(0, Number(steps || 0));
-
-    if (!resolvedEmail || safeSteps <= 0) return null;
-
-    const res = await fetch(
-      `${API_BASE}/move/steps/${encodeURIComponent(resolvedEmail)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          steps: safeSteps,
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Move submission failed");
-    }
-
-    return res.json();
-  };
-
-  const handleToggleMove = async () => {
-    const wasActive = moveIsActive;
-    const stepsToSubmit = Number(sessionSteps || 0);
-
-    setMoveIsActive((current) => {
-      const next = !current;
-
-      if (next) {
-        resetStepFeeder();
-        sessionStartStepsRef.current = getCurrentSteps();
-        setSessionSteps(0);
-        setTimerSeconds(0);
-        startStepFeeder();
-      } else {
-        stopStepFeeder();
-      }
-
-      return next;
-    });
-
-    if (!wasActive) return;
-
-    try {
-      const moveResult = await submitMoveSteps(stepsToSubmit);
-
-      if (moveResult?.new_balance !== undefined) {
-        setLocalZptsBalance(Number(moveResult.new_balance || 0));
-      }
-
-      setActivitySignal({
-        type: "move",
-        steps: stepsToSubmit,
-        zpts: Number(moveResult?.rewards_earned || 0),
-        created_at: new Date().toISOString(),
-      });
-
-      await refreshActivitySnapshot();
-    } catch (error) {
-      console.error("Move submit failed:", error);
-
-      setActivitySignal({
-        type: "move",
-        steps: stepsToSubmit,
-        zpts: 0,
-        created_at: new Date().toISOString(),
-      });
-    }
-  };
-
-  const handleToggleZwapAltView = () => {
+  function handleToggleZwapAltView() {
     setIsZwapAltView((current) => !current);
-  };
-
-  const handleStartGame = (game) => {
-    if (!game || game.locked) return;
-    setActiveGameId(game.id);
-  };
-
-  const submitPlayResult = async (result) => {
-    if (!resolvedEmail) return null;
-
-    const gameType = result?.gameId || result?.game_type || result?.game || "";
-    const score = Number(result?.score || 0);
-    const level = Number(result?.level || 1);
-
-    if (!gameType) return null;
-
-    const res = await fetch(
-      `${API_BASE}/games/result/${encodeURIComponent(resolvedEmail)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          game_type: gameType,
-          score,
-          level,
-          blocks_destroyed: Number(result?.blocksDestroyed || 0),
-          session_duration_seconds: Number(result?.sessionDurationSeconds || 0),
-          completed: true,
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Game result failed");
-    }
-
-    return res.json();
-  };
-
-  const handleGameEnd = async (result) => {
-    console.log("Game ended:", result);
-
-    setActiveGameId(null);
-    setLocalGamesPlayedToday((current) => Math.max(current, 1));
-
-    try {
-      const playResult = await submitPlayResult(result);
-
-      if (playResult?.new_zpts_balance !== undefined) {
-        setLocalZptsBalance(Number(playResult.new_zpts_balance || 0));
-      }
-
-      setActivitySignal({
-        type: "play",
-        game: result?.gameId || playResult?.game || "",
-        zpts: Number(playResult?.zpts_earned || 0),
-        created_at: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("Play result submit failed:", error);
-
-      setActivitySignal({
-        type: "play",
-        game: result?.gameId || "",
-        zpts: 0,
-        created_at: new Date().toISOString(),
-      });
-    }
-
-    await refreshActivitySnapshot();
-  };
-
-  const handlePurchaseShopItem = async (item) => {
-    const itemId = item?.id || item?._id;
-    const paymentType = item?.payment_method || "zpts";
-
-    if (!resolvedEmail || !itemId) return null;
-
-    const res = await fetch(`${API_BASE}/shop/purchase`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: resolvedEmail,
-        item_id: itemId,
-        payment_type: paymentType,
-      }),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || "Purchase failed");
-    }
-
-    const data = await res.json();
-    await refreshActivitySnapshot();
-
-    return data;
-  };
-
-  useEffect(() => {
-    if (!moveIsActive) return undefined;
-
-    const unsubscribe = subscribeToSteps((deviceSteps) => {
-      const start = Number(sessionStartStepsRef.current || 0);
-      setSessionSteps(Math.max(0, Number(deviceSteps || 0) - start));
-    });
-
-    return () => unsubscribe();
-  }, [moveIsActive]);
-
-  useEffect(() => {
-    if (!moveIsActive) return undefined;
-
-    const interval = window.setInterval(() => {
-      setTimerSeconds((current) => current + 1);
-    }, 1000);
-
-    return () => window.clearInterval(interval);
-  }, [moveIsActive]);
-
-  useEffect(() => {
-    return () => {
-      stopStepFeeder();
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadShop() {
-      setShopLoading(true);
-      setShopError("");
-
-      try {
-        const [categoriesResponse, itemsResponse] = await Promise.all([
-          fetch(`${API_BASE}/shop/categories`),
-          fetch(`${API_BASE}/shop/items`),
-        ]);
-
-        if (!categoriesResponse.ok) {
-          throw new Error("Shop categories failed to load");
-        }
-
-        if (!itemsResponse.ok) {
-          throw new Error("Shop items failed to load");
-        }
-
-        const categories = await categoriesResponse.json();
-        const items = await itemsResponse.json();
-
-        if (!mounted) return;
-
-        setShopCategories(Array.isArray(categories) ? categories : []);
-        setShopItems(Array.isArray(items) ? items : []);
-      } catch (error) {
-        if (!mounted) return;
-
-        console.error("Shop load failed:", error);
-        setShopError(error?.message || "Shop failed to load");
-        setShopCategories([]);
-        setShopItems([]);
-      } finally {
-        if (mounted) {
-          setShopLoading(false);
-        }
-      }
-    }
-
-    loadShop();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadActivity() {
-      if (!resolvedEmail) {
-        setActivitySnapshot(null);
-        setActivitySignal(null);
-        return;
-      }
-
-      try {
-        const data = await getActivityDashboard(resolvedEmail);
-
-        if (!mounted) return;
-
-        setActivitySnapshot(data || null);
-        setActivitySignal(data?.latestActivitySignal || null);
-      } catch (error) {
-        if (!mounted) return;
-
-        console.error("Activity load failed:", error);
-        setActivitySnapshot(null);
-        setActivitySignal(null);
-      }
-    }
-
-    loadActivity();
-
-    return () => {
-      mounted = false;
-    };
-  }, [resolvedEmail]);
-
-  const calories = estimateCaloriesFromSteps(sessionSteps);
-
-  const resolvedZptsBalance = Math.max(
-    Number(activitySnapshot?.zptsBalance || 0),
-    Number(zptsBalance || 0),
-    Number(localZptsBalance || 0)
-  );
-
-  const resolvedDailySteps = Math.max(
-    Number(activitySnapshot?.dailySteps || 0),
-    Number(dailySteps || 0),
-    Number(sessionSteps || 0)
-  );
-
-  const resolvedGamesPlayedToday = Math.max(
-    Number(activitySnapshot?.gamesPlayedToday || 0),
-    Number(gamesPlayedToday || 0),
-    Number(localGamesPlayedToday || 0)
-  );
-
-  const resolvedHighScores =
-    activitySnapshot?.highScores && typeof activitySnapshot.highScores === "object"
-      ? activitySnapshot.highScores
-      : {};
-
-  const resolvedLessonsCompletedToday =
-    activitySnapshot?.lessonsCompletedToday ?? lessonsCompletedToday;
-
-  const resolvedFullLoopCompleted =
-    activitySnapshot?.fullLoopCompleted ?? fullLoopCompleted;
-
-  const baseResolvedTaskStates =
-    Array.isArray(activitySnapshot?.taskStates) &&
-    activitySnapshot.taskStates.length > 0
-      ? activitySnapshot.taskStates
-      : taskStates;
-
-  const resolvedTaskStates = mergeTaskState(baseResolvedTaskStates, {
-    move: resolvedDailySteps > 0 || sessionSteps > 0,
-    play: resolvedGamesPlayedToday > 0,
-  });
-
-  const resolvedCompletedTaskCount = Math.max(
-    Number(activitySnapshot?.completedTaskCount || 0),
-    Number(completedTaskCount || 0),
-    resolvedTaskStates.filter((task) => task?.completed).length
-  );
-
-  const resolvedTotalTaskCount =
-    activitySnapshot?.totalTaskCount ?? totalTaskCount;
+  }
 
   if (activeGameId) {
     return (
@@ -581,7 +262,12 @@ export default function DashboardV1({ user, authUser }) {
   }
 
   if (activeView === "activity") {
-    return <ActivityPageV1 onBack={handleBackFromActivity} email={resolvedEmail} />;
+    return (
+      <ActivityPageV1
+        onBack={handleBackFromActivity}
+        email={resolvedEmail}
+      />
+    );
   }
 
   return (
