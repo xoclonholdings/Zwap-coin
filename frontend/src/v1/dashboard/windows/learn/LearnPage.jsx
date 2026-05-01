@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 
 import { learnModules } from "./data/learnModules";
-import { getEbookCarousel } from "./data/ebooks";
+import { getEbookCarousel, getReleasedEbooks } from "./data/ebooks";
 
 const LESSON_COUNT = 3;
+const CURRENT_ARCHIVE_MONTH = 5;
+const CURRENT_ARCHIVE_PART = 2;
 
 const TERM_DEFINITIONS = {
   web3: {
@@ -209,7 +211,12 @@ function buildSearchIndex() {
 
   Object.entries(TERM_DEFINITIONS || {}).forEach(([key, definition]) => {
     const variants = new Set(
-      [key, definition?.title, definition?.shortLabel, ...(EXTRA_SYNONYMS[key] || [])]
+      [
+        key,
+        definition?.title,
+        definition?.shortLabel,
+        ...(EXTRA_SYNONYMS[key] || []),
+      ]
         .filter(Boolean)
         .map(normalize)
         .filter(Boolean)
@@ -242,7 +249,9 @@ function parseLessonText(text = "") {
     let matched = false;
 
     for (const entry of TERM_SEARCH_INDEX) {
-      const candidate = words.slice(index, index + entry.wordCount * 2 - 1).join("");
+      const candidate = words
+        .slice(index, index + entry.wordCount * 2 - 1)
+        .join("");
       const cleanCandidate = normalize(candidate);
 
       if (cleanCandidate === entry.variant && !usedTerms.has(entry.key)) {
@@ -364,11 +373,39 @@ function buildLessons(module) {
         index === 0
           ? "Concept"
           : index === 1
-          ? "Application"
-          : "Lock In",
+            ? "Application"
+            : "Lock In",
       content: lesson?.content || "Lesson content not yet available.",
     };
   });
+}
+
+function buildReleasedEbookCarousel({ module }) {
+  const recommended = getEbookCarousel({
+    recommendedEbookIds: module?.recommendedEbookIds || [],
+    currentMonth: CURRENT_ARCHIVE_MONTH,
+    currentPart: CURRENT_ARCHIVE_PART,
+  });
+
+  const released = getReleasedEbooks({
+    currentMonth: CURRENT_ARCHIVE_MONTH,
+    currentPart: CURRENT_ARCHIVE_PART,
+  }).map((ebook) => ({
+    id: ebook.id,
+    title: `TLDR: ${ebook.title}`,
+    action: "Read",
+    route: `/learn/ebook/${ebook.id}`,
+    tags: ebook.tags || [],
+    releaseOrder: ebook.releaseOrder || 999,
+  }));
+
+  const recommendedIds = new Set(recommended.map((ebook) => ebook.id));
+  const merged = [
+    ...recommended,
+    ...released.filter((ebook) => !recommendedIds.has(ebook.id)),
+  ];
+
+  return merged.slice(0, 6);
 }
 
 function MainCard({ module, lesson, onNextModule }) {
@@ -461,7 +498,7 @@ function RecommendedEbookCard({ item, onRead }) {
     <button
       type="button"
       onClick={() => onRead(item)}
-      className="w-[31%] rounded-[18px] border border-white/10 bg-white/[0.04] p-2 text-left active:scale-[0.98]"
+      className="w-[31%] shrink-0 rounded-[18px] border border-white/10 bg-white/[0.04] p-2 text-left active:scale-[0.98]"
     >
       <div className="h-[70px] overflow-hidden rounded-[12px] bg-white/[0.04]">
         {image ? (
@@ -498,11 +535,7 @@ export default function LearnPage({ onBack }) {
   const currentLesson = lessons[lessonIndex];
 
   const ebooks = useMemo(() => {
-    return getEbookCarousel({
-      recommendedEbookIds: currentModule?.recommendedEbookIds || [],
-      currentMonth: 1,
-      currentPart: 1,
-    });
+    return buildReleasedEbookCarousel({ module: currentModule });
   }, [currentModule]);
 
   function handleBack() {
@@ -529,26 +562,29 @@ export default function LearnPage({ onBack }) {
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[#050510] text-white">
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+      <div className="mb-5 flex items-center justify-between px-4 pt-3">
         <button
           type="button"
           onClick={handleBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05]"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition active:scale-[0.96]"
+          aria-label="Back"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft size={18} />
         </button>
 
         <div className="text-center">
-          <div className="text-[13px] tracking-[0.22em] text-white/60">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/40">
             Learn
           </div>
-          <div className="text-sm font-black text-white">Overview</div>
+          <div className="text-[15px] font-semibold tracking-[-0.02em] text-white">
+            Overview
+          </div>
         </div>
 
-        <div className="h-10 w-10" />
+        <div className="w-10" />
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-hidden p-3">
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden px-3 pb-3">
         <MainCard
           module={currentModule}
           lesson={displayLesson}
@@ -563,7 +599,7 @@ export default function LearnPage({ onBack }) {
           }}
         />
 
-        <div>
+        <div className="min-h-0 flex-1 overflow-hidden">
           <div className="text-[13px] font-black text-white">
             Recommended for you
           </div>
@@ -571,7 +607,7 @@ export default function LearnPage({ onBack }) {
             Pulled from your Learn Archive.
           </div>
 
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {ebooks.map((item) => (
               <RecommendedEbookCard
                 key={item.id}
