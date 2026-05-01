@@ -4,26 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 
 import { learnModules } from "./data/learnModules";
-import { getArchivedRecommendedEbooks } from "./data/ebooks";
 
 const LESSON_COUNT = 3;
-const DEFAULT_ARCHIVE_MONTH = 5;
-const DEFAULT_ARCHIVE_PART = 2;
-
-const LEARN_PROGRESSION_ORDER = [
-  "movement-benefits",
-  "breaking-a-sweat",
-  "focus-discipline",
-  "mental-patterns",
-  "self-awareness",
-  "ai-fears-reality",
-  "personal-conduct",
-  "presence-focus",
-  "belief-outcome",
-  "value-wealth-thinking",
-  "financial-awareness",
-  "ownership-control",
-];
 
 function normalizeModules(source) {
   if (Array.isArray(source)) return source;
@@ -36,143 +18,90 @@ function normalizeModules(source) {
   ];
 }
 
-function orderModules(modules) {
-  const map = new Map(modules.map((module) => [module.id, module]));
-  const ordered = LEARN_PROGRESSION_ORDER.map((id) => map.get(id)).filter(Boolean);
-  const orderedIds = new Set(ordered.map((module) => module.id));
-  const remaining = modules.filter((module) => !orderedIds.has(module.id));
-
-  return [...ordered, ...remaining];
+function getModuleImage(module) {
+  return module?.image || module?.coverImage || module?.cover_image || "";
 }
 
-function getImage(item) {
-  return item?.image || item?.coverImage || item?.cover_image || "";
-}
-
-function getRecommendedEbookIds(module) {
+function getRecommendedEbooks(module) {
   const direct =
-    module?.recommendedEbookIds ||
-    module?.recommended_ebook_ids ||
     module?.recommendedEbooks ||
     module?.recommended_ebooks ||
     module?.recommendedBooks ||
     module?.recommended_books ||
     [];
 
-  if (!Array.isArray(direct)) return [];
-
-  return direct
-    .map((item) => (typeof item === "string" ? item : item?.id))
-    .filter(Boolean);
+  return Array.isArray(direct) ? direct.slice(0, 3) : [];
 }
 
 function buildLessons(module) {
-  const source = Array.isArray(module?.lessons) ? module.lessons.slice(0, 3) : [];
+  const source = Array.isArray(module?.lessons)
+    ? module.lessons.slice(0, 3)
+    : [];
 
-  if (source.length >= LESSON_COUNT) {
-    return source.map((lesson, index) => ({
-      id: lesson?.id || `${module?.id || "module"}-lesson-${index + 1}`,
+  return [0, 1, 2].map((_, index) => {
+    const lesson = source[index] || {};
+
+    return {
+      id: lesson?.id || `${module?.id}-lesson-${index}`,
       title:
-        lesson?.title ||
-        (index === 0 ? "Concept" : index === 1 ? "Application" : "Lock In"),
-      description:
-        lesson?.description ||
-        lesson?.short_description ||
-        lesson?.summary ||
-        module?.short_description ||
-        module?.core ||
-        "Continue this lesson.",
-    }));
-  }
-
-  return [0, 1, 2].map((_, index) => ({
-    id: `${module?.id || "module"}-lesson-${index + 1}`,
-    title:
-      index === 0 ? "Concept" : index === 1 ? "Application" : "Lock In",
-    description:
-      index === 0
-        ? module?.short_description || module?.core || "Learn the core idea."
-        : index === 1
-          ? "Connect the idea to your daily action."
-          : "Complete the lesson and move forward.",
-  }));
+        index === 0
+          ? "Concept"
+          : index === 1
+          ? "Application"
+          : "Lock In",
+      content:
+        lesson?.content ||
+        "Lesson content not yet available.",
+    };
+  });
 }
 
-function NextModuleButton({ onClick }) {
-  return (
-    <div className="flex shrink-0 justify-end">
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-200 shadow-[0_0_16px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
-      >
-        Next Module
-        <ChevronRight size={12} />
-      </button>
-    </div>
-  );
-}
-
-function MainCard({ module, lesson, lessonIndex, activeEbook }) {
-  const lessonImage = getImage(module);
-  const ebookImage = getImage(activeEbook);
-  const isEbookView = Boolean(activeEbook);
+function MainCard({ module, lesson, onNextModule }) {
+  const image = getModuleImage(module);
 
   return (
     <motion.section
-      className="shrink-0 overflow-hidden rounded-[26px] border border-cyan-300/16 bg-[radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.12),transparent_35%),radial-gradient(circle_at_86%_22%,rgba(168,85,247,0.18),transparent_36%),linear-gradient(180deg,rgba(10,18,30,0.96),rgba(5,8,17,0.98))] p-3 shadow-[0_18px_46px_rgba(0,0,0,0.34)]"
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
+      className="rounded-[24px] border border-purple-400/25 bg-[radial-gradient(circle_at_18%_0%,rgba(168,85,247,0.18),transparent_36%),linear-gradient(180deg,rgba(17,20,38,0.96),rgba(7,10,20,0.98))] p-4"
     >
-      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300/70">
-        Module
-      </div>
-
-      <h2 className="mt-1 line-clamp-1 text-[20px] font-black tracking-[-0.05em] text-white">
-        {module?.title || "Learn Module"}
-      </h2>
-
-      <div className="mt-3 rounded-[20px] border border-white/10 bg-black/24 p-3">
-        <div className="flex gap-3">
-          <div className="flex h-[132px] w-[92px] shrink-0 items-center justify-center overflow-hidden rounded-[16px] border border-cyan-300/14 bg-white/[0.035] shadow-[0_0_18px_rgba(34,211,238,0.08)]">
-            {isEbookView && ebookImage ? (
-              <img
-                src={ebookImage}
-                alt={activeEbook?.title || "eBook"}
-                className="h-full w-full object-cover"
-              />
-            ) : !isEbookView && lessonImage ? (
-              <img
-                src={lessonImage}
-                alt={module?.title || "Module"}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <BookOpen className="h-8 w-8 text-cyan-200/70" />
-            )}
+      {/* HEADER */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-purple-300">
+            Module
           </div>
 
-          <div className="min-w-0 flex-1 py-1">
-            <div className="text-[9px] font-black uppercase tracking-[0.12em] text-purple-200/75">
-              {isEbookView ? "eBook" : `Lesson ${lessonIndex + 1}`}
-            </div>
+          <h2 className="mt-1 text-[18px] font-black tracking-[-0.04em] text-white">
+            {module?.title}
+          </h2>
+        </div>
 
-            <h3 className="mt-2 line-clamp-2 text-[18px] font-black tracking-[-0.04em] text-white">
-              {isEbookView
-                ? activeEbook?.title || "Archive eBook"
-                : lesson?.title || "Lesson"}
-            </h3>
+        <button
+          onClick={onNextModule}
+          className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black text-white/80"
+        >
+          Next Module <ChevronRight size={12} className="inline ml-1" />
+        </button>
+      </div>
 
-            <p className="mt-3 line-clamp-5 text-[13px] font-semibold leading-5 text-white/62">
-              {isEbookView
-                ? activeEbook?.description ||
-                  activeEbook?.subtitle ||
-                  "This archive eBook supports your current learning path."
-                : lesson?.description ||
-                  module?.short_description ||
-                  module?.core ||
-                  "Continue this lesson."}
-            </p>
+      {/* LESSON CONTENT */}
+      <div className="mt-4 flex gap-3 rounded-[18px] border border-white/10 bg-black/30 p-3">
+        <div className="flex h-[72px] w-[60px] items-center justify-center rounded-[14px] border border-white/10 bg-white/[0.04]">
+          {image ? (
+            <img src={image} className="h-full w-full object-cover" />
+          ) : (
+            <BookOpen className="h-6 w-6 text-purple-300" />
+          )}
+        </div>
+
+        <div className="flex-1">
+          <div className="text-[10px] font-black uppercase text-white/50">
+            {lesson.title}
+          </div>
+
+          <div className="mt-2 text-sm leading-5 text-white">
+            {lesson.content}
           </div>
         </div>
       </div>
@@ -180,184 +109,92 @@ function MainCard({ module, lesson, lessonIndex, activeEbook }) {
   );
 }
 
-function LessonCards({ lessons, lessonIndex, onSelectLesson }) {
+function LessonToggles({ lessonIndex, setLessonIndex }) {
   return (
-    <section className="shrink-0">
-      <div className="grid grid-cols-3 gap-2">
-        {lessons.map((lesson, index) => {
-          const active = index === lessonIndex;
-
-          return (
-            <button
-              key={lesson.id}
-              type="button"
-              onClick={() => onSelectLesson(index)}
-              className={[
-                "min-h-[58px] rounded-2xl border p-2 text-left transition active:scale-[0.98]",
-                active
-                  ? "border-cyan-300/38 bg-cyan-400/12 shadow-[0_0_14px_rgba(34,211,238,0.10)]"
-                  : "border-white/10 bg-white/[0.035]",
-              ].join(" ")}
-            >
-              <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/42">
-                {index + 1}.
-              </div>
-
-              <div className="mt-1 line-clamp-1 text-[12px] font-black tracking-[-0.03em] text-white">
-                {lesson.title}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function RecommendedEbookCard({ item, index, onOpen }) {
-  const image = getImage(item);
-
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(item)}
-      className="w-[31%] min-w-0 shrink-0 overflow-hidden rounded-[18px] border border-purple-300/18 bg-[linear-gradient(180deg,rgba(20,18,42,0.96),rgba(7,10,20,0.98))] text-left transition active:scale-[0.98]"
-    >
-      <div className="h-[82px] bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.28),rgba(34,211,238,0.12)_42%,rgba(255,255,255,0.04))]">
-        {image ? (
-          <img
-            src={image}
-            alt={item?.title || `Recommended ${index + 1}`}
-            className="h-full w-full object-cover"
-          />
-        ) : null}
-      </div>
-
-      <div className="p-2">
-        <div className="line-clamp-2 text-[11px] font-black leading-3 tracking-[-0.03em] text-white">
-          {item?.title || "Recommended"}
-        </div>
-
-        <div className="mt-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-300/75">
-          Read
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function RecommendedPlaceholder({ index }) {
-  return (
-    <div className="w-[31%] min-w-0 shrink-0 rounded-[18px] border border-white/10 bg-white/[0.035] p-2">
-      <div className="h-[82px] rounded-[14px] bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),rgba(34,211,238,0.08)_48%,rgba(255,255,255,0.04))]" />
-      <div className="mt-2 h-2 w-16 rounded-full bg-white/10" />
-      <div className="mt-1.5 h-2 w-11 rounded-full bg-white/10" />
+    <div className="flex gap-2">
+      {[0, 1, 2].map((i) => (
+        <button
+          key={i}
+          onClick={() => setLessonIndex(i)}
+          className={[
+            "flex-1 rounded-2xl border py-2 text-xs font-black",
+            lessonIndex === i
+              ? "border-cyan-300/40 bg-cyan-400/15 text-white"
+              : "border-white/10 bg-white/[0.04] text-white/50",
+          ].join(" ")}
+        >
+          {i + 1}
+        </button>
+      ))}
     </div>
   );
 }
 
-function RecommendedSection({ ebooks, onOpen }) {
+function RecommendedEbookCard({ item }) {
+  const image =
+    item?.image || item?.cover || item?.coverImage || "";
+
   return (
-    <section className="min-h-0 flex-1 overflow-hidden">
-      <div className="mb-3">
-        <div className="text-[15px] font-black tracking-[-0.04em] text-white">
-          Recommended for you
-        </div>
-        <div className="text-[10px] text-white/45">
-          Pulled from your Learn Archive.
-        </div>
+    <div className="w-[31%] rounded-[18px] border border-white/10 bg-white/[0.04] p-2">
+      <div className="h-[70px] rounded-[12px] overflow-hidden">
+        {image ? (
+          <img src={image} className="h-full w-full object-cover" />
+        ) : null}
       </div>
 
-      <div className="flex gap-2 overflow-x-hidden">
-        {ebooks.length > 0
-          ? ebooks.map((item, index) => (
-              <RecommendedEbookCard
-                key={item?.id || item?.title || index}
-                item={item}
-                index={index}
-                onOpen={onOpen}
-              />
-            ))
-          : [0, 1, 2].map((item) => (
-              <RecommendedPlaceholder key={item} index={item} />
-            ))}
+      <div className="mt-2 text-[11px] font-black text-white line-clamp-2">
+        {item?.title || "Ebook"}
       </div>
-    </section>
+
+      <button className="mt-1 text-[10px] text-cyan-300 font-black">
+        Open
+      </button>
+    </div>
   );
 }
 
-export default function LearnPage({
-  onBack,
-  archiveMonth = DEFAULT_ARCHIVE_MONTH,
-  archivePart = DEFAULT_ARCHIVE_PART,
-}) {
+export default function LearnPage({ onBack }) {
   const navigate = useNavigate();
+
   const [moduleIndex, setModuleIndex] = useState(0);
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [activeEbook, setActiveEbook] = useState(null);
 
   const modules = useMemo(() => normalizeModules(learnModules), []);
 
-  const orderedModules = useMemo(() => orderModules(modules), [modules]);
-
-  const currentModule = orderedModules[moduleIndex] || orderedModules[0];
-
+  const currentModule = modules[moduleIndex];
   const lessons = useMemo(() => buildLessons(currentModule), [currentModule]);
+  const currentLesson = lessons[lessonIndex];
 
-  const currentLesson = lessons[lessonIndex] || lessons[0];
-
-  const recommendedEbooks = useMemo(() => {
-    return getArchivedRecommendedEbooks({
-      recommendedEbookIds: getRecommendedEbookIds(currentModule),
-      currentMonth: archiveMonth,
-      currentPart: archivePart,
-    }).slice(0, 3);
-  }, [currentModule, archiveMonth, archivePart]);
+  const ebooks = getRecommendedEbooks(currentModule);
 
   function handleBack() {
-    if (typeof onBack === "function") {
-      onBack();
-      return;
-    }
-
+    if (onBack) return onBack();
     navigate("/v1/dashboard");
   }
 
-  function handleSelectLesson(index) {
-    setActiveEbook(null);
-    setLessonIndex(Math.max(0, Math.min(LESSON_COUNT - 1, index)));
-  }
-
   function handleNextModule() {
-    setActiveEbook(null);
+    setModuleIndex((prev) =>
+      prev + 1 >= modules.length ? prev : prev + 1
+    );
     setLessonIndex(0);
-    setModuleIndex((current) => {
-      const next = current + 1;
-      return next >= orderedModules.length ? current : next;
-    });
-  }
-
-  function handleOpenEbook(ebook) {
-    setActiveEbook(ebook);
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#050510] text-white">
-      <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#090817]/95 px-4 py-3">
+    <div className="flex h-[100dvh] flex-col bg-[#050510] text-white">
+      {/* HEADER */}
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <button
-          type="button"
           onClick={handleBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition active:scale-[0.97]"
-          aria-label="Back to dashboard"
+          className="h-10 w-10 rounded-full border border-white/10 bg-white/[0.05]"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 m-auto" />
         </button>
 
         <div className="text-center">
-          <div className="text-[16px] font-medium uppercase tracking-[0.2em] text-white/72">
+          <div className="text-[13px] tracking-[0.22em] text-white/60">
             Learn
           </div>
-          <div className="text-xs font-black tracking-[-0.03em] text-white">
+          <div className="text-sm font-black text-white">
             Overview
           </div>
         </div>
@@ -365,28 +202,34 @@ export default function LearnPage({
         <div className="h-10 w-10" />
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-hidden px-3 py-3">
-        <NextModuleButton onClick={handleNextModule} />
+      {/* BODY */}
+      <div className="flex flex-1 flex-col gap-3 p-3 overflow-hidden">
+        <MainCard
+          module={currentModule}
+          lesson={currentLesson}
+          onNextModule={handleNextModule}
+        />
 
-        {currentModule ? (
-          <MainCard
-            module={currentModule}
-            lesson={currentLesson}
-            lessonIndex={lessonIndex}
-            activeEbook={activeEbook}
-          />
-        ) : null}
-
-        <LessonCards
-          lessons={lessons}
+        <LessonToggles
           lessonIndex={lessonIndex}
-          onSelectLesson={handleSelectLesson}
+          setLessonIndex={setLessonIndex}
         />
 
-        <RecommendedSection
-          ebooks={recommendedEbooks}
-          onOpen={handleOpenEbook}
-        />
+        {/* RECOMMENDED */}
+        <div>
+          <div className="text-[13px] font-black text-white">
+            Recommended for you
+          </div>
+          <div className="text-[10px] text-white/50">
+            Pulled from your Learn Archive.
+          </div>
+
+          <div className="mt-2 flex gap-2">
+            {ebooks.map((item, i) => (
+              <RecommendedEbookCard key={i} item={item} />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
