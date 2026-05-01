@@ -1,12 +1,13 @@
 import React from "react";
-import { ChevronLeft, Sparkles } from "lucide-react";
+import { ChevronLeft, ShoppingBag } from "lucide-react";
 
 import ShopInventoryCard from "@/v1/dashboard/windows/shop/ShopInventoryCard";
 
-function HeaderButton({ children, label }) {
+function HeaderButton({ children, label, onClick }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       aria-label={label}
       className="
         flex h-9 w-9 items-center justify-center
@@ -15,6 +16,7 @@ function HeaderButton({ children, label }) {
         bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),rgba(255,255,255,0.04))]
         text-cyan-100/78
         shadow-[0_0_14px_rgba(34,211,238,0.08)]
+        transition active:scale-[0.97]
       "
     >
       {children}
@@ -24,6 +26,7 @@ function HeaderButton({ children, label }) {
 
 export default function InventoryViewV1({
   onBack,
+  onOpenInventorySettings,
   items = [],
   inventoryLoading = false,
 }) {
@@ -43,8 +46,11 @@ export default function InventoryViewV1({
           Inventory
         </div>
 
-        <HeaderButton label="Inventory">
-          <Sparkles size={15} strokeWidth={2.3} />
+        <HeaderButton
+          label="Open inventory settings"
+          onClick={onOpenInventorySettings}
+        >
+          <ShoppingBag size={15} strokeWidth={2.3} />
         </HeaderButton>
       </div>
 
