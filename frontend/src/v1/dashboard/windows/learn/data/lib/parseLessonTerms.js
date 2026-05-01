@@ -1,9 +1,10 @@
 import { TERM_DEFINITIONS, getTermDefinition } from "@/data/terms";
 
-// Build term keys once
-const TERM_KEYS = Object.keys(TERM_DEFINITIONS);
+// ---------------------------
+// CONFIG
+// ---------------------------
 
-// Map concepts → terms (semantic matching)
+// Phrase + alias mapping (can expand anytime)
 const TERM_ALIASES = {
   wallet: ["wallet", "key", "access"],
   zwap: ["zwap"],
@@ -31,50 +32,121 @@ const TERM_ALIASES = {
   ai: ["ai"],
   automation: ["automation"],
   prompt: ["prompt"],
+
+  // 🔥 Phrase-level detection
+  "private key": ["private key"],
+  "digital identity": ["digital identity"],
+  "cash flow": ["cash flow"],
 };
 
-// Flatten alias lookup
-function resolveTerm(cleanWord) {
-  for (const termKey of TERM_KEYS) {
-    const aliases = TERM_ALIASES[termKey] || [];
-    if (aliases.includes(cleanWord)) {
-      return termKey;
-    }
-  }
-  return null;
+// ---------------------------
+// BUILD TERM INDEX
+// ---------------------------
+
+const TERM_KEYS = Object.keys(TERM_DEFINITIONS);
+
+// Flatten phrases + aliases into lookup
+function buildAliasMap() {
+  const map = new Map();
+
+  Object.entries(TERM_ALIASES).forEach(([termKey, aliases]) => {
+    aliases.forEach((alias) => {
+      map.set(alias.toLowerCase(), termKey);
+    });
+  });
+
+  return map;
 }
+
+const ALIAS_MAP = buildAliasMap();
+
+// ---------------------------
+// TEXT NORMALIZATION
+// ---------------------------
+
+function normalize(text) {
+  return text.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+}
+
+// ---------------------------
+// MAIN PARSER
+// ---------------------------
 
 export function parseLessonText(text = "") {
   if (!text) return [];
 
-  const words = text.split(/(\s+)/);
+  const normalized = normalize(text);
+  const words = text.split(/(\s+)/); // preserve original spacing
 
-  const usedTerms = new Set(); // prevent over-highlighting
+  const usedTerms = new Set();
+  const results = [];
 
-  return words.map((word, index) => {
-    const clean = word.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let i = 0;
 
-    const matchedTermKey = resolveTerm(clean);
+  while (i < words.length) {
+    let matched = false;
 
-    if (matchedTermKey && !usedTerms.has(matchedTermKey)) {
-      const term = getTermDefinition(matchedTermKey);
+    // Try phrase matching first (2-word phrases)
+    if (i < words.length - 2) {
+      const phrase = normalize(words[i] + words[i + 1]);
 
-      if (term) {
-        usedTerms.add(matchedTermKey);
+      if (ALIAS_MAP.has(phrase)) {
+        const termKey = ALIAS_MAP.get(phrase);
 
-        return {
-          type: "term",
-          value: word,
-          term,
-          key: `${matchedTermKey}-${index}`,
-        };
+        if (!usedTerms.has(termKey)) {
+          const term = getTermDefinition(termKey);
+
+          if (term) {
+            results.push({
+              type: "term",
+              value: words[i] + words[i + 1],
+              term,
+              key: `${termKey}-${i}`,
+            });
+
+            usedTerms.add(termKey);
+            i += 2;
+            matched = true;
+          }
+        }
       }
     }
 
-    return {
+    if (matched) continue;
+
+    // Single word match
+    const clean = normalize(words[i]);
+
+    if (ALIAS_MAP.has(clean)) {
+      const termKey = ALIAS_MAP.get(clean);
+
+      if (!usedTerms.has(termKey)) {
+        const term = getTermDefinition(termKey);
+
+        if (term) {
+          results.push({
+            type: "term",
+            value: words[i],
+            term,
+            key: `${termKey}-${i}`,
+          });
+
+          usedTerms.add(termKey);
+          i++;
+          continue;
+        }
+      }
+    }
+
+    // Default text
+    results.push({
       type: "text",
-      value: word,
-      key: `text-${index}`,
-    };
-  });
+      value: words[i],
+      key: `text-${i}`,
+    });
+
+    i++;
+  }
+
+  return results;
 }
