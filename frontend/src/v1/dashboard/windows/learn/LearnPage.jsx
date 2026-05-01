@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 
 import { learnModules } from "./data/learnModules";
+import { getEbookCarousel } from "@/data/ebooks";
+import LessonText from "@/components/lesson/LessonText";
 
 const LESSON_COUNT = 3;
 
@@ -22,17 +24,6 @@ function getModuleImage(module) {
   return module?.image || module?.coverImage || module?.cover_image || "";
 }
 
-function getRecommendedEbooks(module) {
-  const direct =
-    module?.recommendedEbooks ||
-    module?.recommended_ebooks ||
-    module?.recommendedBooks ||
-    module?.recommended_books ||
-    [];
-
-  return Array.isArray(direct) ? direct.slice(0, 3) : [];
-}
-
 function buildLessons(module) {
   const source = Array.isArray(module?.lessons)
     ? module.lessons.slice(0, 3)
@@ -49,9 +40,7 @@ function buildLessons(module) {
           : index === 1
           ? "Application"
           : "Lock In",
-      content:
-        lesson?.content ||
-        "Lesson content not yet available.",
+      content: lesson?.content || "Lesson content not yet available.",
     };
   });
 }
@@ -101,7 +90,7 @@ function MainCard({ module, lesson, onNextModule }) {
           </div>
 
           <div className="mt-2 text-sm leading-5 text-white">
-            {lesson.content}
+            <LessonText text={lesson.content} />
           </div>
         </div>
       </div>
@@ -143,11 +132,11 @@ function RecommendedEbookCard({ item }) {
       </div>
 
       <div className="mt-2 text-[11px] font-black text-white line-clamp-2">
-        {item?.title || "Ebook"}
+        {item?.title}
       </div>
 
       <button className="mt-1 text-[10px] text-cyan-300 font-black">
-        Open
+        {item?.action || "Read"}
       </button>
     </div>
   );
@@ -165,7 +154,13 @@ export default function LearnPage({ onBack }) {
   const lessons = useMemo(() => buildLessons(currentModule), [currentModule]);
   const currentLesson = lessons[lessonIndex];
 
-  const ebooks = getRecommendedEbooks(currentModule);
+  const ebooks = useMemo(() => {
+    return getEbookCarousel({
+      recommendedEbookIds: currentModule?.recommendedEbookIds || [],
+      currentMonth: 1,
+      currentPart: 1,
+    });
+  }, [currentModule]);
 
   function handleBack() {
     if (onBack) return onBack();
@@ -225,8 +220,8 @@ export default function LearnPage({ onBack }) {
           </div>
 
           <div className="mt-2 flex gap-2">
-            {ebooks.map((item, i) => (
-              <RecommendedEbookCard key={i} item={item} />
+            {ebooks.map((item) => (
+              <RecommendedEbookCard key={item.id} item={item} />
             ))}
           </div>
         </div>
