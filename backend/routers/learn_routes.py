@@ -38,16 +38,53 @@ class LearnModuleSummary(BaseModel):
     quick_check: dict
 
 
+def _safe_email(user: dict) -> str:
+    return str(user.get("email") or "").lower().strip()
+
+
+def _safe_wallet(value: str = "") -> str:
+    return str(value or "").lower().strip()
+
+
+def _get_user_lookup(user: dict) -> dict:
+    email = _safe_email(user)
+
+    if email:
+        return {"email": email}
+
+    wallet = _safe_wallet(user.get("wallet_address"))
+
+    if wallet:
+        return {"wallet_address": wallet}
+
+    return {"id": user["id"]}
+
+
+async def find_user_for_learn_completion(db, identity: str) -> dict:
+    safe_identity = str(identity or "").lower().strip()
+
+    if not safe_identity:
+        return None
+
+    user = await db.users.find_one({"email": safe_identity})
+
+    if user:
+        return user
+
+    return await db.users.find_one({"wallet_address": safe_identity})
+
+
 async def check_and_reset_daily_zpts(db, user: dict) -> dict:
     now = datetime.now(timezone.utc)
     last_reset = user.get("last_zpts_reset")
+    lookup = _get_user_lookup(user)
 
     if last_reset:
         last_reset_dt = datetime.fromisoformat(last_reset.replace("Z", "+00:00"))
 
         if last_reset_dt.date() < now.date():
             await db.users.update_one(
-                {"wallet_address": user["wallet_address"]},
+                lookup,
                 {
                     "$set": {
                         "daily_zpts_earned": 0,
@@ -60,7 +97,7 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
             user["last_zpts_reset"] = now.isoformat()
     else:
         await db.users.update_one(
-            {"wallet_address": user["wallet_address"]},
+            lookup,
             {
                 "$set": {
                     "daily_zpts_earned": 0,
@@ -104,18 +141,22 @@ async def check_answer(answer: TriviaAnswer):
     )
 
 
-@learn_router.post("/complete/{wallet_address}/{module_id}")
-async def complete_module(wallet_address: str, module_id: str, request: Request):
+@learn_router.post("/complete/{identity}/{module_id}")
+async def complete_module(identity: str, module_id: str, request: Request):
     db = request.app.state.db
-    wallet = wallet_address.lower().strip()
+    safe_identity = str(identity or "").lower().strip()
 
-    if not wallet:
-        raise HTTPException(status_code=400, detail="Wallet address is required")
+    if not safe_identity:
+        raise HTTPException(status_code=400, detail="User identity is required")
 
-    user = await db.users.find_one({"wallet_address": wallet})
+    user = await find_user_for_learn_completion(db, safe_identity)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    email = _safe_email(user)
+    wallet = _safe_wallet(user.get("wallet_address"))
+    lookup = _get_user_lookup(user)
 
     module = get_module(module_id)
 
@@ -139,7 +180,8 @@ async def complete_module(wallet_address: str, module_id: str, request: Request)
 
     tier_config = await get_tier_multipliers(tier)
     cap_check = await enforce_daily_caps(
-        wallet_address=wallet,
+        email=email or None,
+        wallet_address=wallet or None,
         tier=tier,
         earned_today=daily_zpts,
         cap_type="zpts",
@@ -154,7 +196,7 @@ async def complete_module(wallet_address: str, module_id: str, request: Request)
     reward = min(25, int(cap_check["remaining"]))
 
     await db.users.update_one(
-        {"wallet_address": wallet},
+        lookup,
         {
             "$inc": {
                 "zpts_balance": reward,
@@ -172,9 +214,10 @@ async def complete_module(wallet_address: str, module_id: str, request: Request)
         },
     )
 
-    await maybe_mark_learn_task_complete(db, wallet)
+    if email:
+        await maybe_mark_learn_task_complete(db, email)
 
-    updated_user = await db.users.find_one({"wallet_address": wallet})
+    updated_user = await db.users.find_one(lookup)
 
     if not updated_user:
         raise HTTPException(status_code=500, detail="User missing after Learn update")
@@ -183,13 +226,17 @@ async def complete_module(wallet_address: str, module_id: str, request: Request)
     await persist_badge_updates(db, updated_user["id"], badge_result["updates"])
     updated_user.update(badge_result["updates"])
 
-    full_loop_result = await maybe_process_full_daily_loop(db, wallet)
+    full_loop_result = await maybe_process_full_daily_loop(
+        db,
+        email=email or None,
+        wallet_address=wallet or None,
+    )
 
     if (
         full_loop_result.get("awarded")
-        or full_loop_result.get("reason") == "daily_cap_reached_loop_counted"
+        or full_loop_result.get("reason") == "cap_reached_loop_counted"
     ):
-        refreshed_user = await db.users.find_one({"wallet_address": wallet})
+        refreshed_user = await db.users.find_one(lookup)
 
         if refreshed_user:
             updated_user = refreshed_user
