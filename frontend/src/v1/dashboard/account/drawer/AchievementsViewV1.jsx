@@ -21,7 +21,7 @@ function ProgressBar({ value = 0, max = 1, tone = "cyan" }) {
 
   const fill =
     tone === "amber"
-      ? "bg-gradient-to-r from-amber-300 via-orange-300 to-cyan-300 shadow-[0_0_14px_rgba(251,191,36,0.18)]"
+      ? "bg-gradient-to-r from-amber-300 via-yellow-300 to-orange-300 shadow-[0_0_14px_rgba(251,191,36,0.2)]"
       : "bg-gradient-to-r from-cyan-400 via-teal-400 to-violet-400 shadow-[0_0_14px_rgba(34,211,238,0.22)]";
 
   return (
@@ -39,7 +39,14 @@ function HeaderButton({ children, label }) {
     <button
       type="button"
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/75 shadow-[0_0_10px_rgba(255,255,255,0.06)]"
+      className="
+        flex h-9 w-9 items-center justify-center
+        rounded-full
+        border border-amber-300/18
+        bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.12),rgba(255,255,255,0.04))]
+        text-amber-100/78
+        shadow-[0_0_14px_rgba(251,191,36,0.08)]
+      "
     >
       {children}
     </button>
@@ -48,24 +55,25 @@ function HeaderButton({ children, label }) {
 
 function TrophyCard({ trophyCount = 0, trophyBonusPercent = 0 }) {
   return (
-    <div className="relative overflow-hidden rounded-[22px] border border-amber-300/16 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.13),transparent_48%),linear-gradient(180deg,rgba(24,18,8,0.94),rgba(8,9,12,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.24)]">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),transparent_38%)]" />
+    <div className="relative overflow-hidden rounded-[28px] border border-amber-300/22 bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.2),transparent_46%),radial-gradient(circle_at_88%_20%,rgba(245,158,11,0.12),transparent_38%),linear-gradient(180deg,rgba(38,28,10,0.96),rgba(10,9,6,0.98))] px-4 py-5 shadow-[0_16px_42px_rgba(0,0,0,0.38),0_0_18px_rgba(251,191,36,0.08)]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.065),transparent_34%,rgba(251,191,36,0.06))]" />
 
       <div className="relative flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-amber-300/24 bg-amber-300/[0.08] text-amber-100 shadow-[0_0_20px_rgba(251,191,36,0.14)]">
-          <Trophy size={19} strokeWidth={2.3} />
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-300/28 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.24),rgba(24,18,8,0.96))] text-amber-100 shadow-[0_0_24px_rgba(251,191,36,0.16)]">
+          <Trophy size={20} strokeWidth={2.3} />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-black tracking-[-0.04em] text-white">
+          <div className="text-[16px] font-semibold tracking-[-0.03em] text-white/94">
             Trophy Progress
           </div>
-          <div className="mt-0.5 text-[11px] font-medium text-white/48">
+
+          <div className="mt-1 text-[12px] font-medium text-amber-100/58">
             Permanent bonus +{Number(trophyBonusPercent || 0)}%
           </div>
         </div>
 
-        <div className="text-[25px] font-black tracking-[-0.06em] text-amber-100">
+        <div className="text-[28px] font-semibold tracking-[-0.05em] text-amber-100">
           {Number(trophyCount || 0)}
         </div>
       </div>
@@ -79,27 +87,28 @@ function NextBadgeCard({ badge }) {
   const percent = clampPercent((progress / goal) * 100);
 
   return (
-    <div className="relative overflow-hidden rounded-[22px] border border-cyan-300/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_42%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.26)]">
+    <div className="relative overflow-hidden rounded-[24px] border border-cyan-300/18 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.14),transparent_42%),radial-gradient(circle_at_90%_20%,rgba(168,85,247,0.1),transparent_36%),linear-gradient(180deg,rgba(10,24,34,0.96),rgba(5,9,18,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.26)]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),transparent_40%)]" />
 
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border border-cyan-300/20 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border border-cyan-300/22 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
               <Award size={19} strokeWidth={2.3} />
             </div>
 
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/60">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-100/62">
                 Next Badge
               </div>
-              <div className="mt-0.5 text-[17px] font-black tracking-[-0.05em] text-white">
+
+              <div className="mt-0.5 text-[17px] font-semibold tracking-[-0.03em] text-white/94">
                 {badge?.label || "Starter"}
               </div>
             </div>
           </div>
 
-          <div className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/48">
+          <div className="rounded-full border border-cyan-200/12 bg-cyan-300/[0.04] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-100/56">
             {badge?.category || "Consistency"}
           </div>
         </div>
@@ -107,17 +116,18 @@ function NextBadgeCard({ badge }) {
         <ProgressBar value={progress} max={goal} />
 
         <div className="mt-2 flex items-center justify-between gap-3">
-          <div className="text-[11px] font-semibold text-white/48">
+          <div className="text-[11px] font-semibold text-white/52">
             {progress} / {goal}
           </div>
 
-          <div className="text-[11px] font-black tracking-[-0.03em] text-cyan-100">
+          <div className="text-[11px] font-semibold tracking-[-0.02em] text-cyan-100">
             {Math.round(percent)}%
           </div>
         </div>
 
-        <div className="mt-2 rounded-[14px] border border-white/8 bg-black/20 px-3 py-2 text-[11px] font-medium leading-4 text-white/52">
-          {badge?.hint || "Keep completing real activity to unlock badge progress."}
+        <div className="mt-2 rounded-[14px] border border-white/8 bg-black/20 px-3 py-2 text-[11px] font-medium leading-4 text-white/56">
+          {badge?.hint ||
+            "Keep completing real activity to unlock badge progress."}
         </div>
       </div>
     </div>
@@ -126,19 +136,19 @@ function NextBadgeCard({ badge }) {
 
 function LockedIdentityCard() {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] px-4 py-4 shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
+    <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-4 shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/50">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] text-white/46">
           <Lock size={18} strokeWidth={2.2} />
         </div>
 
         <div className="min-w-0">
-          <div className="text-sm font-black tracking-[-0.03em] text-white">
+          <div className="text-sm font-semibold tracking-[-0.02em] text-white/82">
             Identity Tracking Locked
           </div>
+
           <div className="mt-1 text-xs leading-5 text-white/48">
-            Badges become visible after enough real activity. Your progress can
-            still build quietly in the background.
+            Badge visibility unlocks after real activity.
           </div>
         </div>
       </div>
@@ -154,7 +164,7 @@ function AchievementCard({ achievement }) {
   const description = achievement?.description || "";
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))] p-3 shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
+    <div className="rounded-[22px] border border-cyan-300/12 bg-[linear-gradient(180deg,rgba(12,24,34,0.94),rgba(6,10,18,0.98))] p-3 shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border border-cyan-300/18 bg-cyan-400/10 text-cyan-100">
           <Award size={18} strokeWidth={2.2} />
@@ -163,7 +173,7 @@ function AchievementCard({ achievement }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-sm font-black tracking-[-0.03em] text-white">
+              <div className="truncate text-sm font-semibold tracking-[-0.02em] text-white/92">
                 {name}
               </div>
 
@@ -175,7 +185,7 @@ function AchievementCard({ achievement }) {
             </div>
 
             {level ? (
-              <div className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/55">
+              <div className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">
                 {level}
               </div>
             ) : null}
@@ -183,7 +193,7 @@ function AchievementCard({ achievement }) {
 
           <ProgressBar value={progress} max={target} />
 
-          <div className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">
+          <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/38">
             {progress} / {target}
           </div>
         </div>
@@ -204,17 +214,17 @@ export default function AchievementsViewV1({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
-      <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-white/8 px-4">
+      <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 text-sm font-black tracking-[-0.03em] text-white/78"
+          className="flex items-center gap-2 text-sm font-semibold tracking-[-0.02em] text-white/78"
         >
           <ChevronLeft size={16} strokeWidth={2.4} />
           Back
         </button>
 
-        <div className="text-[15px] font-black tracking-[-0.04em] text-white/92">
+        <div className="text-[15px] font-semibold tracking-[-0.02em] text-white/92">
           Achievements
         </div>
 
@@ -225,8 +235,8 @@ export default function AchievementsViewV1({
 
       <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-3">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-0 h-28 w-52 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-violet-400/10 blur-2xl" />
+          <div className="absolute left-1/2 top-0 h-28 w-52 -translate-x-1/2 rounded-full bg-amber-400/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
         </div>
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto pr-1">
