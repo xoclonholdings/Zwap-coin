@@ -38,3 +38,12 @@ export const moduleCategories = {
 };
 
 export const learnModuleList = allModules;
+
+export default {
+  beginner,
+  intermediate,
+  advanced,
+  expert,
+  moduleCategories,
+  learnModuleList,
+};
