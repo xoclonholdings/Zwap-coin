@@ -93,7 +93,7 @@ function getItemName(item = {}) {
 }
 
 function getItemDescription(item = {}) {
-  return item.description || item.subtitle || "Tap to view item.";
+  return item.description || item.subtitle || "Tap item name to browse.";
 }
 
 function getItemPrice(item = {}) {
@@ -146,6 +146,7 @@ export default function DashboardWindowShop({
 }) {
   const [localIsAltView, setLocalIsAltView] = useState(isAltView);
   const [groupIndex, setGroupIndex] = useState(0);
+  const [activeItemIndex, setActiveItemIndex] = useState(0);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const safeCategories =
@@ -194,13 +195,23 @@ export default function DashboardWindowShop({
   );
 
   const activeCategoryLabel = getCategoryLabel(activeCategory);
+  const activeItem = visibleItems[activeItemIndex] || visibleItems[0] || null;
 
-  const handleToggleAltView = (event) => {
+  const handleChevronClick = (event) => {
     event.stopPropagation();
 
     if (!isUnlocked || selectedItem) return;
 
-    setLocalIsAltView((current) => !current);
+    if (localIsAltView) {
+      setGroupIndex((current) =>
+        groupedCategories.length
+          ? (current + 1) % groupedCategories.length
+          : 0
+      );
+      return;
+    }
+
+    setLocalIsAltView(true);
   };
 
   const handleCategorySelect = (category) => {
@@ -208,6 +219,7 @@ export default function DashboardWindowShop({
     if (!nextCategoryId) return;
 
     setLocalCategoryId(nextCategoryId);
+    setActiveItemIndex(0);
     setLocalIsAltView(false);
 
     if (typeof onCategoryChange === "function") {
@@ -215,9 +227,18 @@ export default function DashboardWindowShop({
     }
   };
 
-  const handleItemSelect = (item) => {
-    if (!isUnlocked) return;
-    setSelectedItem(item);
+  const handleNextItem = () => {
+    if (!visibleItems.length) return;
+
+    setActiveItemIndex((current) => (current + 1) % visibleItems.length);
+  };
+
+  const handleOpenPurchase = (event) => {
+    event.stopPropagation();
+
+    if (!isUnlocked || !activeItem) return;
+
+    setSelectedItem(activeItem);
   };
 
   const handleConfirmPurchase = () => {
@@ -257,16 +278,13 @@ export default function DashboardWindowShop({
         {isUnlocked ? (
           <button
             type="button"
-            onClick={handleToggleAltView}
+            onClick={handleChevronClick}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/70 transition active:scale-[0.96]"
             aria-label={
-              localIsAltView ? "Show Shop items" : "Show Shop categories"
+              localIsAltView ? "Show next Shop group" : "Show Shop categories"
             }
           >
-            <ChevronRight
-              className="h-[18px] w-[18px]"
-              strokeWidth={2.4}
-            />
+            <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.4} />
           </button>
         ) : null}
       </div>
@@ -302,7 +320,7 @@ export default function DashboardWindowShop({
           </div>
         </div>
       ) : localIsAltView ? (
-        <div className="relative z-10 mt-4 flex min-h-0 flex-1 flex-col">
+        <div className="relative z-10 mt-5 flex min-h-0 flex-1 flex-col">
           <div className="flex items-center justify-between gap-2">
             <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200/60">
               {activeGroup.group}
@@ -347,52 +365,64 @@ export default function DashboardWindowShop({
 
           <div className="mt-3 flex shrink-0 items-center justify-center gap-1.5">
             {groupedCategories.map((group, index) => (
-              <button
+              <span
                 key={group.group}
-                type="button"
-                onClick={() => setGroupIndex(index)}
                 className={[
                   "h-1.5 rounded-full transition-all",
                   index === groupIndex ? "w-5 bg-cyan-200" : "w-1.5 bg-white/24",
                 ].join(" ")}
-                aria-label={`Show ${group.group} categories`}
               />
             ))}
           </div>
         </div>
       ) : (
-        <div className="relative z-10 mt-5 flex flex-1 flex-col">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">
+        <div className="relative z-10 mt-5 flex min-h-0 flex-1 flex-col">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200/60">
             {activeCategoryLabel}
           </p>
 
-          {visibleItems.length > 0 ? (
-            <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {visibleItems.map((item) => (
-                <button
-                  key={item.id || getItemName(item)}
-                  type="button"
-                  onClick={() => handleItemSelect(item)}
-                  className="min-w-[78%] snap-start rounded-[1.15rem] border border-white/10 bg-white/[0.05] p-3 text-left"
-                >
-                  <div className="flex min-h-[92px] flex-col justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-white">
-                        {getItemName(item)}
-                      </p>
+          {activeItem ? (
+            <>
+              <button
+                type="button"
+                onClick={handleNextItem}
+                className="mt-3 flex min-h-0 flex-1 flex-col justify-center rounded-[1.15rem] border border-white/10 bg-white/[0.05] p-3 text-left"
+              >
+                <p className="truncate text-base font-black tracking-[-0.04em] text-white">
+                  {getItemName(activeItem)}
+                </p>
 
-                      <p className="mt-1 line-clamp-2 text-xs text-white/50">
-                        {getItemDescription(item)}
-                      </p>
-                    </div>
+                <p className="mt-2 line-clamp-2 text-xs leading-snug text-white/50">
+                  {getItemDescription(activeItem)}
+                </p>
 
-                    <p className="mt-4 text-sm font-black text-cyan-200">
-                      {getFormattedItemPrice(item)}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+                <p className="mt-3 text-sm font-black text-cyan-200">
+                  {getFormattedItemPrice(activeItem)}
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenPurchase}
+                className="mt-3 w-full rounded-[20px] border border-white/50 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-300 px-5 py-2.5 text-center text-sm font-black text-white shadow-[0_0_24px_rgba(34,211,238,0.20)] transition active:scale-[0.98]"
+              >
+                Purchase
+              </button>
+
+              <div className="pointer-events-none mt-2 flex shrink-0 justify-center gap-1.5 pb-0.5">
+                {visibleItems.map((item, index) => (
+                  <span
+                    key={item.id || getItemName(item)}
+                    className={[
+                      "h-1.5 rounded-full transition-all duration-300",
+                      index === activeItemIndex
+                        ? "w-4 bg-cyan-200/65 shadow-[0_0_8px_rgba(103,242,255,0.22)]"
+                        : "w-1.5 bg-white/22",
+                    ].join(" ")}
+                  />
+                ))}
+              </div>
+            </>
           ) : (
             <div className="mt-3 flex flex-1 items-center justify-center rounded-[1.15rem] border border-white/10 bg-white/[0.04] px-3 text-center">
               <p className="text-xs font-medium text-white/45">
@@ -435,7 +465,7 @@ export default function DashboardWindowShop({
                 onClick={handleConfirmPurchase}
                 className="rounded-xl border border-cyan-300/25 bg-cyan-300/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100"
               >
-                Purchase
+                Confirm
               </button>
             </div>
           </div>
