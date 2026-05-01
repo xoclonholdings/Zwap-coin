@@ -2,10 +2,11 @@ import React from "react";
 import {
   ChevronLeft,
   Copy,
+  Crown,
   Lock,
   Pencil,
   Shield,
-  Sparkles,
+  Star,
   Trophy,
   User,
   Wallet,
@@ -65,8 +66,8 @@ function TierPill({ tier = "zwapper" }) {
 function StatCard({ icon, label, value, tone = "default" }) {
   const toneClass =
     tone === "gold"
-      ? "border-amber-300/24 bg-[radial-gradient(circle_at_20%_18%,rgba(251,191,36,0.16),transparent_42%),linear-gradient(180deg,rgba(56,42,16,0.82),rgba(18,15,10,0.96))] shadow-[0_10px_24px_rgba(0,0,0,0.2),0_0_16px_rgba(251,191,36,0.1)]"
-      : "border-cyan-200/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] shadow-[0_10px_24px_rgba(0,0,0,0.18)]";
+      ? "border-amber-300/24 bg-[radial-gradient(circle_at_20%_18%,rgba(251,191,36,0.15),transparent_42%),linear-gradient(180deg,rgba(50,38,16,0.78),rgba(18,15,10,0.96))] shadow-[0_10px_24px_rgba(0,0,0,0.2),0_0_14px_rgba(251,191,36,0.09)]"
+      : "border-cyan-200/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.02))] shadow-[0_10px_24px_rgba(0,0,0,0.18)]";
 
   const iconClass = tone === "gold" ? "text-amber-100/58" : "text-white/40";
 
@@ -84,7 +85,7 @@ function StatCard({ icon, label, value, tone = "default" }) {
         </div>
       </div>
 
-      <div className="mt-2 break-words text-[15px] font-black tracking-[-0.04em] text-white">
+      <div className="mt-2 break-words text-[15px] font-semibold tracking-[-0.03em] text-white/92">
         {value}
       </div>
     </div>
@@ -113,6 +114,7 @@ export default function ProfileViewV1({
   const memberSinceLabel = formatMemberSince(memberSince);
   const tierLabel = tier === "zitizen" ? "Zitizen" : "Zwapper";
   const avatarUrl = user?.avatarUrl || user?.avatar_url || user?.photoURL || "";
+  const isPlus = String(tier || "").toLowerCase() === "zitizen";
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
@@ -120,20 +122,20 @@ export default function ProfileViewV1({
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 text-sm font-black tracking-[-0.03em] text-white/78"
+          className="flex items-center gap-2 text-sm font-semibold tracking-[-0.02em] text-white/78"
         >
           <ChevronLeft size={16} strokeWidth={2.4} />
           Back
         </button>
 
-        <div className="text-[15px] font-black tracking-[-0.04em] text-white/92">
+        <div className="text-[15px] font-semibold tracking-[-0.02em] text-white/92">
           Profile
         </div>
 
         <button
           type="button"
           onClick={onEditProfile}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.14)]"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.14)] transition active:scale-[0.97]"
           aria-label="Edit profile"
         >
           <Pencil size={16} strokeWidth={2.2} />
@@ -142,16 +144,16 @@ export default function ProfileViewV1({
 
       <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-3">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-0 h-28 w-52 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-violet-400/10 blur-2xl" />
+          <div className="absolute left-1/2 top-0 h-28 w-52 -translate-x-1/2 rounded-full bg-violet-400/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
         </div>
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5">
-          <div className="relative overflow-hidden rounded-[28px] border border-cyan-300/15 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.18),transparent_44%),radial-gradient(circle_at_85%_20%,rgba(168,85,247,0.12),transparent_36%),linear-gradient(180deg,rgba(12,20,32,0.96),rgba(5,9,18,0.98))] px-4 py-5 shadow-[0_16px_42px_rgba(0,0,0,0.38)]">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.075),transparent_34%,rgba(34,211,238,0.055))]" />
+          <div className="relative overflow-hidden rounded-[28px] border border-violet-300/18 bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,0.22),transparent_44%),radial-gradient(circle_at_85%_20%,rgba(34,211,238,0.08),transparent_36%),linear-gradient(180deg,rgba(20,12,36,0.96),rgba(6,6,16,0.98))] px-4 py-5 shadow-[0_16px_42px_rgba(0,0,0,0.38)]">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.065),transparent_34%,rgba(168,85,247,0.06))]" />
 
             <div className="relative flex flex-col items-center text-center">
-              <div className="flex h-[74px] w-[74px] items-center justify-center overflow-hidden rounded-full border border-cyan-300/30 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.28),rgba(8,14,24,0.96))] text-[24px] font-black tracking-[-0.06em] text-white shadow-[0_0_30px_rgba(34,211,238,0.22)]">
+              <div className="flex h-[74px] w-[74px] items-center justify-center overflow-hidden rounded-full border border-violet-300/30 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.32),rgba(10,10,22,0.96))] text-[24px] font-semibold tracking-[-0.04em] text-white shadow-[0_0_30px_rgba(168,85,247,0.2)]">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -163,8 +165,24 @@ export default function ProfileViewV1({
                 )}
               </div>
 
-              <div className="mt-3 max-w-full break-words text-[22px] font-black tracking-[-0.06em] text-white">
-                {resolvedUsername}
+              <div className="mt-3 flex max-w-full items-center justify-center gap-2">
+                <div className="break-words text-[22px] font-semibold tracking-[-0.04em] text-white">
+                  {resolvedUsername}
+                </div>
+
+                {isPlus ? (
+                  <Crown
+                    size={15}
+                    strokeWidth={2.2}
+                    className="shrink-0 text-violet-300/80"
+                  />
+                ) : (
+                  <Star
+                    size={14}
+                    strokeWidth={2}
+                    className="shrink-0 text-cyan-200/70"
+                  />
+                )}
               </div>
 
               <div className="mt-3">
@@ -210,7 +228,7 @@ export default function ProfileViewV1({
 
             {walletAddress ? (
               <div className="flex min-h-[48px] items-center justify-between gap-3 rounded-[16px] border border-white/10 bg-black/20 px-3">
-                <div className="truncate text-sm font-bold tracking-[-0.03em] text-white/72">
+                <div className="truncate text-sm font-semibold tracking-[-0.03em] text-white/72">
                   {shortenAddress(walletAddress)}
                 </div>
 
@@ -227,30 +245,16 @@ export default function ProfileViewV1({
               <div className="rounded-[16px] border border-white/10 bg-black/20 px-3 py-3">
                 <div className="flex items-center gap-2 text-white/66">
                   <Lock size={14} strokeWidth={2.3} />
-                  <div className="text-sm font-bold tracking-[-0.03em]">
+                  <div className="text-sm font-semibold tracking-[-0.03em]">
                     Wallet locked
                   </div>
                 </div>
 
                 <div className="mt-1 text-[12px] font-medium leading-snug text-white/42">
-                  V1 uses email sign-in only. Wallet access unlocks later when
-                  ZWAP conversion and Swap are active.
+                  Unlocks later with ZWAP conversion and Swap.
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="rounded-[20px] border border-cyan-200/10 bg-cyan-300/[0.035] px-3.5 py-3">
-            <div className="flex items-center gap-2 text-cyan-100/60">
-              <Sparkles size={14} strokeWidth={2.2} />
-              <div className="text-[10px] font-black uppercase tracking-[0.16em]">
-                Edit profile
-              </div>
-            </div>
-
-            <div className="mt-1 text-[12px] font-medium leading-snug text-white/42">
-              Edit opens username, email, and avatar image updates.
-            </div>
           </div>
         </div>
       </div>
