@@ -21,6 +21,32 @@ function toSafeNumber(value) {
   return Math.max(safe, 0);
 }
 
+function resolveCompletedTasks(activityData = {}) {
+  const directCompleted = toSafeNumber(
+    activityData.completedTasks ??
+      activityData.completed_tasks ??
+      activityData.daily_tasks_completed ??
+      activityData.dailyTasksCompleted ??
+      activityData.completedTaskCount
+  );
+
+  const hasDailyLoginSignal =
+    toSafeNumber(
+      activityData.dailyStreak ??
+        activityData.daily_streak ??
+        activityData.streakDays ??
+        activityData.streak_days
+    ) > 0 ||
+    (Array.isArray(activityData.consistency) &&
+      activityData.consistency.some(Boolean));
+
+  if (hasDailyLoginSignal) {
+    return Math.max(1, directCompleted);
+  }
+
+  return directCompleted;
+}
+
 function ProgressBar({ value = 0, max = 1 }) {
   const safeMax = Math.max(1, Number(max || 1));
   const safeValue = Math.max(0, Number(value || 0));
@@ -195,13 +221,7 @@ export default function ActivityPageV1({ onBack, email }) {
         content: (
           <>
             <DailyLoopCard
-              completedTasks={
-                activityData.completedTasks ??
-                activityData.completed_tasks ??
-                activityData.daily_tasks_completed ??
-                activityData.dailyTasksCompleted ??
-                activityData.completedTaskCount
-              }
+              completedTasks={resolveCompletedTasks(activityData)}
               totalTasks={
                 activityData.totalTasks ??
                 activityData.total_tasks ??
