@@ -31,6 +31,14 @@ export default function ActivityProgressCardV1({
     return clamp((totalSteps / stepGoal) * 100);
   }, [totalSteps, stepGoal]);
 
+  const handleRangeClick = (event) => {
+    event.stopPropagation();
+
+    if (typeof onRangeChange === "function") {
+      onRangeChange();
+    }
+  };
+
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
       <div className="mb-4 flex items-start justify-between">
@@ -51,7 +59,7 @@ export default function ActivityProgressCardV1({
 
         <button
           type="button"
-          onClick={onRangeChange}
+          onClick={handleRangeClick}
           className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/70"
         >
           {rangeLabel}
@@ -77,7 +85,10 @@ export default function ActivityProgressCardV1({
             const height = clamp((Number(item.steps || 0) / maxSteps) * 100);
 
             return (
-              <div key={`${item.day || item.label || "step"}-${index}`} className="flex flex-1 flex-col items-center">
+              <div
+                key={`${item.day || item.label || "step"}-${index}`}
+                className="flex flex-1 flex-col items-center"
+              >
                 <div className="h-28 w-full rounded-xl bg-white/[0.04]">
                   <div
                     className="w-full rounded-xl bg-gradient-to-t from-cyan-400 via-blue-500 to-purple-500"
