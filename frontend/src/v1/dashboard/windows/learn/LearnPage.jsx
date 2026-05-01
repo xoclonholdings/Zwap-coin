@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
@@ -572,12 +572,14 @@ export default function LearnPage({
   refreshActivitySnapshot,
   setActivitySignal,
   onBalanceUpdate,
+  mode = "default",
+  initialEbook = null,
 }) {
   const navigate = useNavigate();
 
   const [moduleIndex, setModuleIndex] = useState(0);
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [activeEbook, setActiveEbook] = useState(null);
+  const [activeEbook, setActiveEbook] = useState(initialEbook);
   const [completingModule, setCompletingModule] = useState(false);
 
   const modules = useMemo(() => normalizeModules(learnModules), []);
@@ -589,6 +591,13 @@ export default function LearnPage({
   const ebooks = useMemo(() => {
     return buildReleasedEbookCarousel({ module: currentModule });
   }, [currentModule]);
+
+  useEffect(() => {
+    if (mode === "archive" && initialEbook) {
+      setActiveEbook(initialEbook);
+      setLessonIndex(0);
+    }
+  }, [mode, initialEbook]);
 
   function handleBack() {
     if (onBack) return onBack();
