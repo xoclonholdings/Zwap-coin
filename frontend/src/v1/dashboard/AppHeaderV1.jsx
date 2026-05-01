@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Sprout, BookOpen, Play, Lock } from "lucide-react";
+import { Sprout, BookOpen, Play, Repeat2, Lock } from "lucide-react";
 
 import AccountDrawerV1 from "./account/AccountDrawerV1";
 import AdminPanelV1 from "./admin/AdminPanelV1";
@@ -251,7 +251,7 @@ export default function AppHeaderV1({
               hasAlert={swapHasAlert}
               onClick={handleSwapTap}
               hideLockedBadge={true}
-              icon={<span className="text-[15px] leading-none">🔄</span>}
+              icon={<Repeat2 size={15} strokeWidth={2.25} />}
             />
           </div>
 
