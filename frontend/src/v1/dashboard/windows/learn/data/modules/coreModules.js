@@ -4,9 +4,24 @@ export const coreModules = [
     title: "Benefits of Movement",
     level: "beginner",
     lessons: [
-      { id: "mb-1", title: "Why Movement Matters" },
-      { id: "mb-2", title: "Body → Mind Connection" },
-      { id: "mb-3", title: "Consistency Over Intensity" },
+      {
+        id: "mb-1",
+        title: "Why Movement Matters",
+        content:
+          "Your body is designed to move. Movement increases energy, improves focus, and supports your mental state. When you stay inactive, your energy drops and your thinking becomes slower. Movement is not optional. It is a baseline requirement for performance.",
+      },
+      {
+        id: "mb-2",
+        title: "Body → Mind Connection",
+        content:
+          "Your physical state affects your mental state. When your body is active, your mind becomes clearer. When your body is still for too long, your thinking becomes foggy. Movement improves mood, attention, and decision-making.",
+      },
+      {
+        id: "mb-3",
+        title: "Consistency Over Intensity",
+        content:
+          "You do not need extreme workouts. What matters is consistency. Small amounts of movement done daily will outperform intense effort done occasionally. Build the habit first. Intensity comes later.",
+      },
     ],
     recommendedEbookIds: [
       "atomic-habits",
@@ -20,14 +35,26 @@ export const coreModules = [
     title: "Breaking a Sweat",
     level: "beginner",
     lessons: [
-      { id: "bs-1", title: "Effort vs Comfort" },
-      { id: "bs-2", title: "Building Discipline" },
-      { id: "bs-3", title: "Daily Execution" },
+      {
+        id: "bs-1",
+        title: "Effort vs Comfort",
+        content:
+          "Growth does not happen inside comfort. When you push slightly beyond what feels easy, your body and mind begin to adapt. Avoiding effort keeps you the same. Accepting effort moves you forward.",
+      },
+      {
+        id: "bs-2",
+        title: "Building Discipline",
+        content:
+          "Discipline is built through repetition, not motivation. You do the action even when you do not feel like it. Each time you follow through, you strengthen control over your behavior.",
+      },
+      {
+        id: "bs-3",
+        title: "Daily Execution",
+        content:
+          "Progress comes from daily execution. Not perfect days. Not ideal conditions. Just showing up and doing the work consistently. Execution builds results over time.",
+      },
     ],
-    recommendedEbookIds: [
-      "atomic-habits",
-      "hidden-potential",
-    ],
+    recommendedEbookIds: ["atomic-habits", "hidden-potential"],
   },
 
   {
@@ -35,14 +62,26 @@ export const coreModules = [
     title: "Focus & Discipline",
     level: "intermediate",
     lessons: [
-      { id: "fd-1", title: "Attention Control" },
-      { id: "fd-2", title: "Delayed Gratification" },
-      { id: "fd-3", title: "Staying Locked In" },
+      {
+        id: "fd-1",
+        title: "Attention Control",
+        content:
+          "Your attention is one of your most valuable resources. Where you place it determines your results. Distractions weaken your ability to focus. Controlling your attention strengthens your output.",
+      },
+      {
+        id: "fd-2",
+        title: "Delayed Gratification",
+        content:
+          "Immediate rewards often prevent long-term progress. Delayed gratification means choosing actions that benefit you later instead of what feels good now. This builds discipline and better outcomes.",
+      },
+      {
+        id: "fd-3",
+        title: "Staying Locked In",
+        content:
+          "Consistency requires staying locked in even when progress feels slow. Focus is not about intensity for one moment. It is about sustained attention over time.",
+      },
     ],
-    recommendedEbookIds: [
-      "as-a-man-thinketh",
-      "hidden-potential",
-    ],
+    recommendedEbookIds: ["as-a-man-thinketh", "hidden-potential"],
   },
 
   {
@@ -50,14 +89,26 @@ export const coreModules = [
     title: "Mental Patterns",
     level: "intermediate",
     lessons: [
-      { id: "mp-1", title: "Thought Loops" },
-      { id: "mp-2", title: "Belief Formation" },
-      { id: "mp-3", title: "Breaking Negative Cycles" },
+      {
+        id: "mp-1",
+        title: "Thought Loops",
+        content:
+          "Your mind repeats patterns. If you think the same thoughts daily, you reinforce the same outcomes. Awareness of these loops is the first step to changing them.",
+      },
+      {
+        id: "mp-2",
+        title: "Belief Formation",
+        content:
+          "Beliefs are formed through repetition and experience. What you repeatedly tell yourself becomes your internal truth. Changing beliefs requires new input and repetition.",
+      },
+      {
+        id: "mp-3",
+        title: "Breaking Negative Cycles",
+        content:
+          "Negative patterns continue until you interrupt them. This requires awareness and intentional action. You replace old patterns by consistently applying new ones.",
+      },
     ],
-    recommendedEbookIds: [
-      "as-a-man-thinketh",
-      "the-science-of-mind",
-    ],
+    recommendedEbookIds: ["as-a-man-thinketh", "the-science-of-mind"],
   },
 
   {
@@ -65,14 +116,26 @@ export const coreModules = [
     title: "Self Awareness",
     level: "intermediate",
     lessons: [
-      { id: "sa-1", title: "Observing Yourself" },
-      { id: "sa-2", title: "Identity vs Behavior" },
-      { id: "sa-3", title: "Awareness in Action" },
+      {
+        id: "sa-1",
+        title: "Observing Yourself",
+        content:
+          "Self-awareness starts with observation. You notice your thoughts, actions, and reactions without immediately reacting to them.",
+      },
+      {
+        id: "sa-2",
+        title: "Identity vs Behavior",
+        content:
+          "Your identity is how you see yourself. Your behavior is what you do. When these do not match, progress becomes difficult. Aligning identity with action creates consistency.",
+      },
+      {
+        id: "sa-3",
+        title: "Awareness in Action",
+        content:
+          "Awareness is not passive. You use it to make better decisions in real time. The more aware you are, the more control you have over your outcomes.",
+      },
     ],
-    recommendedEbookIds: [
-      "the-science-of-mind",
-      "the-4-agreements",
-    ],
+    recommendedEbookIds: ["the-science-of-mind", "the-4-agreements"],
   },
 
   {
@@ -80,13 +143,26 @@ export const coreModules = [
     title: "AI Fears & Reality",
     level: "intermediate",
     lessons: [
-      { id: "ai-1", title: "Understanding AI" },
-      { id: "ai-2", title: "Fear vs Reality" },
-      { id: "ai-3", title: "Using AI Correctly" },
+      {
+        id: "ai-1",
+        title: "Understanding AI",
+        content:
+          "AI is a tool that helps automate tasks and generate outputs. It does not think independently. It follows patterns based on the input it receives.",
+      },
+      {
+        id: "ai-2",
+        title: "Fear vs Reality",
+        content:
+          "Fear comes from misunderstanding. AI does not replace people. It replaces repetitive execution. The user remains in control.",
+      },
+      {
+        id: "ai-3",
+        title: "Using AI Correctly",
+        content:
+          "AI works best when you give it clear direction. The better your input, the better your output. Learning to use it gives you an advantage.",
+      },
     ],
-    recommendedEbookIds: [
-      "the-science-of-mind",
-    ],
+    recommendedEbookIds: ["the-science-of-mind"],
   },
 
   {
@@ -94,83 +170,14 @@ export const coreModules = [
     title: "Personal Conduct",
     level: "advanced",
     lessons: [
-      { id: "pc-1", title: "Your Agreements" },
-      { id: "pc-2", title: "Integrity" },
-      { id: "pc-3", title: "Consistency of Character" },
-    ],
-    recommendedEbookIds: [
-      "the-4-agreements",
-    ],
-  },
-
-  {
-    id: "presence-focus",
-    title: "Presence & Focus",
-    level: "advanced",
-    lessons: [
-      { id: "pf-1", title: "Being Present" },
-      { id: "pf-2", title: "Letting Go of Noise" },
-      { id: "pf-3", title: "Focused Awareness" },
-    ],
-    recommendedEbookIds: [
-      "the-power-of-now",
-    ],
-  },
-
-  {
-    id: "belief-outcome",
-    title: "Belief → Outcome",
-    level: "advanced",
-    lessons: [
-      { id: "bo-1", title: "Thought Creates Reality" },
-      { id: "bo-2", title: "Expectation & Results" },
-      { id: "bo-3", title: "Applying Belief Systems" },
-    ],
-    recommendedEbookIds: [
-      "the-game-of-life",
-      "think-and-grow-rich",
-    ],
-  },
-
-  {
-    id: "value-wealth-thinking",
-    title: "Value & Wealth Thinking",
-    level: "advanced",
-    lessons: [
-      { id: "vw-1", title: "What is Value?" },
-      { id: "vw-2", title: "Earning vs Creating" },
-      { id: "vw-3", title: "Thinking Long-Term" },
-    ],
-    recommendedEbookIds: [
-      "think-and-grow-rich",
-    ],
-  },
-
-  {
-    id: "financial-awareness",
-    title: "Financial Awareness",
-    level: "expert",
-    lessons: [
-      { id: "fa-1", title: "Assets vs Liabilities" },
-      { id: "fa-2", title: "Cash Flow Thinking" },
-      { id: "fa-3", title: "Money Behavior" },
-    ],
-    recommendedEbookIds: [
-      "rich-dad-poor-dad",
-    ],
-  },
-
-  {
-    id: "ownership-control",
-    title: "Ownership & Control",
-    level: "expert",
-    lessons: [
-      { id: "oc-1", title: "Owning vs Renting" },
-      { id: "oc-2", title: "Control of Value" },
-      { id: "oc-3", title: "Long-Term Ownership" },
-    ],
-    recommendedEbookIds: [
-      "rich-dad-poor-dad",
-    ],
-  },
-];
+      {
+        id: "pc-1",
+        title: "Your Agreements",
+        content:
+          "Your agreements define how you operate. The standards you set for yourself determine your consistency and behavior.",
+      },
+      {
+        id: "pc-2",
+        title: "Integrity",
+        content:
+          "Integrity
