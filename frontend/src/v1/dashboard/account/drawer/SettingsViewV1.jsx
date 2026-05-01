@@ -1,19 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  ChevronLeft,
   Bell,
+  ChevronLeft,
   EyeOff,
-  Smartphone,
+  Info,
   Moon,
+  Shield,
   SlidersHorizontal,
+  Smartphone,
 } from "lucide-react";
 
-function HeaderButton({ children, label }) {
+function HeaderButton({ children, label, onClick }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/75 shadow-[0_0_10px_rgba(255,255,255,0.06)]"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.14)] transition active:scale-[0.97]"
     >
       {children}
     </button>
@@ -29,15 +32,13 @@ function SettingRow({
   locked = false,
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_44%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_40%)]" />
-
+    <div className="relative overflow-hidden rounded-[22px] border border-cyan-300/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_44%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
       <div className="relative flex items-center gap-3">
         <div
           className={[
             "flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border",
             enabled
-              ? "border-cyan-300/22 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]"
+              ? "border-cyan-300/24 bg-cyan-400/12 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]"
               : "border-white/10 bg-white/[0.04] text-white/48",
           ].join(" ")}
         >
@@ -45,7 +46,7 @@ function SettingRow({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-black tracking-[-0.035em] text-white">
+          <div className="text-sm font-semibold tracking-[-0.02em] text-white/92">
             {title}
           </div>
 
@@ -79,6 +80,28 @@ function SettingRow({
   );
 }
 
+function SystemCard({ icon, title, description }) {
+  return (
+    <div className="rounded-[22px] border border-blue-300/18 bg-[radial-gradient(circle_at_20%_18%,rgba(96,165,250,0.12),transparent_42%),linear-gradient(180deg,rgba(18,34,58,0.82),rgba(8,14,26,0.96))] p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border border-blue-300/20 bg-blue-400/10 text-blue-100/70">
+          {icon}
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold tracking-[-0.02em] text-white/92">
+            {title}
+          </div>
+
+          <div className="mt-1 text-[11px] font-medium leading-4 text-white/50">
+            {description}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsViewV1({
   onBack,
   notificationsEnabled = true,
@@ -90,23 +113,28 @@ export default function SettingsViewV1({
   onToggleMobileLayout,
   onToggleReducedMotion,
 }) {
+  const [showControls, setShowControls] = useState(false);
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
-      <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-white/8 px-4">
+      <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
         <button
           type="button"
-          onClick={onBack}
-          className="flex items-center gap-2 text-sm font-black tracking-[-0.03em] text-white/78"
+          onClick={showControls ? () => setShowControls(false) : onBack}
+          className="flex items-center gap-2 text-sm font-semibold tracking-[-0.02em] text-white/78"
         >
           <ChevronLeft size={16} strokeWidth={2.4} />
           Back
         </button>
 
-        <div className="text-[15px] font-black tracking-[-0.04em] text-white/92">
-          Settings
+        <div className="text-[15px] font-semibold tracking-[-0.02em] text-white/92">
+          {showControls ? "Controls" : "Settings"}
         </div>
 
-        <HeaderButton label="Settings control">
+        <HeaderButton
+          label={showControls ? "Return to settings" : "Open controls"}
+          onClick={() => setShowControls((current) => !current)}
+        >
           <SlidersHorizontal size={15} strokeWidth={2.3} />
         </HeaderButton>
       </div>
@@ -118,38 +146,62 @@ export default function SettingsViewV1({
         </div>
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5">
-          <SettingRow
-            icon={<Bell size={18} strokeWidth={2.2} />}
-            title="Notifications"
-            description="Streak reminders, unlock notices, and account activity alerts."
-            enabled={notificationsEnabled}
-            onToggle={onToggleNotifications}
-          />
+          {showControls ? (
+            <>
+              <SystemCard
+                icon={<Shield size={18} strokeWidth={2.2} />}
+                title="Account Controls"
+                description="Manage privacy, alerts, layout lock, and motion preferences from the main settings panel."
+              />
 
-          <SettingRow
-            icon={<EyeOff size={18} strokeWidth={2.2} />}
-            title="Privacy Mode"
-            description="Hide sensitive balances and reduce visible account details."
-            enabled={privacyModeEnabled}
-            onToggle={onTogglePrivacyMode}
-          />
+              <SystemCard
+                icon={<Smartphone size={18} strokeWidth={2.2} />}
+                title="V1 Layout"
+                description="Mobile Layout Lock keeps ZWAP! in the mobile-first interface during V1."
+              />
 
-          <SettingRow
-            icon={<Smartphone size={18} strokeWidth={2.2} />}
-            title="Mobile Layout Lock"
-            description="Keep ZWAP! locked to the mobile-first interface."
-            enabled={mobileLayoutLocked}
-            locked
-            onToggle={onToggleMobileLayout}
-          />
+              <SystemCard
+                icon={<Info size={18} strokeWidth={2.2} />}
+                title="System Status"
+                description="Wallet, Swap, Learn, and Stream access follow the V1 unlock structure."
+              />
+            </>
+          ) : (
+            <>
+              <SettingRow
+                icon={<Bell size={18} strokeWidth={2.2} />}
+                title="Notifications"
+                description="Streak reminders, unlock notices, and account activity alerts."
+                enabled={notificationsEnabled}
+                onToggle={onToggleNotifications}
+              />
 
-          <SettingRow
-            icon={<Moon size={18} strokeWidth={2.2} />}
-            title="Reduced Motion"
-            description="Reduce animation intensity across drawer views and transitions."
-            enabled={reducedMotionEnabled}
-            onToggle={onToggleReducedMotion}
-          />
+              <SettingRow
+                icon={<EyeOff size={18} strokeWidth={2.2} />}
+                title="Privacy Mode"
+                description="Hide sensitive balances and reduce visible account details."
+                enabled={privacyModeEnabled}
+                onToggle={onTogglePrivacyMode}
+              />
+
+              <SettingRow
+                icon={<Smartphone size={18} strokeWidth={2.2} />}
+                title="Mobile Layout Lock"
+                description="Keep ZWAP! locked to the mobile-first interface."
+                enabled={mobileLayoutLocked}
+                locked
+                onToggle={onToggleMobileLayout}
+              />
+
+              <SettingRow
+                icon={<Moon size={18} strokeWidth={2.2} />}
+                title="Reduced Motion"
+                description="Reduce animation intensity across drawer views and transitions."
+                enabled={reducedMotionEnabled}
+                onToggle={onToggleReducedMotion}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
