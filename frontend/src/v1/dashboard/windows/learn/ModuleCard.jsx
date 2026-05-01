@@ -9,6 +9,8 @@ import {
   Sparkles,
   WifiOff,
 } from "lucide-react";
+
+import { useApp } from "@/app/AppProvider";
 import api from "@/lib/api";
 import useNetworkStatus from "@/hooks/useNetworkStatus";
 import { queuePendingReward } from "@/hooks/pendingRewards";
@@ -47,12 +49,24 @@ const categoryColors = {
   },
 };
 
+function getUserId(user, authUser) {
+  return (
+    user?.id ||
+    user?._id ||
+    user?.userId ||
+    user?.user_id ||
+    user?.email ||
+    authUser?.email ||
+    ""
+  );
+}
+
 export default function ModuleCard({
   module,
   index,
   defaultOpen = false,
-  walletAddress,
 }) {
+  const { user, authUser } = useApp();
   const { isOnline } = useNetworkStatus();
 
   const [expanded, setExpanded] = useState(defaultOpen);
@@ -62,6 +76,7 @@ export default function ModuleCard({
   const [completedReward, setCompletedReward] = useState(null);
   const [pendingSync, setPendingSync] = useState(false);
 
+  const userId = getUserId(user, authUser);
   const colors = categoryColors[module.category] || categoryColors.foundations;
   const display = details || module;
 
@@ -103,12 +118,11 @@ export default function ModuleCard({
     setCompleting(true);
 
     try {
-      // Offline or not wallet-connected: save locally and sync later
-      if (!walletAddress || !isOnline) {
+      if (!userId || !isOnline) {
         queuePendingReward({
           type: "learn_module_completion",
           source: "learn",
-          walletAddress: walletAddress || null,
+          userId: userId || null,
           payload: {
             moduleId: module.id,
             title: module.title,
@@ -120,17 +134,15 @@ export default function ModuleCard({
         return;
       }
 
-      // Online and wallet-connected: complete immediately
-      const result = await api.completeLearnModule(walletAddress, module.id);
+      const result = await api.completeLearnModule(userId, module.id);
       setCompletedReward(result?.reward ?? 0);
     } catch (err) {
       console.error("Error completing learn module:", err);
 
-      // Fallback: save locally if live completion fails
       queuePendingReward({
         type: "learn_module_completion",
         source: "learn",
-        walletAddress: walletAddress || null,
+        userId: userId || null,
         payload: {
           moduleId: module.id,
           title: module.title,
@@ -184,7 +196,7 @@ export default function ModuleCard({
       <AnimatePresence>
         {expanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 1 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22 }}
@@ -245,7 +257,7 @@ export default function ModuleCard({
                     >
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
                         <Sparkles className="w-3 h-3" />
-                        Why it matters in ZWAP
+                        Why it matters in ZWAP!
                       </p>
                       <p className={`${colors.panelText} text-sm`}>
                         {display.content.zwap_context}
@@ -308,9 +320,9 @@ export default function ModuleCard({
                       </p>
                     )}
 
-                    {!walletAddress && !pendingSync && completedReward === null && (
+                    {!userId && !pendingSync && completedReward === null && (
                       <p className="mt-2 text-center text-xs text-gray-500">
-                        Complete now, rewards will tally once connected.
+                        Sign in to save Learn progress.
                       </p>
                     )}
                   </div>
