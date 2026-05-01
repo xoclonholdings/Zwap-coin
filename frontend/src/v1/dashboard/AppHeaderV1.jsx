@@ -184,7 +184,7 @@ export default function AppHeaderV1({
     if (!swapUnlocked) {
       showLockedPopup(
         "Swap Locked",
-        "Swap unlocks when Phase C conversion is ready."
+        "Complete more progress to unlock Swap."
       );
       return;
     }
