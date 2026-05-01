@@ -1,21 +1,18 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { BookOpen, PlayCircle, X } from "lucide-react";
 
-function HeaderIconButton({ onClick, children, label }) {
+function HeaderIconButton({ onClick, children, label, active = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="
-        flex h-9 w-9 items-center justify-center
-        rounded-full
-        border border-cyan-200/15
-        bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),rgba(255,255,255,0.04))]
-        text-cyan-100/78
-        shadow-[0_0_14px_rgba(34,211,238,0.08)]
-        transition active:scale-[0.97]
-      "
+      className={[
+        "flex h-9 w-9 items-center justify-center rounded-full border bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),rgba(255,255,255,0.04))] text-cyan-100/78 shadow-[0_0_14px_rgba(34,211,238,0.08)] transition active:scale-[0.97]",
+        active
+          ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-100"
+          : "border-cyan-200/15",
+      ].join(" ")}
     >
       {children}
     </button>
@@ -31,9 +28,39 @@ export default function AccountDrawerHeaderV1({
   onLearnOpen,
   onStreamOpen,
 }) {
+  const [learnArchiveOpen, setLearnArchiveOpen] = useState(false);
+  const learnMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!learnArchiveOpen) return undefined;
+
+    function handlePointerDown(event) {
+      if (
+        learnMenuRef.current &&
+        !learnMenuRef.current.contains(event.target)
+      ) {
+        setLearnArchiveOpen(false);
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [learnArchiveOpen]);
+
+  const handleToggleLearnArchive = () => {
+    setLearnArchiveOpen((current) => !current);
+  };
+
+  const handleOpenLearnArchive = () => {
+    setLearnArchiveOpen(false);
+    onLearnOpen?.();
+  };
+
   return (
-    <div className="flex h-[58px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
-      
+    <div className="relative flex h-[58px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
       {/* LEFT: ICON + TITLE */}
       <button
         type="button"
@@ -70,9 +97,35 @@ export default function AccountDrawerHeaderV1({
       {/* RIGHT: ACTIONS */}
       <div className="flex items-center gap-2">
         {learnUnlocked ? (
-          <HeaderIconButton onClick={onLearnOpen} label="Open Learn">
-            <BookOpen size={16} strokeWidth={2.2} />
-          </HeaderIconButton>
+          <div ref={learnMenuRef} className="relative">
+            <HeaderIconButton
+              onClick={handleToggleLearnArchive}
+              label="Open Learn Archive"
+              active={learnArchiveOpen}
+            >
+              <BookOpen size={16} strokeWidth={2.2} />
+            </HeaderIconButton>
+
+            {learnArchiveOpen ? (
+              <div className="absolute right-0 top-11 z-[40] w-[180px] overflow-hidden rounded-2xl border border-cyan-200/15 bg-[#06111d]/95 p-2 shadow-[0_0_28px_rgba(34,211,238,0.12)] backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={handleOpenLearnArchive}
+                  className="w-full rounded-xl border border-cyan-200/10 bg-cyan-400/8 px-3 py-2 text-left transition active:scale-[0.98]"
+                >
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200/70">
+                    Learn
+                  </div>
+                  <div className="mt-0.5 text-xs font-black text-white">
+                    Archive
+                  </div>
+                  <div className="mt-1 text-[10px] leading-3 text-white/45">
+                    Open released lessons and eBooks.
+                  </div>
+                </button>
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         {streamUnlocked ? (
