@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import {
   BookOpen,
   ChevronRight,
+  CircleDot,
   Flower2,
   Gamepad2,
   Gem,
@@ -9,7 +10,6 @@ import {
   Package,
   Palette,
   PersonStanding,
-  Ring,
   ShoppingBag,
   Sparkles,
   Zap,
@@ -27,7 +27,7 @@ const DEFAULT_SHOP_CATEGORIES = [
 
   { id: "learn-ebooks", label: "eBooks", group: "Learn", icon: BookOpen },
 
-  { id: "profile-rings", label: "Rings", group: "Profile", icon: Ring },
+  { id: "profile-rings", label: "Rings", group: "Profile", icon: CircleDot },
   { id: "profile-themes", label: "Themes", group: "Profile", icon: Palette },
 
   { id: "garden-items", label: "Garden", group: "Garden", icon: Flower2 },
@@ -55,7 +55,7 @@ function getCategoryIcon(category = {}) {
   if (key.includes("game")) return Gamepad2;
   if (key.includes("boost")) return Zap;
   if (key.includes("book") || key.includes("ebook")) return BookOpen;
-  if (key.includes("ring")) return Ring;
+  if (key.includes("ring")) return CircleDot;
   if (key.includes("theme")) return Palette;
   if (key.includes("garden")) return Flower2;
   if (key.includes("cosmetic") || key.includes("identity")) return Gem;
@@ -102,14 +102,8 @@ function getItemDescription(item = {}) {
 }
 
 function getItemPrice(item = {}) {
-  if (item.payment_method === "stripe") {
-    return item.price_stripe ?? 0;
-  }
-
-  if (item.payment_method === "zwap") {
-    return item.price_zwap ?? 0;
-  }
-
+  if (item.payment_method === "stripe") return item.price_stripe ?? 0;
+  if (item.payment_method === "zwap") return item.price_zwap ?? 0;
   return item.price_zpts ?? 0;
 }
 
@@ -123,9 +117,7 @@ function getFormattedItemPrice(item = {}) {
   const price = getItemPrice(item);
   const currency = getItemCurrencyLabel(item);
 
-  if (currency === "USD") {
-    return `$${formatMoney(price)}`;
-  }
+  if (currency === "USD") return `$${formatMoney(price)}`;
 
   return `${formatNumber(price)} ${currency}`;
 }
