@@ -14,7 +14,7 @@ import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 import ActivityPageV1 from "./activity/ActivityPageV1";
-import LearnPage from "./learn/LearnPage";
+import LearnPage from "./windows/learn/LearnPage";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
