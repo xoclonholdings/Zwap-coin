@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Sparkles, Target } from "lucide-react";
@@ -60,7 +60,7 @@ function getModuleProgress(module) {
   };
 }
 
-function CurrentModuleCard({ module }) {
+function CurrentModuleCard({ module, onContinue }) {
   const progress = getModuleProgress(module);
 
   return (
@@ -80,7 +80,7 @@ function CurrentModuleCard({ module }) {
       <div className="mt-3 rounded-[18px] border border-purple-400/20 bg-black/25 p-3">
         <div className="flex gap-3">
           <div className="flex h-[110px] w-[80px] shrink-0 items-center justify-center rounded-[14px] border border-purple-300/20">
-            <div className="h-6 w-6 border border-purple-300/40 rounded-sm" />
+            <div className="h-6 w-6 rounded-sm border border-purple-300/40" />
           </div>
 
           <div className="flex-1">
@@ -92,14 +92,14 @@ function CurrentModuleCard({ module }) {
               {module?.title || "Learn Module"}
             </h3>
 
-            <p className="mt-1 text-xs text-white/60 line-clamp-2">
+            <p className="mt-1 line-clamp-2 text-xs text-white/60">
               {module?.short_description || module?.core}
             </p>
           </div>
         </div>
 
         <div className="mt-3 flex items-center gap-2">
-          <div className="h-1.5 flex-1 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full bg-gradient-to-r from-purple-500 to-cyan-300"
               style={{ width: `${progress.percent}%` }}
@@ -111,16 +111,21 @@ function CurrentModuleCard({ module }) {
           </div>
         </div>
 
-        <button className="mt-3 w-full rounded-[16px] bg-gradient-to-r from-purple-500 to-cyan-400 py-2 text-xs font-black text-white">
-          Continue Lesson <ChevronRight size={14} className="inline ml-1" />
+        <button
+          type="button"
+          onClick={onContinue}
+          className="mt-3 w-full rounded-[16px] bg-gradient-to-r from-purple-500 to-cyan-400 py-2 text-xs font-black text-white transition active:scale-[0.98]"
+        >
+          Continue Lesson <ChevronRight size={14} className="ml-1 inline" />
         </button>
       </div>
     </motion.section>
   );
 }
 
-export default function LearnPage() {
+export default function LearnPage({ onBack }) {
   const navigate = useNavigate();
+  const [lessonOpen, setLessonOpen] = useState(false);
 
   const modules = useMemo(() => normalizeModules(learnModules), []);
 
@@ -133,15 +138,24 @@ export default function LearnPage() {
   }, [modules]);
 
   const currentModule = orderedModules[0];
-  const remainingModules = orderedModules.slice(1, 4); // hard cap → no scroll
+  const remainingModules = orderedModules.slice(1, 4);
+
+  function handleBack() {
+    if (typeof onBack === "function") {
+      onBack();
+      return;
+    }
+
+    navigate("/v1/dashboard");
+  }
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-[#050510] text-white flex flex-col">
-      {/* HEADER */}
-      <div className="shrink-0 border-b border-white/10 bg-[#090817]/95 px-4 py-3 flex items-center justify-between">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#050510] text-white">
+      <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#090817]/95 px-4 py-3">
         <button
-          onClick={() => navigate("/v1/dashboard")}
-          className="h-10 w-10 flex items-center justify-center rounded-full border border-white/10 bg-white/[0.04]"
+          type="button"
+          onClick={handleBack}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -151,34 +165,41 @@ export default function LearnPage() {
           <div className="text-sm font-bold text-white">Overview</div>
         </div>
 
-        {/* EMPTY spacer to keep layout centered */}
         <div className="h-10 w-10" />
       </div>
 
-      {/* BODY (NO SCROLL) */}
-      <div className="flex-1 overflow-hidden px-3 py-3 flex flex-col gap-3">
-        {currentModule && <CurrentModuleCard module={currentModule} />}
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden px-3 py-3">
+        {currentModule && (
+          <CurrentModuleCard
+            module={currentModule}
+            onContinue={() => setLessonOpen(true)}
+          />
+        )}
 
         <div className="flex-1 overflow-hidden">
           <SectionHeader
             icon={Sparkles}
-            title="Modules"
-            subtitle="Continue progression"
+            title={lessonOpen ? "Current Lesson" : "Modules"}
+            subtitle={lessonOpen ? "Continue your active module" : "Continue progression"}
             colorClass="text-cyan-300"
           />
 
           <div className="space-y-2">
-            {remainingModules.map((module, i) => (
+            {lessonOpen && currentModule ? (
               <ModuleCard
-                key={module.id || i}
-                module={module}
-                index={i}
+                key={`current-${currentModule.id}`}
+                module={currentModule}
+                index={0}
+                defaultOpen={true}
               />
-            ))}
+            ) : (
+              remainingModules.map((module, i) => (
+                <ModuleCard key={module.id || i} module={module} index={i} />
+              ))
+            )}
           </div>
         </div>
 
-        {/* TODAY GOAL */}
         <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -191,13 +212,17 @@ export default function LearnPage() {
               </div>
             </div>
 
-            <button className="text-xs font-bold text-purple-300">
+            <button
+              type="button"
+              onClick={() => setLessonOpen(true)}
+              className="text-xs font-bold text-purple-300"
+            >
               Start
             </button>
           </div>
 
-          <div className="mt-2 h-1.5 bg-white/10 rounded-full">
-            <div className="h-full w-0 bg-gradient-to-r from-purple-500 to-cyan-300 rounded-full" />
+          <div className="mt-2 h-1.5 rounded-full bg-white/10">
+            <div className="h-full w-0 rounded-full bg-gradient-to-r from-purple-500 to-cyan-300" />
           </div>
         </div>
       </div>
