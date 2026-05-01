@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CalendarCheck, Flame } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 
 import ActivityHeaderV1 from "./ActivityHeaderV1";
 import ActivityProgressCardV1 from "./ActivityProgressCardV1";
@@ -62,14 +62,9 @@ function ProgressBar({ value = 0, max = 1 }) {
   );
 }
 
-function DailyLoopCard({
-  completedTasks = 0,
-  totalTasks = 4,
-  dailyStreak = 0,
-}) {
+function DailyLoopCard({ completedTasks = 0, totalTasks = 4 }) {
   const safeTotal = Math.max(1, toSafeNumber(totalTasks));
   const safeCompleted = Math.min(toSafeNumber(completedTasks), safeTotal);
-  const safeStreak = toSafeNumber(dailyStreak);
   const percent = clampPercent((safeCompleted / safeTotal) * 100);
 
   return (
@@ -93,22 +88,15 @@ function DailyLoopCard({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1 rounded-full border border-amber-300/16 bg-amber-300/[0.08] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-amber-100">
-            <Flame size={12} strokeWidth={2.4} />
-            {safeStreak}d
+          <div className="text-[10px] font-black tracking-[-0.03em] text-cyan-100">
+            {Math.round(percent)}%
           </div>
         </div>
 
         <ProgressBar value={safeCompleted} max={safeTotal} />
 
-        <div className="mt-1.5 flex items-center justify-between gap-3">
-          <div className="text-[10px] font-semibold text-white/48">
-            Tasks today
-          </div>
-
-          <div className="text-[10px] font-black tracking-[-0.03em] text-cyan-100">
-            {Math.round(percent)}%
-          </div>
+        <div className="mt-1.5 text-[10px] font-semibold text-white/48">
+          Tasks today
         </div>
       </div>
     </div>
@@ -228,12 +216,6 @@ export default function ActivityPageV1({ onBack, email }) {
                 activityData.daily_tasks_total ??
                 activityData.dailyTasksTotal ??
                 activityData.totalTaskCount
-              }
-              dailyStreak={
-                activityData.dailyStreak ??
-                activityData.daily_streak ??
-                activityData.streakDays ??
-                activityData.streak_days
               }
             />
 
