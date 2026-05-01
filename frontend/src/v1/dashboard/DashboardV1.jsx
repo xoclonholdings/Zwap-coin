@@ -64,7 +64,10 @@ function GameLoadingScreen() {
 }
 
 export default function DashboardV1({ user, authUser }) {
-  const [activeView, setActiveView] = useState("dashboard");
+  const [activeView, setActiveView] = useState({
+    type: "dashboard",
+    payload: null,
+  });
   const [localZptsBalance, setLocalZptsBalance] = useState(null);
 
   const resolvedEmail = useMemo(
@@ -232,19 +235,31 @@ export default function DashboardV1({ user, authUser }) {
   });
 
   function handleOpenActivity() {
-    setActiveView("activity");
+    setActiveView({
+      type: "activity",
+      payload: null,
+    });
   }
 
   function handleBackFromActivity() {
-    setActiveView("dashboard");
+    setActiveView({
+      type: "dashboard",
+      payload: null,
+    });
   }
 
-  function handleOpenLearn() {
-    setActiveView("learn");
+  function handleOpenLearn(payload = null) {
+    setActiveView({
+      type: "learn",
+      payload,
+    });
   }
 
   function handleBackFromLearn() {
-    setActiveView("dashboard");
+    setActiveView({
+      type: "dashboard",
+      payload: null,
+    });
   }
 
   function handleToggleZwapAltView() {
@@ -270,7 +285,7 @@ export default function DashboardV1({ user, authUser }) {
     );
   }
 
-  if (activeView === "activity") {
+  if (activeView.type === "activity") {
     return (
       <ActivityPageV1
         onBack={handleBackFromActivity}
@@ -279,7 +294,7 @@ export default function DashboardV1({ user, authUser }) {
     );
   }
 
-  if (activeView === "learn") {
+  if (activeView.type === "learn") {
     return (
       <LearnPage
         onBack={handleBackFromLearn}
@@ -288,6 +303,8 @@ export default function DashboardV1({ user, authUser }) {
         refreshActivitySnapshot={refreshActivitySnapshot}
         setActivitySignal={setActivitySignal}
         onBalanceUpdate={setLocalZptsBalance}
+        mode={activeView.payload?.mode || "default"}
+        initialEbook={activeView.payload?.ebook || null}
       />
     );
   }
