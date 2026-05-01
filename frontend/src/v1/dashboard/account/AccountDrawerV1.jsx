@@ -14,7 +14,6 @@ export default function AccountDrawerV1({
   tier = "zwapper",
   zptsBalance = 0,
   zwapBalance = 0,
-  walletAddress = "",
 
   inventoryItems = [],
   achievements = [],
@@ -100,7 +99,6 @@ export default function AccountDrawerV1({
                     tier={tier}
                     zptsBalance={zptsBalance}
                     zwapBalance={zwapBalance}
-                    walletAddress={walletAddress}
                     inventoryItems={inventoryItems}
                     achievements={achievements}
                     trophyCount={trophyCount}
