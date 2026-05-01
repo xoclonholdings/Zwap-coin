@@ -148,6 +148,16 @@ export default function AccountPanelContentV1({
     }
   };
 
+  const handleLearnOpen = (payload) => {
+    onClose?.();
+    onLearnOpen?.(payload);
+  };
+
+  const handleStreamOpen = () => {
+    onClose?.();
+    onStreamOpen?.();
+  };
+
   const handleLogout = async () => {
     try {
       clearReviewAccess();
@@ -290,8 +300,8 @@ export default function AccountPanelContentV1({
         onAdminTap={handleAdminTap}
         learnUnlocked={learnUnlocked}
         streamUnlocked={streamUnlocked}
-        onLearnOpen={onLearnOpen}
-        onStreamOpen={onStreamOpen}
+        onLearnOpen={handleLearnOpen}
+        onStreamOpen={handleStreamOpen}
       />
 
       <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-3">
