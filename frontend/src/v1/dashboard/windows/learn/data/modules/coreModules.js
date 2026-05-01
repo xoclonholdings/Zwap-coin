@@ -180,4 +180,15 @@ export const coreModules = [
         id: "pc-2",
         title: "Integrity",
         content:
-          "Integrity
+          "Integrity means doing what you say you will do. It builds trust with yourself and others. Without integrity, consistency breaks down.",
+      },
+      {
+        id: "pc-3",
+        title: "Consistency of Character",
+        content:
+          "Character is built through repeated behavior. When your actions match your standards consistently, you create stability and trust over time.",
+      },
+    ],
+    recommendedEbookIds: ["the-4-agreements"],
+  },
+];
