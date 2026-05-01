@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Sprout, BookOpen, Play, Award, Lock } from "lucide-react";
+import { Sprout, BookOpen, Play, Lock } from "lucide-react";
 
 import AccountDrawerV1 from "./account/AccountDrawerV1";
 import AdminPanelV1 from "./admin/AdminPanelV1";
@@ -27,6 +27,7 @@ function HeaderIconButton({
   hasAlert = false,
   onClick,
   tone = "cyan",
+  hideLockedBadge = false,
 }) {
   const unlockedStyles =
     tone === "garden"
@@ -53,7 +54,7 @@ function HeaderIconButton({
     >
       {icon}
 
-      {!unlocked && (
+      {!unlocked && !hideLockedBadge && (
         <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/10 bg-[#05070b] text-white/45">
           <Lock size={8} />
         </span>
@@ -101,18 +102,18 @@ export default function AppHeaderV1({
   gardenUnlocked = false,
   learnUnlocked = false,
   streamUnlocked = false,
-  badgesUnlocked = false,
+  swapUnlocked = false,
 
   gardenHasAlert = false,
   learnHasAlert = false,
   streamHasAlert = false,
-  badgesHasAlert = false,
+  swapHasAlert = false,
 
   onActivityClick,
   onGardenClick,
   onLearnClick,
   onStreamClick,
-  onBadgeClick,
+  onSwapClick,
 
   user,
   authUser,
@@ -179,14 +180,17 @@ export default function AppHeaderV1({
     onStreamClick?.();
   }
 
-  function handleBadgeTap() {
-    if (!badgesUnlocked) {
-      showLockedPopup("Badges Locked", "Complete more progress to unlock Badges.");
+  function handleSwapTap() {
+    if (!swapUnlocked) {
+      showLockedPopup(
+        "Swap Locked",
+        "Swap unlocks when Phase C conversion is ready."
+      );
       return;
     }
 
     setPopup(null);
-    onBadgeClick?.();
+    onSwapClick?.();
   }
 
   return (
@@ -206,11 +210,13 @@ export default function AppHeaderV1({
               label="Activity"
               onClick={onActivityClick}
               icon={
-                <img
-                  src={activityLogo}
-                  alt="Activity"
-                  className="h-4 w-4 object-contain"
-                />
+                <div className="flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/20 p-[3px]">
+                  <img
+                    src={activityLogo}
+                    alt="Activity"
+                    className="h-5 w-5 object-contain"
+                  />
+                </div>
               }
             />
 
@@ -240,11 +246,12 @@ export default function AppHeaderV1({
             />
 
             <HeaderIconButton
-              label="Badges"
-              unlocked={badgesUnlocked}
-              hasAlert={badgesHasAlert}
-              onClick={handleBadgeTap}
-              icon={<Award size={15} />}
+              label="Swap"
+              unlocked={swapUnlocked}
+              hasAlert={swapHasAlert}
+              onClick={handleSwapTap}
+              hideLockedBadge={true}
+              icon={<span className="text-[15px] leading-none">🔄</span>}
             />
           </div>
 
