@@ -31,8 +31,11 @@ export default function AccountDrawerHeaderV1({
   onStreamOpen,
 }) {
   const [learnArchiveOpen, setLearnArchiveOpen] = useState(false);
+  const [streamLibraryOpen, setStreamLibraryOpen] = useState(false);
   const [archiveVersion, setArchiveVersion] = useState(0);
+
   const learnMenuRef = useRef(null);
+  const streamMenuRef = useRef(null);
 
   const archivedEbooks = useMemo(() => {
     archiveVersion;
@@ -43,9 +46,11 @@ export default function AccountDrawerHeaderV1({
   }, [archiveVersion]);
 
   useEffect(() => {
-    if (!learnArchiveOpen) return undefined;
+    if (!learnArchiveOpen && !streamLibraryOpen) return undefined;
 
-    setArchiveVersion((current) => current + 1);
+    if (learnArchiveOpen) {
+      setArchiveVersion((current) => current + 1);
+    }
 
     function handlePointerDown(event) {
       if (
@@ -54,6 +59,13 @@ export default function AccountDrawerHeaderV1({
       ) {
         setLearnArchiveOpen(false);
       }
+
+      if (
+        streamMenuRef.current &&
+        !streamMenuRef.current.contains(event.target)
+      ) {
+        setStreamLibraryOpen(false);
+      }
     }
 
     window.addEventListener("pointerdown", handlePointerDown);
@@ -61,10 +73,16 @@ export default function AccountDrawerHeaderV1({
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [learnArchiveOpen]);
+  }, [learnArchiveOpen, streamLibraryOpen]);
 
   const handleToggleLearnArchive = () => {
+    setStreamLibraryOpen(false);
     setLearnArchiveOpen((current) => !current);
+  };
+
+  const handleToggleStreamLibrary = () => {
+    setLearnArchiveOpen(false);
+    setStreamLibraryOpen((current) => !current);
   };
 
   const handleOpenArchivedEbook = (ebook) => {
@@ -73,6 +91,13 @@ export default function AccountDrawerHeaderV1({
     onLearnOpen?.({
       mode: "archive",
       ebook,
+    });
+  };
+
+  const handleOpenStreamLibrary = () => {
+    setStreamLibraryOpen(false);
+    onStreamOpen?.({
+      mode: "library",
     });
   };
 
@@ -170,9 +195,54 @@ export default function AccountDrawerHeaderV1({
         ) : null}
 
         {streamUnlocked ? (
-          <HeaderIconButton onClick={onStreamOpen} label="Open Stream">
-            <PlayCircle size={16} strokeWidth={2.2} />
-          </HeaderIconButton>
+          <div ref={streamMenuRef} className="relative">
+            <HeaderIconButton
+              onClick={handleToggleStreamLibrary}
+              label="Open Stream Library"
+              active={streamLibraryOpen}
+            >
+              <PlayCircle size={16} strokeWidth={2.2} />
+            </HeaderIconButton>
+
+            {streamLibraryOpen ? (
+              <div className="absolute right-0 top-11 z-[60] w-[238px] overflow-hidden rounded-2xl border border-purple-200/15 bg-[#0b081d]/95 p-2 shadow-[0_0_28px_rgba(168,85,247,0.14)] backdrop-blur-xl">
+                <div className="px-2 pb-2 pt-1">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-purple-200/75">
+                    Stream Library
+                  </div>
+                  <div className="mt-0.5 text-[10px] leading-3 text-white/45">
+                    Saved Stream sessions appear here.
+                  </div>
+                </div>
+
+                <div className="max-h-[260px] overflow-y-auto pr-1">
+                  <button
+                    type="button"
+                    onClick={handleOpenStreamLibrary}
+                    className="mb-1 w-full rounded-xl border border-purple-200/10 bg-white/[0.035] px-3 py-2 text-left transition active:scale-[0.98]"
+                  >
+                    <div className="line-clamp-1 text-xs font-black text-white">
+                      Open Stream Library
+                    </div>
+
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span className="text-[9px] uppercase tracking-[0.12em] text-white/35">
+                        Library
+                      </span>
+
+                      <span className="text-[10px] font-black text-purple-300">
+                        Open
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-3 text-[11px] leading-4 text-white/45">
+                    No saved Streams yet.
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         {/* CLOSE — NO CONTAINER */}
