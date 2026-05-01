@@ -1,12 +1,8 @@
 import React from "react";
-import {
-  Award,
-  ChevronLeft,
-  Lock,
-  Sparkles,
-  Trophy,
-} from "lucide-react";
+import { Award, ChevronLeft, Trophy } from "lucide-react";
 import { getNextBadge } from "@/lib/badges/getNextBadge";
+
+import BadgeCarouselV1 from "./badges/BadgeCarouselV1";
 
 function clampPercent(value = 0) {
   const safe = Number(value || 0);
@@ -34,10 +30,11 @@ function ProgressBar({ value = 0, max = 1, tone = "cyan" }) {
   );
 }
 
-function HeaderButton({ children, label }) {
+function HeaderButton({ children, label, onClick }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       aria-label={label}
       className="
         flex h-9 w-9 items-center justify-center
@@ -46,6 +43,7 @@ function HeaderButton({ children, label }) {
         bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.12),rgba(255,255,255,0.04))]
         text-amber-100/78
         shadow-[0_0_14px_rgba(251,191,36,0.08)]
+        transition active:scale-[0.97]
       "
     >
       {children}
@@ -134,28 +132,6 @@ function NextBadgeCard({ badge }) {
   );
 }
 
-function LockedIdentityCard() {
-  return (
-    <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-4 shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
-      <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] text-white/46">
-          <Lock size={18} strokeWidth={2.2} />
-        </div>
-
-        <div className="min-w-0">
-          <div className="text-sm font-semibold tracking-[-0.02em] text-white/82">
-            Identity Tracking Locked
-          </div>
-
-          <div className="mt-1 text-xs leading-5 text-white/48">
-            Badge visibility unlocks after real activity.
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AchievementCard({ achievement }) {
   const name = achievement?.name || "";
   const level = achievement?.level || "";
@@ -204,6 +180,7 @@ function AchievementCard({ achievement }) {
 
 export default function AchievementsViewV1({
   onBack,
+  onOpenAchievementSettings,
   user,
   achievements = [],
   trophyCount = 0,
@@ -228,8 +205,11 @@ export default function AchievementsViewV1({
           Achievements
         </div>
 
-        <HeaderButton label="Achievement glow">
-          <Sparkles size={15} strokeWidth={2.3} />
+        <HeaderButton
+          label="Open achievement settings"
+          onClick={onOpenAchievementSettings}
+        >
+          <Trophy size={15} strokeWidth={2.3} />
         </HeaderButton>
       </div>
 
@@ -247,16 +227,16 @@ export default function AchievementsViewV1({
 
           <NextBadgeCard badge={nextBadge} />
 
-          {hasAchievements ? (
-            achievements.map((achievement, index) => (
-              <AchievementCard
-                key={achievement?.id || achievement?.name || index}
-                achievement={achievement}
-              />
-            ))
-          ) : (
-            <LockedIdentityCard />
-          )}
+          <BadgeCarouselV1 achievements={achievements} nextBadge={nextBadge} />
+
+          {hasAchievements
+            ? achievements.map((achievement, index) => (
+                <AchievementCard
+                  key={achievement?.id || achievement?.name || index}
+                  achievement={achievement}
+                />
+              ))
+            : null}
         </div>
       </div>
     </div>
