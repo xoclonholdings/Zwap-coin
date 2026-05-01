@@ -72,7 +72,9 @@ function buildLessons(module) {
   if (source.length >= LESSON_COUNT) {
     return source.map((lesson, index) => ({
       id: lesson?.id || `${module?.id || "module"}-lesson-${index + 1}`,
-      title: lesson?.title || `Lesson ${index + 1}`,
+      title:
+        lesson?.title ||
+        (index === 0 ? "Concept" : index === 1 ? "Application" : "Lock In"),
       description:
         lesson?.description ||
         lesson?.short_description ||
@@ -96,13 +98,22 @@ function buildLessons(module) {
   }));
 }
 
-function MainCard({
-  module,
-  lesson,
-  lessonIndex,
-  activeEbook,
-  onNextModule,
-}) {
+function NextModuleButton({ onClick }) {
+  return (
+    <div className="flex shrink-0 justify-end">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center gap-1 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-200 shadow-[0_0_16px_rgba(34,211,238,0.10)] transition active:scale-[0.97]"
+      >
+        Next Module
+        <ChevronRight size={12} />
+      </button>
+    </div>
+  );
+}
+
+function MainCard({ module, lesson, lessonIndex, activeEbook }) {
   const lessonImage = getImage(module);
   const ebookImage = getImage(activeEbook);
   const isEbookView = Boolean(activeEbook);
@@ -123,7 +134,7 @@ function MainCard({
 
       <div className="mt-3 rounded-[20px] border border-white/10 bg-black/24 p-3">
         <div className="flex gap-3">
-          <div className="flex h-[108px] w-[82px] shrink-0 items-center justify-center overflow-hidden rounded-[16px] border border-cyan-300/14 bg-white/[0.035] shadow-[0_0_18px_rgba(34,211,238,0.08)]">
+          <div className="flex h-[132px] w-[92px] shrink-0 items-center justify-center overflow-hidden rounded-[16px] border border-cyan-300/14 bg-white/[0.035] shadow-[0_0_18px_rgba(34,211,238,0.08)]">
             {isEbookView && ebookImage ? (
               <img
                 src={ebookImage}
@@ -137,22 +148,22 @@ function MainCard({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <BookOpen className="h-7 w-7 text-cyan-200/70" />
+              <BookOpen className="h-8 w-8 text-cyan-200/70" />
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 py-1">
             <div className="text-[9px] font-black uppercase tracking-[0.12em] text-purple-200/75">
               {isEbookView ? "eBook" : `Lesson ${lessonIndex + 1}`}
             </div>
 
-            <h3 className="mt-2 line-clamp-2 text-[16px] font-black tracking-[-0.04em] text-white">
+            <h3 className="mt-2 line-clamp-2 text-[18px] font-black tracking-[-0.04em] text-white">
               {isEbookView
                 ? activeEbook?.title || "Archive eBook"
                 : lesson?.title || "Lesson"}
             </h3>
 
-            <p className="mt-2 line-clamp-4 text-xs leading-4 text-white/58">
+            <p className="mt-3 line-clamp-5 text-[13px] font-semibold leading-5 text-white/62">
               {isEbookView
                 ? activeEbook?.description ||
                   activeEbook?.subtitle ||
@@ -164,16 +175,42 @@ function MainCard({
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={onNextModule}
-          className="mt-4 flex w-full items-center justify-center gap-1 rounded-[17px] bg-gradient-to-r from-cyan-400 via-purple-500 to-fuchsia-500 py-2.5 text-xs font-black text-white shadow-[0_12px_26px_rgba(168,85,247,0.22)] transition active:scale-[0.98]"
-        >
-          Next Module <ChevronRight size={14} />
-        </button>
       </div>
     </motion.section>
+  );
+}
+
+function LessonCards({ lessons, lessonIndex, onSelectLesson }) {
+  return (
+    <section className="shrink-0">
+      <div className="grid grid-cols-3 gap-2">
+        {lessons.map((lesson, index) => {
+          const active = index === lessonIndex;
+
+          return (
+            <button
+              key={lesson.id}
+              type="button"
+              onClick={() => onSelectLesson(index)}
+              className={[
+                "min-h-[58px] rounded-2xl border p-2 text-left transition active:scale-[0.98]",
+                active
+                  ? "border-cyan-300/38 bg-cyan-400/12 shadow-[0_0_14px_rgba(34,211,238,0.10)]"
+                  : "border-white/10 bg-white/[0.035]",
+              ].join(" ")}
+            >
+              <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/42">
+                {index + 1}.
+              </div>
+
+              <div className="mt-1 line-clamp-1 text-[12px] font-black tracking-[-0.03em] text-white">
+                {lesson.title}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -186,7 +223,7 @@ function RecommendedEbookCard({ item, index, onOpen }) {
       onClick={() => onOpen(item)}
       className="w-[31%] min-w-0 shrink-0 overflow-hidden rounded-[18px] border border-purple-300/18 bg-[linear-gradient(180deg,rgba(20,18,42,0.96),rgba(7,10,20,0.98))] text-left transition active:scale-[0.98]"
     >
-      <div className="h-[80px] bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.28),rgba(34,211,238,0.12)_42%,rgba(255,255,255,0.04))]">
+      <div className="h-[82px] bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.28),rgba(34,211,238,0.12)_42%,rgba(255,255,255,0.04))]">
         {image ? (
           <img
             src={image}
@@ -212,10 +249,40 @@ function RecommendedEbookCard({ item, index, onOpen }) {
 function RecommendedPlaceholder({ index }) {
   return (
     <div className="w-[31%] min-w-0 shrink-0 rounded-[18px] border border-white/10 bg-white/[0.035] p-2">
-      <div className="h-[80px] rounded-[14px] bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),rgba(34,211,238,0.08)_48%,rgba(255,255,255,0.04))]" />
+      <div className="h-[82px] rounded-[14px] bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),rgba(34,211,238,0.08)_48%,rgba(255,255,255,0.04))]" />
       <div className="mt-2 h-2 w-16 rounded-full bg-white/10" />
       <div className="mt-1.5 h-2 w-11 rounded-full bg-white/10" />
     </div>
+  );
+}
+
+function RecommendedSection({ ebooks, onOpen }) {
+  return (
+    <section className="min-h-0 flex-1 overflow-hidden">
+      <div className="mb-3">
+        <div className="text-[15px] font-black tracking-[-0.04em] text-white">
+          Recommended for you
+        </div>
+        <div className="text-[10px] text-white/45">
+          Pulled from your Learn Archive.
+        </div>
+      </div>
+
+      <div className="flex gap-2 overflow-x-hidden">
+        {ebooks.length > 0
+          ? ebooks.map((item, index) => (
+              <RecommendedEbookCard
+                key={item?.id || item?.title || index}
+                item={item}
+                index={index}
+                onOpen={onOpen}
+              />
+            ))
+          : [0, 1, 2].map((item) => (
+              <RecommendedPlaceholder key={item} index={item} />
+            ))}
+      </div>
+    </section>
   );
 }
 
@@ -256,14 +323,13 @@ export default function LearnPage({
     navigate("/v1/dashboard");
   }
 
+  function handleSelectLesson(index) {
+    setActiveEbook(null);
+    setLessonIndex(Math.max(0, Math.min(LESSON_COUNT - 1, index)));
+  }
+
   function handleNextModule() {
     setActiveEbook(null);
-
-    if (lessonIndex < LESSON_COUNT - 1) {
-      setLessonIndex((current) => current + 1);
-      return;
-    }
-
     setLessonIndex(0);
     setModuleIndex((current) => {
       const next = current + 1;
@@ -300,41 +366,27 @@ export default function LearnPage({
       </div>
 
       <div className="flex flex-1 flex-col gap-3 overflow-hidden px-3 py-3">
+        <NextModuleButton onClick={handleNextModule} />
+
         {currentModule ? (
           <MainCard
             module={currentModule}
             lesson={currentLesson}
             lessonIndex={lessonIndex}
             activeEbook={activeEbook}
-            onNextModule={handleNextModule}
           />
         ) : null}
 
-        <section className="min-h-0 flex-1 overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.025] p-3">
-          <div className="mb-3">
-            <div className="text-[15px] font-black tracking-[-0.04em] text-white">
-              Recommended for you
-            </div>
-            <div className="text-[10px] text-white/45">
-              Pulled from your Learn Archive.
-            </div>
-          </div>
+        <LessonCards
+          lessons={lessons}
+          lessonIndex={lessonIndex}
+          onSelectLesson={handleSelectLesson}
+        />
 
-          <div className="flex gap-2 overflow-x-hidden">
-            {recommendedEbooks.length > 0
-              ? recommendedEbooks.map((item, index) => (
-                  <RecommendedEbookCard
-                    key={item?.id || item?.title || index}
-                    item={item}
-                    index={index}
-                    onOpen={handleOpenEbook}
-                  />
-                ))
-              : [0, 1, 2].map((item) => (
-                  <RecommendedPlaceholder key={item} index={item} />
-                ))}
-          </div>
-        </section>
+        <RecommendedSection
+          ebooks={recommendedEbooks}
+          onOpen={handleOpenEbook}
+        />
       </div>
     </div>
   );
