@@ -15,7 +15,21 @@ import {
   Zap,
 } from "lucide-react";
 
-const SHOP_UNLOCK_THRESHOLD = 1000;
+import ShopWindowAlternate from "./shop/ShopWindowAlternate";
+import ShopWindowItemView from "./shop/ShopWindowItemView";
+
+import {
+  SHOP_UNLOCK_THRESHOLD,
+  clamp,
+  formatNumber,
+  getCategoryId,
+  getCategoryLabel,
+  getItemCategoryId,
+  getItemDescription,
+  getItemName,
+  getFormattedItemPrice,
+  groupCategories,
+} from "./shop/shopWindowUtils";
 
 const DEFAULT_SHOP_CATEGORIES = [
   { id: "bundle-combos", label: "Combos", group: "Bundles", icon: Package },
@@ -27,18 +41,6 @@ const DEFAULT_SHOP_CATEGORIES = [
   { id: "profile-themes", label: "Themes", group: "Profile", icon: Palette },
   { id: "garden-items", label: "Garden", group: "Garden", icon: Flower2 },
 ];
-
-function clamp(value, min = 0, max = 100) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function formatNumber(value) {
-  return Number(value || 0).toLocaleString();
-}
-
-function formatMoney(value) {
-  return Number(value || 0).toFixed(2);
-}
 
 function getCategoryIcon(category = {}) {
   if (category.icon) return category.icon;
@@ -57,80 +59,6 @@ function getCategoryIcon(category = {}) {
   if (key.includes("featured")) return Sparkles;
 
   return ShoppingBag;
-}
-
-function getCategoryId(category = {}) {
-  return category.id || category.category_id || category.slug || "";
-}
-
-function getCategoryLabel(category = {}) {
-  return category.label || category.name || "Category";
-}
-
-function getCategoryGroup(category = {}) {
-  return category.group || category.section || category.parent || "Shop";
-}
-
-function normalizeLegacyItemCategory(categoryId = "") {
-  const safe = String(categoryId || "").toLowerCase();
-
-  if (safe === "boosts") return "move-boosts";
-  if (safe === "ebooks") return "learn-ebooks";
-  if (safe === "cosmetics") return "profile-rings";
-  if (safe === "featured") return "bundle-combos";
-
-  return safe;
-}
-
-function getItemCategoryId(item = {}) {
-  return normalizeLegacyItemCategory(
-    item.category || item.category_id || item.categoryId || "bundle-combos"
-  );
-}
-
-function getItemName(item = {}) {
-  return item.name || item.title || "Shop Item";
-}
-
-function getItemDescription(item = {}) {
-  return item.description || item.subtitle || "Tap item name to browse.";
-}
-
-function getItemPrice(item = {}) {
-  if (item.payment_method === "stripe") return item.price_stripe ?? 0;
-  if (item.payment_method === "zwap") return item.price_zwap ?? 0;
-  return item.price_zpts ?? 0;
-}
-
-function getItemCurrencyLabel(item = {}) {
-  if (item.payment_method === "stripe") return "USD";
-  if (item.payment_method === "zwap") return "ZWAP";
-  return "zPts";
-}
-
-function getFormattedItemPrice(item = {}) {
-  const price = getItemPrice(item);
-  const currency = getItemCurrencyLabel(item);
-
-  if (currency === "USD") return `$${formatMoney(price)}`;
-
-  return `${formatNumber(price)} ${currency}`;
-}
-
-function groupCategories(categories = []) {
-  const groups = categories.reduce((acc, category) => {
-    const group = getCategoryGroup(category);
-
-    if (!acc[group]) acc[group] = [];
-    acc[group].push(category);
-
-    return acc;
-  }, {});
-
-  return Object.entries(groups).map(([group, groupCategories]) => ({
-    group,
-    categories: groupCategories,
-  }));
 }
 
 export default function DashboardWindowShop({
@@ -184,12 +112,6 @@ export default function DashboardWindowShop({
     return groupCategories(safeCategories);
   }, [safeCategories]);
 
-  const activeGroup =
-    groupedCategories[groupIndex] || groupedCategories[0] || {
-      group: "Shop",
-      categories: safeCategories.slice(0, 2),
-    };
-
   const activeCategory = safeCategories.find(
     (category) => getCategoryId(category) === activeCategoryId
   );
@@ -197,7 +119,7 @@ export default function DashboardWindowShop({
   const activeCategoryLabel = getCategoryLabel(activeCategory);
   const activeItem = visibleItems[activeItemIndex] || visibleItems[0] || null;
 
-  const handleChevronClick = (event) => {
+  function handleChevronClick(event) {
     event.stopPropagation();
 
     if (!isUnlocked || selectedItem) return;
@@ -212,9 +134,9 @@ export default function DashboardWindowShop({
     }
 
     setLocalIsAltView(true);
-  };
+  }
 
-  const handleCategorySelect = (category) => {
+  function handleCategorySelect(category) {
     const nextCategoryId = getCategoryId(category);
     if (!nextCategoryId) return;
 
@@ -225,23 +147,23 @@ export default function DashboardWindowShop({
     if (typeof onCategoryChange === "function") {
       onCategoryChange(nextCategoryId, category);
     }
-  };
+  }
 
-  const handleNextItem = () => {
+  function handleNextItem() {
     if (!visibleItems.length) return;
 
     setActiveItemIndex((current) => (current + 1) % visibleItems.length);
-  };
+  }
 
-  const handleOpenPurchase = (event) => {
+  function handleOpenPurchase(event) {
     event.stopPropagation();
 
     if (!isUnlocked || !activeItem) return;
 
     setSelectedItem(activeItem);
-  };
+  }
 
-  const handleConfirmPurchase = () => {
+  function handleConfirmPurchase() {
     if (!selectedItem) return;
 
     if (typeof onPurchaseItem === "function") {
@@ -249,7 +171,7 @@ export default function DashboardWindowShop({
     }
 
     setSelectedItem(null);
-  };
+  }
 
   return (
     <section
@@ -320,117 +242,21 @@ export default function DashboardWindowShop({
           </div>
         </div>
       ) : localIsAltView ? (
-        <div className="relative z-10 mt-5 flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center justify-between gap-2">
-            <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200/60">
-              {activeGroup.group}
-            </p>
-
-            <p className="shrink-0 text-[9px] font-black uppercase tracking-[0.12em] text-white/28">
-              {groupIndex + 1}/{Math.max(1, groupedCategories.length)}
-            </p>
-          </div>
-
-          <div className="mt-3 grid flex-1 grid-rows-2 gap-2">
-            {activeGroup.categories.slice(0, 2).map((category) => {
-              const categoryId = getCategoryId(category);
-              const CategoryIcon = getCategoryIcon(category);
-              const active = categoryId === activeCategoryId;
-
-              return (
-                <button
-                  key={categoryId}
-                  type="button"
-                  onClick={() => handleCategorySelect(category)}
-                  className={[
-                    "flex min-h-0 items-center gap-2 rounded-2xl border px-3 text-left",
-                    active
-                      ? "border-cyan-300/40 bg-cyan-300/15 text-white"
-                      : "border-white/10 bg-white/[0.04] text-white/60",
-                  ].join(" ")}
-                >
-                  <CategoryIcon className="h-4 w-4 shrink-0" />
-
-                  <span className="truncate text-[10px] font-semibold uppercase tracking-[0.13em]">
-                    {getCategoryLabel(category)}
-                  </span>
-                </button>
-              );
-            })}
-
-            {activeGroup.categories.length === 1 ? (
-              <div className="min-h-0 rounded-2xl border border-white/8 bg-white/[0.025]" />
-            ) : null}
-          </div>
-
-          <div className="mt-3 flex shrink-0 items-center justify-center gap-1.5">
-            {groupedCategories.map((group, index) => (
-              <span
-                key={group.group}
-                className={[
-                  "h-1.5 rounded-full transition-all",
-                  index === groupIndex ? "w-5 bg-cyan-200" : "w-1.5 bg-white/24",
-                ].join(" ")}
-              />
-            ))}
-          </div>
-        </div>
+        <ShopWindowAlternate
+          groupedCategories={groupedCategories}
+          groupIndex={groupIndex}
+          activeCategoryId={activeCategoryId}
+          getCategoryIcon={getCategoryIcon}
+          onCategorySelect={handleCategorySelect}
+        />
       ) : (
-        <div className="relative z-10 mt-5 flex min-h-0 flex-1 flex-col">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200/60">
-            {activeCategoryLabel}
-          </p>
-
-          {activeItem ? (
-            <>
-              <button
-                type="button"
-                onClick={handleNextItem}
-                className="mt-3 flex min-h-0 flex-1 flex-col justify-center rounded-[1.15rem] border border-white/10 bg-white/[0.05] p-3 text-left"
-              >
-                <p className="truncate text-base font-black tracking-[-0.04em] text-white">
-                  {getItemName(activeItem)}
-                </p>
-
-                <p className="mt-2 line-clamp-2 text-xs leading-snug text-white/50">
-                  {getItemDescription(activeItem)}
-                </p>
-
-                <p className="mt-3 text-sm font-black text-cyan-200">
-                  {getFormattedItemPrice(activeItem)}
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenPurchase}
-                className="mt-3 w-full rounded-[20px] border border-white/50 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-300 px-5 py-2.5 text-center text-sm font-black text-white shadow-[0_0_24px_rgba(34,211,238,0.20)] transition active:scale-[0.98]"
-              >
-                Purchase
-              </button>
-
-              <div className="pointer-events-none mt-2 flex shrink-0 justify-center gap-1.5 pb-0.5">
-                {visibleItems.map((item, index) => (
-                  <span
-                    key={item.id || getItemName(item)}
-                    className={[
-                      "h-1.5 rounded-full transition-all duration-300",
-                      index === activeItemIndex
-                        ? "w-4 bg-cyan-200/65 shadow-[0_0_8px_rgba(103,242,255,0.22)]"
-                        : "w-1.5 bg-white/22",
-                    ].join(" ")}
-                  />
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="mt-3 flex flex-1 items-center justify-center rounded-[1.15rem] border border-white/10 bg-white/[0.04] px-3 text-center">
-              <p className="text-xs font-medium text-white/45">
-                No items in this category yet.
-              </p>
-            </div>
-          )}
-        </div>
+        <ShopWindowItemView
+          activeCategoryLabel={activeCategoryLabel}
+          visibleItems={visibleItems}
+          activeItemIndex={activeItemIndex}
+          onNextItem={handleNextItem}
+          onOpenPurchase={handleOpenPurchase}
+        />
       )}
 
       {selectedItem && (
