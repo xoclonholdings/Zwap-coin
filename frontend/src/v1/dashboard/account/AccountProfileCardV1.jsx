@@ -1,4 +1,5 @@
 import React from "react";
+import { Crown, Star } from "lucide-react";
 
 function TierPill({ tier = "zwapper" }) {
   const isPlus = String(tier || "").toLowerCase() === "zitizen";
@@ -9,8 +10,8 @@ function TierPill({ tier = "zwapper" }) {
         "inline-flex items-center rounded-full px-2.5 py-[3px]",
         "text-[11px] font-medium tracking-[-0.01em]",
         isPlus
-          ? "text-violet-200/70 bg-violet-400/10"
-          : "text-cyan-200/70 bg-cyan-400/10",
+          ? "bg-violet-400/10 text-violet-200/70"
+          : "bg-cyan-400/10 text-cyan-200/70",
       ].join(" ")}
     >
       {isPlus ? "Zitizen" : "Zwapper"}
@@ -23,6 +24,7 @@ export default function AccountProfileCardV1({
   tier = "zwapper",
 }) {
   const safeUsername = String(username || "").trim();
+  const isPlus = String(tier || "").toLowerCase() === "zitizen";
 
   return (
     <div
@@ -37,18 +39,37 @@ export default function AccountProfileCardV1({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_35%,rgba(34,211,238,0.05))]" />
 
       <div className="relative flex h-full flex-col justify-center">
-        {/* USERNAME */}
-        <div
-          className="
-            text-[17px] font-semibold tracking-[-0.02em]
-            text-white
-            leading-tight
-          "
-        >
-          {safeUsername}
+        <div className="text-[12px] font-medium tracking-[0.04em] text-white/45">
+          Welcome,
         </div>
 
-        {/* TIER TAG (subtle) */}
+        <div className="mt-1 flex items-center gap-2">
+          <div
+            className="
+              text-[17px] font-semibold tracking-[-0.02em]
+              text-white
+              leading-tight
+              break-words
+            "
+          >
+            {safeUsername}
+          </div>
+
+          {isPlus ? (
+            <Crown
+              size={14}
+              strokeWidth={2.2}
+              className="shrink-0 text-violet-300/80"
+            />
+          ) : (
+            <Star
+              size={13}
+              strokeWidth={2}
+              className="shrink-0 text-cyan-200/65"
+            />
+          )}
+        </div>
+
         <div className="mt-2">
           <TierPill tier={tier} />
         </div>
