@@ -19,17 +19,12 @@ const SHOP_UNLOCK_THRESHOLD = 1000;
 
 const DEFAULT_SHOP_CATEGORIES = [
   { id: "bundle-combos", label: "Combos", group: "Bundles", icon: Package },
-
   { id: "move-boosts", label: "Boosts", group: "Move", icon: PersonStanding },
-
   { id: "play-games", label: "Games", group: "Play", icon: Gamepad2 },
   { id: "play-boosts", label: "Boosts", group: "Play", icon: Zap },
-
   { id: "learn-ebooks", label: "eBooks", group: "Learn", icon: BookOpen },
-
   { id: "profile-rings", label: "Rings", group: "Profile", icon: CircleDot },
   { id: "profile-themes", label: "Themes", group: "Profile", icon: Palette },
-
   { id: "garden-items", label: "Garden", group: "Garden", icon: Flower2 },
 ];
 
@@ -123,17 +118,19 @@ function getFormattedItemPrice(item = {}) {
 }
 
 function groupCategories(categories = []) {
-  return categories.reduce((groups, category) => {
+  const groups = categories.reduce((acc, category) => {
     const group = getCategoryGroup(category);
 
-    if (!groups[group]) {
-      groups[group] = [];
-    }
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(category);
 
-    groups[group].push(category);
-
-    return groups;
+    return acc;
   }, {});
+
+  return Object.entries(groups).map(([group, groupCategories]) => ({
+    group,
+    categories: groupCategories,
+  }));
 }
 
 export default function DashboardWindowShop({
@@ -148,7 +145,8 @@ export default function DashboardWindowShop({
   onPurchaseItem,
 }) {
   const [localIsAltView, setLocalIsAltView] = useState(isAltView);
-  const [touchStartX, setTouchStartX] = useState(null);
+  const [groupIndex, setGroupIndex] = useState(0);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const safeCategories =
     Array.isArray(categories) && categories.length > 0
@@ -160,8 +158,6 @@ export default function DashboardWindowShop({
   const [localCategoryId, setLocalCategoryId] = useState(
     selectedCategoryId || firstCategoryId
   );
-
-  const [selectedItem, setSelectedItem] = useState(null);
 
   const activeCategoryId = selectedCategoryId || localCategoryId;
 
@@ -187,35 +183,24 @@ export default function DashboardWindowShop({
     return groupCategories(safeCategories);
   }, [safeCategories]);
 
+  const activeGroup =
+    groupedCategories[groupIndex] || groupedCategories[0] || {
+      group: "Shop",
+      categories: safeCategories.slice(0, 2),
+    };
+
   const activeCategory = safeCategories.find(
     (category) => getCategoryId(category) === activeCategoryId
   );
 
   const activeCategoryLabel = getCategoryLabel(activeCategory);
 
-  const handleWindowToggle = () => {
+  const handleToggleAltView = (event) => {
+    event.stopPropagation();
+
     if (!isUnlocked || selectedItem) return;
+
     setLocalIsAltView((current) => !current);
-  };
-
-  const handleTouchStart = (event) => {
-    const touch = event.touches?.[0];
-    if (!touch) return;
-
-    setTouchStartX(touch.clientX);
-  };
-
-  const handleTouchEnd = (event) => {
-    const touch = event.changedTouches?.[0];
-    if (!touch || touchStartX === null || selectedItem || !isUnlocked) return;
-
-    const diff = touch.clientX - touchStartX;
-
-    if (Math.abs(diff) >= 36) {
-      setLocalIsAltView(diff < 0);
-    }
-
-    setTouchStartX(null);
   };
 
   const handleCategorySelect = (category) => {
@@ -248,9 +233,6 @@ export default function DashboardWindowShop({
   return (
     <section
       aria-label="Shop"
-      onClick={handleWindowToggle}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       className={[
         "relative flex h-full min-h-[220px] w-full flex-col overflow-hidden rounded-[1.5rem] p-4 text-left",
         "border border-cyan-200/15 bg-[#0b1220]",
@@ -261,22 +243,31 @@ export default function DashboardWindowShop({
       <div className="pointer-events-none absolute inset-0 rounded-[1.5rem] bg-gradient-to-br from-cyan-400/[0.10] via-white/[0.03] to-violet-500/[0.10]" />
       <div className="pointer-events-none absolute inset-[1px] rounded-[1.45rem] border border-white/[0.06]" />
 
-      <div className="relative z-10 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-300/10 text-cyan-200">
-            <ShoppingBag className="h-4 w-4" />
+      <div className="relative z-10 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-300/18 bg-cyan-300/8 text-cyan-200/80">
+            <ShoppingBag className="h-[17px] w-[17px]" strokeWidth={2.1} />
           </div>
 
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white/90">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/84">
             Shop
-          </h2>
+          </div>
         </div>
 
         {isUnlocked ? (
-          <ChevronRight
-            className="h-[18px] w-[18px] shrink-0 text-white/70"
-            strokeWidth={2.4}
-          />
+          <button
+            type="button"
+            onClick={handleToggleAltView}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/70 transition active:scale-[0.96]"
+            aria-label={
+              localIsAltView ? "Show Shop items" : "Show Shop categories"
+            }
+          >
+            <ChevronRight
+              className="h-[18px] w-[18px]"
+              strokeWidth={2.4}
+            />
+          </button>
         ) : null}
       </div>
 
@@ -311,45 +302,61 @@ export default function DashboardWindowShop({
           </div>
         </div>
       ) : localIsAltView ? (
-        <div className="relative z-10 mt-4 min-h-0 flex-1 overflow-hidden">
-          <div className="grid max-h-full gap-2 overflow-y-auto pr-1">
-            {Object.entries(groupedCategories).map(([group, groupCategories]) => (
-              <div key={group}>
-                <p className="mb-1 text-[9px] font-black uppercase tracking-[0.16em] text-cyan-200/45">
-                  {group}
-                </p>
+        <div className="relative z-10 mt-4 flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200/60">
+              {activeGroup.group}
+            </p>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {groupCategories.map((category) => {
-                    const categoryId = getCategoryId(category);
-                    const CategoryIcon = getCategoryIcon(category);
-                    const active = categoryId === activeCategoryId;
+            <p className="shrink-0 text-[9px] font-black uppercase tracking-[0.12em] text-white/28">
+              {groupIndex + 1}/{Math.max(1, groupedCategories.length)}
+            </p>
+          </div>
 
-                    return (
-                      <button
-                        key={categoryId}
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleCategorySelect(category);
-                        }}
-                        className={[
-                          "flex min-h-[42px] items-center gap-2 rounded-2xl border px-3 text-left",
-                          active
-                            ? "border-cyan-300/40 bg-cyan-300/15 text-white"
-                            : "border-white/10 bg-white/[0.04] text-white/60",
-                        ].join(" ")}
-                      >
-                        <CategoryIcon className="h-4 w-4 shrink-0" />
+          <div className="mt-3 grid flex-1 grid-rows-2 gap-2">
+            {activeGroup.categories.slice(0, 2).map((category) => {
+              const categoryId = getCategoryId(category);
+              const CategoryIcon = getCategoryIcon(category);
+              const active = categoryId === activeCategoryId;
 
-                        <span className="truncate text-[10px] font-semibold uppercase tracking-[0.13em]">
-                          {getCategoryLabel(category)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              return (
+                <button
+                  key={categoryId}
+                  type="button"
+                  onClick={() => handleCategorySelect(category)}
+                  className={[
+                    "flex min-h-0 items-center gap-2 rounded-2xl border px-3 text-left",
+                    active
+                      ? "border-cyan-300/40 bg-cyan-300/15 text-white"
+                      : "border-white/10 bg-white/[0.04] text-white/60",
+                  ].join(" ")}
+                >
+                  <CategoryIcon className="h-4 w-4 shrink-0" />
+
+                  <span className="truncate text-[10px] font-semibold uppercase tracking-[0.13em]">
+                    {getCategoryLabel(category)}
+                  </span>
+                </button>
+              );
+            })}
+
+            {activeGroup.categories.length === 1 ? (
+              <div className="min-h-0 rounded-2xl border border-white/8 bg-white/[0.025]" />
+            ) : null}
+          </div>
+
+          <div className="mt-3 flex shrink-0 items-center justify-center gap-1.5">
+            {groupedCategories.map((group, index) => (
+              <button
+                key={group.group}
+                type="button"
+                onClick={() => setGroupIndex(index)}
+                className={[
+                  "h-1.5 rounded-full transition-all",
+                  index === groupIndex ? "w-5 bg-cyan-200" : "w-1.5 bg-white/24",
+                ].join(" ")}
+                aria-label={`Show ${group.group} categories`}
+              />
             ))}
           </div>
         </div>
@@ -360,15 +367,12 @@ export default function DashboardWindowShop({
           </p>
 
           {visibleItems.length > 0 ? (
-            <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-2">
+            <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {visibleItems.map((item) => (
                 <button
                   key={item.id || getItemName(item)}
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleItemSelect(item);
-                  }}
+                  onClick={() => handleItemSelect(item)}
                   className="min-w-[78%] snap-start rounded-[1.15rem] border border-white/10 bg-white/[0.05] p-3 text-left"
                 >
                   <div className="flex min-h-[92px] flex-col justify-between">
