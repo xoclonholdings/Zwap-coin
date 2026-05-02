@@ -182,10 +182,7 @@ export default function AppHeaderV1({
 
   function handleSwapTap() {
     if (!swapUnlocked) {
-      showLockedPopup(
-        "Swap Locked",
-        "Complete more progress to unlock Swap."
-      );
+      showLockedPopup("Swap Locked", "Complete more progress to unlock Swap.");
       return;
     }
 
