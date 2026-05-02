@@ -1,13 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRightLeft,
   CheckCircle2,
   Coins,
   Lock,
   Repeat2,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
   Wallet,
 } from "lucide-react";
@@ -57,9 +55,9 @@ function ConvertCard({
         </div>
       </div>
 
-      <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3">
+      <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-3">
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
+          <div>
             <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
               Current Zone
             </p>
@@ -68,7 +66,7 @@ function ConvertCard({
             </p>
           </div>
 
-          <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
+          <div>
             <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
               zPts Balance
             </p>
@@ -78,51 +76,35 @@ function ConvertCard({
           </div>
         </div>
 
-        <div className="mt-3 rounded-[20px] border border-white/8 bg-black/20 p-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
-              <ArrowRightLeft className="h-5 w-5 text-cyan-300" />
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
-                Unlock Path
-              </p>
-              <p className="mt-2 text-base font-semibold text-white">
-                zPts progress can unlock ZWAP conversion
-              </p>
-              <p className="mt-1 text-sm leading-6 text-white/60">
-                Build your balance, then convert once the threshold is available.
-              </p>
-            </div>
-          </div>
+        <div className="mt-4 border-t border-white/10 pt-3">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
+            Unlock Path
+          </p>
+          <p className="mt-2 text-sm font-semibold leading-5 text-white">
+            zPts progress can unlock ZWAP conversion.
+          </p>
+          <p className="mt-1 text-xs leading-5 text-white/55">
+            Build your balance, then convert once the threshold is available.
+          </p>
         </div>
 
-        <div className="mt-3 rounded-[20px] border border-white/8 bg-white/5 p-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-400/10">
-              <Sparkles className="h-5 w-5 text-violet-300" />
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
-                Status
-              </p>
-              <p className="mt-2 text-base font-semibold text-white">
-                {isConversionReady
-                  ? "Conversion available now"
-                  : "Still building momentum"}
-              </p>
-              <p className="mt-1 text-sm leading-6 text-white/60">
-                {isConversionReady
-                  ? "You can continue into conversion now."
-                  : "Keep accumulating zPts to unlock the next conversion step."}
-              </p>
-            </div>
-          </div>
+        <div className="mt-4 border-t border-white/10 pt-3">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
+            Status
+          </p>
+          <p className="mt-2 text-sm font-semibold leading-5 text-white">
+            {isConversionReady
+              ? "Conversion available now"
+              : "Still building momentum"}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-white/55">
+            {isConversionReady
+              ? "You can continue into conversion now."
+              : "Keep accumulating zPts to unlock the next conversion step."}
+          </p>
         </div>
 
-        <div className="mt-3 rounded-[20px] border border-white/8 bg-black/20 p-3">
+        <div className="mt-4 border-t border-white/10 pt-3">
           <p className="text-[11px] uppercase tracking-wide text-white/45">
             Claimable ZWAP
           </p>
@@ -141,7 +123,7 @@ function ConvertCard({
           whileTap={isConversionReady ? { scale: 0.985, y: 2 } : {}}
           className={`mt-4 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3.5 text-sm font-semibold transition ${
             isConversionReady
-              ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_10px_0_rgba(10,84,64,0.95),0_16px_28px_rgba(52,211,153,0.24),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
+              ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_10px_0_rgba(10,84,64,0.95),0_16px_28px_rgba(52,211,153,0.24),inset_0_1px_0_rgba(255,255,255,0.35)]"
               : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
           }`}
         >
@@ -188,8 +170,8 @@ function ClaimCard({
         </div>
       </div>
 
-      <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3">
-        <div className="rounded-[20px] border border-white/8 bg-black/20 p-3">
+      <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-3">
+        <div>
           <p className="text-[11px] uppercase tracking-wide text-white/45">
             Claimable
           </p>
@@ -201,7 +183,7 @@ function ClaimCard({
           </p>
         </div>
 
-        <div className="mt-3 rounded-2xl border border-white/8 bg-white/5 px-3 py-3">
+        <div className="mt-4 border-t border-white/10 pt-3">
           <div className="flex items-start gap-2">
             <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-cyan-300" />
             <div className="min-w-0">
@@ -221,7 +203,7 @@ function ClaimCard({
           <button
             type="button"
             onClick={onCreateWallet}
-            className="mt-3 inline-flex w-full items-center justify-center rounded-[20px] border border-cyan-300/20 bg-cyan-400/10 px-3 py-3 text-sm font-semibold text-cyan-200 transition active:scale-[0.98]"
+            className="mt-4 inline-flex w-full items-center justify-center rounded-[20px] border border-cyan-300/20 bg-cyan-400/10 px-3 py-3 text-sm font-semibold text-cyan-200 transition active:scale-[0.98]"
           >
             <Wallet className="mr-2 h-4 w-4" />
             Create Wallet
@@ -234,7 +216,7 @@ function ClaimCard({
             whileTap={canClaim ? { scale: 0.985, y: 2 } : {}}
             className={`mt-4 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3.5 text-sm font-semibold transition ${
               canClaim
-                ? "border border-cyan-300/30 bg-cyan-300 text-[#07111f] shadow-[0_10px_0_rgba(8,68,88,0.95),0_16px_28px_rgba(34,211,238,0.20),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(8,68,88,0.95),0_14px_24px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                ? "border border-cyan-300/30 bg-cyan-300 text-[#07111f] shadow-[0_10px_0_rgba(8,68,88,0.95),0_16px_28px_rgba(34,211,238,0.20),inset_0_1px_0_rgba(255,255,255,0.35)]"
                 : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
             }`}
           >
@@ -278,29 +260,27 @@ function SwapLockedCard({ swapUnlocked = false, onPrimaryAction }) {
         </div>
       </div>
 
-      <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3">
-        <div className="rounded-[20px] border border-amber-400/15 bg-amber-400/[0.06] p-3">
-          <p className="text-[11px] uppercase tracking-wide text-amber-300/80">
-            Keep Building
-          </p>
+      <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-3">
+        <p className="text-[11px] uppercase tracking-wide text-amber-300/80">
+          Keep Building
+        </p>
 
-          <div className="mt-3 space-y-2 text-sm leading-5 text-white/80">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-              Earn zPts
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-              Complete daily activity
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-              Stay consistent
-            </div>
+        <div className="mt-3 space-y-2 text-sm leading-5 text-white/80">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+            Earn zPts
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+            Complete daily activity
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+            Stay consistent
           </div>
         </div>
 
-        <div className="mt-3 rounded-2xl border border-white/8 bg-black/20 p-3">
+        <div className="mt-4 border-t border-white/10 pt-3">
           <p className="text-xs leading-5 text-white/60">
             More ways to progress unlock over time.
           </p>
