@@ -79,13 +79,8 @@ function ConvertCard({
   );
 }
 
-function ClaimCard({
-  claimableZwap = 0,
-  hasWallet = false,
-  onCreateWallet,
-  onPrimaryAction,
-}) {
-  const canClaim = Number(claimableZwap || 0) > 0 && hasWallet;
+function ClaimCard({ claimableZwap = 0, onPrimaryAction }) {
+  const canClaim = Number(claimableZwap || 0) > 0;
 
   return (
     <>
@@ -101,36 +96,32 @@ function ClaimCard({
 
       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
         <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-          Claimable ZWAP
+          Claimable
         </p>
 
-        <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[22px] font-semibold text-white">
-          {formatNumber(claimableZwap)}
+        <div className="mt-2 flex items-center gap-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3">
+          <div className="min-w-0 flex-1 text-[22px] font-semibold text-white">
+            {formatNumber(claimableZwap)}
+          </div>
+
+          <div className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.14em] text-cyan-300/80">
+            ZWAP
+          </div>
         </div>
 
-        {!hasWallet ? (
-          <button
-            type="button"
-            onClick={onCreateWallet}
-            className="mt-5 inline-flex w-full items-center justify-center rounded-[22px] border border-cyan-300/20 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-200 transition active:scale-[0.98]"
-          >
-            Create Wallet
-          </button>
-        ) : (
-          <motion.button
-            type="button"
-            onClick={onPrimaryAction}
-            disabled={!canClaim}
-            whileTap={canClaim ? { scale: 0.98 } : {}}
-            className={`mt-5 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3 text-sm font-semibold transition ${
-              canClaim
-                ? "border border-cyan-300/30 bg-cyan-300 text-[#07111f] shadow-[0_8px_0_rgba(8,68,88,0.95)]"
-                : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
-            }`}
-          >
-            Claim ZWAP
-          </motion.button>
-        )}
+        <motion.button
+          type="button"
+          onClick={onPrimaryAction}
+          disabled={!canClaim}
+          whileTap={canClaim ? { scale: 0.98 } : {}}
+          className={`mt-5 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3 text-sm font-semibold transition ${
+            canClaim
+              ? "border border-cyan-300/30 bg-cyan-300 text-[#07111f] shadow-[0_8px_0_rgba(8,68,88,0.95)]"
+              : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
+          }`}
+        >
+          Claim ZWAP
+        </motion.button>
       </div>
     </>
   );
@@ -153,8 +144,8 @@ function SwapCard({
 
   const displayOutput = useMemo(() => {
     if (estimatedOutput !== "") return estimatedOutput;
-    if (!canSwap) return "";
-    return "";
+    if (!canSwap) return "0";
+    return "0";
   }, [canSwap, estimatedOutput]);
 
   function handleMax() {
@@ -174,46 +165,46 @@ function SwapCard({
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-        <div>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-              ZWAP Balance
-            </p>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+                ZWAP Balance
+              </p>
 
-            <button
-              type="button"
-              onClick={handleMax}
-              className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold text-white/65 transition active:scale-[0.98]"
-            >
-              Max
-            </button>
+              <button
+                type="button"
+                onClick={handleMax}
+                className="rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-[10px] font-semibold text-white/65 transition active:scale-[0.98]"
+              >
+                Max
+              </button>
+            </div>
+
+            <input
+              type="number"
+              inputMode="decimal"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              placeholder="0"
+              className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white outline-none placeholder:text-white/20"
+            />
+
+            <p className="mt-1 text-[10px] text-white/35">
+              {formatNumber(safeZwapBalance)} ZWAP
+            </p>
           </div>
 
-          <input
-            type="number"
-            inputMode="decimal"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            placeholder="0"
-            className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white outline-none placeholder:text-white/20"
-          />
+          <div className="pb-6 text-lg font-semibold text-white/35">→</div>
 
-          <p className="mt-1 text-[10px] text-white/35">
-            {formatNumber(safeZwapBalance)} ZWAP
-          </p>
-        </div>
+          <div>
+            <p className="text-right text-[10px] uppercase tracking-[0.2em] text-white/40">
+              {swapToSymbol}
+            </p>
 
-        <div className="my-3 text-center text-lg font-semibold text-white/35">
-          →
-        </div>
-
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-            {swapToSymbol}
-          </p>
-
-          <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white">
-            {displayOutput || "0"}
+            <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-right text-[20px] font-semibold text-white">
+              {displayOutput}
+            </div>
           </div>
         </div>
 
@@ -241,23 +232,16 @@ export default function SwapCoreCard({
   claimableZwap = 0,
   zwapBalance = 0,
   isConversionReady = false,
-  hasWallet = false,
   swapToSymbol = "ETH",
   estimatedSwapOutput = "",
   onConvert,
   onClaim,
-  onCreateWallet,
   onSwap,
 }) {
   return (
     <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.12),transparent_34%),linear-gradient(180deg,rgba(9,22,19,0.98),rgba(7,13,16,0.98))] p-4">
       {activeMode === "claim" ? (
-        <ClaimCard
-          claimableZwap={claimableZwap}
-          hasWallet={hasWallet}
-          onCreateWallet={onCreateWallet}
-          onPrimaryAction={onClaim}
-        />
+        <ClaimCard claimableZwap={claimableZwap} onPrimaryAction={onClaim} />
       ) : activeMode === "swap" ? (
         <SwapCard
           zwapBalance={zwapBalance}
