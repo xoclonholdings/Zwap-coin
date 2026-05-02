@@ -42,8 +42,8 @@ export default function StreamPlayerSurface({ item, activeTab }) {
           {isRadio && (
             <div className="flex justify-center overflow-hidden rounded-[16px] border border-white/10 bg-black">
               <iframe
-                style={{ border: 0, width: "258px", height: "400px" }}
-                src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=fe7eaf/tracklist=false/transparent=true/"
+                style={{ border: 0, width: "100%", height: "208px" }}
+                src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=0f91ff/artwork=small/tracklist=false/transparent=true/"
                 seamless
                 title="ZWAP Radio"
                 allow="autoplay; encrypted-media"
