@@ -3,15 +3,15 @@ import { Headphones, Music2, Radio } from "lucide-react";
 import { motion } from "framer-motion";
 
 const tabs = [
-  { id: "zwap-radio", label: "Radio", icon: Radio },
+  { id: "zwap-radio", label: "ZWAP! Radio", icon: Radio },
   { id: "spotify", label: "Spotify", icon: Headphones },
-  { id: "apple-music", label: "Apple", icon: Music2 },
+  { id: "apple-music", label: "Apple Music", icon: Music2 },
 ];
 
 export default function StreamTabs({ activeTab, setActiveTab }) {
   return (
-    <div className="grid grid-cols-3 gap-2 rounded-[22px] border border-white/6 bg-white/[0.03] p-1.5">
-      {tabs.map((tab) => {
+    <div className="flex gap-2">
+      {tabs.map((tab, index) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
 
@@ -21,16 +21,19 @@ export default function StreamTabs({ activeTab, setActiveTab }) {
             type="button"
             onClick={() => setActiveTab(tab.id)}
             whileTap={{ scale: 0.98 }}
-            className={`rounded-2xl px-2 py-3 text-[11px] font-medium transition-all ${
+            className={[
+              "flex-1 rounded-2xl border px-2 py-2 text-left text-xs font-black",
               isActive
-                ? "border border-cyan-400/30 bg-gradient-to-r from-cyan-500/20 via-sky-500/15 to-purple-500/20 text-white shadow-[0_0_18px_rgba(34,211,238,0.12)]"
-                : "border border-transparent bg-white/[0.02] text-gray-400 hover:bg-white/[0.05] hover:text-gray-200"
-            }`}
+                ? "border-cyan-300/40 bg-cyan-400/15 text-white"
+                : "border-white/10 bg-white/[0.04] text-white/50",
+            ].join(" ")}
           >
-            <div className="flex flex-col items-center gap-1.5">
-              <Icon className="h-4 w-4" />
-              <span className="leading-none">{tab.label}</span>
-            </div>
+            <span className="flex items-center gap-1.5">
+              <Icon size={13} />
+              <span>
+                {index + 1}. {tab.label}
+              </span>
+            </span>
           </motion.button>
         );
       })}
