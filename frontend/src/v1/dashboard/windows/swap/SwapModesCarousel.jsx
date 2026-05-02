@@ -1,65 +1,50 @@
 import React from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowRightLeft,
-  Bitcoin,
-  CircleDollarSign,
-  Coins,
-} from "lucide-react";
+import { ArrowRightLeft, CheckCircle2, Repeat2, Wallet } from "lucide-react";
 
 function getModeMeta(mode) {
   switch (mode?.id) {
-    case "swap-pol":
+    case "convert":
       return {
-        label: "ZWAP → POL",
-        short: "POL",
+        label: "zPts → ZWAP",
+        short: "Convert",
         Icon: ArrowRightLeft,
       };
-    case "swap-btc":
+    case "claim":
       return {
-        label: "ZWAP → BTC",
-        short: "BTC",
-        Icon: Bitcoin,
+        label: "Claim to wallet",
+        short: "Claim",
+        Icon: Wallet,
       };
-    case "swap-eth":
+    case "swap":
       return {
-        label: "ZWAP → ETH",
-        short: "ETH",
-        Icon: ArrowRightLeft,
-      };
-    case "swap-usdc":
-      return {
-        label: "ZWAP → USDC",
-        short: "USDC",
-        Icon: CircleDollarSign,
-      };
-    case "convert-zpts":
-      return {
-        label: "zPts",
-        short: "zPts",
-        Icon: Coins,
+        label: "ZWAP → assets",
+        short: "Swap",
+        Icon: Repeat2,
       };
     default:
       return {
-        label: `${mode?.fromToken || ""} → ${mode?.toToken || ""}`.trim(),
-        short: mode?.name || "Route",
-        Icon: ArrowRightLeft,
+        label: mode?.label || "Mode",
+        short: mode?.name || "Mode",
+        Icon: CheckCircle2,
       };
   }
 }
 
 export default function SwapModesCarousel({
-  modes = [],
+  modes = [
+    { id: "convert", name: "Convert" },
+    { id: "claim", name: "Claim" },
+    { id: "swap", name: "Swap" },
+  ],
   activeMode,
   onSelectMode,
 }) {
-  const visibleModes = modes.slice(0, 4);
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">
-          Swap Routes
+          Modes
         </p>
 
         <div className="rounded-xl border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] text-white/45">
@@ -67,8 +52,8 @@ export default function SwapModesCarousel({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
-        {visibleModes.map((mode, index) => {
+      <div className="grid grid-cols-3 gap-2">
+        {modes.map((mode, index) => {
           const { short, label, Icon } = getModeMeta(mode);
           const isActive = activeMode === mode.id;
 
@@ -76,7 +61,7 @@ export default function SwapModesCarousel({
             <motion.button
               key={mode.id}
               type="button"
-              onClick={() => onSelectMode(mode.id)}
+              onClick={() => onSelectMode?.(mode.id)}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.03 }}
