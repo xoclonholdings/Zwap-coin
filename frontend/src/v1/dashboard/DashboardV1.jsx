@@ -17,6 +17,7 @@ import ActivityPageV1 from "./activity/ActivityPageV1";
 import LearnPage from "./windows/learn/LearnPage";
 import StreamPanel from "./windows/stream/StreamPanel";
 import MiniStreamPlayer from "./windows/stream/MiniStreamPlayer";
+import SwapHome from "@/components/swap/SwapHome";
 
 import radioArtwork from "../../assets/stream/zwap_radio_logo.png";
 
@@ -52,6 +53,36 @@ function getResolvedEmail({ authUser, user }) {
     .toLowerCase();
 }
 
+function getClaimableZwap(user) {
+  return Number(
+    user?.claimable_zwap ||
+      user?.claimableZwap ||
+      user?.internal_zwap_balance ||
+      user?.internalZwapBalance ||
+      0
+  );
+}
+
+function getWalletAddress(user) {
+  return String(
+    user?.walletAddress ||
+      user?.wallet_address ||
+      user?.wallet ||
+      ""
+  ).trim();
+}
+
+function getProgressZone(zptsBalance = 0) {
+  const safe = Number(zptsBalance || 0);
+
+  if (safe >= 1000) return "Conversion Ready";
+  if (safe >= 750) return "Almost Ready";
+  if (safe >= 500) return "Building Momentum";
+  if (safe >= 250) return "Getting Started";
+
+  return "Building";
+}
+
 function GameLoadingScreen() {
   return (
     <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050816] text-white">
@@ -76,6 +107,7 @@ export default function DashboardV1({ user, authUser }) {
   const [miniStreamVisible, setMiniStreamVisible] = useState(false);
   const [miniStreamPlaying, setMiniStreamPlaying] = useState(true);
   const [localZptsBalance, setLocalZptsBalance] = useState(null);
+  const [localClaimableZwap, setLocalClaimableZwap] = useState(null);
 
   const resolvedEmail = useMemo(
     () => getResolvedEmail({ authUser, user }),
@@ -241,6 +273,14 @@ export default function DashboardV1({ user, authUser }) {
     taskStates,
   });
 
+  const resolvedClaimableZwap =
+    localClaimableZwap === null ? getClaimableZwap(user) : localClaimableZwap;
+
+  const resolvedWalletAddress = getWalletAddress(user);
+  const hasWallet = Boolean(resolvedWalletAddress);
+  const conversionProgressZone = getProgressZone(resolvedZptsBalance);
+  const isConversionReady = Number(resolvedZptsBalance || 0) >= 1000;
+
   function handleOpenActivity() {
     setActiveView({
       type: "activity",
@@ -263,6 +303,20 @@ export default function DashboardV1({ user, authUser }) {
   }
 
   function handleBackFromLearn() {
+    setActiveView({
+      type: "dashboard",
+      payload: null,
+    });
+  }
+
+  function handleOpenSwap() {
+    setActiveView({
+      type: "swap",
+      payload: null,
+    });
+  }
+
+  function handleBackFromSwap() {
     setActiveView({
       type: "dashboard",
       payload: null,
@@ -292,6 +346,55 @@ export default function DashboardV1({ user, authUser }) {
 
   function handleToggleZwapAltView() {
     setIsZwapAltView((current) => !current);
+  }
+
+  async function handleConvertZpts() {
+    if (!resolvedEmail || !isConversionReady) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/wallet/convert-zpts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: resolvedEmail,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) return;
+
+      if (data?.new_zpts_balance !== undefined) {
+        setLocalZptsBalance(data.new_zpts_balance);
+      }
+
+      if (data?.claimable_zwap !== undefined) {
+        setLocalClaimableZwap(Number(data.claimable_zwap || 0));
+      }
+
+      refreshActivitySnapshot?.();
+      setActivitySignal?.(Date.now());
+    } catch {
+      return;
+    }
+  }
+
+  function handleClaimZwap() {
+    return;
+  }
+
+  function handleCreateWallet() {
+    return;
+  }
+
+  function handleConnectWallet() {
+    return;
+  }
+
+  function handleLockedSwap() {
+    return;
   }
 
   let screenContent = null;
@@ -333,6 +436,24 @@ export default function DashboardV1({ user, authUser }) {
         initialEbook={activeView.payload?.ebook || null}
       />
     );
+  } else if (activeView.type === "swap") {
+    screenContent = (
+      <SwapHome
+        onBack={handleBackFromSwap}
+        zptsBalance={resolvedZptsBalance}
+        claimableZwap={resolvedClaimableZwap}
+        isConversionReady={isConversionReady}
+        progressZone={conversionProgressZone}
+        walletAddress={resolvedWalletAddress}
+        hasWallet={hasWallet}
+        swapUnlocked={previewSwapUnlocked}
+        onConvert={handleConvertZpts}
+        onClaim={handleClaimZwap}
+        onCreateWallet={handleCreateWallet}
+        onConnectWallet={handleConnectWallet}
+        onLockedSwap={handleLockedSwap}
+      />
+    );
   } else {
     screenContent = (
       <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
@@ -345,11 +466,12 @@ export default function DashboardV1({ user, authUser }) {
             displayName={displayName}
             gardenUnlocked={previewGardenUnlocked}
             learnUnlocked={previewLearnUnlocked}
-            streamUnlocked={previewStreamUnlocked}
+            streamUnlocked={true}
             swapUnlocked={previewSwapUnlocked}
             onActivityClick={handleOpenActivity}
             onLearnClick={handleOpenLearn}
             onStreamClick={handleOpenStream}
+            onSwapClick={handleOpenSwap}
           />
         </div>
 
