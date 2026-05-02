@@ -12,10 +12,6 @@ import {
   Wallet,
 } from "lucide-react";
 
-function formatNumber(value) {
-  return Math.floor(Number(value || 0)).toLocaleString();
-}
-
 function formatZwap(value) {
   const safe = Number(value || 0);
   if (!Number.isFinite(safe)) return "0";
@@ -53,9 +49,7 @@ function ConvertCard({
           <h3 className="mt-1 text-xl font-semibold tracking-tight text-white">
             Build Toward ZWAP
           </h3>
-          <p className="mt-1 text-sm text-emerald-50/60">
-            {helperText}
-          </p>
+          <p className="mt-1 text-sm text-emerald-50/60">{helperText}</p>
         </div>
 
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10">
@@ -164,7 +158,6 @@ function ClaimCard({
   walletAddress = "",
   hasWallet = false,
   onCreateWallet,
-  onConnectWallet,
   onPrimaryAction,
 }) {
   const canClaim = Number(claimableZwap || 0) > 0 && hasWallet;
@@ -178,7 +171,7 @@ function ClaimCard({
               Claim
             </p>
             <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300">
-              Wallet
+              Privy Wallet
             </div>
           </div>
 
@@ -204,7 +197,7 @@ function ClaimCard({
             {formatZwap(claimableZwap)} ZWAP
           </p>
           <p className="mt-2 text-xs leading-5 text-white/45">
-            Claimable ZWAP must be connected to a wallet before future Swap access.
+            Claimable ZWAP must be claimed to your Privy wallet before future Swap access.
           </p>
         </div>
 
@@ -217,31 +210,22 @@ function ClaimCard({
               </p>
               <p className="mt-0.5 break-all text-[11px] text-white/55">
                 {hasWallet
-                  ? walletAddress || "Wallet connected"
-                  : "Create or connect a wallet to claim ZWAP."}
+                  ? walletAddress || "Privy wallet ready"
+                  : "Create your Privy wallet to claim ZWAP."}
               </p>
             </div>
           </div>
         </div>
 
         {!hasWallet ? (
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={onCreateWallet}
-              className="inline-flex items-center justify-center rounded-[20px] border border-cyan-300/20 bg-cyan-400/10 px-3 py-3 text-xs font-semibold text-cyan-200 transition active:scale-[0.98]"
-            >
-              Create Wallet
-            </button>
-
-            <button
-              type="button"
-              onClick={onConnectWallet}
-              className="inline-flex items-center justify-center rounded-[20px] border border-white/10 bg-white/6 px-3 py-3 text-xs font-semibold text-white transition active:scale-[0.98]"
-            >
-              Connect Wallet
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onCreateWallet}
+            className="mt-3 inline-flex w-full items-center justify-center rounded-[20px] border border-cyan-300/20 bg-cyan-400/10 px-3 py-3 text-sm font-semibold text-cyan-200 transition active:scale-[0.98]"
+          >
+            <Wallet className="mr-2 h-4 w-4" />
+            Create Wallet
+          </button>
         ) : (
           <motion.button
             type="button"
@@ -353,7 +337,6 @@ export default function SwapCoreCard({
   onConvert,
   onClaim,
   onCreateWallet,
-  onConnectWallet,
   onLockedSwap,
 }) {
   return (
@@ -364,7 +347,6 @@ export default function SwapCoreCard({
           walletAddress={walletAddress}
           hasWallet={hasWallet}
           onCreateWallet={onCreateWallet}
-          onConnectWallet={onConnectWallet}
           onPrimaryAction={onClaim}
         />
       ) : activeMode === "swap" ? (
