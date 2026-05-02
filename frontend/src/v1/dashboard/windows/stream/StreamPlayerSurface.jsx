@@ -38,9 +38,9 @@ export default function StreamPlayerSurface({ item, activeTab }) {
           </div>
         </div>
 
-        <div className="mt-4 rounded-[20px] border border-white/10 bg-black/30 p-3">
+        <div className="mt-3">
           {isRadio && (
-            <div className="flex justify-center overflow-hidden rounded-[16px] border border-white/10 bg-black">
+            <div className="overflow-hidden rounded-[16px] bg-black">
               <iframe
                 style={{ border: 0, width: "100%", height: "208px" }}
                 src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=0f91ff/artwork=small/tracklist=false/transparent=true/"
@@ -56,8 +56,8 @@ export default function StreamPlayerSurface({ item, activeTab }) {
           )}
 
           {isSpotify && (
-            <div className="space-y-4">
-              <div className="flex h-[100px] items-center justify-center rounded-[16px] border border-white/10 bg-black/20">
+            <div className="space-y-3">
+              <div className="flex h-[92px] items-center justify-center rounded-[16px] border border-white/10 bg-black/20">
                 <Headphones className="h-6 w-6 text-green-400" />
               </div>
 
@@ -72,7 +72,7 @@ export default function StreamPlayerSurface({ item, activeTab }) {
           )}
 
           {isApple && (
-            <div className="flex h-[100px] items-center justify-center rounded-[16px] border border-white/10 bg-black/20 text-center">
+            <div className="flex h-[92px] items-center justify-center rounded-[16px] border border-white/10 bg-black/20 text-center">
               <div>
                 <Music2 className="mx-auto mb-2 h-6 w-6 text-pink-300" />
                 <p className="text-sm text-white/80">
