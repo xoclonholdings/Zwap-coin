@@ -1,95 +1,58 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Headphones, Music2 } from "lucide-react";
-import { connectSpotify } from "@/lib/spotify";
+import { Pause, Play, Music2, X } from "lucide-react";
 
-export default function StreamPlayerSurface({ item, activeTab }) {
-  if (!item) return null;
-
-  const isRadio = activeTab === "zwap-radio";
-  const isSpotify = activeTab === "spotify";
-  const isApple = activeTab === "apple-music";
+export default function MiniStreamPlayer({
+  visible = false,
+  title = "ZWAP! Radio",
+  subtitle = "Now Playing",
+  isPlaying = false,
+  onOpenStream,
+  onClose,
+}) {
+  if (!visible) return null;
 
   return (
-    <motion.div
-      key={item.id}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br ${item.accent} p-5`}
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_42%)]" />
+    <div className="fixed bottom-[74px] left-1/2 z-[210] w-full max-w-[430px] -translate-x-1/2 px-3">
+      <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        {/* LEFT: TITLE */}
+        <button
+          type="button"
+          onClick={onOpenStream}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+            <Music2 className="h-4 w-4 text-cyan-300" />
+          </div>
 
-      <div className="relative">
-        {/* HEADER */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/65">
-              {isRadio && "ZWAP! Radio"}
-              {isSpotify && "Spotify"}
-              {isApple && "Apple Music"}
+          <div className="min-w-0">
+            <p className="truncate text-[12px] font-semibold text-white">
+              {title}
             </p>
-
-            <h3 className="mt-2 text-lg font-semibold text-white">
-              {item.title}
-            </h3>
-
-            <p className="mt-1 text-sm text-gray-200/80">{item.subtitle}</p>
+            <p className="truncate text-[10px] text-white/50">{subtitle}</p>
           </div>
+        </button>
 
-          <div className="shrink-0 rounded-full border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/75">
-            {item.status || "READY"}
-          </div>
+        {/* RIGHT: NAV CONTROLS */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenStream}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white active:scale-[0.96]"
+            aria-label="Open Stream"
+          >
+            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/70 active:scale-[0.96]"
+            aria-label="Hide mini player"
+          >
+            <X size={14} />
+          </button>
         </div>
-
-        {/* PLAYER SURFACE */}
-        <div className="mt-5 rounded-[20px] border border-white/10 bg-black/30 p-4">
-          {/* ZWAP RADIO / BANDCAMP */}
-          {isRadio && (
-            <div className="overflow-hidden rounded-[16px] border border-white/10 bg-black">
-              <iframe
-                style={{ border: 0, width: "100%", height: "360px" }}
-                src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=9a64ff/tracklist=false/track=306480053/transparent=true/"
-                seamless
-                title="ZWAP Radio"
-              />
-            </div>
-          )}
-
-          {/* SPOTIFY */}
-          {isSpotify && (
-            <div className="space-y-4">
-              <div className="flex h-[100px] items-center justify-center rounded-[16px] border border-white/10 bg-black/20">
-                <Headphones className="h-6 w-6 text-green-400" />
-              </div>
-
-              <button
-                type="button"
-                onClick={connectSpotify}
-                className="w-full rounded-xl border border-green-400/30 bg-gradient-to-r from-green-500/30 to-emerald-500/30 px-4 py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
-              >
-                Connect Spotify
-              </button>
-            </div>
-          )}
-
-          {/* APPLE MUSIC */}
-          {isApple && (
-            <div className="flex h-[100px] items-center justify-center rounded-[16px] border border-white/10 bg-black/20 text-center">
-              <div>
-                <Music2 className="mx-auto mb-2 h-6 w-6 text-pink-300" />
-                <p className="text-sm text-white/80">
-                  Apple Music integration coming next
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* DESCRIPTION */}
-        <p className="mt-4 text-sm leading-5 text-gray-200/80">
-          {item.description}
-        </p>
       </div>
-    </motion.div>
+    </div>
   );
 }
