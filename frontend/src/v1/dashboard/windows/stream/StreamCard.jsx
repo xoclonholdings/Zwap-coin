@@ -8,13 +8,11 @@ export default function StreamCard({ item, active, onClick, onOpen }) {
       onClick={onClick}
       whileTap={{ scale: 0.97 }}
       className={[
-        "min-w-0 rounded-2xl border p-2 text-left transition-all",
-        active
-          ? "border-cyan-300/40 bg-white/[0.08]"
-          : "border-white/10 bg-white/[0.04]",
+        "min-w-0 rounded-[18px] border border-white/10 bg-white/[0.04] p-2 text-left transition-all",
+        active ? "bg-white/[0.08] border-cyan-300/40" : "",
       ].join(" ")}
     >
-      <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+      <div className="overflow-hidden rounded-[12px] bg-white/[0.04]">
         {item?.artwork ? (
           <img
             src={item.artwork}
@@ -24,31 +22,25 @@ export default function StreamCard({ item, active, onClick, onOpen }) {
         ) : null}
       </div>
 
-      <div className="mt-2 min-w-0">
-        <p className="truncate text-[11px] font-black text-white">
-          {item.title}
-        </p>
-
-        <p className="mt-0.5 truncate text-[9px] text-white/50">
-          {item.subtitle}
-        </p>
+      <div className="mt-2 line-clamp-2 text-[11px] font-black text-white">
+        {item?.title || "Playlist"}
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2 text-[9px]">
-        <span className="truncate font-black uppercase tracking-[0.08em] text-white/40">
-          {item.duration || "PLAYLIST"}
-        </span>
-
+      <div className="mt-1 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
             onOpen?.();
           }}
-          className="shrink-0 font-black text-cyan-300"
+          className="text-[10px] font-black text-cyan-300"
         >
           Open
         </button>
+
+        <span className="text-[10px] font-black text-white/45">
+          Archive
+        </span>
       </div>
     </motion.button>
   );
