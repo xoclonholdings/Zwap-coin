@@ -1,136 +1,180 @@
-import React from "react";
-import { ArrowRightLeft } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, Bitcoin, CircleDollarSign, Coins, Repeat2 } from "lucide-react";
 
 import SwapCoreCard from "@/components/swap/SwapCoreCard";
-import SwapFeedback from "@/components/swap/SwapFeedback";
-import SwapHistory from "@/components/swap/SwapHistory";
-import SwapEmbeddedFlow from "@/components/swap/SwapEmbeddedFlow";
-import ConvertZPtsModal from "@/components/swap/ConvertZPtsModal";
+import SwapModesCarousel from "@/components/swap/SwapModesCarousel";
+
+const SWAP_MODES = [
+  { id: "convert", name: "Convert" },
+  { id: "claim", name: "Claim" },
+  { id: "swap", name: "Swap" },
+];
+
+const FEATURED_SWAPS = [
+  {
+    id: "zwap-btc",
+    short: "BTC",
+    label: "ZWAP → BTC",
+    name: "Bitcoin",
+    Icon: Bitcoin,
+  },
+  {
+    id: "zwap-eth",
+    short: "ETH",
+    label: "ZWAP → ETH",
+    name: "Ethereum",
+    Icon: Repeat2,
+  },
+  {
+    id: "zwap-pol",
+    short: "POL",
+    label: "ZWAP → POL",
+    name: "Polygon",
+    Icon: Coins,
+  },
+  {
+    id: "zwap-usdc",
+    short: "USDC",
+    label: "ZWAP → USDC",
+    name: "USD Coin",
+    Icon: CircleDollarSign,
+  },
+];
+
+function FeaturedSwapCard({ item, active = false, onClick }) {
+  const Icon = item.Icon;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "w-[31%] shrink-0 rounded-[18px] border p-2 text-left transition active:scale-[0.98]",
+        active
+          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+          : "border-white/10 bg-white/[0.04] text-white",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "flex h-[70px] items-center justify-center rounded-[12px] border",
+          active
+            ? "border-emerald-400/20 bg-emerald-400/10"
+            : "border-white/10 bg-white/[0.04]",
+        ].join(" ")}
+      >
+        <Icon className="h-6 w-6" />
+      </div>
+
+      <div className="mt-2 text-[11px] font-black text-white">
+        {item.label}
+      </div>
+
+      <div className="mt-1 text-[10px] font-semibold text-white/45">
+        {item.name}
+      </div>
+    </button>
+  );
+}
 
 export default function SwapHome({
-  user,
-  isPlus,
-  isLoadingPrices,
-  tokens,
-  tokenLogos,
-  modes,
-  activeMode,
-  fromToken,
-  toToken,
-  fromAmount,
-  fromUsd,
-  estimatedOutput,
-  rate,
-  activeService,
-  isFullscreen,
-  isRouteLoading,
-  feedback,
-  progressZone,
-  isConversionReady,
-  isConvertModalOpen,
-  primaryActionLabel,
-  hasInternalZwapToClaim,
-  hasWalletZwap,
-  zptsBalance,
-  onSetFromAmount,
-  onSwapTokens,
-  onSelectMode,
-  onSetMax,
-  onPrimaryAction,
-  onOpenConvertModal,
-  onCloseConvertModal,
-  onCloseFeedback,
-  onToggleFullscreen,
-  onCloseSwapService,
+  onBack,
+
+  zptsBalance = 0,
+  claimableZwap = 0,
+  isConversionReady = false,
+  progressZone = "Building",
+
+  walletAddress = "",
+  hasWallet = false,
+  swapUnlocked = false,
+
+  onConvert,
+  onClaim,
+  onCreateWallet,
+  onConnectWallet,
+  onLockedSwap,
 }) {
-  if (activeService) {
-    return (
-      <SwapEmbeddedFlow
-        activeService={activeService}
-        isFullscreen={isFullscreen}
-        isRouteLoading={isRouteLoading}
-        fromAmount={fromAmount}
-        fromToken={fromToken}
-        toToken={toToken}
-        onToggleFullscreen={onToggleFullscreen}
-        onClose={onCloseSwapService}
-      />
-    );
+  const [activeMode, setActiveMode] = useState("convert");
+
+  function handleBack() {
+    onBack?.();
+  }
+
+  function handleFeaturedSwapTap() {
+    setActiveMode("swap");
+    onLockedSwap?.();
   }
 
   return (
-    <div
-      className="min-h-[calc(100dvh-140px)] bg-[#081017] px-4 py-4 text-white"
-      data-testid="swap-tab"
-    >
-      <div className="mx-auto w-full max-w-md space-y-4">
-        <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.18),transparent_35%),linear-gradient(180deg,rgba(10,24,22,0.96),rgba(6,14,14,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-emerald-200/70">
-                  Swap
-                </p>
+    <div className="flex h-[100dvh] flex-col bg-[#050510] text-white">
+      <div className="mb-5 flex items-center justify-between px-4 pt-3">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition active:scale-[0.96]"
+          aria-label="Back"
+        >
+          <ArrowLeft size={18} />
+        </button>
 
-                <div className="rounded-xl border border-amber-400/25 bg-[linear-gradient(180deg,rgba(251,191,36,0.18),rgba(251,191,36,0.08))] px-2.5 py-1 text-[11px] font-medium text-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.10)]">
-                  {isPlus ? "Zitizen" : "Zwapper"}
-                </div>
-              </div>
-
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-                Swap & Convert
-              </h1>
-
-              <p className="mt-1 text-sm text-emerald-50/65">
-                Move value across your ZWAP ecosystem.
-              </p>
-            </div>
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/25 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.22),rgba(52,211,153,0.10))] shadow-[0_0_24px_rgba(52,211,153,0.14)]">
-              <ArrowRightLeft className="h-5 w-5 text-emerald-300" />
-            </div>
+        <div className="text-center">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/40">
+            Swap
+          </div>
+          <div className="text-[15px] font-semibold tracking-[-0.02em] text-white">
+            Overview
           </div>
         </div>
 
-        <SwapCoreCard
-          tokens={tokens}
-          tokenLogos={tokenLogos}
-          modes={modes}
-          activeMode={activeMode}
-          onSelectMode={onSelectMode}
-          fromToken={fromToken}
-          toToken={toToken}
-          fromAmount={fromAmount}
-          fromUsd={fromUsd}
-          estimatedOutput={estimatedOutput}
-          rate={rate}
-          isLoadingPrices={isLoadingPrices}
-          primaryActionLabel={primaryActionLabel}
-          hasWalletZwap={hasWalletZwap}
-          hasInternalZwapToClaim={hasInternalZwapToClaim}
-          onSetFromAmount={onSetFromAmount}
-          onSwapTokens={onSwapTokens}
-          onSetMax={onSetMax}
-          onPrimaryAction={onPrimaryAction}
-        />
-
-        <SwapHistory
-          zptsBalance={zptsBalance}
-          isConversionReady={isConversionReady}
-          onOpenConvertModal={onOpenConvertModal}
-        />
-
-        <SwapFeedback feedback={feedback} onClose={onCloseFeedback} />
+        <div className="w-10" />
       </div>
 
-      <ConvertZPtsModal
-        open={isConvertModalOpen}
-        onClose={onCloseConvertModal}
-        isReady={isConversionReady}
-        progressZone={progressZone}
-        zptsBalance={Math.floor(Number(user?.zpts_balance ?? 0))}
-        onConvert={onPrimaryAction}
-      />
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden px-3 pb-3">
+        <SwapCoreCard
+          activeMode={activeMode}
+          zptsBalance={zptsBalance}
+          claimableZwap={claimableZwap}
+          isConversionReady={isConversionReady}
+          progressZone={progressZone}
+          walletAddress={walletAddress}
+          hasWallet={hasWallet}
+          swapUnlocked={swapUnlocked}
+          onConvert={onConvert}
+          onClaim={onClaim}
+          onCreateWallet={onCreateWallet}
+          onConnectWallet={onConnectWallet}
+          onLockedSwap={onLockedSwap}
+        />
+
+        <SwapModesCarousel
+          modes={SWAP_MODES}
+          activeMode={activeMode}
+          onSelectMode={setActiveMode}
+        />
+
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="px-1">
+            <div className="text-[13px] font-black text-white">
+              Featured Swaps
+            </div>
+            <div className="text-[10px] text-white/50">
+              Convert ZWAP into supported assets when Swap unlocks.
+            </div>
+          </div>
+
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+            {FEATURED_SWAPS.map((item) => (
+              <FeaturedSwapCard
+                key={item.id}
+                item={item}
+                active={activeMode === "swap"}
+                onClick={handleFeaturedSwapTap}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
