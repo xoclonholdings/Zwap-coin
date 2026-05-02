@@ -72,7 +72,6 @@ export default function DashboardV1({ user, authUser }) {
   });
   const [streamOpen, setStreamOpen] = useState(false);
   const [miniStreamVisible, setMiniStreamVisible] = useState(false);
-  const [miniStreamPlaying, setMiniStreamPlaying] = useState(true);
   const [localZptsBalance, setLocalZptsBalance] = useState(null);
 
   const resolvedEmail = useMemo(
@@ -284,10 +283,6 @@ export default function DashboardV1({ user, authUser }) {
     setMiniStreamVisible(false);
   }
 
-  function handleToggleMiniStreamPlay() {
-    setMiniStreamPlaying((current) => !current);
-  }
-
   function handleToggleZwapAltView() {
     setIsZwapAltView((current) => !current);
   }
@@ -441,9 +436,8 @@ export default function DashboardV1({ user, authUser }) {
       <MiniStreamPlayer
         visible={miniStreamVisible && !streamOpen}
         title="ZWAP! Radio"
-        subtitle={miniStreamPlaying ? "Now Playing" : "Paused"}
-        isPlaying={miniStreamPlaying}
-        onTogglePlay={handleToggleMiniStreamPlay}
+        subtitle="Now Playing"
+        isPlaying={true}
         onOpenStream={handleOpenStream}
         onClose={handleCloseMiniStream}
       />
