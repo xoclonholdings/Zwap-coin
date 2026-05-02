@@ -15,8 +15,8 @@ import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 import ActivityPageV1 from "./activity/ActivityPageV1";
 import LearnPage from "./windows/learn/LearnPage";
-import StreamPanel from "./stream/StreamPanel";
-import MiniStreamPlayer from "./stream/MiniStreamPlayer";
+import StreamPanel from "./windows/stream/StreamPanel";
+import MiniStreamPlayer from "./windows/stream/MiniStreamPlayer";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
