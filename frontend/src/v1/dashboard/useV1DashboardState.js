@@ -205,9 +205,7 @@ export default function useV1DashboardState({
       isAdminPreviewUser ||
       getFirstBoolean(user, ["learnUnlocked", "learn_unlocked"], false);
 
-    const streamUnlocked =
-      isAdminPreviewUser ||
-      getFirstBoolean(user, ["streamUnlocked", "stream_unlocked"], false);
+    const streamUnlocked = Boolean(isAuthenticated || isAdminPreviewUser);
 
     const assistUnlocked =
       isAdminPreviewUser ||
