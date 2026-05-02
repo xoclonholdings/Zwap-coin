@@ -16,6 +16,7 @@ import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 import ActivityPageV1 from "./activity/ActivityPageV1";
 import LearnPage from "./windows/learn/LearnPage";
 import StreamPanel from "./stream/StreamPanel";
+import MiniStreamPlayer from "./stream/MiniStreamPlayer";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
@@ -70,6 +71,8 @@ export default function DashboardV1({ user, authUser }) {
     payload: null,
   });
   const [streamOpen, setStreamOpen] = useState(false);
+  const [miniStreamVisible, setMiniStreamVisible] = useState(false);
+  const [miniStreamPlaying, setMiniStreamPlaying] = useState(true);
   const [localZptsBalance, setLocalZptsBalance] = useState(null);
 
   const resolvedEmail = useMemo(
@@ -265,15 +268,34 @@ export default function DashboardV1({ user, authUser }) {
   }
 
   function handleOpenStream() {
+    setMiniStreamVisible(false);
     setStreamOpen(true);
+  }
+
+  function handleStreamOpenChange(nextOpen) {
+    setStreamOpen(nextOpen);
+
+    if (!nextOpen) {
+      setMiniStreamVisible(true);
+    }
+  }
+
+  function handleCloseMiniStream() {
+    setMiniStreamVisible(false);
+  }
+
+  function handleToggleMiniStreamPlay() {
+    setMiniStreamPlaying((current) => !current);
   }
 
   function handleToggleZwapAltView() {
     setIsZwapAltView((current) => !current);
   }
 
+  let screenContent = null;
+
   if (activeGameId) {
-    return (
+    screenContent = (
       <Suspense fallback={<GameLoadingScreen />}>
         {activeGameId === "stackz" && (
           <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />
@@ -289,19 +311,15 @@ export default function DashboardV1({ user, authUser }) {
         )}
       </Suspense>
     );
-  }
-
-  if (activeView.type === "activity") {
-    return (
+  } else if (activeView.type === "activity") {
+    screenContent = (
       <ActivityPageV1
         onBack={handleBackFromActivity}
         email={resolvedEmail}
       />
     );
-  }
-
-  if (activeView.type === "learn") {
-    return (
+  } else if (activeView.type === "learn") {
+    screenContent = (
       <LearnPage
         onBack={handleBackFromLearn}
         email={resolvedEmail}
@@ -313,103 +331,122 @@ export default function DashboardV1({ user, authUser }) {
         initialEbook={activeView.payload?.ebook || null}
       />
     );
+  } else {
+    screenContent = (
+      <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
+        <div className="shrink-0">
+          <AppHeaderV1
+            user={user}
+            authUser={authUser}
+            tier={resolvedTier}
+            zptsBalance={resolvedZptsBalance}
+            displayName={displayName}
+            gardenUnlocked={previewGardenUnlocked}
+            learnUnlocked={previewLearnUnlocked}
+            streamUnlocked={previewStreamUnlocked}
+            swapUnlocked={previewSwapUnlocked}
+            onActivityClick={handleOpenActivity}
+            onLearnClick={handleOpenLearn}
+            onStreamClick={handleOpenStream}
+          />
+        </div>
+
+        <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
+          <div className="min-h-0 overflow-hidden [&>*]:h-full">
+            <DashboardWindowMove
+              isActive={moveIsActive}
+              sessionSteps={sessionSteps}
+              calories={calories}
+              timerSeconds={timerSeconds}
+              onToggleMove={handleToggleMove}
+            />
+          </div>
+
+          <div className="min-h-0 overflow-hidden [&>*]:h-full">
+            <DashboardWindowPlay
+              highScores={resolvedHighScores}
+              onStartGame={handleStartGame}
+              onOpenPlay={handleStartGame}
+            />
+          </div>
+
+          <div className="min-h-0 overflow-hidden [&>*]:h-full">
+            <DashboardWindowShop
+              zptsBalance={resolvedZptsBalance}
+              shopUnlocked={previewShopUnlocked}
+              categories={shopCategories}
+              items={shopItems}
+              loading={shopLoading}
+              error={shopError}
+              onPurchaseItem={handlePurchaseShopItem}
+            />
+          </div>
+
+          <div className="min-h-0 overflow-hidden [&>*]:h-full">
+            <DashboardWindowZwap
+              isAltView={isZwapAltView}
+              onToggleAltView={handleToggleZwapAltView}
+              systemMessage={zwapMessage}
+              eventType={zwapMode}
+              nextStep={zwapHint}
+              activitySignal={activitySignal}
+              completedTaskCount={resolvedCompletedTaskCount}
+              totalTaskCount={resolvedTotalTaskCount}
+              taskStates={resolvedTaskStates}
+              zptsBalance={resolvedZptsBalance}
+              shopUnlocked={previewShopUnlocked}
+              gardenUnlocked={previewGardenUnlocked}
+              learnUnlocked={previewLearnUnlocked}
+              assistUnlocked={previewAssistUnlocked}
+              swapUnlocked={previewSwapUnlocked}
+              badgeVisibilityUnlocked={previewBadgeVisibilityUnlocked}
+              streamUnlocked={previewStreamUnlocked}
+              profileNeedsSetup={profileNeedsSetup}
+              hasNewHighScore={hasNewHighScore}
+              canSpendZpts={canSpendZpts}
+              shouldSaveZpts={shouldSaveZpts}
+              streakDays={streakDays}
+              dailySteps={resolvedDailySteps}
+              gamesPlayedToday={resolvedGamesPlayedToday}
+              lessonsCompletedToday={resolvedLessonsCompletedToday}
+              lastActiveAt={lastActiveAt}
+              fullLoopCompleted={resolvedFullLoopCompleted}
+              healthPercent={healthPercent}
+              growthStage={growthStage}
+              plantName={plantName}
+              rarePlantUnlocked={previewRarePlantUnlocked}
+              longestStreak={longestStreak}
+              totalBlooms={totalBlooms}
+              activeDays={activeDays}
+              missedDays={missedDays}
+              daysUntilNextBloom={daysUntilNextBloom}
+              nextRareUnlock={nextRareUnlock}
+              streakGraceDaysRemaining={streakGraceDaysRemaining}
+            />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
-      <div className="shrink-0">
-        <AppHeaderV1
-          user={user}
-          authUser={authUser}
-          tier={resolvedTier}
-          zptsBalance={resolvedZptsBalance}
-          displayName={displayName}
-          gardenUnlocked={previewGardenUnlocked}
-          learnUnlocked={previewLearnUnlocked}
-          streamUnlocked={previewStreamUnlocked}
-          swapUnlocked={previewSwapUnlocked}
-          onActivityClick={handleOpenActivity}
-          onLearnClick={handleOpenLearn}
-          onStreamClick={handleOpenStream}
-        />
-      </div>
+    <div className="relative h-[100dvh] w-full overflow-hidden">
+      {screenContent}
 
-      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2.5 px-2.5 pb-2.5 pt-2.5">
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowMove
-            isActive={moveIsActive}
-            sessionSteps={sessionSteps}
-            calories={calories}
-            timerSeconds={timerSeconds}
-            onToggleMove={handleToggleMove}
-          />
-        </div>
+      <StreamPanel
+        open={streamOpen}
+        onOpenChange={handleStreamOpenChange}
+      />
 
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowPlay
-            highScores={resolvedHighScores}
-            onStartGame={handleStartGame}
-            onOpenPlay={handleStartGame}
-          />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowShop
-            zptsBalance={resolvedZptsBalance}
-            shopUnlocked={previewShopUnlocked}
-            categories={shopCategories}
-            items={shopItems}
-            loading={shopLoading}
-            error={shopError}
-            onPurchaseItem={handlePurchaseShopItem}
-          />
-        </div>
-
-        <div className="min-h-0 overflow-hidden [&>*]:h-full">
-          <DashboardWindowZwap
-            isAltView={isZwapAltView}
-            onToggleAltView={handleToggleZwapAltView}
-            systemMessage={zwapMessage}
-            eventType={zwapMode}
-            nextStep={zwapHint}
-            activitySignal={activitySignal}
-            completedTaskCount={resolvedCompletedTaskCount}
-            totalTaskCount={resolvedTotalTaskCount}
-            taskStates={resolvedTaskStates}
-            zptsBalance={resolvedZptsBalance}
-            shopUnlocked={previewShopUnlocked}
-            gardenUnlocked={previewGardenUnlocked}
-            learnUnlocked={previewLearnUnlocked}
-            assistUnlocked={previewAssistUnlocked}
-            swapUnlocked={previewSwapUnlocked}
-            badgeVisibilityUnlocked={previewBadgeVisibilityUnlocked}
-            streamUnlocked={previewStreamUnlocked}
-            profileNeedsSetup={profileNeedsSetup}
-            hasNewHighScore={hasNewHighScore}
-            canSpendZpts={canSpendZpts}
-            shouldSaveZpts={shouldSaveZpts}
-            streakDays={streakDays}
-            dailySteps={resolvedDailySteps}
-            gamesPlayedToday={resolvedGamesPlayedToday}
-            lessonsCompletedToday={resolvedLessonsCompletedToday}
-            lastActiveAt={lastActiveAt}
-            fullLoopCompleted={resolvedFullLoopCompleted}
-            healthPercent={healthPercent}
-            growthStage={growthStage}
-            plantName={plantName}
-            rarePlantUnlocked={previewRarePlantUnlocked}
-            longestStreak={longestStreak}
-            totalBlooms={totalBlooms}
-            activeDays={activeDays}
-            missedDays={missedDays}
-            daysUntilNextBloom={daysUntilNextBloom}
-            nextRareUnlock={nextRareUnlock}
-            streakGraceDaysRemaining={streakGraceDaysRemaining}
-          />
-        </div>
-      </div>
-
-      <StreamPanel open={streamOpen} onOpenChange={setStreamOpen} />
+      <MiniStreamPlayer
+        visible={miniStreamVisible && !streamOpen}
+        title="ZWAP! Radio"
+        subtitle={miniStreamPlaying ? "Now Playing" : "Paused"}
+        isPlaying={miniStreamPlaying}
+        onTogglePlay={handleToggleMiniStreamPlay}
+        onOpenStream={handleOpenStream}
+        onClose={handleCloseMiniStream}
+      />
     </div>
   );
 }
