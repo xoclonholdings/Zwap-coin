@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { ArrowLeft, Bitcoin, CircleDollarSign, Coins, Repeat2 } from "lucide-react";
 
-import SwapCoreCard from "./windows/swap/SwapCoreCard";
-import SwapModesCarousel from "./windows/swap/SwapModesCarousel";
+import SwapCoreCard from "./SwapCoreCard";
+import SwapModesCarousel from "./SwapModesCarousel";
 
 const SWAP_MODES = [
   { id: "convert", name: "Convert" },
