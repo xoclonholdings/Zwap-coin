@@ -15,6 +15,7 @@ import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 import ActivityPageV1 from "./activity/ActivityPageV1";
 import LearnPage from "./windows/learn/LearnPage";
+import StreamPanel from "./stream/StreamPanel";
 
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
@@ -68,6 +69,7 @@ export default function DashboardV1({ user, authUser }) {
     type: "dashboard",
     payload: null,
   });
+  const [streamOpen, setStreamOpen] = useState(false);
   const [localZptsBalance, setLocalZptsBalance] = useState(null);
 
   const resolvedEmail = useMemo(
@@ -262,6 +264,10 @@ export default function DashboardV1({ user, authUser }) {
     });
   }
 
+  function handleOpenStream() {
+    setStreamOpen(true);
+  }
+
   function handleToggleZwapAltView() {
     setIsZwapAltView((current) => !current);
   }
@@ -324,6 +330,7 @@ export default function DashboardV1({ user, authUser }) {
           swapUnlocked={previewSwapUnlocked}
           onActivityClick={handleOpenActivity}
           onLearnClick={handleOpenLearn}
+          onStreamClick={handleOpenStream}
         />
       </div>
 
@@ -401,6 +408,8 @@ export default function DashboardV1({ user, authUser }) {
           />
         </div>
       </div>
+
+      <StreamPanel open={streamOpen} onOpenChange={setStreamOpen} />
     </div>
   );
 }
