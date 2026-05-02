@@ -71,12 +71,12 @@ function HeaderPopup({ popup, onClose }) {
   if (!popup) return null;
 
   return (
-    <div className="fixed left-1/2 top-[86px] z-[9999] w-[250px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#0c1220]/95 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+    <div className="fixed left-1/2 top-[86px] z-[9999] w-[270px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#0c1220]/95 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
       <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/80">
         {popup.title}
       </div>
 
-      <div className="mt-1 text-[12px] leading-5 text-white/80">
+      <div className="mt-1 whitespace-pre-line text-[12px] leading-5 text-white/80">
         {popup.message}
       </div>
 
@@ -101,7 +101,7 @@ export default function AppHeaderV1({
 
   gardenUnlocked = false,
   learnUnlocked = false,
-  streamUnlocked = false,
+  streamUnlocked = true,
   swapUnlocked = false,
 
   gardenHasAlert = false,
@@ -171,18 +171,16 @@ export default function AppHeaderV1({
   }
 
   function handleStreamTap() {
-    if (!streamUnlocked) {
-      showLockedPopup("Stream Locked", "Complete more progress to unlock Stream.");
-      return;
-    }
-
     setPopup(null);
     onStreamClick?.();
   }
 
   function handleSwapTap() {
     if (!swapUnlocked) {
-      showLockedPopup("Swap Locked", "Complete more progress to unlock Swap.");
+      showLockedPopup(
+        "Swap Locked",
+        "Swap converts your progress into real value.\n\nKeep building:\n• Earn zPts\n• Complete daily activity\n• Stay consistent\n\nMore ways to progress unlock over time.\n\nSwap unlocks when the system is ready.\n\nYou’re not ready yet.\nKeep going."
+      );
       return;
     }
 
@@ -236,7 +234,7 @@ export default function AppHeaderV1({
 
             <HeaderIconButton
               label="Stream"
-              unlocked={streamUnlocked}
+              unlocked={true}
               hasAlert={streamHasAlert}
               onClick={handleStreamTap}
               icon={<Play size={15} />}
@@ -293,7 +291,7 @@ export default function AppHeaderV1({
         trophyCount={trophyCount}
         trophyBonusPercent={trophyBonusPercent}
         learnUnlocked={learnUnlocked}
-        streamUnlocked={streamUnlocked}
+        streamUnlocked={true}
         onAdminTrigger={handleAdminOpen}
         onLearnOpen={onLearnClick}
         onStreamOpen={onStreamClick}
