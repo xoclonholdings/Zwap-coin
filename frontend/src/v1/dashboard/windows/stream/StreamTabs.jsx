@@ -1,17 +1,16 @@
 import React from "react";
-import { BookOpen, Headphones, Radio, Video } from "lucide-react";
+import { Headphones, Music2, Radio } from "lucide-react";
 import { motion } from "framer-motion";
 
 const tabs = [
-  { id: "live", label: "Live", icon: Radio },
-  { id: "listen", label: "Listen", icon: Headphones },
-  { id: "watch", label: "Watch", icon: Video },
-  { id: "library", label: "Library", icon: BookOpen },
+  { id: "zwap-radio", label: "Radio", icon: Radio },
+  { id: "spotify", label: "Spotify", icon: Headphones },
+  { id: "apple-music", label: "Apple", icon: Music2 },
 ];
 
 export default function StreamTabs({ activeTab, setActiveTab }) {
   return (
-    <div className="grid grid-cols-4 gap-2 rounded-[22px] border border-white/6 bg-white/[0.03] p-1.5">
+    <div className="grid grid-cols-3 gap-2 rounded-[22px] border border-white/6 bg-white/[0.03] p-1.5">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -19,6 +18,7 @@ export default function StreamTabs({ activeTab, setActiveTab }) {
         return (
           <motion.button
             key={tab.id}
+            type="button"
             onClick={() => setActiveTab(tab.id)}
             whileTap={{ scale: 0.98 }}
             className={`rounded-2xl px-2 py-3 text-[11px] font-medium transition-all ${
