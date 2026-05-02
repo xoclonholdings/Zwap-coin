@@ -7,11 +7,13 @@ import {
   Lock,
   Repeat2,
   ShieldCheck,
+  Sparkles,
+  TrendingUp,
   Wallet,
 } from "lucide-react";
 
 function formatNumber(value) {
-  return Number(value || 0).toLocaleString();
+  return Math.floor(Number(value || 0)).toLocaleString();
 }
 
 function formatZwap(value) {
@@ -26,10 +28,14 @@ function formatZwap(value) {
 function ConvertCard({
   zptsBalance = 0,
   claimableZwap = 0,
+  isConversionReady = false,
+  progressZone = "Building",
   onPrimaryAction,
 }) {
-  const availableZwap = Math.floor(Number(zptsBalance || 0) / 1000);
-  const canConvert = availableZwap >= 1;
+  const safeZpts = Math.floor(Number(zptsBalance ?? 0));
+  const helperText = isConversionReady
+    ? "Your balance is ready to unlock conversion."
+    : "Keep building your balance to reach the next conversion unlock.";
 
   return (
     <>
@@ -37,58 +43,86 @@ function ConvertCard({
         <div>
           <div className="flex items-center gap-2">
             <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-100/45">
-              Convert
+              Progress Checkpoint
             </p>
             <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
-              zPts → ZWAP
+              Convert
             </div>
           </div>
 
           <h3 className="mt-1 text-xl font-semibold tracking-tight text-white">
-            Convert Progress
+            Build Toward ZWAP
           </h3>
           <p className="mt-1 text-sm text-emerald-50/60">
-            Turn saved zPts into claimable ZWAP.
+            {helperText}
           </p>
         </div>
 
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10">
-          <ArrowRightLeft className="h-5 w-5 text-emerald-300" />
+          <TrendingUp className="h-5 w-5 text-emerald-300" />
         </div>
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3">
-        <div className="rounded-[20px] border border-white/8 bg-black/20 p-3">
-          <p className="text-[11px] uppercase tracking-wide text-white/45">
-            Available Balance
-          </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+              Current Zone
+            </p>
+            <p className="mt-2 text-sm font-semibold text-emerald-300">
+              {progressZone}
+            </p>
+          </div>
 
-          <div className="mt-3 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-[28px] font-semibold leading-none text-white">
-                {formatNumber(zptsBalance)}
-              </p>
-              <p className="mt-2 text-xs text-white/35">zPts</p>
+          <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+              zPts Balance
+            </p>
+            <p className="mt-2 text-sm font-semibold text-violet-300">
+              {safeZpts.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-[20px] border border-white/8 bg-black/20 p-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10">
+              <ArrowRightLeft className="h-5 w-5 text-cyan-300" />
             </div>
 
-            <div className="text-right">
-              <p className="text-[18px] font-semibold leading-none text-emerald-300">
-                {formatNumber(availableZwap)}
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
+                Unlock Path
               </p>
-              <p className="mt-2 text-xs text-white/35">ZWAP available</p>
+              <p className="mt-2 text-base font-semibold text-white">
+                zPts progress can unlock ZWAP conversion
+              </p>
+              <p className="mt-1 text-sm leading-6 text-white/60">
+                Build your balance, then convert once the threshold is available.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-3 rounded-2xl border border-white/8 bg-white/5 px-3 py-3">
-          <div className="flex items-start gap-2">
-            <Coins className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-300" />
+        <div className="mt-3 rounded-[20px] border border-white/8 bg-white/5 p-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-400/10">
+              <Sparkles className="h-5 w-5 text-violet-300" />
+            </div>
+
             <div className="min-w-0">
-              <p className="text-xs font-medium text-white/80">
-                Conversion Rate
+              <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">
+                Status
               </p>
-              <p className="mt-0.5 text-[11px] text-white/55">
-                1,000 zPts converts into 1 claimable ZWAP.
+              <p className="mt-2 text-base font-semibold text-white">
+                {isConversionReady
+                  ? "Conversion available now"
+                  : "Still building momentum"}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-white/60">
+                {isConversionReady
+                  ? "You can continue into conversion now."
+                  : "Keep accumulating zPts to unlock the next conversion step."}
               </p>
             </div>
           </div>
@@ -98,7 +132,7 @@ function ConvertCard({
           <p className="text-[11px] uppercase tracking-wide text-white/45">
             Claimable ZWAP
           </p>
-          <p className="mt-2 text-[24px] font-semibold leading-none text-white">
+          <p className="mt-2 text-[22px] font-semibold leading-none text-white">
             {formatZwap(claimableZwap)} ZWAP
           </p>
           <p className="mt-2 text-xs leading-5 text-white/45">
@@ -109,16 +143,16 @@ function ConvertCard({
         <motion.button
           type="button"
           onClick={onPrimaryAction}
-          disabled={!canConvert}
-          whileTap={canConvert ? { scale: 0.985, y: 2 } : {}}
+          disabled={!isConversionReady}
+          whileTap={isConversionReady ? { scale: 0.985, y: 2 } : {}}
           className={`mt-4 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3.5 text-sm font-semibold transition ${
-            canConvert
+            isConversionReady
               ? "border border-emerald-300/30 bg-emerald-400 text-[#071511] shadow-[0_10px_0_rgba(10,84,64,0.95),0_16px_28px_rgba(52,211,153,0.24),inset_0_1px_0_rgba(255,255,255,0.35)] hover:translate-y-[1px] hover:shadow-[0_8px_0_rgba(10,84,64,0.95),0_14px_24px_rgba(52,211,153,0.22),inset_0_1px_0_rgba(255,255,255,0.35)]"
               : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
           }`}
         >
-          <ArrowRightLeft className="mr-2 h-4 w-4" />
-          {canConvert ? "Convert zPts" : "Need 1,000 zPts"}
+          <Coins className="mr-2 h-4 w-4" />
+          {isConversionReady ? "Convert Now" : "Keep Building"}
         </motion.button>
       </div>
     </>
@@ -152,7 +186,7 @@ function ClaimCard({
             Claim ZWAP
           </h3>
           <p className="mt-1 text-sm text-emerald-50/60">
-            Claiming moves ZWAP into wallet ownership.
+            Claiming makes your ZWAP available for wallet ownership.
           </p>
         </div>
 
@@ -170,8 +204,7 @@ function ClaimCard({
             {formatZwap(claimableZwap)} ZWAP
           </p>
           <p className="mt-2 text-xs leading-5 text-white/45">
-            Claimable ZWAP is ready, but it must be connected to a wallet before
-            future Swap access.
+            Claimable ZWAP must be connected to a wallet before future Swap access.
           </p>
         </div>
 
@@ -245,7 +278,7 @@ function SwapLockedCard({ swapUnlocked = false, onPrimaryAction }) {
           </div>
 
           <h3 className="mt-1 text-xl font-semibold tracking-tight text-white">
-            Swap Locked
+            {swapUnlocked ? "Swap Available" : "Swap Locked"}
           </h3>
           <p className="mt-1 text-sm text-emerald-50/60">
             Swap converts your progress into real value.
@@ -301,7 +334,7 @@ function SwapLockedCard({ swapUnlocked = false, onPrimaryAction }) {
           className="mt-4 inline-flex w-full items-center justify-center rounded-[22px] border border-white/10 bg-white/6 px-4 py-3.5 text-sm font-semibold text-white/72 transition active:scale-[0.98]"
         >
           <Lock className="mr-2 h-4 w-4" />
-          Swap Locked
+          {swapUnlocked ? "Continue to Swap" : "Swap Locked"}
         </button>
       </div>
     </>
@@ -312,6 +345,8 @@ export default function SwapCoreCard({
   activeMode = "convert",
   zptsBalance = 0,
   claimableZwap = 0,
+  isConversionReady = false,
+  progressZone = "Building",
   walletAddress = "",
   hasWallet = false,
   swapUnlocked = false,
@@ -341,6 +376,8 @@ export default function SwapCoreCard({
         <ConvertCard
           zptsBalance={zptsBalance}
           claimableZwap={claimableZwap}
+          isConversionReady={isConversionReady}
+          progressZone={progressZone}
           onPrimaryAction={onConvert}
         />
       )}
