@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { ArrowLeft, Bitcoin, CircleDollarSign, Coins, Repeat2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Bitcoin,
+  CircleDollarSign,
+  Coins,
+  Repeat2,
+} from "lucide-react";
 
 import SwapCoreCard from "./SwapCoreCard";
 import SwapModesCarousel from "./SwapModesCarousel";
@@ -77,7 +83,7 @@ function FeaturedSwapCard({ item, active = false, onClick }) {
   );
 }
 
-export default function SwapHome({
+export default function SwapPage({
   onBack,
 
   zptsBalance = 0,
@@ -92,14 +98,9 @@ export default function SwapHome({
   onConvert,
   onClaim,
   onCreateWallet,
-  onConnectWallet,
   onLockedSwap,
 }) {
   const [activeMode, setActiveMode] = useState("convert");
-
-  function handleBack() {
-    onBack?.();
-  }
 
   function handleFeaturedSwapTap() {
     setActiveMode("swap");
@@ -108,10 +109,10 @@ export default function SwapHome({
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[#050510] text-white">
-      <div className="mb-5 flex items-center justify-between px-4 pt-3">
+      <div className="mb-3 flex items-center justify-between px-4 pt-3">
         <button
           type="button"
-          onClick={handleBack}
+          onClick={onBack}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition active:scale-[0.96]"
           aria-label="Back"
         >
@@ -143,7 +144,6 @@ export default function SwapHome({
           onConvert={onConvert}
           onClaim={onClaim}
           onCreateWallet={onCreateWallet}
-          onConnectWallet={onConnectWallet}
           onLockedSwap={onLockedSwap}
         />
 
