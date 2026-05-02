@@ -1,7 +1,8 @@
-import moveMotivateArtwork from "../../../../assets/zwap_move_motivate.png";
-import playActivateArtwork from "../../../../assets/zwap_play_power.png";
-import focusArtwork from "../../../../assets/zwap_focus_fantasy.png";
-import chillArtwork from "../../../../assets/zwap_chill_collection.png";
+import radioArtwork from "../../../../assets/stream/zwap_radio_logo.png";
+import moveMotivateArtwork from "../../../../assets/stream/zwap_move_motivate.png";
+import playActivateArtwork from "../../../../assets/stream/zwap_play_power.png";
+import focusArtwork from "../../../../assets/stream/zwap_focus_fantasy.png";
+import chillArtwork from "../../../../assets/stream/zwap_chill_collection.png";
 
 export const streamModes = [
   {
@@ -10,6 +11,7 @@ export const streamModes = [
     title: "ZWAP! Radio",
     type: "bandcamp",
     status: "READY",
+    artwork: radioArtwork,
     embedProvider: "bandcamp",
     embedUrl: "",
     externalUrl: "https://poetreesmusic.bandcamp.com/album/zwap-radio",
