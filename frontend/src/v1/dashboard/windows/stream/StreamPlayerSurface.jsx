@@ -22,13 +22,13 @@ export default function StreamPlayerSurface({ item, activeTab }) {
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/65">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/65">
               {isRadio && "ZWAP! Radio"}
               {isSpotify && "Spotify"}
               {isApple && "Apple Music"}
             </p>
 
-            <h3 className="mt-1 text-lg font-semibold text-white">
+            <h3 className="mt-1 text-[18px] font-black tracking-[-0.04em] text-white">
               {item.title}
             </h3>
           </div>
@@ -42,7 +42,7 @@ export default function StreamPlayerSurface({ item, activeTab }) {
           {isRadio && (
             <div className="overflow-hidden rounded-[16px] border border-white/10 bg-black">
               <iframe
-                style={{ border: 0, width: "100%", height: "360px" }}
+                style={{ border: 0, width: "100%", height: "300px" }}
                 src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=9a64ff/tracklist=false/track=306480053/transparent=true/"
                 seamless
                 title="ZWAP Radio"
