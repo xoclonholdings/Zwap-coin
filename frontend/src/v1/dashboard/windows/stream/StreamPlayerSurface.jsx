@@ -40,14 +40,18 @@ export default function StreamPlayerSurface({ item, activeTab }) {
 
         <div className="mt-4 rounded-[20px] border border-white/10 bg-black/30 p-3">
           {isRadio && (
-            <div className="overflow-hidden rounded-[16px] border border-white/10 bg-black">
+            <div className="flex justify-center overflow-hidden rounded-[16px] border border-white/10 bg-black">
               <iframe
-                style={{ border: 0, width: "100%", height: "300px" }}
-                src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=9a64ff/tracklist=false/track=306480053/transparent=true/"
+                style={{ border: 0, width: "258px", height: "400px" }}
+                src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=fe7eaf/tracklist=false/transparent=true/"
                 seamless
                 title="ZWAP Radio"
                 allow="autoplay; encrypted-media"
-              />
+              >
+                <a href="https://poetreesmusic.bandcamp.com/album/zwap-radio">
+                  ZWAP! Radio by ZWAP!
+                </a>
+              </iframe>
             </div>
           )}
 
