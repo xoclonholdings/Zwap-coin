@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Headphones, Music2 } from "lucide-react";
-import { connectSpotify } from "@/lib/spotify";
+import { connectSpotify } from "../../../lib/spotify";
 
 export default function StreamPlayerSurface({ item, activeTab }) {
   if (!item) return null;
