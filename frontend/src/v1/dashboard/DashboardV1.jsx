@@ -436,8 +436,10 @@ export default function DashboardV1({ user, authUser }) {
       <MiniStreamPlayer
         visible={miniStreamVisible && !streamOpen}
         title="ZWAP! Radio"
-        subtitle="Now Playing"
-        isPlaying={true}
+        subtitle={miniStreamPlaying ? "Now Playing" : "Paused"}
+        artwork={state?.currentStreamArtwork || null}
+        isPlaying={miniStreamPlaying}
+        onTogglePlay={handleToggleMiniStreamPlay}
         onOpenStream={handleOpenStream}
         onClose={handleCloseMiniStream}
       />
