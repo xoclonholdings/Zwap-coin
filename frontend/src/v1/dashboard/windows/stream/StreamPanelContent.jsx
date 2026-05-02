@@ -67,16 +67,17 @@ export default function StreamPanelContent({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-2">
               {playlistItems.map((item) => (
-                <StreamCard
-                  key={item.id}
-                  item={item}
-                  tabId={activeTab}
-                  active={selectedPlaylist?.id === item.id}
-                  onClick={() => handleSelectPlaylist(item)}
-                  onOpen={() => handleOpenPlaylist(item)}
-                />
+                <div key={item.id} className="w-[31%] shrink-0">
+                  <StreamCard
+                    item={item}
+                    tabId={activeTab}
+                    active={selectedPlaylist?.id === item.id}
+                    onClick={() => handleSelectPlaylist(item)}
+                    onOpen={() => handleOpenPlaylist(item)}
+                  />
+                </div>
               ))}
             </div>
           </div>
