@@ -43,7 +43,7 @@ export default function StreamPanelContent({
               Stream
             </div>
             <div className="text-[15px] font-semibold tracking-[-0.02em] text-white">
-              Library
+              Overview
             </div>
           </div>
 
