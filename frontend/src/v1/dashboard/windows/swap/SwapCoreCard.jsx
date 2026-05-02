@@ -1,25 +1,23 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Coins, Wallet, Lock } from "lucide-react";
+import { Coins, Repeat2, Wallet } from "lucide-react";
 
 function formatNumber(value) {
-  const safe = Math.floor(Number(value || 0));
-  if (!Number.isFinite(safe)) return "0";
-  return safe.toLocaleString();
-}
-
-function formatZwap(value) {
   const safe = Number(value || 0);
   if (!Number.isFinite(safe)) return "0";
+
   return safe.toLocaleString(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 4,
   });
 }
 
-/* =========================
-   CONVERT (MINIMAL)
-========================= */
+function formatWhole(value) {
+  const safe = Math.floor(Number(value || 0));
+  if (!Number.isFinite(safe)) return "0";
+  return safe.toLocaleString();
+}
+
 function ConvertCard({
   zptsBalance = 0,
   isConversionReady = false,
@@ -41,13 +39,27 @@ function ConvertCard({
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">
-          zPts Balance → ZWAP
-        </p>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+              zPts Balance
+            </p>
+            <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white">
+              {formatWhole(safeZpts)}
+            </div>
+          </div>
 
-        <p className="mt-3 text-[22px] font-semibold text-white">
-          {formatNumber(safeZpts)} → {formatZwap(estimatedZwap)}
-        </p>
+          <div className="pb-3 text-lg font-semibold text-white/35">→</div>
+
+          <div>
+            <p className="text-right text-[10px] uppercase tracking-[0.2em] text-white/40">
+              ZWAP Balance
+            </p>
+            <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-right text-[20px] font-semibold text-emerald-300">
+              {formatNumber(estimatedZwap)}
+            </div>
+          </div>
+        </div>
 
         <motion.button
           type="button"
@@ -67,12 +79,8 @@ function ConvertCard({
   );
 }
 
-/* =========================
-   CLAIM (MINIMAL)
-========================= */
 function ClaimCard({
   claimableZwap = 0,
-  walletAddress = "",
   hasWallet = false,
   onCreateWallet,
   onPrimaryAction,
@@ -92,13 +100,13 @@ function ClaimCard({
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">
-          Claimable
+        <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+          Claimable ZWAP
         </p>
 
-        <p className="mt-3 text-[24px] font-semibold text-white">
-          {formatZwap(claimableZwap)} ZWAP
-        </p>
+        <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[22px] font-semibold text-white">
+          {formatNumber(claimableZwap)}
+        </div>
 
         {!hasWallet ? (
           <button
@@ -128,10 +136,31 @@ function ClaimCard({
   );
 }
 
-/* =========================
-   SWAP LOCKED (MINIMAL)
-========================= */
-function SwapLockedCard({ swapUnlocked = false, onPrimaryAction }) {
+function SwapCard({
+  zwapBalance = 0,
+  swapToSymbol = "ETH",
+  estimatedOutput = "",
+  onPrimaryAction,
+}) {
+  const [amount, setAmount] = useState("");
+
+  const safeZwapBalance = Number(zwapBalance || 0);
+  const safeAmount = Number(amount || 0);
+  const canSwap =
+    Number.isFinite(safeAmount) &&
+    safeAmount > 0 &&
+    safeAmount <= safeZwapBalance;
+
+  const displayOutput = useMemo(() => {
+    if (estimatedOutput !== "") return estimatedOutput;
+    if (!canSwap) return "";
+    return "";
+  }, [canSwap, estimatedOutput]);
+
+  function handleMax() {
+    setAmount(String(safeZwapBalance || ""));
+  }
+
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
@@ -140,57 +169,101 @@ function SwapLockedCard({ swapUnlocked = false, onPrimaryAction }) {
         </p>
 
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10">
-          <Lock className="h-4 w-4 text-amber-300" />
+          <Repeat2 className="h-4 w-4 text-amber-300" />
         </div>
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-        <p className="text-sm text-white/70">
-          Swap is locked. Keep building.
-        </p>
+        <div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+              ZWAP Balance
+            </p>
 
-        <button
+            <button
+              type="button"
+              onClick={handleMax}
+              className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold text-white/65 transition active:scale-[0.98]"
+            >
+              Max
+            </button>
+          </div>
+
+          <input
+            type="number"
+            inputMode="decimal"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            placeholder="0"
+            className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white outline-none placeholder:text-white/20"
+          />
+
+          <p className="mt-1 text-[10px] text-white/35">
+            {formatNumber(safeZwapBalance)} ZWAP
+          </p>
+        </div>
+
+        <div className="my-3 text-center text-lg font-semibold text-white/35">
+          →
+        </div>
+
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+            {swapToSymbol}
+          </p>
+
+          <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white">
+            {displayOutput || "0"}
+          </div>
+        </div>
+
+        <motion.button
           type="button"
-          onClick={onPrimaryAction}
-          className="mt-5 inline-flex w-full items-center justify-center rounded-[22px] border border-white/10 bg-white/6 px-4 py-3 text-sm font-semibold text-white/70 transition active:scale-[0.98]"
+          onClick={() => onPrimaryAction?.({ amount, toSymbol: swapToSymbol })}
+          disabled={!canSwap}
+          whileTap={canSwap ? { scale: 0.98 } : {}}
+          className={`mt-5 inline-flex w-full items-center justify-center rounded-[22px] px-4 py-3 text-sm font-semibold transition ${
+            canSwap
+              ? "border border-amber-300/30 bg-amber-300 text-[#171007] shadow-[0_8px_0_rgba(92,64,14,0.95)]"
+              : "cursor-not-allowed border border-white/8 bg-white/8 text-white/35"
+          }`}
         >
-          Swap Locked
-        </button>
+          Swap Now
+        </motion.button>
       </div>
     </>
   );
 }
 
-/* =========================
-   CORE SWITCH
-========================= */
 export default function SwapCoreCard({
   activeMode = "convert",
   zptsBalance = 0,
   claimableZwap = 0,
+  zwapBalance = 0,
   isConversionReady = false,
-  walletAddress = "",
   hasWallet = false,
-  swapUnlocked = false,
+  swapToSymbol = "ETH",
+  estimatedSwapOutput = "",
   onConvert,
   onClaim,
   onCreateWallet,
-  onLockedSwap,
+  onSwap,
 }) {
   return (
     <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.12),transparent_34%),linear-gradient(180deg,rgba(9,22,19,0.98),rgba(7,13,16,0.98))] p-4">
       {activeMode === "claim" ? (
         <ClaimCard
           claimableZwap={claimableZwap}
-          walletAddress={walletAddress}
           hasWallet={hasWallet}
           onCreateWallet={onCreateWallet}
           onPrimaryAction={onClaim}
         />
       ) : activeMode === "swap" ? (
-        <SwapLockedCard
-          swapUnlocked={swapUnlocked}
-          onPrimaryAction={onLockedSwap}
+        <SwapCard
+          zwapBalance={zwapBalance}
+          swapToSymbol={swapToSymbol}
+          estimatedOutput={estimatedSwapOutput}
+          onPrimaryAction={onSwap}
         />
       ) : (
         <ConvertCard
