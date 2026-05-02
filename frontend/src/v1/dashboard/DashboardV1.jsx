@@ -18,6 +18,8 @@ import LearnPage from "./windows/learn/LearnPage";
 import StreamPanel from "./windows/stream/StreamPanel";
 import MiniStreamPlayer from "./windows/stream/MiniStreamPlayer";
 
+import radioArtwork from "../../assets/stream/zwap_radio_logo.png";
+
 const StackzGame = lazy(() =>
   import("@/v1/components/games/stackz/StackzGame")
 );
@@ -72,6 +74,7 @@ export default function DashboardV1({ user, authUser }) {
   });
   const [streamOpen, setStreamOpen] = useState(false);
   const [miniStreamVisible, setMiniStreamVisible] = useState(false);
+  const [miniStreamPlaying, setMiniStreamPlaying] = useState(true);
   const [localZptsBalance, setLocalZptsBalance] = useState(null);
 
   const resolvedEmail = useMemo(
@@ -283,6 +286,10 @@ export default function DashboardV1({ user, authUser }) {
     setMiniStreamVisible(false);
   }
 
+  function handleToggleMiniStreamPlay() {
+    handleOpenStream();
+  }
+
   function handleToggleZwapAltView() {
     setIsZwapAltView((current) => !current);
   }
@@ -437,7 +444,7 @@ export default function DashboardV1({ user, authUser }) {
         visible={miniStreamVisible && !streamOpen}
         title="ZWAP! Radio"
         subtitle={miniStreamPlaying ? "Now Playing" : "Paused"}
-        artwork={state?.currentStreamArtwork || null}
+        artwork={radioArtwork}
         isPlaying={miniStreamPlaying}
         onTogglePlay={handleToggleMiniStreamPlay}
         onOpenStream={handleOpenStream}
