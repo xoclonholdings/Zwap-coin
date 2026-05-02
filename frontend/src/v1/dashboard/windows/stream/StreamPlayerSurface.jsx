@@ -15,7 +15,7 @@ export default function StreamPlayerSurface({ item, activeTab }) {
       key={item.id}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br ${item.accent} p-5`}
+      className={`relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br ${item.accent} p-4`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_42%)]" />
 
@@ -28,11 +28,9 @@ export default function StreamPlayerSurface({ item, activeTab }) {
               {isApple && "Apple Music"}
             </p>
 
-            <h3 className="mt-2 text-lg font-semibold text-white">
+            <h3 className="mt-1 text-lg font-semibold text-white">
               {item.title}
             </h3>
-
-            <p className="mt-1 text-sm text-gray-200/80">{item.subtitle}</p>
           </div>
 
           <div className="shrink-0 rounded-full border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/75">
@@ -40,7 +38,7 @@ export default function StreamPlayerSurface({ item, activeTab }) {
           </div>
         </div>
 
-        <div className="mt-5 rounded-[20px] border border-white/10 bg-black/30 p-4">
+        <div className="mt-4 rounded-[20px] border border-white/10 bg-black/30 p-3">
           {isRadio && (
             <div className="overflow-hidden rounded-[16px] border border-white/10 bg-black">
               <iframe
@@ -80,10 +78,6 @@ export default function StreamPlayerSurface({ item, activeTab }) {
             </div>
           )}
         </div>
-
-        <p className="mt-4 text-sm leading-5 text-gray-200/80">
-          {item.description}
-        </p>
       </div>
     </motion.div>
   );
