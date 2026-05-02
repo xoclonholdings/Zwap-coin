@@ -1,16 +1,18 @@
+import moveMotivateArtwork from "../../../../assets/zwap_move_motivate.png";
+import playActivateArtwork from "../../../../assets/zwap_play_power.png";
+import focusArtwork from "../../../../assets/zwap_focus_fantasy.png";
+import chillArtwork from "../../../../assets/zwap_chill_collection.png";
+
 export const streamModes = [
   {
     id: "zwap-radio",
     label: "ZWAP! Radio",
     title: "ZWAP! Radio",
-    subtitle: "PoeTrees Music on Bandcamp",
     type: "bandcamp",
     status: "READY",
-    description:
-      "The native ZWAP! Radio lane. This is where PoeTrees Music lives as the first embedded Stream experience.",
     embedProvider: "bandcamp",
     embedUrl: "",
-    externalUrl: "",
+    externalUrl: "https://poetreesmusic.bandcamp.com/album/zwap-radio",
     accent: "from-cyan-500/20 via-sky-500/10 to-purple-500/20",
   },
   {
@@ -54,6 +56,7 @@ export const playlistItems = [
     reward: null,
     description:
       "High-energy music for walking, training, and getting the body moving.",
+    artwork: moveMotivateArtwork,
     spotifyUrl: "",
     appleMusicUrl: "",
     bandcampUrl: "",
@@ -69,14 +72,15 @@ export const playlistItems = [
     reward: null,
     description:
       "Upbeat music for PLAY sessions, arcade energy, and quick reward loops.",
+    artwork: playActivateArtwork,
     spotifyUrl: "",
     appleMusicUrl: "",
     bandcampUrl: "",
     accent: "from-fuchsia-500/20 via-cyan-500/10 to-purple-500/20",
   },
   {
-    id: "playlist-focus",
-    title: "ZWAP! Focus",
+    id: "playlist-focus-fantasy",
+    title: "ZWAP! Focus Fantasy",
     subtitle: "Lock in",
     type: "playlist",
     category: "focus",
@@ -84,14 +88,15 @@ export const playlistItems = [
     reward: null,
     description:
       "Focused audio for learning, building, reading, and steady execution.",
+    artwork: focusArtwork,
     spotifyUrl: "",
     appleMusicUrl: "",
     bandcampUrl: "",
     accent: "from-violet-500/20 via-purple-500/10 to-cyan-500/20",
   },
   {
-    id: "playlist-chill",
-    title: "ZWAP! Chill",
+    id: "playlist-chill-collection",
+    title: "ZWAP! Chill Collection",
     subtitle: "Cool down",
     type: "playlist",
     category: "chill",
@@ -99,6 +104,7 @@ export const playlistItems = [
     reward: null,
     description:
       "Lower-energy music for recovery, reflection, cooldowns, and calm sessions.",
+    artwork: chillArtwork,
     spotifyUrl: "",
     appleMusicUrl: "",
     bandcampUrl: "",
@@ -107,11 +113,8 @@ export const playlistItems = [
 ];
 
 export const watchItems = [];
-
 export const listenItems = streamModes;
-
 export const liveItems = [];
-
 export const libraryItems = playlistItems;
 
 export function getStreamModeById(id) {
