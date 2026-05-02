@@ -17,7 +17,7 @@ import ActivityPageV1 from "./activity/ActivityPageV1";
 import LearnPage from "./windows/learn/LearnPage";
 import StreamPanel from "./windows/stream/StreamPanel";
 import MiniStreamPlayer from "./windows/stream/MiniStreamPlayer";
-import SwapHome from "@/windows/swap/SwapHome";
+import SwapHome from "./windows/swap/SwapHome";
 
 import radioArtwork from "../../assets/stream/zwap_radio_logo.png";
 
