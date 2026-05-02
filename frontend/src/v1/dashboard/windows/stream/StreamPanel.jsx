@@ -26,11 +26,14 @@ export default function StreamPanel({ open, onOpenChange }) {
     setSelectedPlaylist(item);
   }
 
-  if (!open) return null;
-
   return (
     <>
-      <div className="fixed inset-0 z-[220] bg-black/80 backdrop-blur-md">
+      {/* STREAM OVERLAY (HIDDEN, NOT UNMOUNTED) */}
+      <div
+        className={`fixed inset-0 z-[220] transition-all ${
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        } bg-black/80 backdrop-blur-md`}
+      >
         <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col bg-[#050510] text-white">
           <StreamPanelContent
             activeTab={activeTab}
@@ -45,6 +48,7 @@ export default function StreamPanel({ open, onOpenChange }) {
         </div>
       </div>
 
+      {/* LIBRARY MODAL */}
       <StreamLibraryModal
         open={libraryOpen}
         items={playlistItems}
