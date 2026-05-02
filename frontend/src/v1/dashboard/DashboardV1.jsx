@@ -17,7 +17,7 @@ import ActivityPageV1 from "./activity/ActivityPageV1";
 import LearnPage from "./windows/learn/LearnPage";
 import StreamPanel from "./windows/stream/StreamPanel";
 import MiniStreamPlayer from "./windows/stream/MiniStreamPlayer";
-import SwapHome from "./windows/swap/SwapHome";
+import SwapPage from "./windows/swap/SwapPage";
 
 import radioArtwork from "../../assets/stream/zwap_radio_logo.png";
 
@@ -288,7 +288,7 @@ export default function DashboardV1({ user, authUser }) {
     });
   }
 
-  function handleBackFromActivity() {
+  function handleBackToDashboard() {
     setActiveView({
       type: "dashboard",
       payload: null,
@@ -302,23 +302,9 @@ export default function DashboardV1({ user, authUser }) {
     });
   }
 
-  function handleBackFromLearn() {
-    setActiveView({
-      type: "dashboard",
-      payload: null,
-    });
-  }
-
   function handleOpenSwap() {
     setActiveView({
       type: "swap",
-      payload: null,
-    });
-  }
-
-  function handleBackFromSwap() {
-    setActiveView({
-      type: "dashboard",
       payload: null,
     });
   }
@@ -389,10 +375,6 @@ export default function DashboardV1({ user, authUser }) {
     return;
   }
 
-  function handleConnectWallet() {
-    return;
-  }
-
   function handleLockedSwap() {
     return;
   }
@@ -419,14 +401,14 @@ export default function DashboardV1({ user, authUser }) {
   } else if (activeView.type === "activity") {
     screenContent = (
       <ActivityPageV1
-        onBack={handleBackFromActivity}
+        onBack={handleBackToDashboard}
         email={resolvedEmail}
       />
     );
   } else if (activeView.type === "learn") {
     screenContent = (
       <LearnPage
-        onBack={handleBackFromLearn}
+        onBack={handleBackToDashboard}
         email={resolvedEmail}
         apiBase={API_BASE}
         refreshActivitySnapshot={refreshActivitySnapshot}
@@ -438,8 +420,8 @@ export default function DashboardV1({ user, authUser }) {
     );
   } else if (activeView.type === "swap") {
     screenContent = (
-      <SwapHome
-        onBack={handleBackFromSwap}
+      <SwapPage
+        onBack={handleBackToDashboard}
         zptsBalance={resolvedZptsBalance}
         claimableZwap={resolvedClaimableZwap}
         isConversionReady={isConversionReady}
@@ -450,7 +432,6 @@ export default function DashboardV1({ user, authUser }) {
         onConvert={handleConvertZpts}
         onClaim={handleClaimZwap}
         onCreateWallet={handleCreateWallet}
-        onConnectWallet={handleConnectWallet}
         onLockedSwap={handleLockedSwap}
       />
     );
