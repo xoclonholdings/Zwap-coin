@@ -1,44 +1,57 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronRight, Music2 } from "lucide-react";
+import { Music2 } from "lucide-react";
 
-export default function StreamCard({ item, active, onClick }) {
+export default function StreamCard({
+  item,
+  active,
+  onClick,
+  onOpen,
+}) {
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      whileTap={{ scale: 0.985 }}
-      className={`w-[46%] shrink-0 rounded-[18px] border p-3 text-left transition-all ${
+      whileTap={{ scale: 0.97 }}
+      className={[
+        "relative flex flex-col justify-between rounded-2xl border p-3 text-left transition-all",
         active
-          ? "border-cyan-400/30 bg-white/[0.06] shadow-[0_0_24px_rgba(34,211,238,0.10)]"
-          : "border-white/10 bg-white/[0.04] hover:bg-white/[0.06]"
-      }`}
+          ? "border-cyan-300/40 bg-white/[0.08]"
+          : "border-white/10 bg-white/[0.04]",
+      ].join(" ")}
     >
-      <div
-        className={[
-          "flex h-[72px] items-center justify-center rounded-[14px] bg-gradient-to-br",
-          item?.accent || "from-cyan-500/20 via-purple-500/10 to-blue-500/20",
-        ].join(" ")}
-      >
-        <Music2 className="h-7 w-7 text-white/80" />
+      {/* ICON */}
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+        <Music2 className="h-4 w-4 text-white/80" />
       </div>
 
-      <div className="mt-2 line-clamp-2 text-[12px] font-black leading-4 text-white">
-        {item?.title || "ZWAP! Playlist"}
+      {/* TEXT */}
+      <div className="min-w-0">
+        <p className="truncate text-[12px] font-bold text-white">
+          {item.title}
+        </p>
+
+        <p className="mt-0.5 text-[10px] text-white/50">
+          {item.subtitle}
+        </p>
       </div>
 
-      <div className="mt-1 line-clamp-1 text-[10px] text-white/45">
-        {item?.subtitle || "Playlist"}
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="text-[9px] uppercase tracking-[0.12em] text-white/35">
-          {item?.duration || "Playlist"}
+      {/* FOOTER */}
+      <div className="mt-3 flex items-center justify-between text-[10px]">
+        <span className="text-white/40">
+          {item.duration || "PLAYLIST"}
         </span>
 
-        <span className="flex items-center gap-1 text-[10px] font-black text-cyan-300">
-          Open <ChevronRight size={11} />
-        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen?.();
+          }}
+          className="text-cyan-300 font-semibold"
+        >
+          Open
+        </button>
       </div>
     </motion.button>
   );
