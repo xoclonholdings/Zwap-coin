@@ -41,7 +41,7 @@ export default function StreamPlayerSurface({ item, activeTab }) {
         <div className="mt-4 flex justify-center">
           {isRadio && (
             <iframe
-              style={{ border: 0, width: "295px", height: "295px" }}
+              style={{ border: 0, width: "285px", height: "285px" }}
               src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=0f91ff/minimal=true/transparent=true/"
               seamless
               title="ZWAP Radio"
