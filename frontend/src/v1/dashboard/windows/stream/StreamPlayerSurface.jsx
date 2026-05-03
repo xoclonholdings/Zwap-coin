@@ -41,8 +41,8 @@ export default function StreamPlayerSurface({ item, activeTab }) {
         <div className="mt-4 flex justify-center">
           {isRadio && (
             <iframe
-              style={{ border: 0, width: "210px", height: "210px" }}
-              src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size=large/bgcol=333333/linkcol=0f91ff/artwork=small/minimal=true/transparent=true/"
+              style={{ border: 0, width: "350px", height: "350px" }}
+              src="https://bandcamp.com/EmbeddedPlayer/album=2559372961/size-large/bgcol=333333/linkcol-0f91ff/minimal-true/transparent-true/"
               seamless
               title="ZWAP Radio"
               allow="autoplay; encrypted-media"
@@ -54,7 +54,7 @@ export default function StreamPlayerSurface({ item, activeTab }) {
           )}
 
           {isSpotify && (
-            <div className="space-y-4 w-full">
+            <div className="w-full space-y-4">
               <div className="flex h-[100px] items-center justify-center rounded-[16px] border border-white/10 bg-black/20">
                 <Headphones className="h-6 w-6 text-green-400" />
               </div>
