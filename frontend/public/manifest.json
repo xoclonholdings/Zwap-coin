@@ -4,64 +4,64 @@
   "description": "Walk, Play, Shop & Swap with ZWAP! - The Move-to-Earn Crypto App",
   "icons": [
     {
-      "src": "icons/icon-72.png",
+      "src": "/app/icons/icon-72.png",
       "type": "image/png",
       "sizes": "72x72",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-96.png",
+      "src": "/app/icons/icon-96.png",
       "type": "image/png",
       "sizes": "96x96",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-128.png",
+      "src": "/app/icons/icon-128.png",
       "type": "image/png",
       "sizes": "128x128",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-144.png",
+      "src": "/app/icons/icon-144.png",
       "type": "image/png",
       "sizes": "144x144",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-152.png",
+      "src": "/app/icons/icon-152.png",
       "type": "image/png",
       "sizes": "152x152",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-192.png",
+      "src": "/app/icons/icon-192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-384.png",
+      "src": "/app/icons/icon-384.png",
       "type": "image/png",
       "sizes": "384x384",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "/app/icons/icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "/app/",
   "display": "standalone",
   "theme_color": "#0a0b1e",
   "background_color": "#0a0b1e",
   "orientation": "portrait",
-  "scope": "/",
+  "scope": "/app/",
   "categories": ["finance", "games", "lifestyle"],
   "screenshots": [
     {
-      "src": "screenshots/dashboard.png",
+      "src": "/app/screenshots/dashboard.png",
       "sizes": "375x812",
       "type": "image/png",
       "form_factor": "narrow"
