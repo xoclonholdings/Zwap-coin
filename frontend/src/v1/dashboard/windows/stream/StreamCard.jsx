@@ -8,7 +8,8 @@ export default function StreamCard({ item, active, onClick, onOpen }) {
       onClick={onClick}
       whileTap={{ scale: 0.97 }}
       className={[
-        "min-w-0 rounded-[18px] border border-white/10 bg-white/[0.04] p-2 text-left transition-all",
+        "min-w-0 aspect-square rounded-[18px] border border-white/10 bg-white/[0.04] p-2 text-left transition-all",
+        "flex flex-col justify-between",
         active ? "bg-white/[0.08] border-cyan-300/40" : "",
       ].join(" ")}
     >
