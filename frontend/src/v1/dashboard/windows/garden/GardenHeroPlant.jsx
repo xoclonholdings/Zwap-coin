@@ -1,7 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-export default function GardenHeroPlant({ stage, healthState, rarePlantUnlocked }) {
+export default function GardenHeroPlant({
+  stage,
+  healthState,
+  rarePlantUnlocked,
+}) {
   const isRare = rarePlantUnlocked || stage === "rare";
   const isWeak = healthState.key === "weak" || healthState.key === "wilted";
   const opacity = healthState.key === "wilted" ? 0.45 : 1;
@@ -13,9 +17,7 @@ export default function GardenHeroPlant({ stage, healthState, rarePlantUnlocked 
   const showFlower = ["mature", "rare"].includes(stage);
 
   return (
-    <div className="relative flex h-[270px] w-full items-end justify-center overflow-hidden rounded-[1.35rem] border border-lime-300/20 bg-[radial-gradient(circle_at_center,rgba(91,255,83,0.2),rgba(3,20,12,0.95)_58%,rgba(2,8,14,1))]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(145,255,99,0.2),transparent_28%),linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_38%)]" />
-
+    <div className="relative flex h-[260px] w-full items-end justify-center overflow-hidden">
       {[...Array(18)].map((_, index) => (
         <motion.span
           key={index}
