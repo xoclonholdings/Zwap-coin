@@ -88,23 +88,21 @@ export default function SwapPage({
 
   zptsBalance = 0,
   claimableZwap = 0,
+  zwapBalance = 0,
   isConversionReady = false,
-  progressZone = "Building",
 
-  walletAddress = "",
-  hasWallet = false,
-  swapUnlocked = false,
+  estimatedSwapOutput = "",
 
   onConvert,
   onClaim,
-  onCreateWallet,
-  onLockedSwap,
+  onSwap,
 }) {
   const [activeMode, setActiveMode] = useState("convert");
+  const [selectedSwap, setSelectedSwap] = useState(FEATURED_SWAPS[1]);
 
-  function handleFeaturedSwapTap() {
+  function handleFeaturedSwapTap(item) {
+    setSelectedSwap(item);
     setActiveMode("swap");
-    onLockedSwap?.();
   }
 
   return (
@@ -136,15 +134,13 @@ export default function SwapPage({
           activeMode={activeMode}
           zptsBalance={zptsBalance}
           claimableZwap={claimableZwap}
+          zwapBalance={zwapBalance}
           isConversionReady={isConversionReady}
-          progressZone={progressZone}
-          walletAddress={walletAddress}
-          hasWallet={hasWallet}
-          swapUnlocked={swapUnlocked}
+          swapToSymbol={selectedSwap?.short || "ETH"}
+          estimatedSwapOutput={estimatedSwapOutput}
           onConvert={onConvert}
           onClaim={onClaim}
-          onCreateWallet={onCreateWallet}
-          onLockedSwap={onLockedSwap}
+          onSwap={onSwap}
         />
 
         <SwapModesCarousel
@@ -158,9 +154,6 @@ export default function SwapPage({
             <div className="text-[13px] font-black text-white">
               Featured Swaps
             </div>
-            <div className="text-[10px] text-white/50">
-              Convert ZWAP into supported assets when Swap unlocks.
-            </div>
           </div>
 
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
@@ -168,8 +161,8 @@ export default function SwapPage({
               <FeaturedSwapCard
                 key={item.id}
                 item={item}
-                active={activeMode === "swap"}
-                onClick={handleFeaturedSwapTap}
+                active={activeMode === "swap" && selectedSwap?.id === item.id}
+                onClick={() => handleFeaturedSwapTap(item)}
               />
             ))}
           </div>
