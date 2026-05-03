@@ -134,10 +134,28 @@ api_router.include_router(admin_router)
 
 app.include_router(api_router)
 
+cors_origins_env = os.environ.get("CORS_ORIGINS", "")
+
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://zwap.online",
+    "https://www.zwap.online",
+]
+
+if cors_origins_env:
+    allowed_origins.extend(
+        origin.strip()
+        for origin in cors_origins_env.split(",")
+        if origin.strip()
+    )
+
+allowed_origins = list(dict.fromkeys(allowed_origins))
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
