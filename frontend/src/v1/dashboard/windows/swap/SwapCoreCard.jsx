@@ -95,11 +95,7 @@ function ClaimCard({ claimableZwap = 0, onPrimaryAction }) {
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-          Claimable
-        </p>
-
-        <div className="mt-2 flex items-center gap-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3">
+        <div className="flex items-center gap-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3">
           <div className="min-w-0 flex-1 text-[22px] font-semibold text-white">
             {formatNumber(claimableZwap)}
           </div>
@@ -144,9 +140,8 @@ function SwapCard({
 
   const displayOutput = useMemo(() => {
     if (estimatedOutput !== "") return estimatedOutput;
-    if (!canSwap) return "0";
     return "0";
-  }, [canSwap, estimatedOutput]);
+  }, [estimatedOutput]);
 
   function handleMax() {
     setAmount(String(safeZwapBalance || ""));
@@ -165,29 +160,25 @@ function SwapCard({
       </div>
 
       <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+        <div className="mb-2 flex justify-start">
+          <button
+            type="button"
+            onClick={handleMax}
+            className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold text-white/65 transition active:scale-[0.98]"
+          >
+            Max
+          </button>
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
           <div>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-                ZWAP Balance
-              </p>
-
-              <button
-                type="button"
-                onClick={handleMax}
-                className="rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-[10px] font-semibold text-white/65 transition active:scale-[0.98]"
-              >
-                Max
-              </button>
-            </div>
-
             <input
               type="number"
               inputMode="decimal"
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               placeholder="0"
-              className="mt-2 w-full rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white outline-none placeholder:text-white/20"
+              className="w-full rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-[20px] font-semibold text-white outline-none placeholder:text-white/20"
             />
 
             <p className="mt-1 text-[10px] text-white/35">
@@ -195,16 +186,16 @@ function SwapCard({
             </p>
           </div>
 
-          <div className="pb-6 text-lg font-semibold text-white/35">→</div>
+          <div className="pt-3 text-lg font-semibold text-white/35">→</div>
 
           <div>
-            <p className="text-right text-[10px] uppercase tracking-[0.2em] text-white/40">
-              {swapToSymbol}
-            </p>
-
-            <div className="mt-2 rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-right text-[20px] font-semibold text-white">
+            <div className="rounded-[18px] border border-white/10 bg-black/20 px-3 py-3 text-right text-[20px] font-semibold text-white">
               {displayOutput}
             </div>
+
+            <p className="mt-1 text-right text-[10px] uppercase tracking-[0.14em] text-white/35">
+              {swapToSymbol}
+            </p>
           </div>
         </div>
 
