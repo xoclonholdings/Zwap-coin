@@ -50,7 +50,7 @@ function GuidanceText({ guidance, onTypingChange }) {
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean)
-      .slice(0, 3);
+      .slice(0, 2);
   }, [guidance]);
 
   const fullText = lines.join("\n");
