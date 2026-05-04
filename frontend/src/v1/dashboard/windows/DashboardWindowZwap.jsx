@@ -170,7 +170,7 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} onTypingChange={setIsTyping} />
       </motion.div>
 
-      <div className="relative -mt-1 flex-1 justify-center">
+      <div className="relative -mt-1 flex justify-center pb-2">
         <div className="absolute bottom-2 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
         <motion.img
