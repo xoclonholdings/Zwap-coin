@@ -88,12 +88,12 @@ export function VoiceView({ lines }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex w-full max-w-[300px] flex-col items-center justify-center gap-3 px-2"
+      className="flex w-full flex-col items-center justify-center gap-3 px-6"
     >
       {lines.map((line) => (
         <div
           key={line}
-          className="w-full text-center text-[1.92rem] font-black leading-[1.08] tracking-[-0.055em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
+          className="w-full text-center text-[clamp(1.9rem,8vw,2.6rem)] font-black leading-[1.08] tracking-[-0.055em] text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.08)]"
         >
           {renderGradientLine(line)}
         </div>
@@ -115,7 +115,7 @@ export function ActionProofView() {
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
       transition={{ duration: 0.55 }}
-      className="flex w-full max-w-[320px] flex-col items-center gap-5"
+      className="flex w-full flex-col items-center gap-5 px-6"
     >
       <motion.div
         animate={{
@@ -214,25 +214,25 @@ export function ShopProofView() {
       id: "ebook",
       src: ebookItem,
       alt: "TLDR ebook item",
-      className: "left-[16px] top-[18px]",
+      className: "left-[5%] top-[18px]",
     },
     {
       id: "move-boost",
       src: moveBoost12h,
       alt: "Move boost item",
-      className: "right-[16px] top-[18px]",
+      className: "right-[5%] top-[18px]",
     },
     {
       id: "play-boost",
       src: playBoost12h,
       alt: "Play boost item",
-      className: "left-[16px] top-[158px]",
+      className: "left-[5%] top-[158px]",
     },
     {
       id: "bronze-ring",
       src: bronzeRing,
       alt: "Bronze ring item",
-      className: "right-[16px] top-[158px]",
+      className: "right-[5%] top-[158px]",
     },
   ];
 
@@ -242,9 +242,9 @@ export function ShopProofView() {
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: 8, filter: "blur(8px)" }}
       transition={{ duration: 0.55 }}
-      className="relative h-[390px] w-[320px]"
+      className="relative h-[390px] w-full px-6"
     >
-      <div className="absolute left-1/2 top-[6px] h-[292px] w-[300px] -translate-x-1/2 rounded-[34px] border border-cyan-300/10 bg-white/[0.035] shadow-[0_0_50px_rgba(34,211,238,0.13)] backdrop-blur-md" />
+      <div className="absolute left-1/2 top-[6px] h-[292px] w-[90%] -translate-x-1/2 rounded-[34px] border border-cyan-300/10 bg-white/[0.035] shadow-[0_0_50px_rgba(34,211,238,0.13)] backdrop-blur-md" />
 
       {items.map((item, index) => (
         <motion.div
@@ -285,7 +285,7 @@ export function CoinProofView() {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
-      className="flex max-w-[330px] flex-col items-center gap-5 text-center"
+      className="flex w-full flex-col items-center gap-5 px-6 text-center"
     >
       <div className="flex items-center justify-center gap-5">
         {[zptsCoin, zwapCoin].map((coin, index) => (
