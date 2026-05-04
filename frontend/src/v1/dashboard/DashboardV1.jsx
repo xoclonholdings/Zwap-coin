@@ -104,7 +104,7 @@ export default function DashboardV1({ user, authUser }) {
     payload: null,
   });
   const [streamOpen, setStreamOpen] = useState(false);
-  const [miniStreamVisible, setMiniStreamVisible] = useState(false);
+  const [miniStreamVisible, setMiniStreamVisible] = useState(true);
   const [miniStreamPlaying, setMiniStreamPlaying] = useState(true);
   const [localZptsBalance, setLocalZptsBalance] = useState(null);
   const [localClaimableZwap, setLocalClaimableZwap] = useState(null);
@@ -310,20 +310,13 @@ export default function DashboardV1({ user, authUser }) {
   }
 
   function handleOpenStream() {
-    setMiniStreamVisible(false);
+    setMiniStreamVisible(true);
     setStreamOpen(true);
   }
 
   function handleStreamOpenChange(nextOpen) {
     setStreamOpen(nextOpen);
-
-    if (!nextOpen) {
-      setMiniStreamVisible(true);
-    }
-  }
-
-  function handleCloseMiniStream() {
-    setMiniStreamVisible(false);
+    setMiniStreamVisible(true);
   }
 
   function handleToggleMiniStreamPlay() {
@@ -453,6 +446,18 @@ export default function DashboardV1({ user, authUser }) {
             onLearnClick={handleOpenLearn}
             onStreamClick={handleOpenStream}
             onSwapClick={handleOpenSwap}
+            streamPlayerSlot={
+              <MiniStreamPlayer
+                visible={miniStreamVisible}
+                variant="header"
+                title="ZWAP! Radio"
+                subtitle={miniStreamPlaying ? "Now Playing" : "Paused"}
+                artwork={radioArtwork}
+                isPlaying={miniStreamPlaying}
+                onTogglePlay={handleToggleMiniStreamPlay}
+                onOpenStream={handleOpenStream}
+              />
+            }
           />
         </div>
 
@@ -541,17 +546,6 @@ export default function DashboardV1({ user, authUser }) {
       <StreamPanel
         open={streamOpen}
         onOpenChange={handleStreamOpenChange}
-      />
-
-      <MiniStreamPlayer
-        visible={miniStreamVisible && !streamOpen}
-        title="ZWAP! Radio"
-        subtitle={miniStreamPlaying ? "Now Playing" : "Paused"}
-        artwork={radioArtwork}
-        isPlaying={miniStreamPlaying}
-        onTogglePlay={handleToggleMiniStreamPlay}
-        onOpenStream={handleOpenStream}
-        onClose={handleCloseMiniStream}
       />
     </div>
   );
