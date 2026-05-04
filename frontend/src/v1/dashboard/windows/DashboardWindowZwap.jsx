@@ -119,8 +119,8 @@ function GuidanceText({ guidance, onTypingChange }) {
             key={`${line}-${index}`}
             className={
               isEdgeLine
-                ? "text-[0.92rem] font-extrabold uppercase leading-[1.06] tracking-[0.06em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.16)]"
-                : "text-[0.72rem] font-semibold leading-snug tracking-[-0.02em] text-white/70"
+                ? "text-[0.88rem] font-extrabold uppercase leading-[1.06] tracking-[0.06em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.16)]"
+                : "text-[0.7rem] font-semibold leading-snug tracking-[-0.02em] text-white/70"
             }
           >
             {visibleLine}
@@ -138,10 +138,10 @@ function ZapGuidanceStage({ guidance }) {
   const [isTyping, setIsTyping] = useState(false);
 
   return (
-    <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between pt-2">
+    <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between overflow-hidden pt-2">
       <motion.div
         key={`bubble-${guidance}`}
-        className="relative mx-auto h-[150px] w-full max-w-[94%]"
+        className="relative mx-auto h-[138px] w-full max-w-[94%] shrink-0"
         initial={{ scale: 0.985, opacity: 0.92 }}
         animate={{
           scale: isTyping ? [1, 1.003, 1] : [0.985, 1.014, 1],
@@ -170,13 +170,13 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} onTypingChange={setIsTyping} />
       </motion.div>
 
-      <div className="relative -mt-5 flex justify-center">
-        <div className="absolute bottom-0 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
+      <div className="relative -mt-3 flex min-h-0 flex-1 items-end justify-center pb-1">
+        <div className="absolute bottom-2 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
         <motion.img
           src={zapHead}
           alt="Zap guide"
-          className="relative h-[104px] w-[134px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
+          className="relative h-[88px] w-[118px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
           draggable={false}
           animate={
             isTyping
