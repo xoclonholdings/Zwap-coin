@@ -170,13 +170,13 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} onTypingChange={setIsTyping} />
       </motion.div>
 
-      <div className="relative -mt-3 flex min-h-0 flex-1 items-end justify-center pb-1">
+      <div className="relative -mt-1 flex min-h-0 flex-1 items-end justify-center pb-0">
         <div className="absolute bottom-2 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
         <motion.img
           src={zapHead}
           alt="Zap guide"
-          className="relative h-[88px] w-[118px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
+          className="relative h-[96px] w-[124px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
           draggable={false}
           animate={
             isTyping
