@@ -1,5 +1,5 @@
 import React from "react";
-import { Music2 } from "lucide-react";
+import { Music2, Pause, Play, VolumeX } from "lucide-react";
 
 export default function MiniStreamPlayer({
   visible = false,
@@ -13,23 +13,52 @@ export default function MiniStreamPlayer({
 
   if (variant === "header") {
     return (
-      <button
-        type="button"
-        onClick={onOpenStream}
-        aria-label={title}
-        className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-400/45 bg-cyan-500/15 text-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.20)] transition active:scale-[0.96]"
-      >
-        {artwork ? (
-          <img
-            src={artwork}
-            alt=""
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
-        ) : (
-          <Music2 size={15} />
-        )}
-      </button>
+      <div className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-cyan-400/35 bg-cyan-500/10 px-1 shadow-[0_0_14px_rgba(34,211,238,0.16)]">
+        <button
+          type="button"
+          onClick={onOpenStream}
+          aria-label={title}
+          className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/[0.04] active:scale-[0.96]"
+        >
+          {artwork ? (
+            <img
+              src={artwork}
+              alt=""
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
+          ) : (
+            <Music2 size={12} className="text-cyan-300" />
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenStream}
+          aria-label="Open Stream"
+          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/[0.05] text-white/80 active:scale-[0.96]"
+        >
+          <Play size={12} />
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenStream}
+          aria-label="Open Stream controls"
+          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/[0.05] text-white/80 active:scale-[0.96]"
+        >
+          <Pause size={12} />
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenStream}
+          aria-label="Open Stream audio"
+          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/[0.05] text-white/60 active:scale-[0.96]"
+        >
+          <VolumeX size={12} />
+        </button>
+      </div>
     );
   }
 
