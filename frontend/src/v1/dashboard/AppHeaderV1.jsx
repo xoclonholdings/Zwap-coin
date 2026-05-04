@@ -6,10 +6,6 @@ import AdminPanelV1 from "./admin/AdminPanelV1";
 
 import activityLogo from "@/assets/dashboard/activity_logo.png";
 
-function formatZpts(value) {
-  return Number(value || 0).toLocaleString();
-}
-
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
   if (!safe) return "U";
@@ -61,7 +57,9 @@ function HeaderIconButton({
       )}
 
       {hasAlert && unlocked && (
-        <span className={`absolute right-0 top-0 h-1.5 w-1.5 rounded-full ${alertStyles}`} />
+        <span
+          className={`absolute right-0 top-0 h-1.5 w-1.5 rounded-full ${alertStyles}`}
+        />
       )}
     </button>
   );
@@ -196,7 +194,7 @@ export default function AppHeaderV1({
           .join(" ")}
       >
         <div className="flex h-[64px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
             <HeaderIconButton
               label="Activity"
               onClick={onActivityClick}
@@ -233,22 +231,14 @@ export default function AppHeaderV1({
               unlocked={swapUnlocked}
               hasAlert={swapHasAlert}
               onClick={handleSwapTap}
-              hideLockedBadge={true}
               icon={<Repeat2 size={15} strokeWidth={2.25} />}
             />
 
             {streamPlayerSlot ? (
-              <div className="shrink-0">{streamPlayerSlot}</div>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                {streamPlayerSlot}
+              </div>
             ) : null}
-          </div>
-
-          <div className="shrink-0 rounded-2xl border border-cyan-400/14 bg-cyan-400/[0.06] px-3 py-1.5 text-center shadow-[0_0_16px_rgba(34,211,238,0.08)]">
-            <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/42">
-              Balance
-            </div>
-            <div className="mt-0.5 whitespace-nowrap text-[14px] font-bold tracking-[-0.03em] text-cyan-300">
-              {formatZpts(zptsBalance)} zPts
-            </div>
           </div>
 
           <button
