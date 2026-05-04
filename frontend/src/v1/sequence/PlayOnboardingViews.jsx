@@ -29,7 +29,7 @@ export function PlayCompleteView() {
       animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: 8, scale: 0.98, filter: "blur(8px)" }}
       transition={{ duration: 0.6 }}
-      className="flex max-w-[320px] flex-col items-center gap-4 text-center"
+      className="flex w-full flex-col items-center gap-4 px-6 text-center"
     >
       <OnboardingVoiceText lines={["Play session", "complete."]} />
 
@@ -43,13 +43,13 @@ export function PlayCompleteView() {
 export function PlayGameStage({ children }) {
   return (
     <motion.div
-      className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white"
+      className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-black text-white"
       initial={{ opacity: 0, filter: "blur(8px)" }}
       animate={{ opacity: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, filter: "blur(8px)" }}
       transition={{ duration: 0.35 }}
     >
-      <div className="relative h-full w-full max-w-[460px] overflow-hidden bg-black">
+      <div className="relative h-full w-full overflow-hidden bg-black">
         {children}
       </div>
     </motion.div>
