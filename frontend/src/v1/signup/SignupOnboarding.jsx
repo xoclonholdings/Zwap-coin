@@ -4,13 +4,13 @@ import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
 
 function Shell({ children }) {
   return (
-    <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black text-white">
+    <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-black px-6 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.18),_rgba(8,10,22,0.96)_58%,_rgba(0,0,0,1)_100%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(180,134,255,0.08),_transparent_35%,_rgba(34,211,238,0.08))]" />
 
-      <div className="absolute left-1/2 top-1/2 h-[560px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
+      <div className="absolute inset-x-5 top-1/2 h-[min(78dvh,680px)] -translate-y-1/2 rounded-[42px] border border-cyan-300/10 bg-white/[0.025] shadow-[0_0_90px_rgba(34,211,238,0.22)]" />
 
-      <div className="relative z-10 flex min-h-[560px] w-full max-w-[460px] flex-col items-center justify-center px-10 text-center">
+      <div className="relative z-10 flex h-full w-full flex-col items-center justify-center text-center">
         {children}
       </div>
     </div>
@@ -39,7 +39,7 @@ function Panel({ children }) {
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
       transition={{ duration: 0.55 }}
-      className="flex w-full max-w-[320px] flex-col items-center gap-5"
+      className="flex w-full flex-col items-center gap-5"
     >
       {children}
     </motion.div>
@@ -150,11 +150,11 @@ export default function SignupOnboarding({
       <AnimatePresence mode="wait">
         {phase === "email" && (
           <Panel key="email">
-            <div className="text-center text-[2.15rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
+            <div className="text-center text-[clamp(2.15rem,9vw,3.25rem)] font-black leading-[1.03] tracking-[-0.065em] text-white">
               Create your <GradientText>ZWAP!</GradientText> account.
             </div>
 
-            <div className="max-w-[280px] text-center text-sm font-bold leading-relaxed tracking-[-0.02em] text-white/55">
+            <div className="text-center text-sm font-bold leading-relaxed tracking-[-0.02em] text-white/55">
               Save your <GradientText variant="zpts">zPts</GradientText>, protect
               your progress, and unlock your dashboard.
             </div>
@@ -181,11 +181,11 @@ export default function SignupOnboarding({
 
         {phase === "code" && (
           <Panel key="code">
-            <div className="text-center text-[2.15rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
+            <div className="text-center text-[clamp(2.15rem,9vw,3.25rem)] font-black leading-[1.03] tracking-[-0.065em] text-white">
               Check your code.
             </div>
 
-            <div className="max-w-[280px] text-center text-sm font-bold leading-relaxed tracking-[-0.02em] text-white/55">
+            <div className="text-center text-sm font-bold leading-relaxed tracking-[-0.02em] text-white/55">
               We sent a sign-in code to{" "}
               <span className="text-cyan-200">{email.trim()}</span>
             </div>
@@ -223,7 +223,7 @@ export default function SignupOnboarding({
 
         {phase === "success" && (
           <Panel key="success">
-            <div className="text-center text-[2.3rem] font-black leading-[1.03] tracking-[-0.065em] text-white">
+            <div className="text-center text-[clamp(2.3rem,9vw,3.4rem)] font-black leading-[1.03] tracking-[-0.065em] text-white">
               You’re in.
             </div>
 
