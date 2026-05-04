@@ -418,7 +418,7 @@ export default function ActivityPageV1({ onBack, email }) {
   const activePanel = panels[panelIndex] || panels[0];
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#030711] px-4 pb-4 pt-4 text-white">
+    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#030711] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 text-white">
       <ActivityHeaderV1
         onBack={onBack}
         title="Activity"
@@ -452,7 +452,6 @@ export default function ActivityPageV1({ onBack, email }) {
 
           <div
             className="min-h-0 flex-1 overflow-hidden"
-            onClick={showNextPanel}
             onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
             onTouchEnd={handleTouchEnd}
           >
@@ -463,15 +462,17 @@ export default function ActivityPageV1({ onBack, email }) {
               {panels.map((panel) => (
                 <div
                   key={panel.id}
-                  className="flex min-w-full flex-col justify-start gap-2.5 pt-2.5"
+                  className="min-h-0 min-w-full overflow-y-auto overscroll-contain"
                 >
-                  {panel.content}
+                  <div className="flex min-h-full flex-col justify-start gap-2.5 pb-8 pt-2.5">
+                    {panel.content}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="mt-2.5 shrink-0">
+          <div className="mt-2.5 shrink-0 pb-1">
             <PageDots activeIndex={panelIndex} total={panels.length} />
           </div>
         </>
