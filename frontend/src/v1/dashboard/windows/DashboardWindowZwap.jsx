@@ -109,7 +109,7 @@ function GuidanceText({ guidance, onTypingChange }) {
   }
 
   return (
-    <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-3 pt-5 text-center">
+    className="relative z-10 flex h-full flex-col items-center justify-center gap-2 px-5 py-4 text-center"
       {lines.map((line, index) => {
         const visibleLine = getVisibleLine(line, index);
         const isEdgeLine = index === 0 || index === lines.length - 1;
