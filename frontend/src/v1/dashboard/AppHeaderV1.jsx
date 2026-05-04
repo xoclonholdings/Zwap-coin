@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Sprout, BookOpen, Play, Repeat2, Lock } from "lucide-react";
+import { Sprout, BookOpen, Repeat2, Lock } from "lucide-react";
 
 import AccountDrawerV1 from "./account/AccountDrawerV1";
 import AdminPanelV1 from "./admin/AdminPanelV1";
@@ -106,7 +106,6 @@ export default function AppHeaderV1({
 
   gardenHasAlert = false,
   learnHasAlert = false,
-  streamHasAlert = false,
   swapHasAlert = false,
 
   onActivityClick,
@@ -114,6 +113,8 @@ export default function AppHeaderV1({
   onLearnClick,
   onStreamClick,
   onSwapClick,
+
+  streamPlayerSlot = null,
 
   user,
   authUser,
@@ -170,11 +171,6 @@ export default function AppHeaderV1({
     onLearnClick?.();
   }
 
-  function handleStreamTap() {
-    setPopup(null);
-    onStreamClick?.();
-  }
-
   function handleSwapTap() {
     if (!swapUnlocked) {
       showLockedPopup(
@@ -216,15 +212,6 @@ export default function AppHeaderV1({
             />
 
             <HeaderIconButton
-              label="Garden"
-              unlocked={gardenUnlocked}
-              hasAlert={gardenHasAlert}
-              onClick={handleGardenTap}
-              tone="garden"
-              icon={<Sprout size={15} />}
-            />
-
-            <HeaderIconButton
               label="Learn"
               unlocked={learnUnlocked}
               hasAlert={learnHasAlert}
@@ -233,11 +220,12 @@ export default function AppHeaderV1({
             />
 
             <HeaderIconButton
-              label="Stream"
-              unlocked={true}
-              hasAlert={streamHasAlert}
-              onClick={handleStreamTap}
-              icon={<Play size={15} />}
+              label="Garden"
+              unlocked={gardenUnlocked}
+              hasAlert={gardenHasAlert}
+              onClick={handleGardenTap}
+              tone="garden"
+              icon={<Sprout size={15} />}
             />
 
             <HeaderIconButton
@@ -248,6 +236,10 @@ export default function AppHeaderV1({
               hideLockedBadge={true}
               icon={<Repeat2 size={15} strokeWidth={2.25} />}
             />
+
+            {streamPlayerSlot ? (
+              <div className="shrink-0">{streamPlayerSlot}</div>
+            ) : null}
           </div>
 
           <div className="shrink-0 rounded-2xl border border-cyan-400/14 bg-cyan-400/[0.06] px-3 py-1.5 text-center shadow-[0_0_16px_rgba(34,211,238,0.08)]">
@@ -291,7 +283,7 @@ export default function AppHeaderV1({
         trophyCount={trophyCount}
         trophyBonusPercent={trophyBonusPercent}
         learnUnlocked={learnUnlocked}
-        streamUnlocked={true}
+        streamUnlocked={streamUnlocked}
         onAdminTrigger={handleAdminOpen}
         onLearnOpen={onLearnClick}
         onStreamOpen={onStreamClick}
