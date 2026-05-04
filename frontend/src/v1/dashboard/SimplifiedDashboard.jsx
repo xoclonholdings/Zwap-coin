@@ -16,18 +16,14 @@ export default function SimplifiedDashboard({
   tier = "zwapper",
   zptsBalance = 0,
   zwapBalance = 0,
-  walletAddress = "",
   className = "",
 }) {
-  const resolvedWalletAddress =
-    user?.walletAddress || user?.wallet_address || walletAddress || "";
-
   const resolvedEmail =
     authUser?.email?.address || authUser?.email || user?.email || "";
 
   const resolvedUsername = generateUsername({
     username: user?.username || displayName,
-    walletAddress: resolvedWalletAddress,
+    walletAddress: "",
     email: resolvedEmail,
   });
 
@@ -41,17 +37,10 @@ export default function SimplifiedDashboard({
       zpts_balance: user?.zpts_balance ?? user?.zptsBalance ?? zptsBalance,
       zwapBalance: user?.zwapBalance ?? user?.zwap_balance ?? zwapBalance,
       zwap_balance: user?.zwap_balance ?? user?.zwapBalance ?? zwapBalance,
-      walletAddress: resolvedWalletAddress,
-      wallet_address: resolvedWalletAddress,
+      walletAddress: "",
+      wallet_address: "",
     }),
-    [
-      user,
-      resolvedUsername,
-      tier,
-      zptsBalance,
-      zwapBalance,
-      resolvedWalletAddress,
-    ]
+    [user, resolvedUsername, tier, zptsBalance, zwapBalance]
   );
 
   const streakDays = asNumber(
