@@ -437,7 +437,7 @@ export default function DashboardV1({ user, authUser }) {
     );
   } else {
     screenContent = (
-      <div className="mx-auto flex h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden">
+      <div className="flex h-[100dvh] w-full flex-col overflow-hidden">
         <div className="shrink-0">
           <AppHeaderV1
             user={user}
