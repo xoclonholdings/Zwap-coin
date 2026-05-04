@@ -27,6 +27,7 @@ export function VoiceView({ text }) {
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
+      className="w-full"
     >
       <OnboardingVoiceText lines={[text]} />
     </motion.div>
@@ -35,7 +36,7 @@ export function VoiceView({ text }) {
 
 export function CounterView({ steps, zpts }) {
   return (
-    <div className="absolute left-1/2 top-[12%] w-[316px] -translate-x-1/2">
+    <div className="absolute left-1/2 top-[12%] w-[min(86vw,316px)] -translate-x-1/2">
       <motion.div
         initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -95,7 +96,7 @@ export function RingView({
       <button
         type="button"
         onClick={handleClick}
-        className="group relative h-64 w-64 rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
+        className="group relative h-[min(68vw,16rem)] w-[min(68vw,16rem)] rounded-full focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
       >
         <motion.div
           animate={
@@ -146,7 +147,7 @@ export function MoveCompleteView({ verified = false }) {
       animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: 8, scale: 0.98, filter: "blur(8px)" }}
       transition={{ duration: 0.6 }}
-      className="flex max-w-[320px] flex-col items-center gap-4 text-center"
+      className="flex w-full flex-col items-center gap-4 px-6 text-center"
     >
       <OnboardingVoiceText
         lines={
@@ -165,7 +166,7 @@ export function MoveCompleteView({ verified = false }) {
 
 export function PlayButton({ onClick, onLearnMore }) {
   return (
-    <div className="absolute left-1/2 top-1/2 flex w-full max-w-[320px] -translate-x-1/2 -translate-y-1/2 flex-col items-center">
+    <div className="absolute left-1/2 top-1/2 flex w-full max-w-[320px] -translate-x-1/2 -translate-y-1/2 flex-col items-center px-6">
       <motion.div
         initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
