@@ -109,7 +109,7 @@ function GuidanceText({ guidance, onTypingChange }) {
   }
 
   return (
-    <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-4 pt-6 text-center">
+    <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-3 pt-5 text-center">
       {lines.map((line, index) => {
         const visibleLine = getVisibleLine(line, index);
         const isEdgeLine = index === 0 || index === lines.length - 1;
@@ -138,10 +138,10 @@ function ZapGuidanceStage({ guidance }) {
   const [isTyping, setIsTyping] = useState(false);
 
   return (
-    <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between overflow-hidden pt-2">
+    <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden pt-1">
       <motion.div
         key={`bubble-${guidance}`}
-        className="relative mx-auto h-[138px] w-full max-w-[94%] shrink-0"
+        className="relative mx-auto h-[126px] w-full max-w-[94%] shrink-0"
         initial={{ scale: 0.985, opacity: 0.92 }}
         animate={{
           scale: isTyping ? [1, 1.003, 1] : [0.985, 1.014, 1],
@@ -170,13 +170,13 @@ function ZapGuidanceStage({ guidance }) {
         <GuidanceText guidance={guidance} onTypingChange={setIsTyping} />
       </motion.div>
 
-      <div className="relative -mt-1 flex justify-center pb-3">
+      <div className="relative -mt-4 flex justify-center pb-1">
         <div className="absolute bottom-2 h-8 w-32 rounded-full bg-violet-500/25 blur-xl" />
 
         <motion.img
           src={zapHead}
           alt="Zap guide"
-          className="relative h-[96px] w-[124px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
+          className="relative -translate-y-2 h-[92px] w-[122px] object-contain drop-shadow-[0_0_22px_rgba(168,85,247,0.32)]"
           draggable={false}
           animate={
             isTyping
