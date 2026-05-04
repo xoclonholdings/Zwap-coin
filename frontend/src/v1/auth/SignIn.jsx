@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
 
 import { useApp } from "@/app/AppProvider";
-import api from "@/lib/api";
 
 const REVIEW_EMAIL = "review@zwap.app";
 const REVIEW_PASSWORD = "ZwapReview2026!";
@@ -228,15 +227,22 @@ export default function SignIn({ onSuccess }) {
       setIsWorking(true);
       setReviewStatusText("");
 
-      const reviewUser = await api.createOrUpdateEmailUser(REVIEW_EMAIL, {
-        username: "Reviewer",
-      });
-
-      completeEmailAuth?.({
-        ...reviewUser,
+      const reviewUser = {
+        id: "reviewer-v1",
         email: REVIEW_EMAIL,
+        username: "Reviewer",
+        displayName: "Reviewer",
+        tier: "zwapper",
         authProvider: "review",
-      });
+        zptsBalance: 5000,
+        zpts_balance: 5000,
+        zwapBalance: 0,
+        zwap_balance: 0,
+        walletAddress: "",
+        wallet_address: "",
+      };
+
+      completeEmailAuth?.(reviewUser);
 
       setIsReviewerModalOpen(false);
       setPhase("success");
