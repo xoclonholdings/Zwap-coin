@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -30,6 +30,7 @@ export default function V1App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, authUser, isAuthenticated } = useApp();
+  const [landingSequenceKey, setLandingSequenceKey] = useState(0);
 
   const access = useV1AccessState({
     user,
@@ -48,6 +49,13 @@ export default function V1App() {
   });
 
   const currentPath = location.pathname.replace(/\/+$/, "");
+
+  const isRootRoute =
+    currentPath === "/v1" ||
+    currentPath.endsWith("/v1") ||
+    currentPath === "/app" ||
+    currentPath.endsWith("/app") ||
+    currentPath === "";
 
   const isUnlockedSystemRoute =
     currentPath.endsWith("/signin") ||
@@ -84,6 +92,30 @@ export default function V1App() {
     };
   }, [location.pathname, shouldLockOnboardingBack]);
 
+  useEffect(() => {
+    if (!shouldLockOnboardingBack) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+
+      session.stopMoveTracking();
+
+      if (isRootRoute) {
+        setLandingSequenceKey((currentKey) => currentKey + 1);
+        return;
+      }
+
+      onboarding.goToRoot();
+      setLandingSequenceKey((currentKey) => currentKey + 1);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isRootRoute, onboarding, session, shouldLockOnboardingBack]);
+
   return (
     <Routes>
       <Route
@@ -94,7 +126,10 @@ export default function V1App() {
           ) : onboarding.onboardingSeen ? (
             <Navigate to="signin" replace />
           ) : (
-            <LandingSequence onSelect={onboarding.startFromWelcome} />
+            <LandingSequence
+              key={landingSequenceKey}
+              onSelect={onboarding.startFromWelcome}
+            />
           )
         }
       />
