@@ -1,5 +1,11 @@
-import React from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
 import useV1AccessState from "@/app/useV1AccessState";
@@ -22,6 +28,7 @@ import SignupOnboarding from "@/v1/signup/SignupOnboarding";
 
 export default function V1App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, authUser, isAuthenticated } = useApp();
 
   const access = useV1AccessState({
@@ -39,6 +46,43 @@ export default function V1App() {
     isAuthenticated: access.canSeeDashboard,
     isAdminPreviewUser: access.isAdminPreviewUser,
   });
+
+  const currentPath = location.pathname.replace(/\/+$/, "");
+
+  const isUnlockedSystemRoute =
+    currentPath.endsWith("/signin") ||
+    currentPath.endsWith("/signup") ||
+    currentPath.endsWith("/signout") ||
+    currentPath.endsWith("/dashboard");
+
+  const shouldLockOnboardingBack =
+    !access.canSeeDashboard && !isUnlockedSystemRoute;
+
+  useEffect(() => {
+    if (!shouldLockOnboardingBack) return;
+
+    const lockedUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    window.history.pushState(
+      { zwapOnboardingBackLocked: true },
+      "",
+      lockedUrl
+    );
+
+    const handlePopState = () => {
+      window.history.pushState(
+        { zwapOnboardingBackLocked: true },
+        "",
+        lockedUrl
+      );
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [location.pathname, shouldLockOnboardingBack]);
 
   return (
     <Routes>
