@@ -270,12 +270,10 @@ export default function LandingSequence({ onSelect }) {
           </AnimatePresence>
 
           {phase === 4 && (
-            <div className="flex w-full flex-col items-center gap-5">
-              <img
-                src={zwapLogo}
-                alt="ZWAP!"
-                className="mb-5 w-40 opacity-90"
-              />
+            <div className="flex w-full -translate-y-10 flex-col items-center gap-5">
+              <div className="mb-2 text-sm font-semibold tracking-wide text-white/70">
+                Choose how to begin.
+              </div>
 
               <div className="flex w-full gap-4">
                 <OnboardingActionButton
