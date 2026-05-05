@@ -69,7 +69,7 @@ export default function LandingSequence({ onSelect }) {
 
     const runSequence = async () => {
       setPhase(0);
-      await wait(2200);
+      await wait(1700);
       if (cancelled) return;
 
       setPhase(null);
@@ -219,24 +219,25 @@ export default function LandingSequence({ onSelect }) {
                 transition={{ duration: 0.7 }}
                 className="flex w-full flex-col items-center"
               >
-                <motion.img
-                  src={zwapLogo}
-                  alt="ZWAP!"
+                <motion.div
                   initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{
-                    opacity: 1,
-                    scale: [1, 1.06, 1],
-                  }}
-                  transition={{
-                    opacity: { duration: 0.6 },
-                    scale: {
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="mb-8 w-48 drop-shadow-[0_0_25px_rgba(34,211,238,0.45)]"
+                >
+                  <motion.img
+                    src={zwapLogo}
+                    alt="ZWAP!"
+                    animate={{ scale: [1, 1.06, 1] }}
+                    transition={{
                       duration: 2.6,
                       repeat: Infinity,
                       ease: "easeInOut",
-                    },
-                  }}
-                  className="mb-8 w-48 drop-shadow-[0_0_25px_rgba(34,211,238,0.45)]"
-                />
+                      delay: 0.65,
+                    }}
+                    className="w-full"
+                  />
+                </motion.div>
 
                 <div className="whitespace-nowrap text-3xl font-black tracking-[-0.05em] text-white">
                   Welcome to{" "}
