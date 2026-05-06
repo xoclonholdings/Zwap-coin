@@ -5,29 +5,29 @@ import { MOVE_ONBOARDING_VOICE } from "./moveOnboardingScript";
 const VOICE_HOLD_MS = 1800;
 const COMPLETE_HOLD_MS = 1400;
 
-const FIRST_NO_MOVE_DELAY_MS = 9000;
-const SECOND_NO_MOVE_DELAY_MS = 11000;
-const FINAL_NO_MOVE_DELAY_MS = 14000;
-
-const MOVED_COMPLETE_DELAY_MS = 2200;
+const MOCK_START_DELAY_MS = 2400;
+const MOCK_STEP_SEQUENCE = [1, 2, 3, 5, 7, 10];
+const MOCK_STEP_INTERVAL_MS = 360;
 
 export default function useMoveOnboardingMachine({
   totalSteps,
   onStartTracking,
+  onStopTracking,
 }) {
   const [mode, setMode] = useState("voice-start");
   const [voice, setVoice] = useState(MOVE_ONBOARDING_VOICE.start);
   const [showVoice, setShowVoice] = useState(true);
   const [isTracking, setIsTracking] = useState(false);
   const [moveVerified, setMoveVerified] = useState(false);
-
-  const startStepsRef = useRef(0);
-  const movedOnceRef = useRef(false);
-  const idleNudgeCountRef = useRef(0);
+  const [mockSteps, setMockSteps] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const voiceTimerRef = useRef(null);
-  const idleTimerRef = useRef(null);
+  const mockStartTimerRef = useRef(null);
+  const mockStepTimerRef = useRef(null);
+  const elapsedTimerRef = useRef(null);
   const completeTimerRef = useRef(null);
+  const mockStepIndexRef = useRef(0);
 
   const clearTimer = (timerRef) => {
     if (timerRef.current) {
@@ -36,9 +36,24 @@ export default function useMoveOnboardingMachine({
     }
   };
 
+  const clearIntervalTimer = (timerRef) => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const clearMockTimers = useCallback(() => {
+    clearTimer(mockStartTimerRef);
+    clearTimer(mockStepTimerRef);
+    clearIntervalTimer(elapsedTimerRef);
+  }, []);
+
   const clearAllTimers = useCallback(() => {
     clearTimer(voiceTimerRef);
-    clearTimer(idleTimerRef);
+    clearTimer(mockStartTimerRef);
+    clearTimer(mockStepTimerRef);
+    clearIntervalTimer(elapsedTimerRef);
     clearTimer(completeTimerRef);
   }, []);
 
@@ -54,17 +69,53 @@ export default function useMoveOnboardingMachine({
     }, holdMs);
   }, []);
 
-  const completeMoveSession = useCallback(
-    ({ verified = false } = {}) => {
-      clearAllTimers();
+  const completeMoveSession = useCallback(() => {
+    clearMockTimers();
+    clearTimer(completeTimerRef);
 
-      setMoveVerified(Boolean(verified));
-      setIsTracking(false);
-      setShowVoice(false);
-      setMode("complete");
-    },
-    [clearAllTimers]
-  );
+    setMockSteps(10);
+    setMoveVerified(true);
+    setIsTracking(false);
+    setShowVoice(false);
+    setMode("complete");
+
+    onStopTracking?.();
+  }, [clearMockTimers, onStopTracking]);
+
+  const runMockStepSequence = useCallback(() => {
+    mockStepIndexRef.current = 0;
+
+    const advanceMockStep = () => {
+      const nextStep = MOCK_STEP_SEQUENCE[mockStepIndexRef.current];
+
+      if (typeof nextStep !== "number") {
+        completeMoveSession();
+        return;
+      }
+
+      setMockSteps(nextStep);
+      mockStepIndexRef.current += 1;
+
+      if (nextStep >= 10) {
+        clearTimer(mockStepTimerRef);
+
+        mockStepTimerRef.current = setTimeout(() => {
+          completeMoveSession();
+        }, MOCK_STEP_INTERVAL_MS);
+
+        return;
+      }
+
+      clearTimer(mockStepTimerRef);
+
+      mockStepTimerRef.current = setTimeout(
+        advanceMockStep,
+        MOCK_STEP_INTERVAL_MS
+      );
+    };
+
+    advanceMockStep();
+  }, [completeMoveSession]);
 
   const startTracking = useCallback(() => {
     if (isTracking) return;
@@ -73,16 +124,35 @@ export default function useMoveOnboardingMachine({
 
     setIsTracking(true);
     setMoveVerified(false);
-    setMode("voice-move");
+    setMockSteps(0);
+    setElapsedSeconds(0);
+    setMode("active");
+    setShowVoice(false);
 
-    startStepsRef.current = Number(totalSteps || 0);
-    movedOnceRef.current = false;
-    idleNudgeCountRef.current = 0;
+    mockStepIndexRef.current = 0;
 
     onStartTracking?.();
 
-    showVoiceThen(MOVE_ONBOARDING_VOICE.move, "waiting");
-  }, [isTracking, totalSteps, onStartTracking, clearAllTimers, showVoiceThen]);
+    elapsedTimerRef.current = setInterval(() => {
+      setElapsedSeconds((currentSeconds) => currentSeconds + 1);
+    }, 1000);
+
+    mockStartTimerRef.current = setTimeout(() => {
+      runMockStepSequence();
+    }, MOCK_START_DELAY_MS);
+  }, [isTracking, onStartTracking, clearAllTimers, runMockStepSequence]);
+
+  const stopTracking = useCallback(() => {
+    if (!isTracking) return;
+
+    clearMockTimers();
+
+    setIsTracking(false);
+    setShowVoice(false);
+    setMode("ring-idle");
+
+    onStopTracking?.();
+  }, [isTracking, clearMockTimers, onStopTracking]);
 
   useEffect(() => {
     if (mode !== "voice-start") return;
@@ -91,83 +161,6 @@ export default function useMoveOnboardingMachine({
 
     return () => clearTimer(voiceTimerRef);
   }, [mode, showVoiceThen]);
-
-  useEffect(() => {
-    if (!isTracking) return;
-    if (showVoice) return;
-
-    const currentSteps = Number(totalSteps || 0);
-    const startSteps = Number(startStepsRef.current || 0);
-    const deltaSteps = currentSteps - startSteps;
-
-    if (deltaSteps <= 0) return;
-
-    clearTimer(idleTimerRef);
-    clearTimer(completeTimerRef);
-
-    if (!movedOnceRef.current) {
-      movedOnceRef.current = true;
-      idleNudgeCountRef.current = 0;
-
-      setMoveVerified(true);
-      setMode("voice-success");
-
-      showVoiceThen(MOVE_ONBOARDING_VOICE.success, "active");
-
-      completeTimerRef.current = setTimeout(() => {
-        completeMoveSession({ verified: true });
-      }, VOICE_HOLD_MS + MOVED_COMPLETE_DELAY_MS);
-
-      return;
-    }
-  }, [
-    totalSteps,
-    isTracking,
-    showVoice,
-    showVoiceThen,
-    completeMoveSession,
-  ]);
-
-  useEffect(() => {
-    if (!isTracking) return;
-    if (showVoice) return;
-    if (mode !== "waiting") return;
-    if (movedOnceRef.current) return;
-
-    clearTimer(idleTimerRef);
-
-    let delay = FIRST_NO_MOVE_DELAY_MS;
-
-    if (idleNudgeCountRef.current === 1) {
-      delay = SECOND_NO_MOVE_DELAY_MS;
-    }
-
-    if (idleNudgeCountRef.current >= 2) {
-      delay = FINAL_NO_MOVE_DELAY_MS;
-    }
-
-    idleTimerRef.current = setTimeout(() => {
-      if (movedOnceRef.current) return;
-
-      idleNudgeCountRef.current += 1;
-
-      if (idleNudgeCountRef.current === 1) {
-        setMode("voice-nudge");
-        showVoiceThen(MOVE_ONBOARDING_VOICE.nudgeFirst, "waiting");
-        return;
-      }
-
-      if (idleNudgeCountRef.current === 2) {
-        setMode("voice-nudge");
-        showVoiceThen(MOVE_ONBOARDING_VOICE.nudgeSecond, "waiting");
-        return;
-      }
-
-      completeMoveSession({ verified: false });
-    }, delay);
-
-    return () => clearTimer(idleTimerRef);
-  }, [isTracking, mode, showVoice, showVoiceThen, completeMoveSession]);
 
   useEffect(() => {
     if (mode !== "complete") return;
@@ -191,6 +184,9 @@ export default function useMoveOnboardingMachine({
     showVoice,
     isTracking,
     moveVerified,
+    mockSteps,
+    elapsedSeconds,
     startTracking,
+    stopTracking,
   };
 }
