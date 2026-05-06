@@ -34,7 +34,7 @@ export function VoiceView({ text }) {
   );
 }
 
-export function CounterView({ steps, zpts }) {
+export function CounterView({ steps, elapsedSeconds = 0 }) {
   return (
     <div className="absolute left-1/2 top-[12%] w-[min(86vw,316px)] -translate-x-1/2">
       <motion.div
@@ -48,6 +48,7 @@ export function CounterView({ steps, zpts }) {
           <div className="text-xl font-black tracking-[-0.03em] text-white">
             {steps}
           </div>
+
           <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
             STEPS
           </div>
@@ -57,10 +58,11 @@ export function CounterView({ steps, zpts }) {
 
         <div>
           <div className="text-xl font-black tracking-[-0.03em] text-cyan-300">
-            +{zpts}
+            {elapsedSeconds}s
           </div>
+
           <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
-            zPTS
+            TIME
           </div>
         </div>
       </motion.div>
@@ -124,7 +126,7 @@ export function RingView({
         >
           <div className="flex h-full w-full items-center justify-center rounded-full bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.10),rgba(8,23,22,1)_55%)]">
             <div className="rounded-full bg-cyan-400/85 px-7 py-3 text-base font-semibold uppercase tracking-[0.18em] text-[#041214] shadow-[0_0_24px_rgba(34,211,238,0.35)]">
-              {isTracking ? "Pause" : "Start"}
+              {isTracking ? "Tracking" : "Start"}
             </div>
           </div>
         </motion.div>
@@ -132,14 +134,14 @@ export function RingView({
 
       {!isTracking && (
         <div className="pointer-events-none absolute left-1/2 top-full mt-5 -translate-x-1/2 whitespace-nowrap text-sm font-bold text-white/80">
-          {isPaused ? "Tap Start to resume" : "Tap Start"}
+          Tap Start
         </div>
       )}
     </motion.div>
   );
 }
 
-export function MoveCompleteView({ verified = false }) {
+export function MoveCompleteView() {
   return (
     <motion.div
       key="move-complete"
@@ -149,17 +151,7 @@ export function MoveCompleteView({ verified = false }) {
       transition={{ duration: 0.6 }}
       className="flex w-full flex-col items-center gap-4 px-6 text-center"
     >
-      <OnboardingVoiceText
-        lines={
-          verified ? ["Move session", "complete."] : ["Move check", "complete."]
-        }
-      />
-
-      <div className="text-sm font-bold leading-relaxed text-white/55">
-        {verified
-          ? "Nice. Your movement was detected."
-          : "That’s ok. You can try more movement later."}
-      </div>
+      <OnboardingVoiceText lines={["Move session", "complete."]} />
     </motion.div>
   );
 }
