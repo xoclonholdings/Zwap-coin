@@ -1,6 +1,7 @@
 import {
   BREAKERZ_BALL,
   BREAKERZ_CANVAS,
+  BREAKERZ_FX,
   BREAKERZ_HUD,
   BREAKERZ_LIVES,
   BREAKERZ_PADDLE,
@@ -54,6 +55,8 @@ function createBall(round, width, height, paddleY) {
   return {
     x: position.x,
     y: position.y,
+    prevX: position.x,
+    prevY: position.y,
     radius: BREAKERZ_BALL.radius,
     dx: velocity.dx,
     dy: velocity.dy,
@@ -79,6 +82,51 @@ export function createBreakerzEngine({
   let relaunchAt = 0;
   let clearAt = 0;
   let gameOverAt = 0;
+  let eventId = 0;
+  let combo = 0;
+
+  function pushFx(type, payload = {}) {
+    if (!frame) return;
+
+    frame.fxEvents = [
+      ...(frame.fxEvents || []),
+      {
+        id: eventId,
+        type,
+        createdAt: nowMs(),
+        ...payload,
+      },
+    ].slice(-BREAKERZ_FX.maxEvents);
+
+    eventId += 1;
+  }
+
+  function pushAudio(type, payload = {}) {
+    if (!frame) return;
+
+    frame.audioEvents = [
+      ...(frame.audioEvents || []),
+      {
+        id: eventId,
+        type,
+        createdAt: nowMs(),
+        ...payload,
+      },
+    ].slice(-BREAKERZ_FX.maxEvents);
+
+    eventId += 1;
+  }
+
+  function trimEvents(currentTime) {
+    if (!frame) return;
+
+    frame.fxEvents = (frame.fxEvents || []).filter((event) => {
+      const age = currentTime - event.createdAt;
+      if (event.type === "text") return age <= BREAKERZ_FX.textDurationMs;
+      if (event.type === "pulse") return age <= BREAKERZ_FX.pulseDurationMs;
+      return age <= BREAKERZ_FX.sparkDurationMs;
+    });
+  }
 
   function buildRound(roundNumber, carryScore = 0, carryLives = startingLives) {
     const roundData = generateBreakerzRound({
@@ -107,6 +155,10 @@ export function createBreakerzEngine({
       showGameOverOverlay: false,
       statusText: `Round ${roundNumber}`,
       lastTime: 0,
+      fxEvents: [],
+      audioEvents: [],
+      combo,
+      time: nowMs(),
     };
 
     phase = "intro";
@@ -140,16 +192,11 @@ export function createBreakerzEngine({
   function setPaddleX(x) {
     if (!frame || finished) return;
 
-    frame.paddle.x = clamp(
-      x,
-      0,
-      frame.width - frame.paddle.width
-    );
+    frame.paddle.x = clamp(x, 0, frame.width - frame.paddle.width);
   }
 
   function togglePause() {
     if (finished) return;
-
     if (phase === "gameover") return;
 
     paused = !paused;
@@ -202,6 +249,8 @@ export function createBreakerzEngine({
 
     frame.ball.x = position.x;
     frame.ball.y = position.y;
+    frame.ball.prevX = position.x;
+    frame.ball.prevY = position.y;
     frame.ball.dx = velocity.dx;
     frame.ball.dy = velocity.dy;
   }
@@ -209,7 +258,23 @@ export function createBreakerzEngine({
   function loseLife() {
     if (!frame) return;
 
+    combo = 0;
+    frame.combo = combo;
     frame.lives = Math.max(0, frame.lives - 1);
+
+    pushFx("pulse", {
+      x: frame.width / 2,
+      y: frame.height * 0.76,
+      color: "rgba(251,113,133,0.95)",
+      radius: 40,
+    });
+    pushFx("text", {
+      x: frame.width / 2,
+      y: frame.height * 0.68,
+      text: "MISS",
+      color: "#fb7185",
+    });
+    pushAudio("miss");
 
     if (frame.lives <= 0) {
       phase = "gameover";
@@ -229,6 +294,20 @@ export function createBreakerzEngine({
     frame.score += getBreakerzRoundBonus(frame.round);
     frame.score += frame.lives * 50;
 
+    pushFx("pulse", {
+      x: frame.width / 2,
+      y: frame.height / 2,
+      color: "rgba(250,204,21,0.95)",
+      radius: 84,
+    });
+    pushFx("text", {
+      x: frame.width / 2,
+      y: frame.height / 2 - 20,
+      text: "ROUND CLEAR",
+      color: "#facc15",
+    });
+    pushAudio("clear");
+
     phase = "round-clear";
     clearAt = nowMs() + BREAKERZ_ROUND_FLOW.clearDelayMs;
   }
@@ -246,22 +325,28 @@ export function createBreakerzEngine({
   function updateBall(dtScale = 1) {
     if (!frame) return;
 
+    frame.ball.prevX = frame.ball.x;
+    frame.ball.prevY = frame.ball.y;
+
     frame.ball.x += frame.ball.dx * dtScale;
     frame.ball.y += frame.ball.dy * dtScale;
 
     if (frame.ball.x <= frame.ball.radius) {
       frame.ball.x = frame.ball.radius;
       frame.ball.dx *= -1;
+      pushAudio("wall");
     }
 
     if (frame.ball.x >= frame.width - frame.ball.radius) {
       frame.ball.x = frame.width - frame.ball.radius;
       frame.ball.dx *= -1;
+      pushAudio("wall");
     }
 
     if (frame.ball.y <= BREAKERZ_HUD.mobileTopInset / 2) {
       frame.ball.y = BREAKERZ_HUD.mobileTopInset / 2;
       frame.ball.dy *= -1;
+      pushAudio("wall");
     }
 
     const paddle = frame.paddle;
@@ -284,6 +369,14 @@ export function createBreakerzEngine({
       frame.ball.dy = bounce.dy;
       frame.ball.dx = bounce.dx;
       frame.ball.y = paddle.y - frame.ball.radius - 1;
+
+      pushFx("pulse", {
+        x: frame.ball.x,
+        y: paddle.y,
+        color: "rgba(34,211,238,0.85)",
+        radius: 26,
+      });
+      pushAudio("paddle");
     }
 
     for (const brick of frame.bricks) {
@@ -296,9 +389,34 @@ export function createBreakerzEngine({
       frame.ball.dx = bounce.dx;
       frame.ball.dy = bounce.dy;
 
+      pushFx("spark", {
+        x: frame.ball.x,
+        y: frame.ball.y,
+        color: brick.glow || brick.color || "#f0abfc",
+      });
+      pushAudio("brick");
+
       if (brick.hp <= 0) {
         brick.alive = false;
+        combo += 1;
+        frame.combo = combo;
         frame.score += brick.value || 10;
+
+        pushFx("burst", {
+          x: brick.x + brick.width / 2,
+          y: brick.y + brick.height / 2,
+          color: brick.glow || brick.color || "#f0abfc",
+        });
+
+        if (combo > 1 && combo % 4 === 0) {
+          pushFx("text", {
+            x: brick.x + brick.width / 2,
+            y: brick.y,
+            text: `x${combo}`,
+            color: "#facc15",
+          });
+          pushAudio("combo");
+        }
       }
 
       break;
@@ -319,7 +437,10 @@ export function createBreakerzEngine({
       return getFrame();
     }
 
+    frame.time = currentTime;
     frame.paused = paused;
+    frame.combo = combo;
+    trimEvents(currentTime);
 
     if (paused) {
       frame.showRoundIntro = false;
