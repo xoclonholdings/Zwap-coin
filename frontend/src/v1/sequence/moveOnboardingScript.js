@@ -1,9 +1,6 @@
 export const MOVE_ONBOARDING_VOICE = {
-  start: "Tap to start.",
-  move: "Take a few steps.",
-  success: "That’s it.",
-  continue: "Keep going.",
-  nudgeFirst: "Just a few steps.",
-  nudgeSecond: "Take your time.",
-  playRedirect: "Can’t move yet?\nTry Play.",
+  start:
+    "Nice… you chose MOVE.\n\nPress Start and ZWAP! will track the steps you take.\n\nAs you move, you’ll see what you earn.\n\nReady to try?",
+  success:
+    "Nice… you just earned +50 zPts.\n\nThat’s how ZWAP! turns your movement into value.\n\nWant to try PLAY?",
 };
