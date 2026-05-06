@@ -20,7 +20,7 @@ export const BREAKERZ_LIVES = {
 export const BREAKERZ_PADDLE = {
   startWidth: 96,
   minWidth: 64,
-  height: 10,
+  height: 12,
   yOffset: 30,
   edgeBounceBoost: 1.18,
 };
@@ -57,6 +57,13 @@ export const BREAKERZ_PATTERNS = [
   "stairs-right",
   "stripes",
 ];
+
+export const BREAKERZ_FX = {
+  sparkDurationMs: 340,
+  pulseDurationMs: 420,
+  textDurationMs: 620,
+  maxEvents: 24,
+};
 
 export function getBreakerzDifficultyTier(round = 1) {
   const safeRound = Math.max(1, Number(round) || 1);
