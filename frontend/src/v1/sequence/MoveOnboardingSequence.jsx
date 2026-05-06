@@ -11,13 +11,8 @@ import {
   MoveCompleteView,
 } from "./MoveOnboardingViews";
 
-function getZpts(steps) {
-  if (steps >= 20) return 50;
-  if (steps >= 15) return 35;
-  if (steps >= 10) return 20;
-  if (steps >= 5) return 10;
-  return 0;
-}
+const MOVE_TARGET_STEPS = 10;
+const MOVE_REWARD_ZPTS = 50;
 
 export default function MoveOnboardingSequence({
   totalSteps = 0,
@@ -34,6 +29,8 @@ export default function MoveOnboardingSequence({
     showVoice,
     isTracking,
     moveVerified,
+    mockSteps,
+    elapsedSeconds,
     startTracking,
     stopTracking,
   } = useMoveOnboardingMachine({
@@ -44,16 +41,16 @@ export default function MoveOnboardingSequence({
 
   const displayedSteps = useMemo(() => {
     return isTracking || mode === "complete" || mode === "done"
-      ? Math.min(totalSteps, 20)
+      ? Math.min(Number(mockSteps || 0), MOVE_TARGET_STEPS)
       : 0;
-  }, [totalSteps, isTracking, mode]);
+  }, [mockSteps, isTracking, mode]);
 
   const displayedZpts = useMemo(() => {
-    return moveVerified ? getZpts(displayedSteps) : 0;
-  }, [displayedSteps, moveVerified]);
+    return moveVerified ? MOVE_REWARD_ZPTS : 0;
+  }, [moveVerified]);
 
   const ringProgressPercent = useMemo(() => {
-    return Math.min((displayedSteps / 20) * 100, 100);
+    return Math.min((displayedSteps / MOVE_TARGET_STEPS) * 100, 100);
   }, [displayedSteps]);
 
   const showAction = !showVoice && mode !== "complete" && mode !== "done";
@@ -65,23 +62,23 @@ export default function MoveOnboardingSequence({
     completedRef.current = true;
 
     onMoveComplete?.({
-      displayedSteps,
-      displayedZpts,
+      displayedSteps: MOVE_TARGET_STEPS,
+      displayedZpts: MOVE_REWARD_ZPTS,
       moveStarted: true,
-      moveVerified,
+      moveVerified: true,
     });
-  }, [mode, displayedSteps, displayedZpts, moveVerified, onMoveComplete]);
+  }, [mode, onMoveComplete]);
 
   useEffect(() => {
     if (!moveVerified) return;
 
     onMoveMilestone?.({
-      displayedSteps,
-      displayedZpts,
+      displayedSteps: MOVE_TARGET_STEPS,
+      displayedZpts: MOVE_REWARD_ZPTS,
       moveStarted: true,
       moveVerified: true,
     });
-  }, [moveVerified, displayedSteps, displayedZpts, onMoveMilestone]);
+  }, [moveVerified, onMoveMilestone]);
 
   return (
     <OnboardingShell>
@@ -89,11 +86,13 @@ export default function MoveOnboardingSequence({
         {showVoice && <VoiceView key={voice} text={voice} />}
 
         {!showVoice && mode === "complete" && (
-          <MoveCompleteView key="move-complete" verified={moveVerified} />
+          <MoveCompleteView key="move-complete" />
         )}
       </AnimatePresence>
 
-      {showAction && <CounterView steps={displayedSteps} zpts={displayedZpts} />}
+      {showAction && (
+        <CounterView steps={displayedSteps} elapsedSeconds={elapsedSeconds} />
+      )}
 
       {showAction && (
         <div className="absolute bottom-[12%] left-1/2 -translate-x-1/2">
