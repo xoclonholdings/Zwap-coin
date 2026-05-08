@@ -22,7 +22,17 @@ export default function NextActionGate({
         className="flex w-full max-w-[320px] flex-col items-center gap-6"
       >
         {type === "move" && (
-          <OnboardingVoiceText lines={["Now try", "MOVE."]} />
+          <OnboardingVoiceText
+            lines={[
+              "Nice… you just earned",
+              "+50 zPts.",
+              "",
+              "That’s how ZWAP! turns",
+              "your movement into value.",
+              "",
+              "Want to try PLAY?",
+            ]}
+          />
         )}
 
         {type === "play" && (
@@ -41,7 +51,17 @@ export default function NextActionGate({
 
         <div className="flex w-full flex-col items-center gap-4">
           {type === "move" && (
-            <OnboardingActionButton type="move" onClick={onMove} />
+            <>
+              <OnboardingActionButton type="play" onClick={onPlay} />
+
+              <button
+                type="button"
+                onClick={onMove}
+                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-bold tracking-[0.08em] text-white/70 transition active:scale-[0.97]"
+              >
+                Learn More
+              </button>
+            </>
           )}
 
           {type === "play" && (
