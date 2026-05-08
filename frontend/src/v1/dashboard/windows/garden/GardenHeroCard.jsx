@@ -7,7 +7,7 @@ import GardenHeroPlant from "./GardenHeroPlant";
 
 function HealthPanel({ health, healthState }) {
   return (
-    <div className="relative z-10 w-[34%] shrink-0">
+    <div className="relative z-20 w-[34%] shrink-0">
       <div className="text-[12px] font-semibold text-white/88">
         Garden Health
       </div>
@@ -51,7 +51,7 @@ function LevelPanel({ gardenLevel = 1, nextLevelPercent = 0 }) {
   const safeNext = clamp(nextLevelPercent);
 
   return (
-    <div className="relative z-10 flex w-[28%] shrink-0 flex-col items-end text-right">
+    <div className="relative z-20 flex w-[28%] shrink-0 flex-col items-end text-right">
       <div className="text-[12px] font-semibold text-white/88">Level</div>
 
       <div className="mt-3 flex justify-end">
@@ -97,7 +97,7 @@ export default function GardenHeroCard({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(91,255,83,0.18),rgba(3,20,12,0.94)_58%,rgba(2,8,14,1))]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(145,255,99,0.2),transparent_28%),linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_38%)]" />
 
-      <div className="absolute inset-0 flex items-end justify-center">
+      <div className="absolute inset-0 z-10 flex items-end justify-center">
         <GardenHeroPlant
           stage={stage}
           healthState={healthState}
@@ -105,10 +105,10 @@ export default function GardenHeroCard({
         />
       </div>
 
-      <div className="relative z-10 flex h-full min-h-[330px] justify-between gap-2 p-4">
+      <div className="pointer-events-none relative z-20 flex h-full min-h-[330px] justify-between gap-2 p-4">
         <HealthPanel health={health} healthState={healthState} />
 
-        <div className="pointer-events-none flex-1" />
+        <div className="flex-1" />
 
         <LevelPanel
           gardenLevel={gardenLevel}
