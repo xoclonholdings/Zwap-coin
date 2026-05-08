@@ -33,13 +33,13 @@ export function SignupGateChoiceView({ onKeepEarning, onNotNow }) {
       className="flex w-full max-w-[320px] flex-col items-center gap-5"
     >
       <OnboardingVoiceText
-        lines={["Keep earning?", "Sign up to save your progress."]}
+        lines={["Save your progress.", "Create your account."]}
       />
 
       <div className="flex w-full gap-4">
         <OnboardingActionButton
           type="save"
-          label="Keep Earning"
+          label="Save Progress"
           eyebrow="SAVE PROGRESS"
           onClick={onKeepEarning}
         />
@@ -64,7 +64,7 @@ export function SignupGateExitView({ onDone }) {
       className="flex max-w-[320px] flex-col items-center gap-5"
     >
       <OnboardingVoiceText
-        lines={["ZWAP!", "We’ll be here when you’re ready."]}
+        lines={["ZWAP! will be here", "when you’re ready."]}
       />
 
       <button
