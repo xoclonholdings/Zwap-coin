@@ -14,6 +14,7 @@ import DashboardWindowShop from "./windows/DashboardWindowShop";
 import DashboardWindowZwap from "./windows/DashboardWindowZwap";
 
 import ActivityPageV1 from "./activity/ActivityPageV1";
+import GardenWindow from "./windows/garden/GardenWindow";
 import LearnPage from "./windows/learn/LearnPage";
 import StreamPanel from "./windows/stream/StreamPanel";
 import MiniStreamPlayer from "./windows/stream/MiniStreamPlayer";
@@ -295,6 +296,13 @@ export default function DashboardV1({ user, authUser }) {
     });
   }
 
+  function handleOpenGarden() {
+    setActiveView({
+      type: "garden",
+      payload: null,
+    });
+  }
+
   function handleOpenLearn(payload = null) {
     setActiveView({
       type: "learn",
@@ -393,9 +401,29 @@ export default function DashboardV1({ user, authUser }) {
     );
   } else if (activeView.type === "activity") {
     screenContent = (
-      <ActivityPageV1
-        onBack={handleBackToDashboard}
-        email={resolvedEmail}
+      <ActivityPageV1 onBack={handleBackToDashboard} email={resolvedEmail} />
+    );
+  } else if (activeView.type === "garden") {
+    screenContent = (
+      <GardenWindow
+        onClose={handleBackToDashboard}
+        streakDays={streakDays}
+        dailySteps={resolvedDailySteps}
+        gamesPlayedToday={resolvedGamesPlayedToday}
+        lessonsCompletedToday={resolvedLessonsCompletedToday}
+        lastActiveAt={lastActiveAt}
+        plantName={plantName}
+        healthPercent={healthPercent}
+        growthStage={growthStage}
+        rarePlantUnlocked={previewRarePlantUnlocked}
+        fullLoopCompleted={resolvedFullLoopCompleted}
+        longestStreak={longestStreak}
+        totalBlooms={totalBlooms}
+        activeDays={activeDays}
+        missedDays={missedDays}
+        daysUntilNextBloom={daysUntilNextBloom}
+        nextRareUnlock={nextRareUnlock}
+        streakGraceDaysRemaining={streakGraceDaysRemaining}
       />
     );
   } else if (activeView.type === "learn") {
@@ -443,6 +471,7 @@ export default function DashboardV1({ user, authUser }) {
             streamUnlocked={true}
             swapUnlocked={previewSwapUnlocked}
             onActivityClick={handleOpenActivity}
+            onGardenClick={handleOpenGarden}
             onLearnClick={handleOpenLearn}
             onStreamClick={handleOpenStream}
             onSwapClick={handleOpenSwap}
@@ -543,10 +572,7 @@ export default function DashboardV1({ user, authUser }) {
     <div className="relative h-[100dvh] w-full overflow-hidden">
       {screenContent}
 
-      <StreamPanel
-        open={streamOpen}
-        onOpenChange={handleStreamOpenChange}
-      />
+      <StreamPanel open={streamOpen} onOpenChange={handleStreamOpenChange} />
     </div>
   );
 }
