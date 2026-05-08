@@ -55,7 +55,7 @@ export default function SignupGate({
         {phase === "voice" && (
           <SignupGateVoiceView
             key="voice"
-            lines={["You earned 50 zPts.", "Would you like to keep earning?"]}
+            lines={["You earned +100 zPts.", "Want to keep earning?"]}
           />
         )}
 
@@ -68,11 +68,14 @@ export default function SignupGate({
         )}
 
         {phase === "response_yes" && (
-          <SignupGateVoiceView key="yes" lines={["Let’s keep going."]} />
+          <SignupGateVoiceView key="yes" lines={["Save your progress."]} />
         )}
 
         {phase === "response_no" && (
-          <SignupGateVoiceView key="no" lines={["No pressure."]} />
+          <SignupGateVoiceView
+            key="no"
+            lines={["ZWAP! will be here", "when you’re ready."]}
+          />
         )}
 
         {phase === "exit" && (
