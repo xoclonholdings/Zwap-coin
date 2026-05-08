@@ -19,17 +19,29 @@ function buildRingStyle(progressPercent = 0) {
   };
 }
 
+function formatElapsedTime(seconds = 0) {
+  const safeSeconds = Math.max(Number(seconds || 0), 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(
+    remainingSeconds
+  ).padStart(2, "0")}`;
+}
+
 export function VoiceView({ text }) {
+  const lines = Array.isArray(text) ? text : [text];
+
   return (
     <motion.div
-      key={text}
+      key={lines.join("-")}
       initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
       animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
       exit={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
       transition={{ duration: 0.65 }}
       className="w-full"
     >
-      <OnboardingVoiceText lines={[text]} />
+      <OnboardingVoiceText lines={lines} />
     </motion.div>
   );
 }
@@ -58,7 +70,7 @@ export function CounterView({ steps, elapsedSeconds = 0 }) {
 
         <div>
           <div className="text-xl font-black tracking-[-0.03em] text-cyan-300">
-            {elapsedSeconds}s
+            {formatElapsedTime(elapsedSeconds)}
           </div>
 
           <div className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/45">
