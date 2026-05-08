@@ -1,76 +1,62 @@
 import React, { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
-function Particle({
-  position,
-  color,
-  speed,
-  offset,
-  size,
-}) {
-  const ref = useRef();
-
-  useFrame((state) => {
-    if (!ref.current) return;
-
-    const t = state.clock.elapsedTime * speed + offset;
-
-    ref.current.position.y =
-      position[1] + Math.sin(t) * 0.18;
-
-    ref.current.position.x =
-      position[0] + Math.cos(t * 0.7) * 0.08;
-
-    ref.current.material.opacity =
-      0.35 + (Math.sin(t * 2) + 1) * 0.25;
-  });
-
-  return (
-    <mesh ref={ref} position={position}>
-      <sphereGeometry args={[size, 10, 10]} />
-
-      <meshBasicMaterial
-        color={color}
-        transparent
-        opacity={0.8}
-      />
-    </mesh>
-  );
-}
+const PARTICLE_COUNT = 70;
 
 export default function GardenParticles({
   rarePlantUnlocked = false,
+  healthState,
 }) {
-  const particles = useMemo(() => {
-    return [...Array(18)].map((_, index) => ({
-      id: index,
-      position: [
-        (Math.random() - 0.5) * 4,
-        Math.random() * 3,
-        (Math.random() - 0.5) * 2,
-      ],
-      speed: 0.5 + Math.random() * 1.2,
-      offset: Math.random() * Math.PI * 2,
-      size: 0.03 + Math.random() * 0.035,
-    }));
+  const pointsRef = useRef();
+
+  const positions = useMemo(() => {
+    const array = new Float32Array(PARTICLE_COUNT * 3);
+
+    for (let i = 0; i < PARTICLE_COUNT; i += 1) {
+      const i3 = i * 3;
+
+      array[i3] = (Math.random() - 0.5) * 5;
+      array[i3 + 1] = Math.random() * 5 - 1;
+      array[i3 + 2] = (Math.random() - 0.5) * 4;
+    }
+
+    return array;
   }, []);
 
+  useFrame((state) => {
+    if (!pointsRef.current) return;
+
+    pointsRef.current.rotation.y =
+      state.clock.elapsedTime * 0.04;
+
+    pointsRef.current.position.y =
+      Math.sin(state.clock.elapsedTime * 0.6) * 0.06;
+  });
+
   return (
-    <group>
-      {particles.map((particle) => (
-        <Particle
-          key={particle.id}
-          position={particle.position}
-          speed={particle.speed}
-          offset={particle.offset}
-          size={particle.size}
-          color={
-            rarePlantUnlocked
-              ? "#ff7ae7"
-              : "#baff6c"
-          }
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={positions.length / 3}
+          array={positions}
+          itemSize={3}
         />
-      ))}
-    </group>
+      </bufferGeometry>
+
+      <pointsMaterial
+        size={0.045}
+        transparent
+        depthWrite={false}
+        opacity={0.9}
+        color={
+          rarePlantUnlocked
+            ? "#ff7ae7"
+            : healthState?.accent || "#7cff5b"
+        }
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
   );
 }
