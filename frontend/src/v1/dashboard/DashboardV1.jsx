@@ -268,6 +268,7 @@ export default function DashboardV1({ user, authUser }) {
 
     lessonsCompletedToday,
     fullLoopCompleted,
+    streakDays,
 
     completedTaskCount,
     totalTaskCount,
