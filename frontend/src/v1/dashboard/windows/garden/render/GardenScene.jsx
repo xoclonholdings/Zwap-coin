@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { Float } from "@react-three/drei";
 
 import PlantModel from "./PlantModel";
+import GardenParticles from "./GardenParticles";
 
 export default function GardenScene({
   stage = "seed",
@@ -48,6 +49,11 @@ export default function GardenScene({
           position={[0, -3, 2]}
           intensity={4}
           color="#7cff5b"
+        />
+
+        <GardenParticles
+          rarePlantUnlocked={rarePlantUnlocked}
+          healthState={healthState}
         />
 
         <Float
