@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 
 import { clamp } from "./gardenUtils";
-import GardenHeroPlant from "./GardenHeroPlant";
+import GardenScene from "./render/GardenScene";
 
 function HealthPanel({ health, healthState }) {
   return (
@@ -98,7 +98,7 @@ export default function GardenHeroCard({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(145,255,99,0.2),transparent_28%),linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_38%)]" />
 
       <div className="absolute inset-0 z-10 flex items-end justify-center">
-        <GardenHeroPlant
+        <GardenScene
           stage={stage}
           healthState={healthState}
           rarePlantUnlocked={rarePlantUnlocked}
