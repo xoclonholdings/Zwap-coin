@@ -8,7 +8,7 @@ import cylinderzCover from "@/assets/games/cylinderz_game_cover.jpg";
 import invazionCover from "@/assets/games/invazion_game_cover.jpg";
 import pulzeCover from "@/assets/games/pulze_game_cover.jpg";
 import stackzCover from "@/assets/games/stackz_game_cover.jpg";
-import tailezCover from "@/assets/games/tailez_game_cover.jpg";
+import tailzCover from "@/assets/games/tailz_game_cover.jpg";
 import triplezCover from "@/assets/games/triplez_game_cover.jpg";
 import werdzCover from "@/assets/games/werdz_game_cover.jpg";
 import zapManCover from "@/assets/games/zap_man_game_cover.jpg";
@@ -26,7 +26,7 @@ const DEFAULT_GAMES = [
   { id: "werdz", name: "WERDZ", cover: werdzCover, locked: true },
   { id: "triplez", name: "TRIPLEZ", cover: triplezCover, locked: true },
   { id: "cylinderz", name: "CYLINDERZ", cover: cylinderzCover, locked: true },
-  { id: "tailez", name: "TAILEZ", cover: tailezCover, locked: true },
+  { id: "tailz", name: "TAILZ", cover: tailzCover, locked: true },
   { id: "invazion", name: "INVAZION", cover: invazionCover, locked: true },
 ];
 
