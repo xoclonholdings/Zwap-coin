@@ -37,24 +37,7 @@ function RewardAnchor({ label }) {
   );
 }
 
-function NeutralMoveAnchor() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18, scale: 0.96, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-      transition={{ duration: 0.6 }}
-      className="flex w-full max-w-[320px] flex-col items-center text-center"
-    >
-      <OnboardingVoiceText lines={["MOVE is ready", "when you are."]} />
-    </motion.div>
-  );
-}
-
-export default function CompletionFlow({
-  type,
-  moveVerified = false,
-  onComplete,
-}) {
+export default function CompletionFlow({ type, onComplete }) {
   useEffect(() => {
     if (!type) return undefined;
 
@@ -75,11 +58,7 @@ export default function CompletionFlow({
         <OnboardingVoiceText lines={["Ready to earn?"]} />
       )}
 
-      {type === COMPLETION_TYPES.move && moveVerified && (
-        <RewardAnchor label="MOVE COMPLETE" />
-      )}
-
-      {type === COMPLETION_TYPES.move && !moveVerified && <NeutralMoveAnchor />}
+      {type === COMPLETION_TYPES.move && <RewardAnchor label="MOVE COMPLETE" />}
 
       {type === COMPLETION_TYPES.play && <RewardAnchor label="PLAY COMPLETE" />}
     </OnboardingShell>

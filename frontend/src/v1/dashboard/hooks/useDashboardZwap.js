@@ -50,20 +50,12 @@ export default function useDashboardZwap({
   lessonsCompletedToday = 0,
   fullLoopCompleted = false,
 
+  streakDays = 0,
+
   completedTaskCount = 0,
   totalTaskCount = 4,
   taskStates = [],
 }) {
-  const previewShopUnlocked = isAdminPreviewUser || shopUnlocked;
-  const previewGardenUnlocked = isAdminPreviewUser || gardenUnlocked;
-  const previewRarePlantUnlocked = isAdminPreviewUser || rarePlantUnlocked;
-  const previewSwapUnlocked = isAdminPreviewUser || isSwapUnlocked;
-  const previewBadgeVisibilityUnlocked =
-    isAdminPreviewUser || badgeVisibilityUnlocked;
-  const previewLearnUnlocked = isAdminPreviewUser || learnUnlocked;
-  const previewStreamUnlocked = isAdminPreviewUser || streamUnlocked;
-  const previewAssistUnlocked = isAdminPreviewUser || assistUnlocked;
-
   const resolvedZptsBalance = Math.max(
     Number(activitySnapshot?.zptsBalance || 0),
     Number(zptsBalance || 0),
@@ -83,7 +75,8 @@ export default function useDashboardZwap({
   );
 
   const resolvedHighScores =
-    activitySnapshot?.highScores && typeof activitySnapshot.highScores === "object"
+    activitySnapshot?.highScores &&
+    typeof activitySnapshot.highScores === "object"
       ? activitySnapshot.highScores
       : {};
 
@@ -112,6 +105,32 @@ export default function useDashboardZwap({
 
   const resolvedTotalTaskCount =
     activitySnapshot?.totalTaskCount ?? totalTaskCount;
+
+  const previewShopUnlocked = isAdminPreviewUser || shopUnlocked;
+
+  const previewGardenUnlocked =
+    isAdminPreviewUser ||
+    gardenUnlocked ||
+    Number(streakDays || 0) >= 3 ||
+    Boolean(resolvedFullLoopCompleted);
+
+  const previewRarePlantUnlocked =
+    isAdminPreviewUser || rarePlantUnlocked;
+
+  const previewSwapUnlocked =
+    isAdminPreviewUser || isSwapUnlocked;
+
+  const previewBadgeVisibilityUnlocked =
+    isAdminPreviewUser || badgeVisibilityUnlocked;
+
+  const previewLearnUnlocked =
+    isAdminPreviewUser || learnUnlocked;
+
+  const previewStreamUnlocked =
+    isAdminPreviewUser || streamUnlocked;
+
+  const previewAssistUnlocked =
+    isAdminPreviewUser || assistUnlocked;
 
   return useMemo(
     () => ({
@@ -143,6 +162,7 @@ export default function useDashboardZwap({
       previewLearnUnlocked,
       previewStreamUnlocked,
       previewAssistUnlocked,
+
       resolvedZptsBalance,
       resolvedDailySteps,
       resolvedGamesPlayedToday,

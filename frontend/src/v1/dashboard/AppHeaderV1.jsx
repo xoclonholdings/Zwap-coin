@@ -8,10 +8,14 @@ import activityLogo from "@/assets/dashboard/activity_logo.png";
 
 function buildInitials(name = "") {
   const safe = String(name || "").trim();
+
   if (!safe) return "U";
 
   const parts = safe.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
 
   return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
 }
@@ -138,7 +142,10 @@ export default function AppHeaderV1({
   }, [initials, displayName]);
 
   function showLockedPopup(title, message) {
-    setPopup({ title, message });
+    setPopup({
+      title,
+      message,
+    });
   }
 
   function handleAdminOpen() {
@@ -152,20 +159,27 @@ export default function AppHeaderV1({
         "Garden Locked",
         "Complete 3 active days or your first full daily loop to unlock Garden."
       );
+
       return;
     }
 
     setPopup(null);
+
     onGardenClick?.();
   }
 
   function handleLearnTap() {
     if (!learnUnlocked) {
-      showLockedPopup("Learn Locked", "Complete more progress to unlock Learn.");
+      showLockedPopup(
+        "Learn Locked",
+        "Complete more progress to unlock Learn."
+      );
+
       return;
     }
 
     setPopup(null);
+
     onLearnClick?.();
   }
 
@@ -175,10 +189,12 @@ export default function AppHeaderV1({
         "Swap Locked",
         "Swap converts your progress into real value.\n\nKeep building:\n• Earn zPts\n• Complete daily activity\n• Stay consistent\n\nMore ways to progress unlock over time.\n\nSwap unlocks when the system is ready.\n\nYou’re not ready yet.\nKeep going."
       );
+
       return;
     }
 
     setPopup(null);
+
     onSwapClick?.();
   }
 
@@ -255,7 +271,10 @@ export default function AppHeaderV1({
         </div>
       </div>
 
-      <HeaderPopup popup={popup} onClose={() => setPopup(null)} />
+      <HeaderPopup
+        popup={popup}
+        onClose={() => setPopup(null)}
+      />
 
       <AccountDrawerV1
         open={accountOpen}
@@ -283,7 +302,10 @@ export default function AppHeaderV1({
         onOpenSupportChat={onOpenSupportChat}
       />
 
-      <AdminPanelV1 isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
+      <AdminPanelV1
+        isOpen={adminOpen}
+        onClose={() => setAdminOpen(false)}
+      />
     </>
   );
 }

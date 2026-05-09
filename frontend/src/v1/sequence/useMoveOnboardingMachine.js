@@ -5,9 +5,9 @@ import { MOVE_ONBOARDING_VOICE } from "./moveOnboardingScript";
 const VOICE_HOLD_MS = 1800;
 const COMPLETE_HOLD_MS = 1400;
 
-const MOCK_START_DELAY_MS = 2400;
+const MOCK_START_DELAY_MS = 2600;
 const MOCK_STEP_SEQUENCE = [1, 2, 3, 5, 7, 10];
-const MOCK_STEP_INTERVAL_MS = 360;
+const MOCK_STEP_INTERVAL_MS = 900;
 
 export default function useMoveOnboardingMachine({
   totalSteps,
@@ -15,7 +15,7 @@ export default function useMoveOnboardingMachine({
   onStopTracking,
 }) {
   const [mode, setMode] = useState("voice-start");
-  const [voice, setVoice] = useState(MOVE_ONBOARDING_VOICE.start);
+  const [voice, setVoice] = useState(MOVE_ONBOARDING_VOICE.start1);
   const [showVoice, setShowVoice] = useState(true);
   const [isTracking, setIsTracking] = useState(false);
   const [moveVerified, setMoveVerified] = useState(false);
@@ -57,10 +57,10 @@ export default function useMoveOnboardingMachine({
     clearTimer(completeTimerRef);
   }, []);
 
-  const showVoiceThen = useCallback((line, nextMode, holdMs = VOICE_HOLD_MS) => {
+  const showVoiceThen = useCallback((lines, nextMode, holdMs = VOICE_HOLD_MS) => {
     clearTimer(voiceTimerRef);
 
-    setVoice(line);
+    setVoice(lines);
     setShowVoice(true);
 
     voiceTimerRef.current = setTimeout(() => {
@@ -157,7 +157,31 @@ export default function useMoveOnboardingMachine({
   useEffect(() => {
     if (mode !== "voice-start") return;
 
-    showVoiceThen(MOVE_ONBOARDING_VOICE.start, "ring-idle");
+    showVoiceThen(MOVE_ONBOARDING_VOICE.start1, "voice-start-2");
+
+    return () => clearTimer(voiceTimerRef);
+  }, [mode, showVoiceThen]);
+
+  useEffect(() => {
+    if (mode !== "voice-start-2") return;
+
+    showVoiceThen(MOVE_ONBOARDING_VOICE.start2, "voice-start-3");
+
+    return () => clearTimer(voiceTimerRef);
+  }, [mode, showVoiceThen]);
+
+  useEffect(() => {
+    if (mode !== "voice-start-3") return;
+
+    showVoiceThen(MOVE_ONBOARDING_VOICE.start3, "voice-start-4");
+
+    return () => clearTimer(voiceTimerRef);
+  }, [mode, showVoiceThen]);
+
+  useEffect(() => {
+    if (mode !== "voice-start-4") return;
+
+    showVoiceThen(MOVE_ONBOARDING_VOICE.start4, "ring-idle");
 
     return () => clearTimer(voiceTimerRef);
   }, [mode, showVoiceThen]);
