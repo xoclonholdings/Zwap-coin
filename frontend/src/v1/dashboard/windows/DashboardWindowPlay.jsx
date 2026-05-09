@@ -1,25 +1,33 @@
 import React, { useState } from "react";
 import { Gamepad2, ChevronRight, Lock } from "lucide-react";
 
-import brainzLogo from "@/assets/games/brainz_game_logo.png";
-import breakerzLogo from "@/assets/games/breakerz_game_logo.png";
-import pulzeLogo from "@/assets/games/pulze_game_logo.png";
-import stackzLogo from "@/assets/games/stackz_game_logo.png";
-import triplezLogo from "@/assets/games/triplez_game_logo.png";
-import werdzLogo from "@/assets/games/werdz_game_logo.png";
-import zapManLogo from "@/assets/games/zap_man_logo.png";
+import acezCover from "@/assets/games/acez_game_cover.jpg";
+import brainzCover from "@/assets/games/brainz_game_cover.jpg";
+import breakerzCover from "@/assets/games/breakerz_game_cover.jpg";
+import cylinderzCover from "@/assets/games/cylinderz_game_cover.jpg";
+import invazionCover from "@/assets/games/invazion_game_cover.jpg";
+import pulzeCover from "@/assets/games/pulze_game_cover.jpg";
+import stackzCover from "@/assets/games/stackz_game_cover.jpg";
+import tailezCover from "@/assets/games/tailez_game_cover.jpg";
+import triplezCover from "@/assets/games/triplez_game_cover.jpg";
+import werdzCover from "@/assets/games/werdz_game_cover.jpg";
+import zapManCover from "@/assets/games/zap_man_game_cover.jpg";
 
 import PlayHighScores from "./play/PlayHighScores";
 
 const DEFAULT_GAMES = [
-  { id: "stackz", name: "STACKZ", logo: stackzLogo, locked: false },
-  { id: "breakerz", name: "BREAKERZ", logo: breakerzLogo, locked: false },
-  { id: "pulze", name: "PULZE", logo: pulzeLogo, locked: false },
-  { id: "zap-man", name: "ZAP-MAN", logo: zapManLogo, locked: false },
+  { id: "zap-man", name: "ZAP-MAN", cover: zapManCover, locked: false },
+  { id: "stackz", name: "STACKZ", cover: stackzCover, locked: false },
+  { id: "breakerz", name: "BREAKERZ", cover: breakerzCover, locked: false },
+  { id: "pulze", name: "PULZE", cover: pulzeCover, locked: false },
+  { id: "acez", name: "ACEZ", cover: acezCover, locked: false },
 
-  { id: "brainz", name: "BRAINZ", logo: brainzLogo, locked: true },
-  { id: "triplez", name: "TRIPLEZ", logo: triplezLogo, locked: true },
-  { id: "werdz", name: "WERDZ", logo: werdzLogo, locked: true },
+  { id: "brainz", name: "BRAINZ", cover: brainzCover, locked: true },
+  { id: "werdz", name: "WERDZ", cover: werdzCover, locked: true },
+  { id: "triplez", name: "TRIPLEZ", cover: triplezCover, locked: true },
+  { id: "cylinderz", name: "CYLINDERZ", cover: cylinderzCover, locked: true },
+  { id: "tailez", name: "TAILEZ", cover: tailezCover, locked: true },
+  { id: "invazion", name: "INVAZION", cover: invazionCover, locked: true },
 ];
 
 function WindowAltIndicator({ onClick }) {
@@ -55,7 +63,6 @@ export default function DashboardWindowPlay({
     Array.isArray(games) && games.length > 0 ? games : DEFAULT_GAMES;
 
   const activeGame = safeGames[activeIndex] || safeGames[0];
-  const isZapMan = activeGame.id === "zap-man";
 
   function handleToggleAltView(event) {
     event.stopPropagation();
@@ -91,9 +98,7 @@ export default function DashboardWindowPlay({
     setTouchStartX(null);
   }
 
-  function handleStart(event) {
-    event.stopPropagation();
-
+  function handleStart() {
     if (activeGame.locked) return;
 
     if (onStartGame) {
@@ -151,51 +156,42 @@ export default function DashboardWindowPlay({
 
         <div
           className="mt-4 flex min-h-0 flex-1 flex-col items-center justify-center rounded-[22px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
-          onClick={showNextGame}
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="relative flex min-h-0 flex-1 items-center justify-center">
-            <div className="relative flex h-[86px] w-full max-w-[220px] items-center justify-center overflow-visible">
-              <img
-                src={activeGame.logo}
-                alt={activeGame.name}
-                className={[
-                  "block h-full max-h-full w-auto max-w-none object-contain drop-shadow-[0_0_18px_rgba(34,211,238,0.25)] transition-all duration-200",
-                  isSwitching
-                    ? isZapMan
-                      ? "scale-95 opacity-40 blur-[1px]"
-                      : "scale-[1.2] opacity-40 blur-[1px]"
-                    : isZapMan
-                    ? "scale-100 opacity-100"
-                    : "scale-[1.28] opacity-100",
-                  activeGame.locked ? "opacity-30" : "",
-                ].join(" ")}
-              />
-
-              {activeGame.locked && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Lock className="h-6 w-6 text-white/70" strokeWidth={2.2} />
-                  <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
-                    Locked
-                  </span>
-                </div>
-              )}
-            </div>
+          <div className="mb-2 shrink-0 text-[10px] font-bold uppercase tracking-[0.24em] text-white/45">
+            ← swipe
           </div>
 
           <button
             type="button"
             onClick={handleStart}
             disabled={activeGame.locked}
-            className={[
-              "mt-3 w-full max-w-[220px] shrink-0 rounded-[20px] border px-5 py-2.5 text-center text-base font-black transition active:scale-[0.98]",
+            className="relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-[18px] border border-white/10 bg-black/20 p-0 text-left transition active:scale-[0.99] disabled:cursor-not-allowed"
+            aria-label={
               activeGame.locked
-                ? "cursor-not-allowed border-white/10 bg-white/10 text-white/30"
-                : "border-white/50 bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-300 text-white shadow-[0_0_24px_rgba(34,211,238,0.20)]",
-            ].join(" ")}
+                ? `${activeGame.name} locked`
+                : `Start ${activeGame.name}`
+            }
           >
-            {activeGame.locked ? "Locked" : "Start"}
+            <img
+              src={activeGame.cover}
+              alt={activeGame.name}
+              className={[
+                "block h-full w-full object-cover transition-all duration-200",
+                isSwitching ? "scale-[1.02] opacity-40 blur-[1px]" : "scale-100 opacity-100",
+                activeGame.locked ? "opacity-35 grayscale-[0.25]" : "",
+              ].join(" ")}
+            />
+
+            {activeGame.locked && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/35">
+                <Lock className="h-6 w-6 text-white/75" strokeWidth={2.2} />
+                <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/65">
+                  Locked
+                </span>
+              </div>
+            )}
           </button>
 
           <div className="mt-2 flex shrink-0 justify-center gap-1.5 pb-0.5">
