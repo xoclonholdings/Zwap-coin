@@ -163,7 +163,7 @@ export default function DashboardWindowPlay({
         </div>
 
         <div
-          className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-[22px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
+          className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-[22px] border border-white/10 bg-black/20 px-3 py-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
           onClick={showNextGame}
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
           onTouchEnd={handleTouchEnd}
@@ -172,31 +172,34 @@ export default function DashboardWindowPlay({
             type="button"
             onClick={handleOpenGame}
             disabled={activeGame.locked}
-            className="relative flex min-h-0 flex-1 items-center justify-center active:scale-[0.985]"
+            className="relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-[18px] p-0 active:scale-[0.985]"
+            aria-label={
+              activeGame.locked
+                ? `${activeGame.name} locked`
+                : `Start ${activeGame.name}`
+            }
           >
-            <div className="relative overflow-hidden rounded-[22px] border border-white/10 shadow-[0_0_28px_rgba(34,211,238,0.08)]">
-              <img
-                src={activeGame.cover}
-                alt={activeGame.name}
-                className={[
-                  "block h-[300px] w-[170px] object-cover transition-all duration-200",
-                  isSwitching
-                    ? "scale-[0.98] opacity-40 blur-[1px]"
-                    : "scale-100 opacity-100",
-                  activeGame.locked ? "opacity-30" : "",
-                ].join(" ")}
-              />
+            <img
+              src={activeGame.cover}
+              alt={activeGame.name}
+              className={[
+                "block h-full w-full object-contain transition-all duration-200",
+                isSwitching
+                  ? "scale-[0.98] opacity-40 blur-[1px]"
+                  : "scale-100 opacity-100",
+                activeGame.locked ? "opacity-30" : "",
+              ].join(" ")}
+            />
 
-              {activeGame.locked && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[1px]">
-                  <Lock className="h-6 w-6 text-white/70" strokeWidth={2.2} />
+            {activeGame.locked && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[1px]">
+                <Lock className="h-6 w-6 text-white/70" strokeWidth={2.2} />
 
-                  <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
-                    Locked
-                  </span>
-                </div>
-              )}
-            </div>
+                <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
+                  Locked
+                </span>
+              </div>
+            )}
           </button>
 
           <div className="mt-3 flex shrink-0 justify-center gap-1.5 pb-0.5">
