@@ -11,7 +11,7 @@ import stackzCover from "@/assets/games/stackz_game_cover.jpg";
 import tailzCover from "@/assets/games/tailz_game_cover.jpg";
 import triplezCover from "@/assets/games/triplez_game_cover.jpg";
 import werdzCover from "@/assets/games/werdz_game_cover.jpg";
-import zapManCover from "@/assets/games/zap_man_cover.jpg";
+import zapManCover from "@/assets/games/zap_man_game_cover.jpg";
 
 import PlayHighScores from "./play/PlayHighScores";
 
