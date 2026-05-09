@@ -11,16 +11,15 @@ import stackzCover from "@/assets/games/stackz_game_cover.jpg";
 import tailzCover from "@/assets/games/tailz_game_cover.jpg";
 import triplezCover from "@/assets/games/triplez_game_cover.jpg";
 import werdzCover from "@/assets/games/werdz_game_cover.jpg";
-import zapManCover from "@/assets/games/zap_man_game_cover.jpg";
+import zapManCover from "@/assets/games/zap_man_cover.jpg";
 
 import PlayHighScores from "./play/PlayHighScores";
 
 const DEFAULT_GAMES = [
   { id: "zap-man", name: "ZAP-MAN", cover: zapManCover, locked: false },
-  { id: "stackz", name: "STACKZ", cover: stackzCover, locked: false },
   { id: "breakerz", name: "BREAKERZ", cover: breakerzCover, locked: false },
   { id: "pulze", name: "PULZE", cover: pulzeCover, locked: false },
-  { id: "acez", name: "ACEZ", cover: acezCover, locked: false },
+  { id: "stackz", name: "STACKZ", cover: stackzCover, locked: false },
 
   { id: "brainz", name: "BRAINZ", cover: brainzCover, locked: true },
   { id: "werdz", name: "WERDZ", cover: werdzCover, locked: true },
@@ -28,6 +27,7 @@ const DEFAULT_GAMES = [
   { id: "cylinderz", name: "CYLINDERZ", cover: cylinderzCover, locked: true },
   { id: "tailz", name: "TAILZ", cover: tailzCover, locked: true },
   { id: "invazion", name: "INVAZION", cover: invazionCover, locked: true },
+  { id: "acez", name: "ACEZ", cover: acezCover, locked: true },
 ];
 
 function WindowAltIndicator({ onClick }) {
@@ -98,7 +98,9 @@ export default function DashboardWindowPlay({
     setTouchStartX(null);
   }
 
-  function handleStart() {
+  function handleOpenGame(event) {
+    event.stopPropagation();
+
     if (activeGame.locked) return;
 
     if (onStartGame) {
@@ -154,47 +156,50 @@ export default function DashboardWindowPlay({
           </div>
         </div>
 
+        <div className="mt-3 mb-1 flex items-center justify-center">
+          <span className="text-[9px] font-semibold uppercase tracking-[0.34em] text-white/28">
+            ← Swipe
+          </span>
+        </div>
+
         <div
-          className="mt-4 flex min-h-0 flex-1 flex-col items-center justify-center rounded-[22px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
+          className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-[22px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
+          onClick={showNextGame}
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="mb-2 shrink-0 text-[10px] font-bold uppercase tracking-[0.24em] text-white/45">
-            ← swipe
-          </div>
-
           <button
             type="button"
-            onClick={handleStart}
+            onClick={handleOpenGame}
             disabled={activeGame.locked}
-            className="relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-[18px] border border-white/10 bg-black/20 p-0 text-left transition active:scale-[0.99] disabled:cursor-not-allowed"
-            aria-label={
-              activeGame.locked
-                ? `${activeGame.name} locked`
-                : `Start ${activeGame.name}`
-            }
+            className="relative flex min-h-0 flex-1 items-center justify-center active:scale-[0.985]"
           >
-            <img
-              src={activeGame.cover}
-              alt={activeGame.name}
-              className={[
-                "block h-full w-full object-cover transition-all duration-200",
-                isSwitching ? "scale-[1.02] opacity-40 blur-[1px]" : "scale-100 opacity-100",
-                activeGame.locked ? "opacity-35 grayscale-[0.25]" : "",
-              ].join(" ")}
-            />
+            <div className="relative overflow-hidden rounded-[22px] border border-white/10 shadow-[0_0_28px_rgba(34,211,238,0.08)]">
+              <img
+                src={activeGame.cover}
+                alt={activeGame.name}
+                className={[
+                  "block h-[300px] w-[170px] object-cover transition-all duration-200",
+                  isSwitching
+                    ? "scale-[0.98] opacity-40 blur-[1px]"
+                    : "scale-100 opacity-100",
+                  activeGame.locked ? "opacity-30" : "",
+                ].join(" ")}
+              />
 
-            {activeGame.locked && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/35">
-                <Lock className="h-6 w-6 text-white/75" strokeWidth={2.2} />
-                <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/65">
-                  Locked
-                </span>
-              </div>
-            )}
+              {activeGame.locked && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[1px]">
+                  <Lock className="h-6 w-6 text-white/70" strokeWidth={2.2} />
+
+                  <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/60">
+                    Locked
+                  </span>
+                </div>
+              )}
+            </div>
           </button>
 
-          <div className="mt-2 flex shrink-0 justify-center gap-1.5 pb-0.5">
+          <div className="mt-3 flex shrink-0 justify-center gap-1.5 pb-0.5">
             {safeGames.map((_, index) => (
               <span
                 key={index}
