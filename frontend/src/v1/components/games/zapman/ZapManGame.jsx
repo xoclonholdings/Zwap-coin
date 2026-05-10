@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 
 import ZapManBoard from "./ZapManBoard";
 import ZapManHud from "./ZapManHud";
-import ZapManControls from "./ZapManControls";
 import {
   ZapManSplashOverlay,
   ZapManPauseOverlay,
@@ -66,8 +65,6 @@ export default function ZapManGame({
   const handledRoundRef = useRef(false);
   const handledGameOverRef = useRef(false);
 
-  /* ---------------- INIT ---------------- */
-
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -82,8 +79,6 @@ export default function ZapManGame({
     setExitOpen(false);
   }, [isPlaying, round]);
 
-  /* ---------------- INPUT ---------------- */
-
   useEffect(() => {
     if (gameState !== "live") return;
 
@@ -96,8 +91,6 @@ export default function ZapManGame({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [gameState]);
-
-  /* ---------------- SWIPE INPUT ---------------- */
 
   function handleTouchStart(event) {
     if (gameState !== "live") return;
@@ -148,8 +141,6 @@ export default function ZapManGame({
     touchStartRef.current = null;
   }
 
-  /* ---------------- GAME LOOP ---------------- */
-
   useEffect(() => {
     if (gameState !== "live") return;
 
@@ -191,8 +182,6 @@ export default function ZapManGame({
     return () => clearInterval(interval);
   }, [gameState, onRoundComplete, onOutOfLives]);
 
-  /* ---------------- HANDLERS ---------------- */
-
   function handleStart() {
     handledRoundRef.current = false;
     handledGameOverRef.current = false;
@@ -210,10 +199,6 @@ export default function ZapManGame({
 
   function handleResume() {
     setGameState("live");
-  }
-
-  function handleDirection(dir) {
-    setState((prev) => setQueuedDirection(prev, dir));
   }
 
   function handleRequestExit() {
@@ -238,8 +223,6 @@ export default function ZapManGame({
     setGameState("live");
   }
 
-  /* ---------------- RENDER ---------------- */
-
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816] text-white">
       <ZapManHud
@@ -249,18 +232,13 @@ export default function ZapManGame({
       />
 
       <div
-        className="flex flex-1 touch-none select-none flex-col items-center justify-center px-3 py-3"
+        className="flex min-h-0 flex-1 touch-none select-none flex-col px-2 pb-2 pt-2"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
       >
         <ZapManBoard state={state} />
-
-        <ZapManControls
-          open={gameState === "live"}
-          onDirection={handleDirection}
-        />
       </div>
 
       <ZapManSplashOverlay
