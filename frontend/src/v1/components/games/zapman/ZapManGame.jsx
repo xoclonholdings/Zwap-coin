@@ -1,276 +1,195 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, lazy, useMemo, useState } from "react";
 
-import ZapManBoard from "./ZapManBoard";
-import ZapManHud from "./ZapManHud";
-import {
-  ZapManSplashOverlay,
-  ZapManPauseOverlay,
-  ZapManExitOverlay,
-  ZapManGameOverOverlay,
-} from "./ZapManOverlays";
+import GameInterstitialOverlay from "./GameInterstitialOverlay";
+import GameRoundCompleteOverlay from "./GameRoundCompleteOverlay";
+import GameReviveOverlay from "./GameReviveOverlay";
+
+import { playDoubleRewardAd, playExtraLifeAd } from "./adService";
 
 import {
-  createInitialState,
-  setQueuedDirection,
-  advancePlayer,
-  advanceEnemies,
-  checkCollision,
-  resolveCollision,
-  maybeAdvanceRound,
-  restartGame,
-  getResult,
-} from "./ZapManEngine";
+  buildArcadeRewardResult,
+  buildReviveResult,
+  normalizeArcadeFinalResult,
+} from "./rewardService";
 
-import { GAME_TICK_MS } from "./ZapManConstants";
+const StackzGame = lazy(() =>
+  import("@/v1/components/games/stackz/StackzGame")
+);
 
-const SWIPE_THRESHOLD = 24;
+const BreakerzGame = lazy(() =>
+  import("@/v1/components/games/breakerz/BreakerzGame")
+);
 
-function buildRoundResult(state, overrides = {}) {
-  return {
-    gameId: "zap-man",
-    game_type: "zap-man",
-    score: Number(state?.score || 0),
-    round: Number(state?.completedRound || state?.round || 1),
-    nextRound: Number(state?.nextRound || Number(state?.round || 1) + 1),
-    level: Number(state?.completedRound || state?.round || 1),
-    lives: Number(state?.lives || 0),
-    baseZpts: Number(state?.baseZpts || state?.roundReward || 0),
-    finalZpts: Number(state?.totalZptsEarned || state?.baseZpts || 0),
-    totalZptsEarned: Number(state?.totalZptsEarned || 0),
-    pelletsCollected: Number(state?.pelletsCollected || 0),
-    powerPelletsCollected: Number(state?.powerPelletsCollected || 0),
-    enemiesZapped: Number(state?.enemiesZapped || 0),
-    sessionDurationSeconds: Number(state?.sessionDurationSeconds || 0),
-    completed: true,
-    ...overrides,
-  };
+const PulzeGame = lazy(() =>
+  import("@/v1/components/games/pulze/PulzeGame")
+);
+
+const ZapManGame = lazy(() =>
+  import("@/v1/components/games/zapman/ZapManGame")
+);
+
+function GameLoadingScreen() {
+  return (
+    <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050816] text-white">
+      <div className="rounded-[24px] border border-cyan-300/15 bg-white/[0.04] px-5 py-4 text-center shadow-[0_0_32px_rgba(34,211,238,0.10)]">
+        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/70">
+          Loading Game
+        </div>
+        <div className="mt-2 text-sm font-semibold text-white/70">
+          Powering up the arcade…
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export default function ZapManGame({
-  onGameEnd,
-  onRoundComplete,
-  onOutOfLives,
-  isPlaying,
-  level = 1,
-  round = 1,
-}) {
-  const [gameState, setGameState] = useState("idle");
-  const [state, setState] = useState(() =>
-    createInitialState({
-      round,
-    })
-  );
-  const [exitOpen, setExitOpen] = useState(false);
-  const touchStartRef = useRef(null);
-  const handledRoundRef = useRef(false);
-  const handledGameOverRef = useRef(false);
+function getGameTitle(gameId) {
+  if (gameId === "zap-man") return "Zap-Man";
+  if (gameId === "breakerz") return "Breakerz";
+  if (gameId === "stackz") return "Stackz";
+  if (gameId === "pulze") return "Pulze";
+  return "ZWAP! Arcade";
+}
 
-  useEffect(() => {
-    if (!isPlaying) return;
+export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
+  const [flowState, setFlowState] = useState("live");
+  const [roundResult, setRoundResult] = useState(null);
+  const [rewardDoubled, setRewardDoubled] = useState(false);
+  const [reviveUsed, setReviveUsed] = useState(false);
+  const [adRunning, setAdRunning] = useState(false);
+  const [roundSeed, setRoundSeed] = useState(1);
+  const [currentRound, setCurrentRound] = useState(1);
 
-    handledRoundRef.current = false;
-    handledGameOverRef.current = false;
-    setState(
-      createInitialState({
-        round,
-      })
-    );
-    setGameState("splash");
-    setExitOpen(false);
-  }, [isPlaying, round]);
+  const gameTitle = useMemo(() => getGameTitle(activeGameId), [activeGameId]);
 
-  useEffect(() => {
-    if (gameState !== "live") return;
-
-    function handleKeyDown(event) {
-      if (event.key === "Escape") {
-        setGameState("paused");
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [gameState]);
-
-  function handleTouchStart(event) {
-    if (gameState !== "live") return;
-
-    const touch = event.touches?.[0];
-    if (!touch) return;
-
-    touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-    };
+  function handleRoundComplete(result) {
+    setRoundResult(result || {});
+    setRewardDoubled(false);
+    setFlowState("interstitial");
   }
 
-  function handleTouchMove(event) {
-    if (gameState !== "live") return;
-    if (!touchStartRef.current) return;
-
-    event.preventDefault();
-
-    const touch = event.touches?.[0];
-    if (!touch) return;
-
-    const dx = touch.clientX - touchStartRef.current.x;
-    const dy = touch.clientY - touchStartRef.current.y;
-
-    if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
-      return;
-    }
-
-    const direction =
-      Math.abs(dx) > Math.abs(dy)
-        ? dx > 0
-          ? "right"
-          : "left"
-        : dy > 0
-          ? "down"
-          : "up";
-
-    setState((prev) => setQueuedDirection(prev, direction));
-
-    touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-    };
+  function handleInterstitialComplete() {
+    setFlowState("roundComplete");
   }
 
-  function handleTouchEnd() {
-    touchStartRef.current = null;
+  function handleOutOfLives(result) {
+    setRoundResult(result || {});
+    setFlowState("revive");
   }
 
-  useEffect(() => {
-    if (gameState !== "live") return;
+  async function handleWatchDoubleAd() {
+    if (rewardDoubled || adRunning) return;
 
-    const interval = setInterval(() => {
-      setState((prev) => {
-        let next = advancePlayer(prev);
-        const now = Date.now();
+    setAdRunning(true);
 
-        const hit1 = checkCollision(next.player, next.enemies);
-        if (hit1) next = resolveCollision(next, hit1, now);
-
-        next = advanceEnemies(next, now);
-
-        const hit2 = checkCollision(next.player, next.enemies);
-        if (hit2) next = resolveCollision(next, hit2, now);
-
-        next = maybeAdvanceRound(next);
-
-        if (next.roundCompleted && !handledRoundRef.current) {
-          handledRoundRef.current = true;
-          setGameState("roundComplete");
-          onRoundComplete?.(buildRoundResult(next));
-          return next;
-        }
-
-        if (next.isGameOver && !handledGameOverRef.current) {
-          handledGameOverRef.current = true;
-          setGameState("ended");
-
-          if (typeof onOutOfLives === "function") {
-            onOutOfLives(buildRoundResult(next));
-          }
-        }
-
-        return next;
+    try {
+      const adResult = await playDoubleRewardAd({
+        gameId: activeGameId,
+        round: Number(roundResult?.round || currentRound || 1),
       });
-    }, GAME_TICK_MS);
 
-    return () => clearInterval(interval);
-  }, [gameState, onRoundComplete, onOutOfLives]);
+      if (!adResult?.rewarded) return;
 
-  function handleStart() {
-    handledRoundRef.current = false;
-    handledGameOverRef.current = false;
-    setState(
-      createInitialState({
-        round,
-      })
+      const updatedResult = buildArcadeRewardResult(roundResult, {
+        doubled: true,
+      });
+
+      setRoundResult(updatedResult);
+      setRewardDoubled(true);
+    } finally {
+      setAdRunning(false);
+    }
+  }
+
+  async function handleWatchReviveAd() {
+    if (reviveUsed || adRunning) return;
+
+    setAdRunning(true);
+
+    try {
+      const adResult = await playExtraLifeAd({
+        gameId: activeGameId,
+        round: Number(roundResult?.round || currentRound || 1),
+      });
+
+      if (!adResult?.rewarded) return;
+
+      const updatedResult = buildReviveResult(roundResult);
+
+      setRoundResult(updatedResult);
+      setReviveUsed(true);
+      setFlowState("live");
+      setRoundSeed((current) => current + 1);
+    } finally {
+      setAdRunning(false);
+    }
+  }
+
+  function handleStartNextRound() {
+    const nextRound = Number(roundResult?.nextRound || currentRound + 1);
+
+    setCurrentRound(nextRound);
+    setRoundResult(null);
+    setRewardDoubled(false);
+    setFlowState("live");
+    setRoundSeed((current) => current + 1);
+  }
+
+  function handleFinalGameEnd(result) {
+    onGameEnd?.(
+      normalizeArcadeFinalResult(activeGameId, result || roundResult || {})
     );
-    setGameState("live");
   }
 
-  function handlePause() {
-    setGameState("paused");
-  }
+  function renderGame() {
+    const sharedProps = {
+      key: `${activeGameId}-${roundSeed}`,
+      isPlaying: flowState === "live",
+      level: currentRound,
+      round: currentRound,
+      onGameEnd: handleFinalGameEnd,
+      onRoundComplete: handleRoundComplete,
+      onOutOfLives: handleOutOfLives,
+      reviveUsed,
+    };
 
-  function handleResume() {
-    setGameState("live");
-  }
+    if (activeGameId === "stackz") return <StackzGame {...sharedProps} />;
+    if (activeGameId === "breakerz") return <BreakerzGame {...sharedProps} />;
+    if (activeGameId === "pulze") return <PulzeGame {...sharedProps} />;
+    if (activeGameId === "zap-man") return <ZapManGame {...sharedProps} />;
 
-  function handleRequestExit() {
-    setExitOpen(true);
-    setGameState("paused");
-  }
-
-  function handleCancelExit() {
-    setExitOpen(false);
-  }
-
-  function handleConfirmExit() {
-    setGameState("exit");
-    setExitOpen(false);
-    onGameEnd?.(getResult(state));
-  }
-
-  function handleRestart() {
-    handledRoundRef.current = false;
-    handledGameOverRef.current = false;
-    setState(restartGame());
-    setGameState("live");
+    return null;
   }
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816] text-white">
-      <ZapManHud
-        state={state}
-        onPause={handlePause}
-        gameState={gameState}
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-[#050816] text-white">
+      <Suspense fallback={<GameLoadingScreen />}>{renderGame()}</Suspense>
+
+      <GameInterstitialOverlay
+        open={flowState === "interstitial"}
+        gameTitle={gameTitle}
+        onComplete={handleInterstitialComplete}
       />
 
-      <div
-        className="flex min-h-0 flex-1 touch-none select-none flex-col px-2 pb-2 pt-2"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-      >
-        <ZapManBoard state={state} />
-      </div>
-
-      <ZapManSplashOverlay
-        open={gameState === "splash"}
-        onStart={handleStart}
-        onBackToArcade={handleConfirmExit}
+      <GameRoundCompleteOverlay
+        open={flowState === "roundComplete"}
+        gameTitle={gameTitle}
+        result={roundResult}
+        rewardDoubled={rewardDoubled}
+        adRunning={adRunning}
+        onWatchDoubleAd={handleWatchDoubleAd}
+        onStartNextRound={handleStartNextRound}
+        onBackToArcade={() => handleFinalGameEnd(roundResult)}
       />
 
-      <ZapManPauseOverlay
-        open={gameState === "paused" && !exitOpen}
-        round={state.round}
-        score={state.score}
-        lives={state.lives}
-        pellets={state.pellets.length}
-        onResume={handleResume}
-        onExit={handleRequestExit}
-      />
-
-      <ZapManExitOverlay
-        open={exitOpen}
-        round={state.round}
-        score={state.score}
-        onCancel={handleCancelExit}
-        onConfirmExit={handleConfirmExit}
-      />
-
-      <ZapManGameOverOverlay
-        open={gameState === "ended" && typeof onOutOfLives !== "function"}
-        round={state.round}
-        score={state.score}
-        onRestart={handleRestart}
-        onBackToArcade={handleConfirmExit}
+      <GameReviveOverlay
+        open={flowState === "revive"}
+        gameTitle={gameTitle}
+        result={roundResult}
+        reviveUsed={reviveUsed}
+        adRunning={adRunning}
+        onWatchReviveAd={handleWatchReviveAd}
+        onEndSession={() => handleFinalGameEnd(roundResult)}
       />
     </div>
   );
