@@ -117,7 +117,9 @@ function moveEnemyTowardPlayer(enemy, player, round = 1, powered = false) {
 
       return {
         ...option,
-        score: powered ? -distance + Math.random() * 0.25 : distance + Math.random() * 0.25,
+        score: powered
+          ? -distance + Math.random() * 0.25
+          : distance + Math.random() * 0.25,
       };
     })
     .sort((a, b) => a.score - b.score);
@@ -244,6 +246,21 @@ function createPlayer() {
   };
 }
 
+function calculateRoundReward(state) {
+  const round = Number(state?.round || 1);
+  const pelletsCollected = Number(state?.pelletsCollected || 0);
+  const powerPelletsCollected = Number(state?.powerPelletsCollected || 0);
+  const enemiesZapped = Number(state?.enemiesZapped || 0);
+
+  return (
+    10 +
+    round * 5 +
+    Math.floor(pelletsCollected / 10) * 2 +
+    powerPelletsCollected * 3 +
+    enemiesZapped * 5
+  );
+}
+
 function resetPositionsAfterHit(state) {
   const player = createPlayer();
   const enemies = generateEnemies(state.enemies.length, player, state.round);
@@ -262,6 +279,7 @@ function buildRoundState({
   score = 0,
   lives = INITIAL_LIVES,
   pelletsCollected = 0,
+  totalZptsEarned = 0,
   poweredUntil = 0,
 } = {}) {
   const safeRound = Math.max(1, Number(round) || 1);
@@ -298,6 +316,12 @@ function buildRoundState({
     pelletsCollected,
     powerPelletsCollected: 0,
     enemiesZapped: 0,
+    totalZptsEarned,
+    roundCompleted: false,
+    completedRound: null,
+    nextRound: null,
+    roundReward: 0,
+    baseZpts: 0,
     isGameOver: false,
     player,
     queuedDirection: INITIAL_PLAYER_DIRECTION,
@@ -310,8 +334,8 @@ function buildRoundState({
   };
 }
 
-export function createInitialState() {
-  return buildRoundState();
+export function createInitialState(options = {}) {
+  return buildRoundState(options);
 }
 
 export function setQueuedDirection(state, direction) {
@@ -364,6 +388,11 @@ export function advancePlayer(state, now = Date.now()) {
 
   return {
     ...state,
+    roundCompleted: false,
+    completedRound: null,
+    nextRound: null,
+    roundReward: 0,
+    baseZpts: 0,
     player: nextPlayer,
     pellets: remainingPellets,
     powerPellets: remainingPowerPellets,
@@ -427,13 +456,26 @@ export function maybeAdvanceRound(state) {
     return state;
   }
 
-  return buildRoundState({
-    round: state.round + 1,
-    score: state.score,
-    lives: state.lives,
-    pelletsCollected: state.pelletsCollected,
-    poweredUntil: 0,
-  });
+  const completedRound = Number(state.round || 1);
+  const nextRound = completedRound + 1;
+  const roundReward = calculateRoundReward(state);
+  const totalZptsEarned = Number(state.totalZptsEarned || 0) + roundReward;
+
+  return {
+    ...buildRoundState({
+      round: nextRound,
+      score: state.score,
+      lives: state.lives,
+      pelletsCollected: state.pelletsCollected,
+      totalZptsEarned,
+      poweredUntil: 0,
+    }),
+    roundCompleted: true,
+    completedRound,
+    nextRound,
+    roundReward,
+    baseZpts: roundReward,
+  };
 }
 
 export function applyGameOver(state) {
@@ -454,6 +496,15 @@ export function applyGameOver(state) {
   });
 }
 
+export function reviveGame(state) {
+  return resetPositionsAfterHit({
+    ...state,
+    lives: 1,
+    isGameOver: false,
+    poweredUntil: 0,
+  });
+}
+
 export function restartGame() {
   return createInitialState();
 }
@@ -462,11 +513,16 @@ export function getResult(state) {
   return {
     score: state.score,
     round: state.round,
+    level: state.round,
     lives: state.lives,
-    cleared: false,
+    cleared: Boolean(state.roundCompleted),
     pelletsCollected: state.pelletsCollected,
     powerPelletsCollected: state.powerPelletsCollected,
     enemiesZapped: state.enemiesZapped,
+    baseZpts: Number(state.baseZpts || state.roundReward || 0),
+    finalZpts: Number(state.totalZptsEarned || state.baseZpts || 0),
+    totalZptsEarned: Number(state.totalZptsEarned || 0),
     gameId: "zap-man",
+    game_type: "zap-man",
   };
 }
