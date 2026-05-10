@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import useV1DashboardState from "./useV1DashboardState";
 import useDashboardActivity from "./hooks/useDashboardActivity";
@@ -20,23 +20,9 @@ import StreamPanel from "./windows/stream/StreamPanel";
 import MiniStreamPlayer from "./windows/stream/MiniStreamPlayer";
 import SwapPage from "./windows/swap/SwapPage";
 
+import ZwapArcadeEngine from "@/v1/components/games/arcade/ZwapArcadeEngine";
+
 import radioArtwork from "../../assets/stream/zwap_radio_logo.png";
-
-const StackzGame = lazy(() =>
-  import("@/v1/components/games/stackz/StackzGame")
-);
-
-const BreakerzGame = lazy(() =>
-  import("@/v1/components/games/breakerz/BreakerzGame")
-);
-
-const PulzeGame = lazy(() =>
-  import("@/v1/components/games/pulze/PulzeGame")
-);
-
-const ZapManGame = lazy(() =>
-  import("@/v1/components/games/zapman/ZapManGame")
-);
 
 const ADMIN_PREVIEW_EMAILS = ["admin@zwap.online"];
 
@@ -82,21 +68,6 @@ function getProgressZone(zptsBalance = 0) {
   if (safe >= 250) return "Getting Started";
 
   return "Building";
-}
-
-function GameLoadingScreen() {
-  return (
-    <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050816] text-white">
-      <div className="rounded-[24px] border border-cyan-300/15 bg-white/[0.04] px-5 py-4 text-center shadow-[0_0_32px_rgba(34,211,238,0.10)]">
-        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/70">
-          Loading Game
-        </div>
-        <div className="mt-2 text-sm font-semibold text-white/70">
-          Powering up the arcade…
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function DashboardV1({ user, authUser }) {
@@ -385,20 +356,10 @@ export default function DashboardV1({ user, authUser }) {
 
   if (activeGameId) {
     screenContent = (
-      <Suspense fallback={<GameLoadingScreen />}>
-        {activeGameId === "stackz" && (
-          <StackzGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-        {activeGameId === "breakerz" && (
-          <BreakerzGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-        {activeGameId === "pulze" && (
-          <PulzeGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-        {activeGameId === "zap-man" && (
-          <ZapManGame isPlaying={true} onGameEnd={handleGameEnd} />
-        )}
-      </Suspense>
+      <ZwapArcadeEngine
+        activeGameId={activeGameId}
+        onGameEnd={handleGameEnd}
+      />
     );
   } else if (activeView.type === "activity") {
     screenContent = (
