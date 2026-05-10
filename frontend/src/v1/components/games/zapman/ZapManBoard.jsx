@@ -55,13 +55,13 @@ export default function ZapManBoard({ state }) {
 
   function getCellClass(type) {
     const base =
-      "relative flex aspect-square w-full items-center justify-center overflow-visible rounded-[7px] border transition-colors duration-200";
+      "relative flex aspect-square w-full items-center justify-center overflow-visible rounded-[8px] border transition-colors duration-200";
 
     if (type === "wall") {
-      return `${base} border-cyan-300/20 bg-[radial-gradient(circle_at_top,rgba(103,242,255,0.24),rgba(8,145,178,0.14)_48%,rgba(2,6,23,0.72)_100%)] shadow-[inset_0_0_12px_rgba(34,211,238,0.16),0_0_14px_rgba(34,211,238,0.18)]`;
+      return `${base} border-cyan-200/25 bg-[linear-gradient(180deg,rgba(103,242,255,0.22),rgba(14,165,233,0.10)_42%,rgba(2,6,23,0.72)_100%)] shadow-[inset_0_1px_10px_rgba(255,255,255,0.10),inset_0_-10px_18px_rgba(8,47,73,0.36),0_0_15px_rgba(34,211,238,0.24)]`;
     }
 
-    return `${base} border-white/[0.035] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.045),rgba(255,255,255,0.015)_52%,rgba(2,6,23,0.22)_100%)]`;
+    return `${base} border-white/[0.025] bg-[radial-gradient(circle_at_center,rgba(103,242,255,0.045),rgba(255,255,255,0.012)_48%,rgba(2,6,23,0.18)_100%)]`;
   }
 
   function renderInner(cell) {
@@ -90,8 +90,12 @@ export default function ZapManBoard({ state }) {
   }
 
   return (
-    <div className="relative w-full max-w-[430px] rounded-[30px] border border-cyan-300/25 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_62%),linear-gradient(180deg,rgba(4,13,24,0.98),rgba(2,6,16,0.98))] p-3 shadow-[0_22px_70px_rgba(0,0,0,0.42),0_0_34px_rgba(34,211,238,0.10)]">
-      <div className="pointer-events-none absolute inset-2 rounded-[24px] border border-cyan-200/10 shadow-[inset_0_0_34px_rgba(34,211,238,0.10)]" />
+    <div className="relative w-full max-w-[455px] rounded-[34px] border border-cyan-300/28 bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.12),transparent_58%),linear-gradient(180deg,rgba(4,13,24,0.98),rgba(1,4,12,0.99))] p-3.5 shadow-[0_26px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(34,211,238,0.16)]">
+      <div className="pointer-events-none absolute inset-0 rounded-[34px] bg-[linear-gradient(135deg,rgba(255,255,255,0.10),transparent_28%,rgba(34,211,238,0.08)_74%,transparent)]" />
+
+      <div className="pointer-events-none absolute inset-2 rounded-[28px] border border-cyan-200/12 shadow-[inset_0_0_38px_rgba(34,211,238,0.14)]" />
+
+      <div className="pointer-events-none absolute inset-4 rounded-[24px] bg-[radial-gradient(circle_at_center,transparent_42%,rgba(34,211,238,0.07)_100%)]" />
 
       <div
         className="relative grid gap-[5px]"
@@ -99,6 +103,7 @@ export default function ZapManBoard({ state }) {
       >
         {cells.map((cell) => (
           <div key={cell.key} className={getCellClass(cell.type)}>
+            <span className="pointer-events-none absolute inset-[18%] rounded-[5px] bg-cyan-200/[0.018]" />
             {renderInner(cell)}
           </div>
         ))}
