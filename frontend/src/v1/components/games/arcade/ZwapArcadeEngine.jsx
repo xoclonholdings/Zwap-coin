@@ -4,10 +4,7 @@ import GameInterstitialOverlay from "./GameInterstitialOverlay";
 import GameRoundCompleteOverlay from "./GameRoundCompleteOverlay";
 import GameReviveOverlay from "./GameReviveOverlay";
 
-import {
-  playDoubleRewardAd,
-  playExtraLifeAd,
-} from "./adService";
+import { playDoubleRewardAd, playExtraLifeAd } from "./adService";
 
 import {
   buildArcadeRewardResult,
@@ -61,6 +58,7 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
   const [reviveUsed, setReviveUsed] = useState(false);
   const [adRunning, setAdRunning] = useState(false);
   const [roundSeed, setRoundSeed] = useState(1);
+  const [currentRound, setCurrentRound] = useState(1);
 
   const gameTitle = useMemo(() => getGameTitle(activeGameId), [activeGameId]);
 
@@ -87,7 +85,7 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
     try {
       const adResult = await playDoubleRewardAd({
         gameId: activeGameId,
-        round: Number(roundResult?.round || 1),
+        round: Number(roundResult?.round || currentRound || 1),
       });
 
       if (!adResult?.rewarded) return;
@@ -111,7 +109,7 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
     try {
       const adResult = await playExtraLifeAd({
         gameId: activeGameId,
-        round: Number(roundResult?.round || 1),
+        round: Number(roundResult?.round || currentRound || 1),
       });
 
       if (!adResult?.rewarded) return;
@@ -128,6 +126,9 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
   }
 
   function handleStartNextRound() {
+    const nextRound = Number(roundResult?.nextRound || currentRound + 1);
+
+    setCurrentRound(nextRound);
     setRoundResult(null);
     setRewardDoubled(false);
     setFlowState("live");
@@ -144,6 +145,8 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
     const sharedProps = {
       key: `${activeGameId}-${roundSeed}`,
       isPlaying: flowState === "live",
+      level: currentRound,
+      round: currentRound,
       onGameEnd: handleFinalGameEnd,
       onRoundComplete: handleRoundComplete,
       onOutOfLives: handleOutOfLives,
