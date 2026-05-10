@@ -90,23 +90,27 @@ export default function ZapManBoard({ state }) {
   }
 
   return (
-    <div className="relative w-full max-w-[455px] rounded-[34px] border border-cyan-300/28 bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.12),transparent_58%),linear-gradient(180deg,rgba(4,13,24,0.98),rgba(1,4,12,0.99))] p-3.5 shadow-[0_26px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(34,211,238,0.16)]">
-      <div className="pointer-events-none absolute inset-0 rounded-[34px] bg-[linear-gradient(135deg,rgba(255,255,255,0.10),transparent_28%,rgba(34,211,238,0.08)_74%,transparent)]" />
+    <div className="flex min-h-0 flex-1 items-center justify-center">
+      <div className="relative w-full max-w-[520px] rounded-[34px] border border-cyan-300/28 bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.12),transparent_58%),linear-gradient(180deg,rgba(4,13,24,0.98),rgba(1,4,12,0.99))] p-3.5 shadow-[0_26px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(34,211,238,0.16)]">
+        <div className="pointer-events-none absolute inset-0 rounded-[34px] bg-[linear-gradient(135deg,rgba(255,255,255,0.10),transparent_28%,rgba(34,211,238,0.08)_74%,transparent)]" />
 
-      <div className="pointer-events-none absolute inset-2 rounded-[28px] border border-cyan-200/12 shadow-[inset_0_0_38px_rgba(34,211,238,0.14)]" />
+        <div className="pointer-events-none absolute inset-2 rounded-[28px] border border-cyan-200/12 shadow-[inset_0_0_38px_rgba(34,211,238,0.14)]" />
 
-      <div className="pointer-events-none absolute inset-4 rounded-[24px] bg-[radial-gradient(circle_at_center,transparent_42%,rgba(34,211,238,0.07)_100%)]" />
+        <div className="pointer-events-none absolute inset-4 rounded-[24px] bg-[radial-gradient(circle_at_center,transparent_42%,rgba(34,211,238,0.07)_100%)]" />
 
-      <div
-        className="relative grid gap-[5px]"
-        style={{ gridTemplateColumns: `repeat(${GRID_WIDTH}, minmax(0, 1fr))` }}
-      >
-        {cells.map((cell) => (
-          <div key={cell.key} className={getCellClass(cell.type)}>
-            <span className="pointer-events-none absolute inset-[18%] rounded-[5px] bg-cyan-200/[0.018]" />
-            {renderInner(cell)}
-          </div>
-        ))}
+        <div
+          className="relative grid gap-[5px]"
+          style={{
+            gridTemplateColumns: `repeat(${GRID_WIDTH}, minmax(0, 1fr))`,
+          }}
+        >
+          {cells.map((cell) => (
+            <div key={cell.key} className={getCellClass(cell.type)}>
+              <span className="pointer-events-none absolute inset-[18%] rounded-[5px] bg-cyan-200/[0.018]" />
+              {renderInner(cell)}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
