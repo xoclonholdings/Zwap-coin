@@ -1,108 +1,92 @@
-import React, { useMemo } from "react";
-import { GRID_WIDTH, GRID_HEIGHT, getWallsForRound } from "./ZapManConstants";
-import {
-  ZapManEnemy,
-  ZapManPellet,
-  ZapManPlayer,
-  ZapManPowerPellet,
-} from "./ZapManCharacters";
-import { isPowered } from "./ZapManEngine";
+export const GRID_WIDTH = 15;
+export const GRID_HEIGHT = 15;
 
-function key(x, y) {
-  return `${x},${y}`;
+export const INITIAL_PLAYER_POSITION = { x: 7, y: 11 };
+export const INITIAL_PLAYER_DIRECTION = "right";
+
+export const INITIAL_LIVES = 5;
+
+export const INITIAL_ENEMY_SPEED = 420;
+export const MIN_ENEMY_SPEED = 130;
+export const ENEMY_SPEED_STEP = 28;
+
+export const INITIAL_ENEMY_COUNT = 1;
+export const MAX_ENEMIES = 6;
+
+export const ROUND_PELLET_COUNT = 28;
+export const ROUND_POWER_PELLET_COUNT = 3;
+
+export const GAME_TICK_MS = 120;
+export const POWER_MODE_MS = 6500;
+export const POWER_ENEMY_SCORE = 50;
+
+export const DIRECTIONS = {
+  up: { x: 0, y: -1 },
+  down: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+};
+
+export const ZAPMAN_CHARACTERS = {
+  player: "zapman",
+  enemies: ["glitch", "spark", "phantom", "volt", "shade", "byte"],
+};
+
+export const WALL_LAYOUTS = [
+  [
+    "0,0","1,0","2,0","3,0","4,0","5,0","6,0","7,0","8,0","9,0","10,0","11,0","12,0","13,0","14,0",
+    "0,14","1,14","2,14","3,14","4,14","5,14","6,14","7,14","8,14","9,14","10,14","11,14","12,14","13,14","14,14",
+    "0,1","0,2","0,3","0,4","0,5","0,6","0,7","0,8","0,9","0,10","0,11","0,12","0,13",
+    "14,1","14,2","14,3","14,4","14,5","14,6","14,7","14,8","14,9","14,10","14,11","14,12","14,13",
+
+    "3,2","4,2","5,2","9,2","10,2","11,2",
+    "3,3","11,3",
+    "2,5","3,5","4,5","10,5","11,5","12,5",
+    "6,4","6,5","6,6","8,4","8,5","8,6",
+    "3,8","4,8","5,8","9,8","10,8","11,8",
+    "3,9","11,9",
+    "2,11","3,11","4,11","10,11","11,11","12,11",
+    "6,10","6,11","8,10","8,11",
+  ],
+
+  [
+    "0,0","1,0","2,0","3,0","4,0","5,0","6,0","7,0","8,0","9,0","10,0","11,0","12,0","13,0","14,0",
+    "0,14","1,14","2,14","3,14","4,14","5,14","6,14","7,14","8,14","9,14","10,14","11,14","12,14","13,14","14,14",
+    "0,1","0,2","0,3","0,4","0,5","0,6","0,7","0,8","0,9","0,10","0,11","0,12","0,13",
+    "14,1","14,2","14,3","14,4","14,5","14,6","14,7","14,8","14,9","14,10","14,11","14,12","14,13",
+
+    "2,2","3,2","11,2","12,2",
+    "5,3","6,3","8,3","9,3",
+    "2,5","3,5","5,5","9,5","11,5","12,5",
+    "7,5","7,6","7,7","7,8","7,9",
+    "2,9","3,9","5,9","9,9","11,9","12,9",
+    "5,11","6,11","8,11","9,11",
+    "2,12","3,12","11,12","12,12",
+  ],
+
+  [
+    "0,0","1,0","2,0","3,0","4,0","5,0","6,0","7,0","8,0","9,0","10,0","11,0","12,0","13,0","14,0",
+    "0,14","1,14","2,14","3,14","4,14","5,14","6,14","7,14","8,14","9,14","10,14","11,14","12,14","13,14","14,14",
+    "0,1","0,2","0,3","0,4","0,5","0,6","0,7","0,8","0,9","0,10","0,11","0,12","0,13",
+    "14,1","14,2","14,3","14,4","14,5","14,6","14,7","14,8","14,9","14,10","14,11","14,12","14,13",
+
+    "2,2","3,2","4,2","10,2","11,2","12,2",
+    "2,3","12,3",
+    "6,3","8,3",
+    "4,5","5,5","6,5","8,5","9,5","10,5",
+    "2,6","3,6","11,6","12,6",
+    "6,7","8,7",
+    "2,8","3,8","11,8","12,8",
+    "4,9","5,9","6,9","8,9","9,9","10,9",
+    "2,11","12,11",
+    "2,12","3,12","4,12","10,12","11,12","12,12",
+  ],
+];
+
+export function getWallsForRound(round = 1) {
+  const safeRound = Math.max(1, Number(round) || 1);
+  const index = (safeRound - 1) % WALL_LAYOUTS.length;
+  return WALL_LAYOUTS[index];
 }
 
-export default function ZapManBoard({ state }) {
-  const powered = isPowered(state);
-
-  const cells = useMemo(() => {
-    const wallSet = new Set(getWallsForRound(state.round));
-    const pelletSet = new Set(
-      state.pellets.map((pellet) => key(pellet.x, pellet.y))
-    );
-    const powerPelletSet = new Set(
-      state.powerPellets.map((pellet) => key(pellet.x, pellet.y))
-    );
-    const enemyMap = new Map(
-      state.enemies.map((enemy) => [key(enemy.x, enemy.y), enemy])
-    );
-    const playerKey = key(state.player.x, state.player.y);
-
-    const output = [];
-
-    for (let y = 0; y < GRID_HEIGHT; y += 1) {
-      for (let x = 0; x < GRID_WIDTH; x += 1) {
-        const cellKey = key(x, y);
-
-        let type = "empty";
-        let enemy = null;
-
-        if (wallSet.has(cellKey)) type = "wall";
-        if (pelletSet.has(cellKey)) type = "pellet";
-        if (powerPelletSet.has(cellKey)) type = "powerPellet";
-        if (enemyMap.has(cellKey)) {
-          type = "enemy";
-          enemy = enemyMap.get(cellKey);
-        }
-        if (playerKey === cellKey) type = "player";
-
-        output.push({ x, y, key: cellKey, type, enemy });
-      }
-    }
-
-    return output;
-  }, [state]);
-
-  function getCellClass(type) {
-    const base =
-      "relative flex aspect-square w-full items-center justify-center overflow-visible rounded-[7px] border transition-colors duration-200";
-
-    if (type === "wall") {
-      return `${base} border-cyan-300/20 bg-[radial-gradient(circle_at_top,rgba(103,242,255,0.24),rgba(8,145,178,0.14)_48%,rgba(2,6,23,0.72)_100%)] shadow-[inset_0_0_12px_rgba(34,211,238,0.16),0_0_14px_rgba(34,211,238,0.18)]`;
-    }
-
-    return `${base} border-white/[0.035] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.045),rgba(255,255,255,0.015)_52%,rgba(2,6,23,0.22)_100%)]`;
-  }
-
-  function renderInner(cell) {
-    if (cell.type === "pellet") return <ZapManPellet />;
-    if (cell.type === "powerPellet") return <ZapManPowerPellet />;
-
-    if (cell.type === "player") {
-      return (
-        <ZapManPlayer
-          direction={state.player.direction}
-          powered={powered}
-        />
-      );
-    }
-
-    if (cell.type === "enemy") {
-      return (
-        <ZapManEnemy
-          character={cell.enemy?.character}
-          vulnerable={powered}
-        />
-      );
-    }
-
-    return null;
-  }
-
-  return (
-    <div className="relative w-full max-w-[430px] rounded-[30px] border border-cyan-300/25 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_62%),linear-gradient(180deg,rgba(4,13,24,0.98),rgba(2,6,16,0.98))] p-3 shadow-[0_22px_70px_rgba(0,0,0,0.42),0_0_34px_rgba(34,211,238,0.10)]">
-      <div className="pointer-events-none absolute inset-2 rounded-[24px] border border-cyan-200/10 shadow-[inset_0_0_34px_rgba(34,211,238,0.10)]" />
-
-      <div
-        className="relative grid gap-[5px]"
-        style={{ gridTemplateColumns: `repeat(${GRID_WIDTH}, minmax(0, 1fr))` }}
-      >
-        {cells.map((cell) => (
-          <div key={cell.key} className={getCellClass(cell.type)}>
-            {renderInner(cell)}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+export const WALLS = WALL_LAYOUTS[0];
