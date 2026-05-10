@@ -55,12 +55,13 @@ export function ZapManSplashOverlay({
 
           <div className="mt-5 text-center">
             <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-300/70">
-              Eat. Dodge. Outrun.
+              Charge The Grid
             </p>
 
             <p className="mt-3 text-sm leading-relaxed text-white/58">
-              Clear pellets. Avoid ghosts. Survive longer each round to build
-              score multipliers and progression rewards.
+              Swipe through the neon circuit. Collect charge orbs, avoid
+              glitch hunters, and trigger Overcharge Mode to consume enemies
+              and clear the grid.
             </p>
           </div>
 
@@ -124,7 +125,7 @@ export function ZapManPauseOverlay({
 
           <div className="rounded-2xl border border-white/8 bg-white/5 px-3 py-2 text-center">
             <p className="text-[10px] uppercase tracking-wide text-white/40">
-              Left
+              Orbs
             </p>
             <p className="mt-1 text-sm font-semibold text-pink-300">
               {pellets}
@@ -243,7 +244,7 @@ export function ZapManGameOverOverlay({
           Session Ended
         </p>
 
-        <h3 className="mt-2 text-lg font-semibold text-white">Game Over</h3>
+        <h3 className="mt-2 text-lg font-semibold text-white">Grid Cleared</h3>
 
         <p className="mt-2 text-sm text-white/60">
           Final score: {Number(score || 0).toLocaleString()} • Round {round}
