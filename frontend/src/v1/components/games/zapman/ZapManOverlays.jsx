@@ -1,38 +1,86 @@
-import React from "react";
-import zapManLogo from "@/assets/games/zap_man_logo.png";
+import React, { useEffect, useState } from "react";
 
-export function ZapManSplashOverlay({ open, onStart, onBackToArcade }) {
+import zapManLogo from "@/assets/games/zap_man_logo.png";
+import zapManCover from "@/assets/games/zap_man_game_cover.jpg";
+
+export function ZapManSplashOverlay({
+  open,
+  onStart,
+  onBackToArcade,
+}) {
+  const [showOverlayContent, setShowOverlayContent] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setShowOverlayContent(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowOverlayContent(true);
+    }, 1400);
+
+    return () => clearTimeout(timer);
+  }, [open]);
+
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center px-4">
-      <div className="flex w-full max-w-[320px] flex-col items-center rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.08),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.012))] px-5 py-7 text-center shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-        <img
-          src={zapManLogo}
-          alt="Zap-Man"
-          className="mx-auto mb-8 block w-full max-w-[260px] object-contain drop-shadow-[0_0_34px_rgba(34,211,238,0.28)]"
-        />
+    <div className="absolute inset-0 z-20 overflow-hidden rounded-[32px]">
+      <img
+        src={zapManCover}
+        alt="Zap-Man Cover"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
 
-        <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">
-          Ready
-        </p>
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.18)_0%,rgba(2,6,23,0.28)_32%,rgba(2,6,23,0.78)_100%)]" />
 
-        <div className="mt-7 flex w-full flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={onStart}
-            className="w-full max-w-[260px] rounded-full border border-white/45 bg-[linear-gradient(90deg,rgba(168,85,247,1),rgba(236,72,153,0.95),rgba(34,211,238,1))] px-6 py-4 text-lg font-bold tracking-[0.02em] text-white shadow-[0_0_28px_rgba(34,211,238,0.24)] transition active:scale-[0.98]"
-          >
-            Start
-          </button>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_58%)]" />
 
-          <button
-            type="button"
-            onClick={onBackToArcade}
-            className="w-full max-w-[260px] rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/72 transition hover:bg-white/[0.08]"
-          >
-            Back to Arcade
-          </button>
+      <div
+        className={`absolute inset-x-0 bottom-0 flex justify-center px-5 pb-6 transition-all duration-700 ${
+          showOverlayContent
+            ? "translate-y-0 opacity-100"
+            : "translate-y-10 opacity-0"
+        }`}
+      >
+        <div className="w-full max-w-[340px] rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,24,0.84),rgba(4,8,16,0.92))] px-5 py-5 shadow-[0_24px_80px_rgba(0,0,0,0.52)] backdrop-blur-xl">
+          <div className="flex items-center justify-center">
+            <img
+              src={zapManLogo}
+              alt="Zap-Man"
+              className="w-full max-w-[190px] object-contain drop-shadow-[0_0_24px_rgba(34,211,238,0.24)]"
+            />
+          </div>
+
+          <div className="mt-5 text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-300/70">
+              Eat. Dodge. Outrun.
+            </p>
+
+            <p className="mt-3 text-sm leading-relaxed text-white/58">
+              Clear pellets. Avoid ghosts. Survive longer each round to build
+              score multipliers and progression rewards.
+            </p>
+          </div>
+
+          <div className="mt-6 flex w-full flex-col gap-3">
+            <button
+              type="button"
+              onClick={onStart}
+              className="w-full rounded-full border border-white/45 bg-[linear-gradient(90deg,rgba(168,85,247,1),rgba(236,72,153,0.95),rgba(34,211,238,1))] px-6 py-4 text-lg font-bold tracking-[0.02em] text-white shadow-[0_0_28px_rgba(34,211,238,0.24)] transition active:scale-[0.98]"
+            >
+              Start
+            </button>
+
+            <button
+              type="button"
+              onClick={onBackToArcade}
+              className="w-full rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/72 transition hover:bg-white/[0.08]"
+            >
+              Back to Arcade
+            </button>
+          </div>
         </div>
       </div>
     </div>
