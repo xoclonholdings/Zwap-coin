@@ -26,16 +26,16 @@ export function ZapManSplashOverlay({
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 z-20 overflow-hidden rounded-[32px]">
+    <div className="absolute inset-0 z-20 overflow-hidden rounded-[32px] bg-[#050816]">
       <img
         src={zapManCover}
         alt="Zap-Man Cover"
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-contain"
       />
 
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.18)_0%,rgba(2,6,23,0.28)_32%,rgba(2,6,23,0.78)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.08)_0%,rgba(2,6,23,0.16)_40%,rgba(2,6,23,0.82)_100%)]" />
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_58%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.06),transparent_60%)]" />
 
       <div
         className={`absolute inset-x-0 bottom-0 flex justify-center px-5 pb-6 transition-all duration-700 ${
