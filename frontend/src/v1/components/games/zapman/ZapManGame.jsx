@@ -31,10 +31,16 @@ function buildRoundResult(state, overrides = {}) {
     gameId: "zap-man",
     game_type: "zap-man",
     score: Number(state?.score || 0),
-    round: Number(state?.round || 1),
-    level: Number(state?.round || 1),
+    round: Number(state?.completedRound || state?.round || 1),
+    nextRound: Number(state?.nextRound || Number(state?.round || 1) + 1),
+    level: Number(state?.completedRound || state?.round || 1),
     lives: Number(state?.lives || 0),
-    baseZpts: Number(state?.roundReward || state?.zptsEarned || 0),
+    baseZpts: Number(state?.baseZpts || state?.roundReward || 0),
+    finalZpts: Number(state?.totalZptsEarned || state?.baseZpts || 0),
+    totalZptsEarned: Number(state?.totalZptsEarned || 0),
+    pelletsCollected: Number(state?.pelletsCollected || 0),
+    powerPelletsCollected: Number(state?.powerPelletsCollected || 0),
+    enemiesZapped: Number(state?.enemiesZapped || 0),
     sessionDurationSeconds: Number(state?.sessionDurationSeconds || 0),
     completed: true,
     ...overrides,
@@ -50,7 +56,11 @@ export default function ZapManGame({
   round = 1,
 }) {
   const [gameState, setGameState] = useState("idle");
-  const [state, setState] = useState(createInitialState());
+  const [state, setState] = useState(() =>
+    createInitialState({
+      round,
+    })
+  );
   const [exitOpen, setExitOpen] = useState(false);
   const touchStartRef = useRef(null);
   const handledRoundRef = useRef(false);
@@ -63,10 +73,14 @@ export default function ZapManGame({
 
     handledRoundRef.current = false;
     handledGameOverRef.current = false;
-    setState(createInitialState());
+    setState(
+      createInitialState({
+        round,
+      })
+    );
     setGameState("splash");
     setExitOpen(false);
-  }, [isPlaying]);
+  }, [isPlaying, round]);
 
   /* ---------------- INPUT ---------------- */
 
@@ -154,18 +168,10 @@ export default function ZapManGame({
 
         next = maybeAdvanceRound(next);
 
-        const roundAdvanced =
-          Number(next?.round || 1) > Number(prev?.round || 1);
-
-        if (roundAdvanced && !handledRoundRef.current) {
+        if (next.roundCompleted && !handledRoundRef.current) {
           handledRoundRef.current = true;
           setGameState("roundComplete");
-          onRoundComplete?.(
-            buildRoundResult(next, {
-              round: Number(prev?.round || 1),
-              nextRound: Number(next?.round || 1),
-            })
-          );
+          onRoundComplete?.(buildRoundResult(next));
           return next;
         }
 
@@ -190,7 +196,11 @@ export default function ZapManGame({
   function handleStart() {
     handledRoundRef.current = false;
     handledGameOverRef.current = false;
-    setState(createInitialState());
+    setState(
+      createInitialState({
+        round,
+      })
+    );
     setGameState("live");
   }
 
