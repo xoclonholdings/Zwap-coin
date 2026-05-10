@@ -26,8 +26,25 @@ import { GAME_TICK_MS } from "./ZapManConstants";
 
 const SWIPE_THRESHOLD = 24;
 
+function buildRoundResult(state, overrides = {}) {
+  return {
+    gameId: "zap-man",
+    game_type: "zap-man",
+    score: Number(state?.score || 0),
+    round: Number(state?.round || 1),
+    level: Number(state?.round || 1),
+    lives: Number(state?.lives || 0),
+    baseZpts: Number(state?.roundReward || state?.zptsEarned || 0),
+    sessionDurationSeconds: Number(state?.sessionDurationSeconds || 0),
+    completed: true,
+    ...overrides,
+  };
+}
+
 export default function ZapManGame({
   onGameEnd,
+  onRoundComplete,
+  onOutOfLives,
   isPlaying,
   level = 1,
   round = 1,
@@ -36,12 +53,16 @@ export default function ZapManGame({
   const [state, setState] = useState(createInitialState());
   const [exitOpen, setExitOpen] = useState(false);
   const touchStartRef = useRef(null);
+  const handledRoundRef = useRef(false);
+  const handledGameOverRef = useRef(false);
 
   /* ---------------- INIT ---------------- */
 
   useEffect(() => {
     if (!isPlaying) return;
 
+    handledRoundRef.current = false;
+    handledGameOverRef.current = false;
     setState(createInitialState());
     setGameState("splash");
     setExitOpen(false);
@@ -53,27 +74,9 @@ export default function ZapManGame({
     if (gameState !== "live") return;
 
     function handleKeyDown(event) {
-      const map = {
-        ArrowUp: "up",
-        ArrowDown: "down",
-        ArrowLeft: "left",
-        ArrowRight: "right",
-        w: "up",
-        a: "left",
-        s: "down",
-        d: "right",
-      };
-
       if (event.key === "Escape") {
         setGameState("paused");
-        return;
       }
-
-      const dir = map[event.key];
-      if (!dir) return;
-
-      event.preventDefault();
-      setState((prev) => setQueuedDirection(prev, dir));
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -151,8 +154,28 @@ export default function ZapManGame({
 
         next = maybeAdvanceRound(next);
 
-        if (next.isGameOver) {
+        const roundAdvanced =
+          Number(next?.round || 1) > Number(prev?.round || 1);
+
+        if (roundAdvanced && !handledRoundRef.current) {
+          handledRoundRef.current = true;
+          setGameState("roundComplete");
+          onRoundComplete?.(
+            buildRoundResult(next, {
+              round: Number(prev?.round || 1),
+              nextRound: Number(next?.round || 1),
+            })
+          );
+          return next;
+        }
+
+        if (next.isGameOver && !handledGameOverRef.current) {
+          handledGameOverRef.current = true;
           setGameState("ended");
+
+          if (typeof onOutOfLives === "function") {
+            onOutOfLives(buildRoundResult(next));
+          }
         }
 
         return next;
@@ -160,11 +183,13 @@ export default function ZapManGame({
     }, GAME_TICK_MS);
 
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, onRoundComplete, onOutOfLives]);
 
   /* ---------------- HANDLERS ---------------- */
 
   function handleStart() {
+    handledRoundRef.current = false;
+    handledGameOverRef.current = false;
     setState(createInitialState());
     setGameState("live");
   }
@@ -197,6 +222,8 @@ export default function ZapManGame({
   }
 
   function handleRestart() {
+    handledRoundRef.current = false;
+    handledGameOverRef.current = false;
     setState(restartGame());
     setGameState("live");
   }
@@ -251,7 +278,7 @@ export default function ZapManGame({
       />
 
       <ZapManGameOverOverlay
-        open={gameState === "ended"}
+        open={gameState === "ended" && typeof onOutOfLives !== "function"}
         round={state.round}
         score={state.score}
         onRestart={handleRestart}
