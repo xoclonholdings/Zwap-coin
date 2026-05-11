@@ -28,6 +28,34 @@ const ZapManGame = lazy(() =>
   import("@/v1/components/games/zapman/ZapManGame")
 );
 
+const BrainzGame = lazy(() =>
+  import("@/v1/components/games/brainz/BrainzGame")
+);
+
+const WerdzGame = lazy(() =>
+  import("@/v1/components/games/werdz/WerdzGame")
+);
+
+const TriplezGame = lazy(() =>
+  import("@/v1/components/games/triplez/TriplezGame")
+);
+
+const CylinderzGame = lazy(() =>
+  import("@/v1/components/games/cylinderz/CylinderzGame")
+);
+
+const TailzGame = lazy(() =>
+  import("@/v1/components/games/tailz/TailzGame")
+);
+
+const InvazionGame = lazy(() =>
+  import("@/v1/components/games/invazion/InvazionGame")
+);
+
+const AcezGame = lazy(() =>
+  import("@/v1/components/games/acez/AcezGame")
+);
+
 function GameLoadingScreen() {
   return (
     <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050816] text-white">
@@ -35,6 +63,7 @@ function GameLoadingScreen() {
         <div className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/70">
           Loading Game
         </div>
+
         <div className="mt-2 text-sm font-semibold text-white/70">
           Powering up the arcade…
         </div>
@@ -48,6 +77,14 @@ function getGameTitle(gameId) {
   if (gameId === "breakerz") return "Breakerz";
   if (gameId === "stackz") return "Stackz";
   if (gameId === "pulze") return "Pulze";
+  if (gameId === "brainz") return "Brainz";
+  if (gameId === "werdz") return "Werdz";
+  if (gameId === "triplez") return "Triplez";
+  if (gameId === "cylinderz") return "Cylinderz";
+  if (gameId === "tailz") return "Tailz";
+  if (gameId === "invazion") return "Invazion";
+  if (gameId === "acez") return "Acez";
+
   return "ZWAP! Arcade";
 }
 
@@ -157,6 +194,13 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
     if (activeGameId === "breakerz") return <BreakerzGame {...sharedProps} />;
     if (activeGameId === "pulze") return <PulzeGame {...sharedProps} />;
     if (activeGameId === "zap-man") return <ZapManGame {...sharedProps} />;
+    if (activeGameId === "brainz") return <BrainzGame {...sharedProps} />;
+    if (activeGameId === "werdz") return <WerdzGame {...sharedProps} />;
+    if (activeGameId === "triplez") return <TriplezGame {...sharedProps} />;
+    if (activeGameId === "cylinderz") return <CylinderzGame {...sharedProps} />;
+    if (activeGameId === "tailz") return <TailzGame {...sharedProps} />;
+    if (activeGameId === "invazion") return <InvazionGame {...sharedProps} />;
+    if (activeGameId === "acez") return <AcezGame {...sharedProps} />;
 
     return null;
   }
