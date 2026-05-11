@@ -14,6 +14,7 @@ export default function StackzGame({
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const engineRef = useRef(null);
+  const sessionStartedAtRef = useRef(null);
 
   const [gameState, setGameState] = useState("idle");
   const [uiState, setUiState] = useState({
@@ -26,6 +27,27 @@ export default function StackzGame({
     finished: false,
   });
 
+  function getSessionDurationSeconds() {
+    if (!sessionStartedAtRef.current) return 0;
+
+    return Math.max(
+      0,
+      Math.round((Date.now() - sessionStartedAtRef.current) / 1000)
+    );
+  }
+
+  function buildGameEndPayload(result = {}) {
+    return {
+      score: Number(result.score || 0),
+      round: Number(result.round || uiState.round || round || 1),
+      level: Number(result.level || uiState.level || level || 1),
+      cleared: false,
+      lines: Number(result.lines || 0),
+      gameId: "stackz",
+      sessionDurationSeconds: getSessionDurationSeconds(),
+    };
+  }
+
   useEffect(() => {
     if (!isPlaying) return;
     setGameState("splash");
@@ -33,6 +55,10 @@ export default function StackzGame({
 
   useEffect(() => {
     if (gameState !== "live") return;
+
+    if (!sessionStartedAtRef.current) {
+      sessionStartedAtRef.current = Date.now();
+    }
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -90,14 +116,7 @@ export default function StackzGame({
 
       if (activeEngine.isFinished()) {
         const result = activeEngine.getResult();
-        onGameEnd?.({
-          score: result.score,
-          round: result.round,
-          level: result.level,
-          cleared: false,
-          lines: result.lines,
-          gameId: "stackz",
-        });
+        onGameEnd?.(buildGameEndPayload(result));
         return;
       }
 
@@ -119,6 +138,8 @@ export default function StackzGame({
   }, [gameState, level, round, onGameEnd]);
 
   const handleStart = () => {
+    sessionStartedAtRef.current = Date.now();
+
     setGameState("live");
     setUiState((prev) => ({
       ...prev,
@@ -183,14 +204,14 @@ export default function StackzGame({
       exitOpen: false,
     }));
 
-    onGameEnd?.({
-      score: uiState.score,
-      round: uiState.round,
-      level: uiState.level,
-      cleared: false,
-      lines: uiState.lines,
-      gameId: "stackz",
-    });
+    onGameEnd?.(
+      buildGameEndPayload({
+        score: uiState.score,
+        round: uiState.round,
+        level: uiState.level,
+        lines: uiState.lines,
+      })
+    );
   };
 
   return (
