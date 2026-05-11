@@ -2,6 +2,21 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 
 
+V1_GAME_IDS = [
+    "zap-man",
+    "breakerz",
+    "pulze",
+    "stackz",
+    "brainz",
+    "werdz",
+    "triplez",
+    "cylinderz",
+    "tailz",
+    "invazion",
+    "acez",
+]
+
+
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -93,10 +108,9 @@ def build_task_states(user: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def build_game_high_scores(user: Dict[str, Any]) -> Dict[str, Dict[str, int]]:
-    game_ids = ["stackz", "breakerz", "pulze", "zap-man"]
     high_scores = {}
 
-    for game_id in game_ids:
+    for game_id in V1_GAME_IDS:
         safe_game_id = game_id.replace("-", "_")
 
         score = safe_int(user.get(f"personal_best_{safe_game_id}"))
@@ -376,9 +390,7 @@ def build_personal_bests(user: Dict[str, Any]) -> List[Dict[str, Any]]:
             }
         )
 
-    game_ids = ["stackz", "breakerz", "pulze", "zap-man"]
-
-    for game_id in game_ids:
+    for game_id in V1_GAME_IDS:
         safe_game_id = game_id.replace("-", "_")
         score = safe_int(user.get(f"personal_best_{safe_game_id}"))
 
@@ -390,7 +402,9 @@ def build_personal_bests(user: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "label": f"{game_id.upper()} High Score",
                     "value": score,
                     "score": score,
-                    "level": safe_int(user.get(f"personal_best_level_{safe_game_id}"), 1),
+                    "level": safe_int(
+                        user.get(f"personal_best_level_{safe_game_id}"), 1
+                    ),
                     "plays": safe_int(user.get(f"games_played_{safe_game_id}")),
                 }
             )
