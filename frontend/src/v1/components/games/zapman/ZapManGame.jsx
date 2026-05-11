@@ -63,10 +63,28 @@ export default function ZapManGame({
     })
   );
   const [exitOpen, setExitOpen] = useState(false);
+
   const touchStartRef = useRef(null);
   const handledRoundRef = useRef(false);
   const handledGameOverRef = useRef(false);
   const previousReviveUsedRef = useRef(Boolean(reviveUsed));
+  const sessionStartedAtRef = useRef(null);
+
+  function getSessionDurationSeconds() {
+    if (!sessionStartedAtRef.current) return 0;
+
+    return Math.max(
+      0,
+      Math.round((Date.now() - sessionStartedAtRef.current) / 1000)
+    );
+  }
+
+  function buildTrackedResult(nextState, overrides = {}) {
+    return buildRoundResult(nextState, {
+      sessionDurationSeconds: getSessionDurationSeconds(),
+      ...overrides,
+    });
+  }
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -74,6 +92,7 @@ export default function ZapManGame({
     handledRoundRef.current = false;
     handledGameOverRef.current = false;
     previousReviveUsedRef.current = Boolean(reviveUsed);
+    sessionStartedAtRef.current = null;
 
     setState(
       createInitialState({
@@ -82,7 +101,7 @@ export default function ZapManGame({
     );
     setGameState("splash");
     setExitOpen(false);
-  }, [isPlaying, round]);
+  }, [isPlaying, round, reviveUsed]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -165,6 +184,10 @@ export default function ZapManGame({
   useEffect(() => {
     if (gameState !== "live") return;
 
+    if (!sessionStartedAtRef.current) {
+      sessionStartedAtRef.current = Date.now();
+    }
+
     const interval = setInterval(() => {
       setState((prev) => {
         let next = advancePlayer(prev);
@@ -183,7 +206,7 @@ export default function ZapManGame({
         if (next.roundCompleted && !handledRoundRef.current) {
           handledRoundRef.current = true;
           setGameState("roundComplete");
-          onRoundComplete?.(buildRoundResult(next));
+          onRoundComplete?.(buildTrackedResult(next));
           return next;
         }
 
@@ -192,7 +215,7 @@ export default function ZapManGame({
           setGameState("ended");
 
           if (typeof onOutOfLives === "function") {
-            onOutOfLives(buildRoundResult(next));
+            onOutOfLives(buildTrackedResult(next));
           }
         }
 
@@ -206,6 +229,7 @@ export default function ZapManGame({
   function handleStart() {
     handledRoundRef.current = false;
     handledGameOverRef.current = false;
+    sessionStartedAtRef.current = Date.now();
 
     setState(
       createInitialState({
@@ -235,12 +259,23 @@ export default function ZapManGame({
   function handleConfirmExit() {
     setGameState("exit");
     setExitOpen(false);
-    onGameEnd?.(getResult(state));
+
+    const result = getResult(state);
+
+    onGameEnd?.(
+      buildTrackedResult({
+        ...state,
+        ...result,
+        completedRound: result?.round || state?.round,
+      })
+    );
   }
 
   function handleRestart() {
     handledRoundRef.current = false;
     handledGameOverRef.current = false;
+    sessionStartedAtRef.current = Date.now();
+
     setState(restartGame());
     setGameState("live");
   }
