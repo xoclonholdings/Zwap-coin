@@ -13,7 +13,7 @@ V1 behavior:
 
 V1 game registry:
 - available now: stackz, breakerz, pulze, zap-man
-- locked future games: brainz, triplez, werdz
+- locked future games: brainz, werdz, triplez, cylinderz, tailz, invazion, acez
 """
 
 import logging
@@ -40,10 +40,13 @@ GAME_REGISTRY = {
     "pulze": {"locked": False},
     "zap-man": {"locked": False},
     "brainz": {"locked": True},
-    "triplez": {"locked": True},
     "werdz": {"locked": True},
+    "triplez": {"locked": True},
+    "cylinderz": {"locked": True},
+    "tailz": {"locked": True},
+    "invazion": {"locked": True},
+    "acez": {"locked": True},
 }
-
 
 class GameResultRequest(BaseModel):
     game_type: str
