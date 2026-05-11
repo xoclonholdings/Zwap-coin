@@ -15,6 +15,7 @@ export default function PulzeGame({
   const animationRef = useRef(null);
   const engineRef = useRef(null);
   const finalResultRef = useRef(null);
+  const sessionStartedAtRef = useRef(null);
 
   const [gameState, setGameState] = useState("idle");
   const [uiState, setUiState] = useState({
@@ -31,6 +32,29 @@ export default function PulzeGame({
     feedback: "TAP ON THE PULZE",
   });
 
+  function getSessionDurationSeconds() {
+    if (!sessionStartedAtRef.current) return 0;
+
+    return Math.max(
+      0,
+      Math.round((Date.now() - sessionStartedAtRef.current) / 1000)
+    );
+  }
+
+  function buildGameEndPayload(result = {}, overrides = {}) {
+    return {
+      score: Number(result.score ?? uiState.score ?? 0),
+      round: Number(result.round ?? uiState.round ?? round ?? 1),
+      level: Number(result.level ?? uiState.level ?? level ?? 1),
+      cleared: Boolean(overrides.cleared ?? result.cleared),
+      lives: Number(result.lives ?? uiState.lives ?? 0),
+      hits: Number(result.hits ?? uiState.hits ?? 0),
+      attempts: Number(result.attempts ?? uiState.attempts ?? 0),
+      gameId: "pulze",
+      sessionDurationSeconds: getSessionDurationSeconds(),
+    };
+  }
+
   useEffect(() => {
     if (!isPlaying) return;
     setGameState("splash");
@@ -38,6 +62,10 @@ export default function PulzeGame({
 
   useEffect(() => {
     if (gameState !== "live") return undefined;
+
+    if (!sessionStartedAtRef.current) {
+      sessionStartedAtRef.current = Date.now();
+    }
 
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
@@ -91,16 +119,7 @@ export default function PulzeGame({
       if (activeEngine.isFinished()) {
         const result = activeEngine.getResult();
 
-        finalResultRef.current = {
-          score: result.score,
-          round: result.round,
-          level: result.level,
-          cleared: Boolean(result.cleared),
-          lives: result.lives,
-          hits: result.hits,
-          attempts: result.attempts,
-          gameId: "pulze",
-        };
+        finalResultRef.current = buildGameEndPayload(result);
 
         setGameState("ended");
         return;
@@ -125,6 +144,7 @@ export default function PulzeGame({
 
   const handleStart = () => {
     finalResultRef.current = null;
+    sessionStartedAtRef.current = Date.now();
 
     setGameState("live");
     setUiState((prev) => ({
@@ -197,20 +217,13 @@ export default function PulzeGame({
 
     engine?.confirmExit?.();
 
-    onGameEnd?.({
-      score: result.score ?? uiState.score,
-      round: result.round ?? uiState.round,
-      level: result.level ?? uiState.level,
-      cleared: false,
-      lives: result.lives ?? uiState.lives,
-      hits: result.hits ?? uiState.hits,
-      attempts: result.attempts ?? uiState.attempts,
-      gameId: "pulze",
-    });
+    onGameEnd?.(buildGameEndPayload(result, { cleared: false }));
   };
 
   const handleRestart = () => {
     finalResultRef.current = null;
+    sessionStartedAtRef.current = Date.now();
+
     setGameState("live");
 
     setUiState((prev) => ({
