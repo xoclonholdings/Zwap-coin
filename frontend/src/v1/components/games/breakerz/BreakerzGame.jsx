@@ -15,6 +15,7 @@ export default function BreakerzGame({
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const engineRef = useRef(null);
+  const sessionStartedAtRef = useRef(null);
 
   const [overlayState, setOverlayState] = useState({
     pauseOpen: false,
@@ -28,8 +29,40 @@ export default function BreakerzGame({
     finished: false,
   });
 
+  function getSessionDurationSeconds() {
+    if (!sessionStartedAtRef.current) return 0;
+
+    return Math.max(
+      0,
+      Math.round((Date.now() - sessionStartedAtRef.current) / 1000)
+    );
+  }
+
+  function buildGameEndPayload(result = {}, overrides = {}) {
+    return {
+      score: Number(result.score || uiState.score || 0),
+      round: Number(result.round || uiState.round || round || 1),
+      level: Math.max(1, Number(level) || 1),
+      cleared: Boolean(overrides.cleared ?? result.cleared),
+      lives: Number(result.lives ?? uiState.lives ?? 0),
+      blocksDestroyed: Number(
+        result.blocksDestroyed ||
+          result.blocks_destroyed ||
+          result.bricksDestroyed ||
+          result.bricks_destroyed ||
+          0
+      ),
+      gameId: "breakerz",
+      sessionDurationSeconds: getSessionDurationSeconds(),
+    };
+  }
+
   useEffect(() => {
     if (!isPlaying) return undefined;
+
+    if (!sessionStartedAtRef.current) {
+      sessionStartedAtRef.current = Date.now();
+    }
 
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
@@ -80,14 +113,7 @@ export default function BreakerzGame({
 
       if (activeEngine.isFinished()) {
         const result = activeEngine.getResult();
-        onGameEnd?.({
-          score: result.score,
-          round: result.round,
-          cleared: result.cleared,
-          level: Math.max(1, Number(level) || 1),
-          lives: result.lives,
-          gameId: "breakerz",
-        });
+        onGameEnd?.(buildGameEndPayload(result));
         return;
       }
 
@@ -159,29 +185,25 @@ export default function BreakerzGame({
 
   const handleConfirmExit = () => {
     const engine = engineRef.current;
+
     if (!engine) {
-      onGameEnd?.({
-        score: uiState.score,
-        round: uiState.round,
-        level: Math.max(1, Number(level) || 1),
-        cleared: false,
-        lives: uiState.lives,
-        gameId: "breakerz",
-      });
+      onGameEnd?.(
+        buildGameEndPayload(
+          {
+            score: uiState.score,
+            round: uiState.round,
+            lives: uiState.lives,
+          },
+          { cleared: false }
+        )
+      );
       return;
     }
 
     const result = engine.getResult();
     engine.confirmExit();
 
-    onGameEnd?.({
-      score: result.score,
-      round: result.round,
-      level: Math.max(1, Number(level) || 1),
-      cleared: false,
-      lives: result.lives,
-      gameId: "breakerz",
-    });
+    onGameEnd?.(buildGameEndPayload(result, { cleared: false }));
   };
 
   return (
