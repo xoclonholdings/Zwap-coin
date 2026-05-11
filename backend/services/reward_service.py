@@ -42,7 +42,19 @@ TIERS = {
         "daily_zpts_cap": 600,
         "daily_zwap_cap": 10.0,
         "monthly_zwap_cap": 300.0,
-        "games": ["stackz", "breakerz", "pulze", "zap-man", "brainz", "triplez", "werdz"],
+        "games": [
+            "stackz",
+            "breakerz",
+            "pulze",
+            "zap-man",
+            "brainz",
+            "triplez",
+            "werdz",
+            "cylinderz",
+            "tailz",
+            "invazion",
+            "acez",
+        ],
         "features": ["move", "play", "shop", "zitizen"],
     },
 }
@@ -72,6 +84,10 @@ MAX_GAME_SCORES = {
     "brainz": 50,
     "triplez": 10000,
     "werdz": 200,
+    "cylinderz": 100000,
+    "tailz": 5000,
+    "invazion": 25000,
+    "acez": 10000,
 }
 
 _rate_limits = defaultdict(dict)
@@ -133,7 +149,9 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
         should_reset = True
     elif last_reset:
         try:
-            last_reset_dt = datetime.fromisoformat(str(last_reset).replace("Z", "+00:00"))
+            last_reset_dt = datetime.fromisoformat(
+                str(last_reset).replace("Z", "+00:00")
+            )
             should_reset = last_reset_dt.date() < now.date()
         except Exception:
             should_reset = True
@@ -141,7 +159,11 @@ async def check_and_reset_daily_zpts(db, user: dict) -> dict:
         should_reset = True
 
     if should_reset:
-        lookup = {"email": user["email"]} if user.get("email") else {"id": user["id"]}
+        lookup = (
+            {"email": user["email"]}
+            if user.get("email")
+            else {"id": user["id"]}
+        )
 
         await db.users.update_one(
             lookup,
@@ -189,18 +211,37 @@ async def calculate_play_reward(
 
     if normalized_game == "breakerz":
         base_zpts = min(blocks_destroyed + (score // 40), 40)
+
     elif normalized_game == "stackz":
         base_zpts = min((score // 80) + (level * 2), 50)
+
     elif normalized_game == "pulze":
         base_zpts = min((score // 12) + level, 35)
+
     elif normalized_game == "zap-man":
         base_zpts = min((score // 80) + (level * 2), 50)
+
     elif normalized_game == "brainz":
         base_zpts = min((score * 2) + level, 30)
+
     elif normalized_game == "triplez":
         base_zpts = min((score // 60) + (level * 2), 45)
+
     elif normalized_game == "werdz":
         base_zpts = min((score * 2) + (level * 2), 35)
+
+    elif normalized_game == "cylinderz":
+        base_zpts = min((score // 120) + (level * 3), 60)
+
+    elif normalized_game == "tailz":
+        base_zpts = min((score // 25) + (level * 2), 40)
+
+    elif normalized_game == "invazion":
+        base_zpts = min((score // 100) + (level * 3), 55)
+
+    elif normalized_game == "acez":
+        base_zpts = min((score // 75) + (level * 2), 45)
+
     else:
         base_zpts = 0
 
@@ -221,7 +262,9 @@ async def calculate_move_reward(
         raise ValueError(f"Minimum {MIN_STEPS_PER_CLAIM} steps required")
 
     if steps > MAX_STEPS_PER_CLAIM:
-        raise ValueError(f"Step count exceeds maximum ({MAX_STEPS_PER_CLAIM})")
+        raise ValueError(
+            f"Step count exceeds maximum ({MAX_STEPS_PER_CLAIM})"
+        )
 
     tier_config = _get_tier_config(tier)
     multiplier = float(tier_config["move"])
@@ -242,9 +285,14 @@ async def calculate_move_reward(
     }
 
 
-async def convert_zpts_to_zwap(zpts_amount: int, tier: str = "zwapper") -> Dict:
+async def convert_zpts_to_zwap(
+    zpts_amount: int,
+    tier: str = "zwapper",
+) -> Dict:
     if zpts_amount < ZPTS_TO_ZWAP_RATE:
-        raise ValueError(f"Minimum {ZPTS_TO_ZWAP_RATE} zPts required")
+        raise ValueError(
+            f"Minimum {ZPTS_TO_ZWAP_RATE} zPts required"
+        )
 
     zwap = zpts_amount / ZPTS_TO_ZWAP_RATE
 
@@ -301,3 +349,4 @@ async def enforce_daily_caps(
         "cap": cap,
         "identity": identity,
     }
+}
