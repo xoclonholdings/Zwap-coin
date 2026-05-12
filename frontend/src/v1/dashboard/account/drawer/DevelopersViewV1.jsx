@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   Code2,
   Gamepad2,
+  Megaphone,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -72,6 +73,20 @@ function StatusPill({ children }) {
   );
 }
 
+function InfoLine({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-white/8 py-2 last:border-b-0">
+      <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/35">
+        {label}
+      </span>
+
+      <span className="text-right text-[11px] font-semibold text-white/62">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default function DevelopersViewV1({
   onBack,
   initialSection = "overview",
@@ -122,7 +137,11 @@ export default function DevelopersViewV1({
             title="Developer Portal"
             description="A future approval-based layer for developers, partners, sponsored campaigns, and PLAY ecosystem expansion."
           >
-            <StatusPill>Progression path pending</StatusPill>
+            <div className="flex flex-wrap gap-1.5">
+              <StatusPill>Approval-based</StatusPill>
+              <StatusPill>Not subscription-gated</StatusPill>
+              <StatusPill>Progression pending</StatusPill>
+            </div>
           </DeveloperCard>
 
           <div ref={earnCashRef}>
@@ -136,6 +155,12 @@ export default function DevelopersViewV1({
                 This section is not active yet. Requirements will appear here
                 after the progression rules are written.
               </div>
+
+              <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-1">
+                <InfoLine label="Reward Type" value="Cash / sponsor-funded" />
+                <InfoLine label="Entry Point" value="PLAY + Account Drawer" />
+                <InfoLine label="Status" value="Locked until progression" />
+              </div>
             </DeveloperCard>
           </div>
 
@@ -143,13 +168,37 @@ export default function DevelopersViewV1({
             icon={<Gamepad2 size={18} strokeWidth={2.2} />}
             title="Game Submissions"
             description="External games will require review for quality, safety, reward integrity, and performance impact."
-          />
+          >
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-1">
+              <InfoLine label="Build" value="Required" />
+              <InfoLine label="Metadata" value="Required" />
+              <InfoLine label="Reward Map" value="Reviewed" />
+            </div>
+          </DeveloperCard>
+
+          <DeveloperCard
+            icon={<Megaphone size={18} strokeWidth={2.2} />}
+            title="Sponsored Campaigns"
+            description="Partners may later fund challenges, featured placements, sponsor-backed rewards, and campaign pools."
+          >
+            <div className="flex flex-wrap gap-1.5">
+              <StatusPill>Challenges</StatusPill>
+              <StatusPill>Featured placement</StatusPill>
+              <StatusPill>Reward pools</StatusPill>
+            </div>
+          </DeveloperCard>
 
           <DeveloperCard
             icon={<ShieldCheck size={18} strokeWidth={2.2} />}
             title="Reward Integrity"
             description="Developer games cannot emit arbitrary rewards, bypass caps, or create reward loops outside reward_service."
-          />
+          >
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-1">
+              <InfoLine label="Caps" value="Enforced" />
+              <InfoLine label="Rewards" value="Standardized signals only" />
+              <InfoLine label="Review" value="Required before activation" />
+            </div>
+          </DeveloperCard>
         </div>
       </div>
     </div>
