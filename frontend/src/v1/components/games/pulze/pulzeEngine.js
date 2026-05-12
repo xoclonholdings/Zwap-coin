@@ -11,8 +11,11 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
   let attempts = 0;
   let finished = false;
   let paused = false;
+  let roundComplete = false;
   let lastTime = 0;
   let feedback = "TAP ON THE PULZE";
+
+  const targetHits = 8;
 
   const track = {
     x: 54,
@@ -37,6 +40,13 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
     const padding = getTargetSize() / 2;
     targetPosition =
       track.x + padding + Math.random() * Math.max(1, track.width - padding * 2);
+  }
+
+  function completeRound() {
+    roundComplete = true;
+    finished = true;
+    feedback = "ROUND COMPLETE";
+    score += round * 75 + lives * 25 + streak * 10;
   }
 
   function tick(time) {
@@ -80,12 +90,9 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
       streak += 1;
       score += result.points + streak * 5;
 
-      if (hits > 0 && hits % 5 === 0) {
-        round += 1;
-      }
-
-      if (hits > 0 && hits % 12 === 0) {
-        level += 1;
+      if (hits >= targetHits) {
+        completeRound();
+        return getPublicState();
       }
 
       resetTarget();
@@ -103,11 +110,13 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
   }
 
   function togglePause() {
+    if (finished) return paused;
     paused = !paused;
     return paused;
   }
 
   function resumeFromPause() {
+    if (finished) return;
     paused = false;
   }
 
@@ -123,19 +132,38 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
     finished = true;
   }
 
+  function reviveWithExtraLife() {
+    lives = 1;
+    streak = 0;
+    finished = false;
+    paused = false;
+    roundComplete = false;
+    feedback = "TAP ON THE PULZE";
+    resetTarget();
+  }
+
   function isFinished() {
     return finished;
+  }
+
+  function isRoundComplete() {
+    return roundComplete;
   }
 
   function getResult() {
     return {
       score,
       round,
+      nextRound: round + 1,
       level,
       lives,
       hits,
       attempts,
-      cleared: lives > 0,
+      cleared: Boolean(roundComplete),
+      roundComplete,
+      baseZpts: Math.max(10, Math.floor(score / 100) + round * 5),
+      gameId: "pulze",
+      game_type: "pulze",
     };
   }
 
@@ -150,6 +178,7 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
       attempts,
       paused,
       finished,
+      roundComplete,
       feedback,
     };
   }
@@ -170,6 +199,7 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
       attempts,
       paused,
       finished,
+      roundComplete,
       feedback,
     };
   }
@@ -184,7 +214,9 @@ export function createPulzeEngine({ startingRound = 1, startingLevel = 1 } = {})
     openExitOverlay,
     closeExitOverlay,
     confirmExit,
+    reviveWithExtraLife,
     isFinished,
+    isRoundComplete,
     getResult,
     getPublicState,
   };
