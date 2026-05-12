@@ -39,10 +39,12 @@ export function createStackzEngine({
   let lines = 0;
   let round = Math.max(1, Number(startingRound) || 1);
   let level = Math.max(1, Number(startingLevel) || 1);
+  let roundStartLines = Math.max(0, (round - 1) * 10);
 
   let phase = "intro";
   let paused = false;
   let finished = false;
+  let roundComplete = false;
 
   const safeDropSpeedMultiplier = Math.min(
     Math.max(Number(dropSpeedMultiplier) || 1, 0.35),
@@ -59,7 +61,6 @@ export function createStackzEngine({
 
   function refreshLevelAndRound() {
     level = getStackzLevelFromLines(lines);
-    round = Math.max(1, Math.floor(lines / 10) + 1);
   }
 
   function getGhostPiece() {
@@ -84,10 +85,36 @@ export function createStackzEngine({
       round,
       paused,
       finished,
+      roundComplete,
       showRoundIntro: phase === "intro",
       showGameOver: phase === "gameover",
       phase,
     };
+  }
+
+  function getLinesThisRound() {
+    return Math.max(0, lines - roundStartLines);
+  }
+
+  function getRoundTargetLines() {
+    return 10;
+  }
+
+  function shouldCompleteRound() {
+    return getLinesThisRound() >= getRoundTargetLines();
+  }
+
+  function completeRound() {
+    if (roundComplete) return;
+
+    const roundBonus = round * 100;
+    const lineBonus = getLinesThisRound() * 25;
+
+    score += roundBonus + lineBonus;
+    roundComplete = true;
+    finished = true;
+    paused = false;
+    phase = "round-clear";
   }
 
   function spawnNextPiece() {
@@ -114,6 +141,11 @@ export function createStackzEngine({
       score += getStackzLineScore(clearedResult.cleared, level);
       lines += clearedResult.cleared;
       refreshLevelAndRound();
+
+      if (shouldCompleteRound()) {
+        completeRound();
+        return;
+      }
 
       phase = "line-clear";
       lineClearUntil = nowMs() + STACKZ_FLOW.lineClearDelayMs;
@@ -233,11 +265,12 @@ export function createStackzEngine({
   }
 
   function togglePause() {
-    if (phase === "gameover") return;
+    if (phase === "gameover" || roundComplete) return;
     paused = !paused;
   }
 
   function resume() {
+    if (roundComplete) return;
     paused = false;
   }
 
@@ -246,13 +279,42 @@ export function createStackzEngine({
     paused = false;
   }
 
+  function reviveWithExtraLife() {
+    const clearedRows = 4;
+
+    grid = grid.map((row, index) => {
+      if (index < clearedRows) {
+        return row.map(() => null);
+      }
+
+      return row;
+    });
+
+    activePiece = getRandomPiece();
+    nextPiece = getRandomPiece();
+
+    paused = false;
+    finished = false;
+    roundComplete = false;
+    phase = "live";
+    gameOverUntil = 0;
+    lastTime = nowMs();
+    dropAccumulator = 0;
+  }
+
   function getResult() {
     return {
       score,
       lines,
       level,
       round,
+      nextRound: round + 1,
       finished,
+      cleared: Boolean(roundComplete),
+      roundComplete,
+      baseZpts: Math.max(10, Math.floor(score / 120) + round * 5),
+      gameId: "stackz",
+      game_type: "stackz",
     };
   }
 
@@ -268,8 +330,10 @@ export function createStackzEngine({
     togglePause,
     resume,
     confirmExit,
+    reviveWithExtraLife,
     getResult,
     isFinished: () => finished,
     isPaused: () => paused,
+    isRoundComplete: () => roundComplete,
   };
 }
