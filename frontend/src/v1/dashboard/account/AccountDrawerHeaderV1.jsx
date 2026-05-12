@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, PlayCircle, X } from "lucide-react";
+import { BookOpen, PlayCircle, X, Lock } from "lucide-react";
 
 import { getSavedArchivedEbookCards } from "../windows/learn/data/ebooks";
 
@@ -21,6 +21,30 @@ function HeaderIconButton({ onClick, children, label, active = false }) {
   );
 }
 
+function EarnCashButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Earn cash locked"
+      className="
+        flex h-9 items-center gap-1.5 rounded-full
+        border border-emerald-300/20
+        bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),rgba(255,255,255,0.04))]
+        px-3
+        text-[11px] font-black
+        tracking-[0.08em]
+        text-emerald-100/82
+        shadow-[0_0_14px_rgba(16,185,129,0.08)]
+        transition active:scale-[0.97]
+      "
+    >
+      <span>Earn $</span>
+      <Lock size={12} strokeWidth={2.6} />
+    </button>
+  );
+}
+
 export default function AccountDrawerHeaderV1({
   title = "Account",
   onClose,
@@ -29,6 +53,7 @@ export default function AccountDrawerHeaderV1({
   streamUnlocked = false,
   onLearnOpen,
   onStreamOpen,
+  onEarnCashTap,
 }) {
   const [learnArchiveOpen, setLearnArchiveOpen] = useState(false);
   const [streamLibraryOpen, setStreamLibraryOpen] = useState(false);
@@ -138,6 +163,8 @@ export default function AccountDrawerHeaderV1({
 
       {/* RIGHT: ACTIONS */}
       <div className="flex items-center gap-2">
+        <EarnCashButton onClick={onEarnCashTap} />
+
         {learnUnlocked ? (
           <div ref={learnMenuRef} className="relative">
             <HeaderIconButton
