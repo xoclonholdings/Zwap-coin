@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
+
+import breakerzCover from "@/assets/games/breakerz_game_cover.jpg";
+
 import { BREAKERZ_CANVAS } from "./breakerzConfig";
 import { attachBreakerzInput } from "./breakerzInput";
 import { createBreakerzEngine } from "./breakerzEngine";
@@ -8,7 +11,10 @@ import BreakerzExitOverlay from "./breakerzExitOverlay";
 
 export default function BreakerzGame({
   onGameEnd,
+  onRoundComplete,
+  onOutOfLives,
   isPlaying,
+  reviveUsed = false,
   level = 1,
   round = 1,
 }) {
@@ -16,6 +22,11 @@ export default function BreakerzGame({
   const animationRef = useRef(null);
   const engineRef = useRef(null);
   const sessionStartedAtRef = useRef(null);
+  const handledFinishRef = useRef(false);
+  const previousReviveUsedRef = useRef(Boolean(reviveUsed));
+
+  const [gameState, setGameState] = useState("splash");
+  const [showSplashContent, setShowSplashContent] = useState(false);
 
   const [overlayState, setOverlayState] = useState({
     pauseOpen: false,
@@ -38,10 +49,11 @@ export default function BreakerzGame({
     );
   }
 
-  function buildGameEndPayload(result = {}, overrides = {}) {
+  function buildGamePayload(result = {}, overrides = {}) {
     return {
       score: Number(result.score || uiState.score || 0),
       round: Number(result.round || uiState.round || round || 1),
+      nextRound: Number(result.nextRound || Number(result.round || round || 1) + 1),
       level: Math.max(1, Number(level) || 1),
       cleared: Boolean(overrides.cleared ?? result.cleared),
       lives: Number(result.lives ?? uiState.lives ?? 0),
@@ -52,13 +64,63 @@ export default function BreakerzGame({
           result.bricks_destroyed ||
           0
       ),
+      baseZpts: Number(result.baseZpts || 0),
+      finalZpts: Number(result.finalZpts || result.baseZpts || 0),
       gameId: "breakerz",
+      game_type: "breakerz",
       sessionDurationSeconds: getSessionDurationSeconds(),
+      completed: true,
+      ...overrides,
     };
   }
 
   useEffect(() => {
-    if (!isPlaying) return undefined;
+    if (!isPlaying) return;
+
+    setGameState("splash");
+    setShowSplashContent(false);
+    setOverlayState({
+      pauseOpen: false,
+      exitOpen: false,
+    });
+    setUiState({
+      round: Math.max(1, Number(round) || 1),
+      score: 0,
+      lives: 5,
+      finished: false,
+    });
+
+    handledFinishRef.current = false;
+    previousReviveUsedRef.current = Boolean(reviveUsed);
+
+    const timer = window.setTimeout(() => {
+      setShowSplashContent(true);
+    }, 1400);
+
+    return () => window.clearTimeout(timer);
+  }, [isPlaying, round]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const previousReviveUsed = previousReviveUsedRef.current;
+    const nextReviveUsed = Boolean(reviveUsed);
+
+    if (!previousReviveUsed && nextReviveUsed && engineRef.current) {
+      handledFinishRef.current = false;
+      engineRef.current.reviveWithExtraLife?.();
+      setGameState("live");
+      setOverlayState({
+        pauseOpen: false,
+        exitOpen: false,
+      });
+    }
+
+    previousReviveUsedRef.current = nextReviveUsed;
+  }, [isPlaying, reviveUsed]);
+
+  useEffect(() => {
+    if (!isPlaying || gameState !== "live") return undefined;
 
     if (!sessionStartedAtRef.current) {
       sessionStartedAtRef.current = Date.now();
@@ -77,6 +139,7 @@ export default function BreakerzGame({
     });
 
     engineRef.current = engine;
+    handledFinishRef.current = false;
 
     const detachInput = attachBreakerzInput({
       canvas,
@@ -111,9 +174,26 @@ export default function BreakerzGame({
         finished: activeEngine.isFinished(),
       });
 
-      if (activeEngine.isFinished()) {
+      if (activeEngine.isFinished() && !handledFinishRef.current) {
+        handledFinishRef.current = true;
+
         const result = activeEngine.getResult();
-        onGameEnd?.(buildGameEndPayload(result));
+        const payload = buildGamePayload(result);
+
+        if (activeEngine.isRoundComplete?.()) {
+          setGameState("roundComplete");
+          onRoundComplete?.(payload);
+          return;
+        }
+
+        setGameState("ended");
+
+        if (typeof onOutOfLives === "function") {
+          onOutOfLives?.(payload);
+          return;
+        }
+
+        onGameEnd?.(payload);
         return;
       }
 
@@ -131,11 +211,28 @@ export default function BreakerzGame({
 
       engineRef.current = null;
     };
-  }, [isPlaying, level, round, onGameEnd, overlayState.exitOpen]);
+  }, [
+    isPlaying,
+    gameState,
+    level,
+    round,
+    onGameEnd,
+    onRoundComplete,
+    onOutOfLives,
+    overlayState.exitOpen,
+  ]);
 
-  const handlePauseClick = () => {
+  function handleStart() {
+    setGameState("live");
+    setOverlayState({
+      pauseOpen: false,
+      exitOpen: false,
+    });
+  }
+
+  function handlePauseClick() {
     const engine = engineRef.current;
-    if (!engine) return;
+    if (!engine || gameState !== "live") return;
 
     engine.togglePause();
 
@@ -145,9 +242,9 @@ export default function BreakerzGame({
       pauseOpen: Boolean(publicState.paused),
       exitOpen: false,
     });
-  };
+  }
 
-  const handleResume = () => {
+  function handleResume() {
     const engine = engineRef.current;
     if (!engine) return;
 
@@ -157,9 +254,9 @@ export default function BreakerzGame({
       pauseOpen: false,
       exitOpen: false,
     });
-  };
+  }
 
-  const handleRequestExit = () => {
+  function handleRequestExit() {
     const engine = engineRef.current;
     if (!engine) return;
 
@@ -169,9 +266,9 @@ export default function BreakerzGame({
       pauseOpen: false,
       exitOpen: true,
     });
-  };
+  }
 
-  const handleCancelExit = () => {
+  function handleCancelExit() {
     const engine = engineRef.current;
     if (!engine) return;
 
@@ -181,14 +278,14 @@ export default function BreakerzGame({
       pauseOpen: true,
       exitOpen: false,
     });
-  };
+  }
 
-  const handleConfirmExit = () => {
+  function handleConfirmExit() {
     const engine = engineRef.current;
 
     if (!engine) {
       onGameEnd?.(
-        buildGameEndPayload(
+        buildGamePayload(
           {
             score: uiState.score,
             round: uiState.round,
@@ -203,53 +300,57 @@ export default function BreakerzGame({
     const result = engine.getResult();
     engine.confirmExit();
 
-    onGameEnd?.(buildGameEndPayload(result, { cleared: false }));
-  };
+    onGameEnd?.(buildGamePayload(result, { cleared: false }));
+  }
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816]">
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#050816] text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-[-8%] h-[220px] w-[220px] rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="absolute right-[-10%] top-[10%] h-[220px] w-[220px] rounded-full bg-violet-500/10 blur-3xl" />
         <div className="absolute bottom-[-12%] left-[20%] h-[220px] w-[220px] rounded-full bg-pink-500/10 blur-3xl" />
       </div>
 
-      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur-xl">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-cyan-300/70">
-            Breakerz
-          </p>
-          <p className="mt-1 text-sm font-semibold text-white">
-            Round {uiState.round}
-          </p>
-        </div>
-
-        <div className="text-center">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
-            Score
-          </p>
-          <p className="mt-1 text-sm font-semibold text-cyan-300">
-            {Number(uiState.score || 0).toLocaleString()}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">
-              Lives
+      <div className="relative z-10 border-b border-cyan-200/10 bg-[linear-gradient(180deg,rgba(5,8,22,0.96),rgba(3,6,18,0.78))] px-3 py-3 shadow-[0_12px_34px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300/70">
+              Breakerz
             </p>
-            <p className="mt-1 text-sm font-semibold text-pink-300">
-              {uiState.lives}
+            <p className="mt-1 text-sm font-black text-white">
+              Round {uiState.round}
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handlePauseClick}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
-          >
-            Pause
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="rounded-2xl border border-cyan-200/10 bg-white/[0.045] px-3 py-2 text-center shadow-[inset_0_0_16px_rgba(34,211,238,0.05)]">
+              <p className="text-[9px] uppercase tracking-[0.18em] text-white/38">
+                Score
+              </p>
+              <p className="mt-1 text-sm font-black text-cyan-300">
+                {Number(uiState.score || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-pink-200/10 bg-white/[0.045] px-3 py-2 text-center shadow-[inset_0_0_16px_rgba(236,72,153,0.05)]">
+              <p className="text-[9px] uppercase tracking-[0.18em] text-white/38">
+                Lives
+              </p>
+              <p className="mt-1 text-sm font-black text-pink-300">
+                {uiState.lives}
+              </p>
+            </div>
+
+            {gameState === "live" ? (
+              <button
+                type="button"
+                onClick={handlePauseClick}
+                className="rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-3 text-xs font-black text-white/72 transition active:scale-[0.98]"
+              >
+                Pause
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -258,7 +359,7 @@ export default function BreakerzGame({
           ref={canvasRef}
           width={BREAKERZ_CANVAS.width}
           height={BREAKERZ_CANVAS.height}
-          className="h-full w-full max-h-full max-w-full rounded-[24px] border border-cyan-400/20 bg-[#050912] shadow-[0_20px_60px_rgba(0,0,0,0.35)] touch-none"
+          className="h-full w-full max-h-full max-w-full touch-none rounded-[24px] border border-cyan-400/20 bg-[#050912] shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
         />
 
         <BreakerzPauseOverlay
@@ -278,6 +379,59 @@ export default function BreakerzGame({
           onConfirmExit={handleConfirmExit}
         />
       </div>
+
+      {gameState === "splash" ? (
+        <div className="absolute inset-0 z-40 overflow-hidden rounded-[32px] bg-[#050816]">
+          <img
+            src={breakerzCover}
+            alt="Breakerz Cover"
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.08)_0%,rgba(2,6,23,0.16)_40%,rgba(2,6,23,0.82)_100%)]" />
+
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.06),transparent_60%)]" />
+
+          <div
+            className={`absolute inset-x-0 bottom-0 flex justify-center px-5 pb-6 transition-all duration-700 ${
+              showSplashContent
+                ? "translate-y-0 opacity-100"
+                : "translate-y-10 opacity-0"
+            }`}
+          >
+            <div className="w-full max-w-[340px] rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,24,0.84),rgba(4,8,16,0.92))] px-5 py-5 shadow-[0_24px_80px_rgba(0,0,0,0.52)] backdrop-blur-xl">
+              <div className="mt-1 text-center">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-300/70">
+                  Break The Wall
+                </p>
+
+                <p className="mt-3 text-sm leading-relaxed text-white/58">
+                  Slide the paddle to keep the ball alive. Break every block,
+                  build your score, and clear the round to unlock your reward.
+                </p>
+              </div>
+
+              <div className="mt-6 flex w-full flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={handleStart}
+                  className="w-full rounded-full border border-white/45 bg-[linear-gradient(90deg,rgba(168,85,247,1),rgba(236,72,153,0.95),rgba(34,211,238,1))] px-6 py-4 text-lg font-bold tracking-[0.02em] text-white shadow-[0_0_28px_rgba(34,211,238,0.24)] transition active:scale-[0.98]"
+                >
+                  Start
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmExit}
+                  className="w-full rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/72 transition hover:bg-white/[0.08]"
+                >
+                  Back to Arcade
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
