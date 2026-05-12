@@ -163,7 +163,7 @@ export default function DashboardWindowPlay({
         </div>
 
         <div
-          className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-[22px] border border-white/10 bg-black/20 px-3 py-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.03)]"
+          className="flex min-h-0 flex-1 flex-col items-center justify-center"
           onClick={showNextGame}
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX)}
           onTouchEnd={handleTouchEnd}
@@ -172,7 +172,7 @@ export default function DashboardWindowPlay({
             type="button"
             onClick={handleOpenGame}
             disabled={activeGame.locked}
-            className="relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-[18px] p-0 active:scale-[0.985]"
+            className="relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-[24px] active:scale-[0.985]"
             aria-label={
               activeGame.locked
                 ? `${activeGame.name} locked`
@@ -183,7 +183,7 @@ export default function DashboardWindowPlay({
               src={activeGame.cover}
               alt={activeGame.name}
               className={[
-                "block h-full w-full object-contain transition-all duration-200",
+                "block h-full w-full object-cover transition-all duration-200",
                 isSwitching
                   ? "scale-[0.98] opacity-40 blur-[1px]"
                   : "scale-100 opacity-100",
