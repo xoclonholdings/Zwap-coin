@@ -12,7 +12,6 @@ import {
 } from "./breakerzConfig";
 import {
   generateBreakerzRound,
-  getNextRoundNumber,
   countAliveBricks,
 } from "./breakerzRoundGenerator";
 import {
@@ -77,6 +76,7 @@ export function createBreakerzEngine({
   let phase = "intro";
   let paused = false;
   let finished = false;
+  let roundComplete = false;
 
   let introUntil = 0;
   let relaunchAt = 0;
@@ -84,6 +84,7 @@ export function createBreakerzEngine({
   let gameOverAt = 0;
   let eventId = 0;
   let combo = 0;
+  let blocksDestroyed = 0;
 
   function pushFx(type, payload = {}) {
     if (!frame) return;
@@ -162,6 +163,9 @@ export function createBreakerzEngine({
     };
 
     phase = "intro";
+    paused = false;
+    finished = false;
+    roundComplete = false;
     introUntil = nowMs() + BREAKERZ_ROUND_FLOW.introDelayMs;
     relaunchAt = 0;
     clearAt = 0;
@@ -180,23 +184,25 @@ export function createBreakerzEngine({
       height: frame?.height || safeHeight,
       paddle: frame?.paddle,
       ball: frame?.ball,
-      round: frame?.round || 1,
+      round: frame?.round || firstRound,
       score: frame?.score || 0,
       lives: frame?.lives || BREAKERZ_LIVES.starting,
       paused,
       phase,
       finished,
+      roundComplete,
+      blocksDestroyed,
     };
   }
 
   function setPaddleX(x) {
-    if (!frame || finished) return;
+    if (!frame || finished || roundComplete) return;
 
     frame.paddle.x = clamp(x, 0, frame.width - frame.paddle.width);
   }
 
   function togglePause() {
-    if (finished) return;
+    if (finished || roundComplete) return;
     if (phase === "gameover") return;
 
     paused = !paused;
@@ -218,7 +224,7 @@ export function createBreakerzEngine({
   }
 
   function resumeFromPause() {
-    if (!frame || finished) return;
+    if (!frame || finished || roundComplete) return;
     frame.showExitOverlay = false;
     paused = false;
     frame.paused = false;
@@ -289,7 +295,7 @@ export function createBreakerzEngine({
   }
 
   function clearRound() {
-    if (!frame) return;
+    if (!frame || roundComplete) return;
 
     frame.score += getBreakerzRoundBonus(frame.round);
     frame.score += frame.lives * 50;
@@ -312,18 +318,8 @@ export function createBreakerzEngine({
     clearAt = nowMs() + BREAKERZ_ROUND_FLOW.clearDelayMs;
   }
 
-  function advanceRound() {
-    if (!frame) return;
-
-    const nextRound = getNextRoundNumber(frame.round);
-    const carryScore = frame.score;
-    const carryLives = Math.min(frame.lives, BREAKERZ_LIVES.max);
-
-    buildRound(nextRound, carryScore, carryLives);
-  }
-
   function updateBall(dtScale = 1) {
-    if (!frame) return;
+    if (!frame || roundComplete) return;
 
     frame.ball.prevX = frame.ball.x;
     frame.ball.prevY = frame.ball.y;
@@ -398,6 +394,7 @@ export function createBreakerzEngine({
 
       if (brick.hp <= 0) {
         brick.alive = false;
+        blocksDestroyed += 1;
         combo += 1;
         frame.combo = combo;
         frame.score += brick.value || 10;
@@ -422,7 +419,10 @@ export function createBreakerzEngine({
       break;
     }
 
-    if (frame.ball.y - frame.ball.radius > frame.height + BREAKERZ_HUD.bottomSafeInset) {
+    if (
+      frame.ball.y - frame.ball.radius >
+      frame.height + BREAKERZ_HUD.bottomSafeInset
+    ) {
       loseLife();
       return;
     }
@@ -467,7 +467,8 @@ export function createBreakerzEngine({
 
     if (phase === "round-clear") {
       if (currentTime >= clearAt) {
-        advanceRound();
+        roundComplete = true;
+        finished = true;
       }
       return getFrame();
     }
@@ -489,13 +490,34 @@ export function createBreakerzEngine({
     return getFrame();
   }
 
+  function reviveWithExtraLife() {
+    if (!frame) return;
+
+    frame.lives = 1;
+    frame.showGameOverOverlay = false;
+    paused = false;
+    finished = false;
+    roundComplete = false;
+    phase = "relaunch";
+    relaunchAt = nowMs() + BREAKERZ_BALL.relaunchDelayMs;
+    relaunchBall();
+  }
+
   function getResult() {
     return {
       score: frame?.score || 0,
-      round: frame?.round || 1,
-      cleared: phase === "round-clear",
+      round: frame?.round || firstRound,
+      nextRound: Number(frame?.round || firstRound) + 1,
+      cleared: Boolean(roundComplete || phase === "round-clear"),
       lives: frame?.lives || 0,
       finished,
+      blocksDestroyed,
+      baseZpts: Math.max(
+        10,
+        Math.floor(Number(frame?.score || 0) / 100) + Number(frame?.round || 1) * 5
+      ),
+      gameId: "breakerz",
+      game_type: "breakerz",
     };
   }
 
@@ -509,7 +531,9 @@ export function createBreakerzEngine({
     closeExitOverlay,
     resumeFromPause,
     confirmExit,
+    reviveWithExtraLife,
     getResult,
     isFinished: () => finished,
+    isRoundComplete: () => roundComplete,
   };
 }
