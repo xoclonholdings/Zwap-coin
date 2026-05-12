@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useApp } from "@/app/AppProvider";
@@ -47,6 +48,53 @@ function clearReviewAccess() {
   }
 }
 
+function LockedDevelopersNotice({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center px-5">
+      <button
+        type="button"
+        aria-label="Close developers locked notice"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/68 backdrop-blur-[3px]"
+      />
+
+      <div className="relative z-10 w-full max-w-[340px] overflow-hidden rounded-[28px] border border-emerald-300/18 bg-[linear-gradient(180deg,rgba(5,18,19,0.98),rgba(5,9,18,0.99))] p-5 text-center shadow-[0_0_42px_rgba(16,185,129,0.14)]">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-0 h-24 w-44 -translate-x-1/2 rounded-full bg-emerald-400/12 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
+        </div>
+
+        <div className="relative z-10">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.12)]">
+            <Lock size={19} strokeWidth={2.7} />
+          </div>
+
+          <div className="mt-4 text-[15px] font-black uppercase tracking-[0.14em] text-white">
+            Developers Locked
+          </div>
+
+          <div className="mt-2 text-[12px] leading-5 text-white/58">
+            Sponsored challenges, partner campaigns, and real reward
+            opportunities unlock later in your journey.
+          </div>
+
+          <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-3 text-[11px] leading-4 text-white/45">
+            Requirements will appear here once the progression path is set.
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-4 w-full rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-[12px] font-black uppercase tracking-[0.12em] text-emerald-100 transition active:scale-[0.98]"
+          >
+            Got It
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AccountPanelContentV1({
   onClose,
   onAdminTrigger,
@@ -77,6 +125,7 @@ export default function AccountPanelContentV1({
   const { isAuthenticated, logoutAll } = useApp();
 
   const [activeView, setActiveView] = useState("home");
+  const [developersLockedOpen, setDevelopersLockedOpen] = useState(false);
   const [isReviewAccess] = useState(() => getReviewAccessEnabled());
 
   const [profileOverrides, setProfileOverrides] = useState({
@@ -156,6 +205,10 @@ export default function AccountPanelContentV1({
   const handleStreamOpen = () => {
     onClose?.();
     onStreamOpen?.();
+  };
+
+  const handleDevelopersLockedOpen = () => {
+    setDevelopersLockedOpen(true);
   };
 
   const handleLogout = async () => {
@@ -302,6 +355,7 @@ export default function AccountPanelContentV1({
         streamUnlocked={streamUnlocked}
         onLearnOpen={handleLearnOpen}
         onStreamOpen={handleStreamOpen}
+        onEarnCashTap={handleDevelopersLockedOpen}
       />
 
       <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-3">
@@ -339,6 +393,11 @@ export default function AccountPanelContentV1({
             />
 
             <AccountActionRowV1
+              label="Developers 🔒"
+              onClick={handleDevelopersLockedOpen}
+            />
+
+            <AccountActionRowV1
               label="Settings"
               onClick={() => setActiveView("settings")}
             />
@@ -365,6 +424,12 @@ export default function AccountPanelContentV1({
           onTerms={() => setActiveView("terms")}
         />
       </div>
+
+      {developersLockedOpen ? (
+        <LockedDevelopersNotice
+          onClose={() => setDevelopersLockedOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
