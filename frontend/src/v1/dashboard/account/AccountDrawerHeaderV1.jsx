@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, PlayCircle, X, Lock } from "lucide-react";
+import { BookOpen, PlayCircle, X } from "lucide-react";
 
 import { getSavedArchivedEbookCards } from "../windows/learn/data/ebooks";
 
@@ -26,7 +26,7 @@ function EarnCashButton({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      aria-label="Earn cash locked"
+      aria-label="Open Earn Cash"
       className="
         flex h-9 items-center gap-1.5 rounded-full
         border border-emerald-300/20
@@ -40,7 +40,6 @@ function EarnCashButton({ onClick }) {
       "
     >
       <span>Earn $</span>
-      <Lock size={12} strokeWidth={2.6} />
     </button>
   );
 }
@@ -128,13 +127,11 @@ export default function AccountDrawerHeaderV1({
 
   return (
     <div className="relative flex h-[58px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
-      {/* LEFT: ICON + TITLE */}
       <button
         type="button"
         onClick={onAdminTap}
         className="flex items-center gap-2"
       >
-        {/* ICON (matches SHOP style) */}
         <div
           className="
             flex h-7 w-7 items-center justify-center
@@ -148,7 +145,6 @@ export default function AccountDrawerHeaderV1({
           👤
         </div>
 
-        {/* PREMIUM TITLE */}
         <span
           className="
             text-[15px] font-semibold
@@ -161,7 +157,6 @@ export default function AccountDrawerHeaderV1({
         </span>
       </button>
 
-      {/* RIGHT: ACTIONS */}
       <div className="flex items-center gap-2">
         <EarnCashButton onClick={onEarnCashTap} />
 
@@ -272,7 +267,6 @@ export default function AccountDrawerHeaderV1({
           </div>
         ) : null}
 
-        {/* CLOSE — NO CONTAINER */}
         <button
           type="button"
           onClick={onClose}
