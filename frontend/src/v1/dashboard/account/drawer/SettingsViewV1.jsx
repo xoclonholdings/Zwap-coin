@@ -1,11 +1,15 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import {
-  BadgeDollarSign,
+  Bell,
   ChevronLeft,
-  Code2,
-  Gamepad2,
+  EyeOff,
+  Moon,
   ShieldCheck,
-  Sparkles,
+  SlidersHorizontal,
+  Smartphone,
+  UserRound,
+  WalletCards,
+  Zap,
 } from "lucide-react";
 
 function HeaderButton({ children, label, onClick }) {
@@ -14,36 +18,30 @@ function HeaderButton({ children, label, onClick }) {
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-300/20 bg-emerald-400/10 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.14)] transition active:scale-[0.97]"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.14)] transition active:scale-[0.97]"
     >
       {children}
     </button>
   );
 }
 
-function DeveloperCard({ icon, title, description, children, accent = "cyan" }) {
-  const accentClass =
-    accent === "emerald"
-      ? "border-emerald-300/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_44%),linear-gradient(180deg,rgba(12,26,24,0.94),rgba(6,10,18,0.98))]"
-      : "border-cyan-300/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_44%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))]";
-
-  const iconClass =
-    accent === "emerald"
-      ? "border-emerald-300/24 bg-emerald-400/12 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.12)]"
-      : "border-cyan-300/24 bg-cyan-400/12 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]";
-
+function SettingRow({
+  icon,
+  title,
+  description,
+  enabled = false,
+  onToggle,
+  locked = false,
+}) {
   return (
-    <div
-      className={[
-        "relative overflow-hidden rounded-[22px] border p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.28)]",
-        accentClass,
-      ].join(" ")}
-    >
-      <div className="relative flex items-start gap-3">
+    <div className="relative overflow-hidden rounded-[22px] border border-cyan-300/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_44%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))] p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
+      <div className="relative flex items-center gap-3">
         <div
           className={[
             "flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border",
-            iconClass,
+            enabled
+              ? "border-cyan-300/24 bg-cyan-400/12 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]"
+              : "border-white/10 bg-white/[0.04] text-white/48",
           ].join(" ")}
         >
           {icon}
@@ -57,36 +55,68 @@ function DeveloperCard({ icon, title, description, children, accent = "cyan" }) 
           <div className="mt-1 text-[11px] font-medium leading-4 text-white/48">
             {description}
           </div>
-
-          {children ? <div className="mt-3">{children}</div> : null}
         </div>
+
+        <button
+          type="button"
+          onClick={locked ? undefined : onToggle}
+          disabled={locked}
+          className={[
+            "relative h-7 w-12 shrink-0 rounded-full border transition active:scale-[0.98]",
+            enabled
+              ? "border-cyan-300/30 bg-cyan-400/35 shadow-[0_0_16px_rgba(34,211,238,0.16)]"
+              : "border-white/12 bg-white/[0.05]",
+            locked ? "opacity-70" : "",
+          ].join(" ")}
+          aria-label={`Toggle ${title}`}
+        >
+          <span
+            className={[
+              "absolute top-1 h-5 w-5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.25)] transition",
+              enabled ? "left-6" : "left-1",
+            ].join(" ")}
+          />
+        </button>
       </div>
     </div>
   );
 }
 
-function StatusPill({ children }) {
+function SettingsSection({ title, children }) {
   return (
-    <div className="inline-flex rounded-full border border-white/10 bg-white/[0.045] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/48">
+    <div className="flex flex-col gap-2.5">
+      <div className="px-1 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200/55">
+        {title}
+      </div>
+
       {children}
     </div>
   );
 }
 
-export default function DevelopersViewV1({ onBack, initialSection = "overview" }) {
-  const earnCashRef = useRef(null);
+export default function SettingsViewV1({
+  onBack,
+  onOpenAdvancedSettings,
 
-  useEffect(() => {
-    if (initialSection !== "earnCash") return;
+  notificationsEnabled = true,
+  privacyModeEnabled = false,
+  mobileLayoutLocked = true,
+  reducedMotionEnabled = false,
 
-    requestAnimationFrame(() => {
-      earnCashRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
-  }, [initialSection]);
+  accountAlertsEnabled = true,
+  balancePrivacyEnabled = false,
+  walletVisibilityEnabled = true,
+  rewardAnimationsEnabled = true,
 
+  onToggleNotifications,
+  onTogglePrivacyMode,
+  onToggleMobileLayout,
+  onToggleReducedMotion,
+  onToggleAccountAlerts,
+  onToggleBalancePrivacy,
+  onToggleWalletVisibility,
+  onToggleRewardAnimations,
+}) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
       <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-cyan-200/10 px-4">
@@ -100,54 +130,91 @@ export default function DevelopersViewV1({ onBack, initialSection = "overview" }
         </button>
 
         <div className="text-[15px] font-semibold tracking-[-0.02em] text-white/92">
-          Developers
+          Settings
         </div>
 
-        <HeaderButton label="Developers portal status">
-          <Code2 size={15} strokeWidth={2.3} />
+        <HeaderButton label="Open controls" onClick={onOpenAdvancedSettings}>
+          <SlidersHorizontal size={15} strokeWidth={2.3} />
         </HeaderButton>
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-3">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-0 h-28 w-52 -translate-x-1/2 rounded-full bg-emerald-400/10 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl" />
+          <div className="absolute left-1/2 top-0 h-28 w-52 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-violet-400/10 blur-2xl" />
         </div>
 
-        <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto pr-1">
-          <DeveloperCard
-            icon={<Sparkles size={18} strokeWidth={2.2} />}
-            title="Developer Portal"
-            description="A future approval-based layer for developers, partners, sponsored campaigns, and PLAY ecosystem expansion."
-          >
-            <StatusPill>Progression path pending</StatusPill>
-          </DeveloperCard>
+        <div className="relative z-10 flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+          <SettingsSection title="Account">
+            <SettingRow
+              icon={<UserRound size={18} strokeWidth={2.2} />}
+              title="Account Alerts"
+              description="Important account, sign-in, and profile activity notices."
+              enabled={accountAlertsEnabled}
+              onToggle={onToggleAccountAlerts}
+            />
 
-          <div ref={earnCashRef}>
-            <DeveloperCard
-              icon={<BadgeDollarSign size={18} strokeWidth={2.2} />}
-              title="Earn Cash"
-              description="Sponsored game challenges and real reward opportunities will live here once the unlock path is defined."
-              accent="emerald"
-            >
-              <div className="rounded-2xl border border-emerald-300/12 bg-emerald-400/[0.055] px-3 py-3 text-[11px] font-medium leading-4 text-white/52">
-                This section is not active yet. Requirements will appear here
-                after the progression rules are written.
-              </div>
-            </DeveloperCard>
-          </div>
+            <SettingRow
+              icon={<ShieldCheck size={18} strokeWidth={2.2} />}
+              title="Privacy Mode"
+              description="Hide sensitive balances and reduce visible account details."
+              enabled={privacyModeEnabled}
+              onToggle={onTogglePrivacyMode}
+            />
+          </SettingsSection>
 
-          <DeveloperCard
-            icon={<Gamepad2 size={18} strokeWidth={2.2} />}
-            title="Game Submissions"
-            description="External games will require review for quality, safety, reward integrity, and performance impact."
-          />
+          <SettingsSection title="Rewards">
+            <SettingRow
+              icon={<WalletCards size={18} strokeWidth={2.2} />}
+              title="Balance Privacy"
+              description="Dim or hide zPts and ZWAP balances in account surfaces."
+              enabled={balancePrivacyEnabled}
+              onToggle={onToggleBalancePrivacy}
+            />
 
-          <DeveloperCard
-            icon={<ShieldCheck size={18} strokeWidth={2.2} />}
-            title="Reward Integrity"
-            description="Developer games cannot emit arbitrary rewards, bypass caps, or create reward loops outside reward_service."
-          />
+            <SettingRow
+              icon={<Zap size={18} strokeWidth={2.2} />}
+              title="Reward Animations"
+              description="Show zPts, streak, and unlock animations after reward events."
+              enabled={rewardAnimationsEnabled}
+              onToggle={onToggleRewardAnimations}
+            />
+          </SettingsSection>
+
+          <SettingsSection title="Experience">
+            <SettingRow
+              icon={<Bell size={18} strokeWidth={2.2} />}
+              title="Notifications"
+              description="Streak reminders, unlock notices, and account activity alerts."
+              enabled={notificationsEnabled}
+              onToggle={onToggleNotifications}
+            />
+
+            <SettingRow
+              icon={<Smartphone size={18} strokeWidth={2.2} />}
+              title="Mobile Layout Lock"
+              description="Keep ZWAP! locked to the mobile-first interface."
+              enabled={mobileLayoutLocked}
+              locked
+              onToggle={onToggleMobileLayout}
+            />
+
+            <SettingRow
+              icon={<Moon size={18} strokeWidth={2.2} />}
+              title="Reduced Motion"
+              description="Reduce animation intensity across drawer views and transitions."
+              enabled={reducedMotionEnabled}
+              onToggle={onToggleReducedMotion}
+            />
+
+            <SettingRow
+              icon={<EyeOff size={18} strokeWidth={2.2} />}
+              title="Wallet Visibility"
+              description="Show wallet-linked surfaces only when they are relevant."
+              enabled={walletVisibilityEnabled}
+              onToggle={onToggleWalletVisibility}
+            />
+          </SettingsSection>
         </div>
       </div>
     </div>
