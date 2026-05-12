@@ -27,6 +27,19 @@ function buildScoreRows({ games = [], highScores = {} }) {
   });
 }
 
+function ScoreStat({ label, value }) {
+  return (
+    <div className="min-w-0 rounded-[1rem] border border-white/8 bg-black/18 px-1.5 py-2 text-center">
+      <div className="truncate text-[7px] font-black uppercase tracking-[0.06em] text-white/35">
+        {label}
+      </div>
+      <div className="mt-1 text-[0.82rem] font-black tracking-[-0.04em] text-white">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export default function PlayHighScores({
   games = [],
   highScores = {},
@@ -106,10 +119,7 @@ export default function PlayHighScores({
           style={{ transform: `translateX(-${activeIndex * 100}%)` }}
         >
           {safeRows.map((game) => (
-            <div
-              key={game.id}
-              className="flex min-w-full flex-col justify-center"
-            >
+            <div key={game.id} className="flex min-w-full flex-col justify-center">
               <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.045] p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
@@ -133,33 +143,19 @@ export default function PlayHighScores({
                   )}
                 </div>
 
-                <div className="mt-3 grid grid-cols-3 gap-1.5">
-                  <div className="rounded-[1rem] border border-white/8 bg-black/18 px-2 py-2 text-center">
-                    <div className="text-[8px] font-black uppercase tracking-[0.12em] text-white/35">
-                      Score
-                    </div>
-                    <div className="mt-1 text-[0.82rem] font-black tracking-[-0.04em] text-white">
-                      {game.locked ? "—" : formatScore(game.score)}
-                    </div>
-                  </div>
-
-                  <div className="rounded-[1rem] border border-white/8 bg-black/18 px-2 py-2 text-center">
-                    <div className="text-[8px] font-black uppercase tracking-[0.12em] text-white/35">
-                      Level
-                    </div>
-                    <div className="mt-1 text-[0.82rem] font-black tracking-[-0.04em] text-white">
-                      {game.locked ? "—" : game.level}
-                    </div>
-                  </div>
-
-                  <div className="rounded-[1rem] border border-white/8 bg-black/18 px-2 py-2 text-center">
-                    <div className="text-[8px] font-black uppercase tracking-[0.12em] text-white/35">
-                      Plays
-                    </div>
-                    <div className="mt-1 text-[0.82rem] font-black tracking-[-0.04em] text-white">
-                      {game.locked ? "—" : game.plays}
-                    </div>
-                  </div>
+                <div className="mt-3 grid min-w-0 grid-cols-3 gap-1">
+                  <ScoreStat
+                    label="Score"
+                    value={game.locked ? "—" : formatScore(game.score)}
+                  />
+                  <ScoreStat
+                    label="Level"
+                    value={game.locked ? "—" : game.level}
+                  />
+                  <ScoreStat
+                    label="Plays"
+                    value={game.locked ? "—" : game.plays}
+                  />
                 </div>
               </div>
             </div>
