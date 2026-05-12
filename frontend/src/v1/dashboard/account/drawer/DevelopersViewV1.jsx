@@ -5,8 +5,6 @@ import {
   Code2,
   Gamepad2,
   Megaphone,
-  ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
 function HeaderButton({ children, label }) {
@@ -21,55 +19,26 @@ function HeaderButton({ children, label }) {
   );
 }
 
-function DeveloperCard({ icon, title, description, children, accent = "cyan" }) {
-  const accentClass =
-    accent === "emerald"
-      ? "border-emerald-300/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_44%),linear-gradient(180deg,rgba(12,26,24,0.94),rgba(6,10,18,0.98))]"
-      : "border-cyan-300/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_44%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))]";
-
-  const iconClass =
-    accent === "emerald"
-      ? "border-emerald-300/24 bg-emerald-400/12 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.12)]"
-      : "border-cyan-300/24 bg-cyan-400/12 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]";
-
+function ModeButton({ icon, title, description }) {
   return (
-    <div
-      className={[
-        "relative overflow-hidden rounded-[22px] border p-3.5 shadow-[0_12px_28px_rgba(0,0,0,0.28)]",
-        accentClass,
-      ].join(" ")}
+    <button
+      type="button"
+      className="relative flex min-h-[86px] flex-1 items-center gap-3 overflow-hidden rounded-[22px] border border-cyan-300/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_44%),linear-gradient(180deg,rgba(14,24,34,0.94),rgba(6,10,18,0.98))] p-3 text-left shadow-[0_12px_28px_rgba(0,0,0,0.28)] transition active:scale-[0.98]"
     >
-      <div className="relative flex items-start gap-3">
-        <div
-          className={[
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border",
-            iconClass,
-          ].join(" ")}
-        >
-          {icon}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-cyan-300/20 bg-cyan-400/10 text-cyan-100 shadow-[0_0_16px_rgba(34,211,238,0.10)]">
+        {icon}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-black tracking-[-0.02em] text-white/92">
+          {title}
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold tracking-[-0.02em] text-white/92">
-            {title}
-          </div>
-
-          <div className="mt-1 text-[11px] font-medium leading-4 text-white/48">
-            {description}
-          </div>
-
-          {children ? <div className="mt-3">{children}</div> : null}
+        <div className="mt-1 text-[10px] font-medium leading-3.5 text-white/45">
+          {description}
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatusPill({ children }) {
-  return (
-    <div className="inline-flex rounded-full border border-white/10 bg-white/[0.045] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/48">
-      {children}
-    </div>
+    </button>
   );
 }
 
@@ -132,73 +101,52 @@ export default function DevelopersViewV1({
         </div>
 
         <div className="relative z-10 flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto pr-1">
-          <DeveloperCard
-            icon={<Sparkles size={18} strokeWidth={2.2} />}
-            title="Developer Portal"
-            description="A future approval-based layer for developers, partners, sponsored campaigns, and PLAY ecosystem expansion."
-          >
-            <div className="flex flex-wrap gap-1.5">
-              <StatusPill>Approval-based</StatusPill>
-              <StatusPill>Not subscription-gated</StatusPill>
-              <StatusPill>Progression pending</StatusPill>
+          <div ref={earnCashRef} className="relative overflow-hidden rounded-[26px] border border-emerald-300/16 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_42%),linear-gradient(180deg,rgba(10,28,24,0.96),rgba(5,10,18,0.99))] p-4 shadow-[0_16px_34px_rgba(0,0,0,0.32)]">
+            <div className="relative flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-emerald-300/24 bg-emerald-400/12 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.12)]">
+                <BadgeDollarSign size={19} strokeWidth={2.3} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="text-[16px] font-black tracking-[-0.03em] text-white">
+                  Earn Cash
+                </div>
+
+                <div className="mt-1 text-[12px] font-medium leading-5 text-white/55">
+                  Sponsored game challenges and verified reward opportunities.
+                </div>
+              </div>
             </div>
-          </DeveloperCard>
 
-          <div ref={earnCashRef}>
-            <DeveloperCard
-              icon={<BadgeDollarSign size={18} strokeWidth={2.2} />}
-              title="Earn Cash"
-              description="Sponsored game challenges and real reward opportunities will live here once the unlock path is defined."
-              accent="emerald"
-            >
-              <div className="rounded-2xl border border-emerald-300/12 bg-emerald-400/[0.055] px-3 py-3 text-[11px] font-medium leading-4 text-white/52">
-                This section is not active yet. Requirements will appear here
-                after the progression rules are written.
-              </div>
+            <div className="mt-4 rounded-2xl border border-emerald-300/12 bg-emerald-400/[0.055] px-3 py-3 text-[11px] font-medium leading-4 text-white/52">
+              Requirements will appear here once the progression path is set.
+            </div>
 
-              <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-1">
-                <InfoLine label="Reward Type" value="Cash / sponsor-funded" />
-                <InfoLine label="Entry Point" value="PLAY + Account Drawer" />
-                <InfoLine label="Status" value="Locked until progression" />
-              </div>
-            </DeveloperCard>
+            <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-1">
+              <InfoLine label="Reward Type" value="Cash / sponsor-funded" />
+              <InfoLine label="Entry Point" value="PLAY + Account Drawer" />
+              <InfoLine label="Status" value="Locked until progression" />
+            </div>
           </div>
 
-          <DeveloperCard
-            icon={<Gamepad2 size={18} strokeWidth={2.2} />}
-            title="Game Submissions"
-            description="External games will require review for quality, safety, reward integrity, and performance impact."
-          >
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-1">
-              <InfoLine label="Build" value="Required" />
-              <InfoLine label="Metadata" value="Required" />
-              <InfoLine label="Reward Map" value="Reviewed" />
-            </div>
-          </DeveloperCard>
+          <div className="grid grid-cols-2 gap-2.5">
+            <ModeButton
+              icon={<Gamepad2 size={17} strokeWidth={2.2} />}
+              title="Games"
+              description="Submit games for review."
+            />
 
-          <DeveloperCard
-            icon={<Megaphone size={18} strokeWidth={2.2} />}
-            title="Sponsored Campaigns"
-            description="Partners may later fund challenges, featured placements, sponsor-backed rewards, and campaign pools."
-          >
-            <div className="flex flex-wrap gap-1.5">
-              <StatusPill>Challenges</StatusPill>
-              <StatusPill>Featured placement</StatusPill>
-              <StatusPill>Reward pools</StatusPill>
-            </div>
-          </DeveloperCard>
+            <ModeButton
+              icon={<Megaphone size={17} strokeWidth={2.2} />}
+              title="Campaigns"
+              description="Sponsor challenge pools."
+            />
+          </div>
 
-          <DeveloperCard
-            icon={<ShieldCheck size={18} strokeWidth={2.2} />}
-            title="Reward Integrity"
-            description="Developer games cannot emit arbitrary rewards, bypass caps, or create reward loops outside reward_service."
-          >
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-1">
-              <InfoLine label="Caps" value="Enforced" />
-              <InfoLine label="Rewards" value="Standardized signals only" />
-              <InfoLine label="Review" value="Required before activation" />
-            </div>
-          </DeveloperCard>
+          <div className="px-2 pb-4 pt-1 text-center text-[10px] font-medium leading-4 text-white/34">
+            Rewards use standardized signals and cannot bypass reward_service,
+            caps, or review.
+          </div>
         </div>
       </div>
     </div>
