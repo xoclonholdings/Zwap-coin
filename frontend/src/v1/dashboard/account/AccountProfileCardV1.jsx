@@ -7,11 +7,11 @@ function TierPill({ tier = "zwapper" }) {
   return (
     <div
       className={[
-        "inline-flex items-center rounded-full px-2.5 py-[3px]",
+        "inline-flex w-fit items-center rounded-full border px-3 py-1",
         "text-[11px] font-medium tracking-[-0.01em]",
         isPlus
-          ? "bg-violet-400/12 text-violet-200/75"
-          : "bg-cyan-400/10 text-cyan-200/70",
+          ? "border-violet-300/18 bg-violet-400/12 text-violet-200/78"
+          : "border-cyan-300/16 bg-cyan-400/10 text-cyan-200/72",
       ].join(" ")}
     >
       {isPlus ? "Zitizen" : "Zwapper"}
@@ -36,23 +36,19 @@ export default function AccountProfileCardV1({
         shadow-[0_18px_44px_rgba(0,0,0,0.42),0_0_28px_rgba(168,85,247,0.10)]
       "
     >
-      {/* surface glow */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_35%,rgba(168,85,247,0.08))]" />
 
-      <div className="relative flex h-full flex-col justify-center">
-        {/* Welcome */}
+      <div className="relative flex h-full flex-col items-start justify-center text-left">
         <div className="text-[12px] font-medium tracking-[0.04em] text-violet-200/45">
           Welcome,
         </div>
 
-        {/* Username + Icon */}
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-1 flex max-w-full items-center gap-2">
           <div
             className="
+              min-w-0 break-words text-left
               text-[17px] font-semibold tracking-[-0.02em]
-              text-white
-              leading-tight
-              break-words
+              leading-tight text-white
             "
           >
             {safeUsername}
@@ -73,7 +69,6 @@ export default function AccountProfileCardV1({
           )}
         </div>
 
-        {/* Tier */}
         <div className="mt-2">
           <TierPill tier={tier} />
         </div>
