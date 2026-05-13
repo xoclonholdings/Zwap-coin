@@ -26,6 +26,37 @@ function formatZwap(value) {
   });
 }
 
+function BalancePill({ amount, label, active = false }) {
+  return (
+    <div
+      className={[
+        "flex items-center justify-between gap-2 rounded-full border px-3 py-1.5",
+        active
+          ? "border-cyan-300/18 bg-cyan-400/10 text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.08)]"
+          : "border-white/8 bg-white/[0.035] text-white/34",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "min-w-0 truncate text-[17px] font-black leading-none tracking-[-0.04em]",
+          active ? "text-cyan-200" : "text-white/32",
+        ].join(" ")}
+      >
+        {amount}
+      </div>
+
+      <div
+        className={[
+          "shrink-0 text-[9px] font-black uppercase tracking-[0.16em]",
+          active ? "text-cyan-100/70" : "text-white/34",
+        ].join(" ")}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
 export default function AccountBalanceCardV1({
   zptsBalance = 0,
   zwapBalance = 0,
@@ -52,33 +83,14 @@ export default function AccountBalanceCardV1({
           />
         </div>
 
-        <div className="relative grid grid-cols-2 gap-3">
-          <div>
-            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-cyan-100/70">
-              zPts
-            </div>
+        <div className="relative flex flex-col gap-2">
+          <BalancePill amount={formatZpts(zptsBalance)} label="zPts" active />
 
-            <div className="mt-1 text-[24px] font-black leading-none tracking-[-0.04em] text-cyan-200 drop-shadow-[0_0_12px_rgba(34,211,238,0.24)]">
-              {formatZpts(zptsBalance)}
-            </div>
-          </div>
-
-          <div className="text-right">
-            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-white/38">
-              ZWAP
-            </div>
-
-            <div
-              className={[
-                "mt-1 text-[20px] font-black leading-none tracking-[-0.035em]",
-                hasZwap
-                  ? "text-white/48"
-                  : "text-white/24",
-              ].join(" ")}
-            >
-              {formatZwap(zwapBalance)}
-            </div>
-          </div>
+          <BalancePill
+            amount={formatZwap(zwapBalance)}
+            label="ZWAP"
+            active={hasZwap}
+          />
         </div>
       </div>
     );
@@ -101,33 +113,14 @@ export default function AccountBalanceCardV1({
         />
       </div>
 
-      <div className="relative mt-3 grid grid-cols-2 gap-4">
-        <div>
-          <div className="text-[9px] font-black uppercase tracking-[0.18em] text-cyan-100/70">
-            zPts
-          </div>
+      <div className="relative mt-3 flex flex-col gap-2">
+        <BalancePill amount={formatZpts(zptsBalance)} label="zPts" active />
 
-          <div className="mt-1 text-[1.35rem] font-black leading-none tracking-[-0.04em] text-cyan-200 drop-shadow-[0_0_12px_rgba(34,211,238,0.22)]">
-            {formatZpts(zptsBalance)}
-          </div>
-        </div>
-
-        <div className="text-right">
-          <div className="text-[9px] font-black uppercase tracking-[0.18em] text-white/38">
-            ZWAP
-          </div>
-
-          <div
-            className={[
-              "mt-1 text-[1.1rem] font-black leading-none tracking-[-0.035em]",
-              hasZwap
-                ? "text-white/48"
-                : "text-white/24",
-            ].join(" ")}
-          >
-            {formatZwap(zwapBalance)}
-          </div>
-        </div>
+        <BalancePill
+          amount={formatZwap(zwapBalance)}
+          label="ZWAP"
+          active={hasZwap}
+        />
       </div>
     </div>
   );
