@@ -31,11 +31,49 @@ const ADMIN_TAP_RESET_MS = 1200;
 const REVIEW_ACCESS_STORAGE_KEY = "zwap_review_access_enabled";
 const REVIEW_EMAIL_STORAGE_KEY = "zwap_review_email";
 
+const PROFILE_USERNAME_STORAGE_KEY = "zwap_profile_username";
+const PROFILE_EMAIL_STORAGE_KEY = "zwap_profile_email";
+
 function getReviewAccessEnabled() {
   try {
     return window.localStorage.getItem(REVIEW_ACCESS_STORAGE_KEY) === "true";
   } catch {
     return false;
+  }
+}
+
+function getStoredProfileOverrides() {
+  try {
+    return {
+      username: window.localStorage.getItem(PROFILE_USERNAME_STORAGE_KEY) || "",
+      email: window.localStorage.getItem(PROFILE_EMAIL_STORAGE_KEY) || "",
+    };
+  } catch {
+    return {
+      username: "",
+      email: "",
+    };
+  }
+}
+
+function persistProfileOverrides({ username = "", email = "" }) {
+  try {
+    const safeUsername = String(username || "").trim();
+    const safeEmail = String(email || "").trim();
+
+    if (safeUsername) {
+      window.localStorage.setItem(PROFILE_USERNAME_STORAGE_KEY, safeUsername);
+    } else {
+      window.localStorage.removeItem(PROFILE_USERNAME_STORAGE_KEY);
+    }
+
+    if (safeEmail) {
+      window.localStorage.setItem(PROFILE_EMAIL_STORAGE_KEY, safeEmail);
+    } else {
+      window.localStorage.removeItem(PROFILE_EMAIL_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage failures.
   }
 }
 
@@ -82,10 +120,9 @@ export default function AccountPanelContentV1({
     useState("overview");
   const [isReviewAccess] = useState(() => getReviewAccessEnabled());
 
-  const [profileOverrides, setProfileOverrides] = useState({
-    username: "",
-    email: "",
-  });
+  const [profileOverrides, setProfileOverrides] = useState(() =>
+    getStoredProfileOverrides()
+  );
 
   const [inventorySettings, setInventorySettings] = useState({
     showOwnedOnly: true,
@@ -112,10 +149,13 @@ export default function AccountPanelContentV1({
 
   const resolvedEmail = profileOverrides.email || baseEmail;
 
-  const resolvedUsername = generateUsername({
-    username: profileOverrides.username || user?.username || username,
+  const generatedUsername = generateUsername({
+    username: user?.username || username,
     email: resolvedEmail,
   });
+
+  const resolvedUsername =
+    profileOverrides.username || generatedUsername || username || "";
 
   useEffect(() => {
     return () => {
@@ -180,10 +220,13 @@ export default function AccountPanelContentV1({
   };
 
   const handleSaveProfile = ({ username: nextUsername, email: nextEmail }) => {
-    setProfileOverrides({
+    const nextOverrides = {
       username: String(nextUsername || "").trim(),
       email: String(nextEmail || "").trim(),
-    });
+    };
+
+    persistProfileOverrides(nextOverrides);
+    setProfileOverrides(nextOverrides);
   };
 
   if (activeView === "profile") {
