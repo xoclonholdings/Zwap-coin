@@ -78,7 +78,7 @@ export default function AdminPanelV1({ isOpen = false, onClose }) {
       setCheckingAuth(true);
 
       try {
-        const data = await adminApi.get("/dashboard", key);
+        const data = await adminApi.get("/dashboard/stats", key);
 
         if (!cancelled) {
           setDashboardData(data);
