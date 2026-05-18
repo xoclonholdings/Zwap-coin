@@ -18,19 +18,19 @@ export const BREAKERZ_LIVES = {
 };
 
 export const BREAKERZ_PADDLE = {
-  startWidth: 96,
-  minWidth: 64,
-  height: 12,
+  startWidth: 104,
+  minWidth: 68,
+  height: 13,
   yOffset: 30,
-  edgeBounceBoost: 1.18,
+  edgeBounceBoost: 1.2,
 };
 
 export const BREAKERZ_BALL = {
   radius: 7,
-  baseSpeed: 3.2,
-  roundSpeedRamp: 0.14,
-  maxSpeed: 7.4,
-  relaunchDelayMs: 700,
+  baseSpeed: 3.35,
+  roundSpeedRamp: 0.13,
+  maxSpeed: 7.25,
+  relaunchDelayMs: 680,
 };
 
 export const BREAKERZ_SCORING = {
@@ -59,10 +59,10 @@ export const BREAKERZ_PATTERNS = [
 ];
 
 export const BREAKERZ_FX = {
-  sparkDurationMs: 340,
-  pulseDurationMs: 420,
-  textDurationMs: 620,
-  maxEvents: 24,
+  sparkDurationMs: 360,
+  pulseDurationMs: 440,
+  textDurationMs: 650,
+  maxEvents: 28,
 };
 
 export function getBreakerzDifficultyTier(round = 1) {
@@ -89,7 +89,7 @@ export function getBreakerzPaddleWidth(round = 1) {
   const safeRound = Math.max(1, Number(round) || 1);
 
   return clamp(
-    BREAKERZ_PADDLE.startWidth - (safeRound - 1) * 1.5,
+    BREAKERZ_PADDLE.startWidth - (safeRound - 1) * 1.45,
     BREAKERZ_PADDLE.minWidth,
     BREAKERZ_PADDLE.startWidth
   );
@@ -97,6 +97,7 @@ export function getBreakerzPaddleWidth(round = 1) {
 
 export function getBreakerzRoundBonus(round = 1) {
   const safeRound = Math.max(1, Number(round) || 1);
+
   return BREAKERZ_SCORING.clearBase + safeRound * BREAKERZ_SCORING.clearRoundBonus;
 }
 
