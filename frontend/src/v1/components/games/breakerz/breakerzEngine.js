@@ -6,6 +6,7 @@ import {
   BREAKERZ_LIVES,
   BREAKERZ_PADDLE,
   BREAKERZ_ROUND_FLOW,
+  BREAKERZ_SCORING,
   getBreakerzBallSpeed,
   getBreakerzPaddleWidth,
   getBreakerzRoundBonus,
@@ -206,6 +207,7 @@ export function createBreakerzEngine({
     if (phase === "gameover") return;
 
     paused = !paused;
+
     if (frame) {
       frame.paused = paused;
     }
@@ -213,6 +215,7 @@ export function createBreakerzEngine({
 
   function openExitOverlay() {
     if (!frame) return;
+
     paused = true;
     frame.paused = true;
     frame.showExitOverlay = true;
@@ -220,11 +223,13 @@ export function createBreakerzEngine({
 
   function closeExitOverlay() {
     if (!frame) return;
+
     frame.showExitOverlay = false;
   }
 
   function resumeFromPause() {
     if (!frame || finished || roundComplete) return;
+
     frame.showExitOverlay = false;
     paused = false;
     frame.paused = false;
@@ -274,12 +279,14 @@ export function createBreakerzEngine({
       color: "rgba(251,113,133,0.95)",
       radius: 40,
     });
+
     pushFx("text", {
       x: frame.width / 2,
       y: frame.height * 0.68,
       text: "MISS",
       color: "#fb7185",
     });
+
     pushAudio("miss");
 
     if (frame.lives <= 0) {
@@ -298,7 +305,7 @@ export function createBreakerzEngine({
     if (!frame || roundComplete) return;
 
     frame.score += getBreakerzRoundBonus(frame.round);
-    frame.score += frame.lives * 50;
+    frame.score += frame.lives * BREAKERZ_SCORING.lifeBonus;
 
     pushFx("pulse", {
       x: frame.width / 2,
@@ -306,12 +313,14 @@ export function createBreakerzEngine({
       color: "rgba(250,204,21,0.95)",
       radius: 84,
     });
+
     pushFx("text", {
       x: frame.width / 2,
       y: frame.height / 2 - 20,
       text: "ROUND CLEAR",
       color: "#facc15",
     });
+
     pushAudio("clear");
 
     phase = "round-clear";
@@ -372,6 +381,7 @@ export function createBreakerzEngine({
         color: "rgba(34,211,238,0.85)",
         radius: 26,
       });
+
       pushAudio("paddle");
     }
 
@@ -390,6 +400,7 @@ export function createBreakerzEngine({
         y: frame.ball.y,
         color: brick.glow || brick.color || "#f0abfc",
       });
+
       pushAudio("brick");
 
       if (brick.hp <= 0) {
@@ -412,6 +423,7 @@ export function createBreakerzEngine({
             text: `x${combo}`,
             color: "#facc15",
           });
+
           pushAudio("combo");
         }
       }
@@ -449,11 +461,13 @@ export function createBreakerzEngine({
 
     if (phase === "intro") {
       frame.showRoundIntro = true;
+
       if (currentTime >= introUntil) {
         frame.showRoundIntro = false;
         phase = "live";
         frame.lastTime = currentTime;
       }
+
       return getFrame();
     }
 
@@ -462,6 +476,7 @@ export function createBreakerzEngine({
         phase = "live";
         frame.lastTime = currentTime;
       }
+
       return getFrame();
     }
 
@@ -470,6 +485,7 @@ export function createBreakerzEngine({
         roundComplete = true;
         finished = true;
       }
+
       return getFrame();
     }
 
@@ -477,6 +493,7 @@ export function createBreakerzEngine({
       if (currentTime >= gameOverAt) {
         finished = true;
       }
+
       return getFrame();
     }
 
@@ -514,7 +531,8 @@ export function createBreakerzEngine({
       blocksDestroyed,
       baseZpts: Math.max(
         10,
-        Math.floor(Number(frame?.score || 0) / 100) + Number(frame?.round || 1) * 5
+        Math.floor(Number(frame?.score || 0) / 100) +
+          Number(frame?.round || 1) * 5
       ),
       gameId: "breakerz",
       game_type: "breakerz",
