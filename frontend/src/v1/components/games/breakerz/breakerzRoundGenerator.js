@@ -1,7 +1,7 @@
-const BASE_TOP_OFFSET = 72;
-const BASE_SIDE_PADDING = 14;
-const BASE_ROW_GAP = 6;
-const BASE_COL_GAP = 6;
+const BASE_TOP_OFFSET = 74;
+const BASE_SIDE_PADDING = 18;
+const BASE_ROW_GAP = 7;
+const BASE_COL_GAP = 7;
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -9,11 +9,11 @@ function clamp(value, min, max) {
 
 function pickPalette(round) {
   const palettes = [
-    ["#22d3ee", "#67e8f9", "#a78bfa", "#f472b6"],
-    ["#38bdf8", "#818cf8", "#c084fc", "#f9a8d4"],
-    ["#34d399", "#22d3ee", "#60a5fa", "#a78bfa"],
-    ["#f59e0b", "#fb7185", "#c084fc", "#22d3ee"],
-    ["#2dd4bf", "#38bdf8", "#8b5cf6", "#ec4899"],
+    ["#22d3ee", "#0ea5e9", "#d946ef", "#ec4899", "#f59e0b", "#ef4444"],
+    ["#38bdf8", "#2563eb", "#c084fc", "#f472b6", "#facc15", "#fb7185"],
+    ["#67e8f9", "#22d3ee", "#a78bfa", "#ec4899", "#f97316", "#ef4444"],
+    ["#0ea5e9", "#22d3ee", "#d946ef", "#f472b6", "#f59e0b", "#dc2626"],
+    ["#2dd4bf", "#38bdf8", "#8b5cf6", "#ec4899", "#facc15", "#fb7185"],
   ];
 
   return palettes[(round - 1) % palettes.length];
@@ -32,6 +32,7 @@ function createBrick({
   height,
   hp,
   color,
+  glow,
   round,
 }) {
   return {
@@ -47,7 +48,7 @@ function createBrick({
     maxHp: hp,
     color,
     value: getBrickValue(row, round),
-    glow: color,
+    glow: glow || color,
   };
 }
 
@@ -71,8 +72,12 @@ function buildGrid({
     for (let col = 0; col < cols; col += 1) {
       if (includeFn && !includeFn(row, col, rows, cols)) continue;
 
-      const x = sidePadding + col * (brickWidth + colGap);
+      const rowInset = row % 2 === 1 ? Math.min(5, colGap) : 0;
+      const x = sidePadding + rowInset + col * (brickWidth + colGap);
       const y = topOffset + row * (brickHeight + rowGap);
+      const colorData = colorFn
+        ? colorFn(row, col, round)
+        : { color: "#22d3ee", glow: "#22d3ee" };
 
       bricks.push(
         createBrick({
@@ -83,7 +88,8 @@ function buildGrid({
           width: brickWidth,
           height: brickHeight,
           hp: hpFn ? hpFn(row, col, round) : 1,
-          color: colorFn ? colorFn(row, col, round) : "#22d3ee",
+          color: colorData.color || colorData,
+          glow: colorData.glow || colorData.color || colorData,
           round,
         })
       );
@@ -95,10 +101,10 @@ function buildGrid({
 
 function getPatternType(round) {
   const patterns = [
-    "full",
-    "checker",
-    "tunnel",
-    "diamond",
+    "cover-wall",
+    "split-wall",
+    "combo-gates",
+    "diamond-core",
     "fortress",
     "stairs-left",
     "stairs-right",
@@ -122,10 +128,31 @@ function getRoundStats(round) {
   return {
     round,
     difficultyTier,
-    ballSpeed: 3.2 + (round - 1) * 0.14,
-    paddleWidth: clamp(96 - (round - 1) * 1.5, 64, 96),
+    ballSpeed: 3.35 + (round - 1) * 0.13,
+    paddleWidth: clamp(104 - (round - 1) * 1.45, 68, 104),
     brickHpBase: difficultyTier,
     bonusClearScore: 180 + round * 35,
+  };
+}
+
+function getRowBandColor(row, col, palette) {
+  const bandMap = [
+    { color: palette[0], glow: "#22d3ee" },
+    { color: palette[1], glow: "#38bdf8" },
+    { color: palette[2], glow: "#d946ef" },
+    { color: palette[3], glow: "#ec4899" },
+    { color: palette[4], glow: "#f59e0b" },
+    { color: palette[5], glow: "#ef4444" },
+  ];
+
+  const band = bandMap[row % bandMap.length];
+  const shimmer = col % 3 === 0;
+
+  if (!shimmer) return band;
+
+  return {
+    color: band.color,
+    glow: band.glow,
   };
 }
 
@@ -139,8 +166,8 @@ export function generateBreakerzRound({
   const pattern = getPatternType(safeRound);
   const stats = getRoundStats(safeRound);
 
-  const cols = safeRound <= 3 ? 6 : safeRound <= 8 ? 7 : 8;
-  const rows = clamp(4 + Math.floor((safeRound - 1) / 2), 4, 8);
+  const cols = safeRound <= 4 ? 6 : safeRound <= 9 ? 7 : 8;
+  const rows = clamp(5 + Math.floor((safeRound - 1) / 3), 5, 8);
 
   const sidePadding = BASE_SIDE_PADDING;
   const rowGap = BASE_ROW_GAP;
@@ -148,8 +175,8 @@ export function generateBreakerzRound({
   const topOffset = BASE_TOP_OFFSET;
 
   const totalGapWidth = (cols - 1) * colGap;
-  const brickWidth = Math.floor((width - sidePadding * 2 - totalGapWidth) / cols);
-  const brickHeight = safeRound <= 5 ? 18 : 17;
+  const brickWidth = Math.floor((width - sidePadding * 2 - totalGapWidth - 5) / cols);
+  const brickHeight = safeRound <= 5 ? 17 : 16;
 
   const centerCol = Math.floor(cols / 2);
   const centerRow = Math.floor(rows / 2);
@@ -159,37 +186,52 @@ export function generateBreakerzRound({
 
     if (safeRound <= 2) return 1;
     if (safeRound <= 5) return row < 2 ? 1 : base;
-    if (safeRound <= 9) return row < 2 ? base : base + 1;
 
-    const reinforced = (row + col + safeRound) % 3 === 0;
-    return reinforced ? base + 1 : base;
+    const reinforced = (row + col + safeRound) % 4 === 0;
+    const coreBrick =
+      Math.abs(row - centerRow) <= 1 && Math.abs(col - centerCol) <= 1;
+
+    if (safeRound <= 9) return reinforced || coreBrick ? base + 1 : base;
+
+    return reinforced || coreBrick ? base + 2 : base + 1;
   };
 
   const colorFn = (row, col) => {
-    return palette[(row + col) % palette.length];
+    return getRowBandColor(row, col, palette);
   };
 
   let includeFn;
 
   switch (pattern) {
-    case "checker":
-      includeFn = (row, col) => (row + col) % 2 === 0;
-      break;
-
-    case "tunnel":
+    case "split-wall":
       includeFn = (row, col, totalRows, totalCols) => {
-        const leftWall = col <= 1;
-        const rightWall = col >= totalCols - 2;
-        const roof = row === 0 || row === 1;
-        return leftWall || rightWall || roof;
+        const middleLeft = Math.floor(totalCols / 2) - 1;
+        const middleRight = Math.ceil(totalCols / 2);
+
+        if (row >= Math.floor(totalRows / 2) && col >= middleLeft && col <= middleRight) {
+          return false;
+        }
+
+        return true;
       };
       break;
 
-    case "diamond":
+    case "combo-gates":
+      includeFn = (row, col, totalRows, totalCols) => {
+        const outer = col === 0 || col === totalCols - 1;
+        const roof = row <= 1;
+        const gates = row >= 2 && (col === 1 || col === totalCols - 2);
+        const lowerBanks = row >= totalRows - 2 && col % 2 === 0;
+
+        return outer || roof || gates || lowerBanks;
+      };
+      break;
+
+    case "diamond-core":
       includeFn = (row, col) => {
         return (
           Math.abs(row - centerRow) + Math.abs(col - centerCol) <=
-          Math.max(2, Math.floor(cols / 3))
+          Math.max(2, Math.floor(cols / 2))
         );
       };
       break;
@@ -205,7 +247,9 @@ export function generateBreakerzRound({
           (col === 2 || col === totalCols - 3) &&
           row >= 1 &&
           row <= totalRows - 2;
-        return border || pillars;
+        const crown = row === 1 && col >= 1 && col <= totalCols - 2;
+
+        return border || pillars || crown;
       };
       break;
 
@@ -219,12 +263,20 @@ export function generateBreakerzRound({
       break;
 
     case "stripes":
-      includeFn = (row) => row % 2 === 0;
+      includeFn = (row, col) => row % 2 === 0 || col === 0 || col % 3 === 0;
       break;
 
-    case "full":
+    case "cover-wall":
     default:
-      includeFn = () => true;
+      includeFn = (row, col, totalRows, totalCols) => {
+        const centerGap =
+          row >= Math.floor(totalRows / 2) &&
+          row <= Math.floor(totalRows / 2) + 1 &&
+          col >= Math.floor(totalCols / 2) - 1 &&
+          col <= Math.floor(totalCols / 2);
+
+        return !centerGap;
+      };
       break;
   }
 
