@@ -16,7 +16,7 @@ export function createBallVelocity(speed = 3.2, direction = 1) {
   const safeDirection = direction >= 0 ? 1 : -1;
 
   return {
-    dx: safeSpeed * 0.72 * safeDirection,
+    dx: safeSpeed * 0.58 * safeDirection,
     dy: -safeSpeed,
   };
 }
@@ -43,20 +43,23 @@ export function reflectBallFromPaddle({
   paddleX,
   paddleWidth,
   baseSpeed,
-  bounceBoost = 1.18,
+  bounceBoost = 1.2,
 }) {
   const safeBallX = normalizeNumber(ballX, 0);
   const safePaddleX = normalizeNumber(paddleX, 0);
   const safePaddleWidth = Math.max(1, normalizeNumber(paddleWidth, 96));
   const safeBaseSpeed = Math.max(0.5, normalizeNumber(baseSpeed, 3.2));
-  const safeBounceBoost = Math.max(1, normalizeNumber(bounceBoost, 1.18));
+  const safeBounceBoost = Math.max(1, normalizeNumber(bounceBoost, 1.2));
 
   const hitRatio = clamp((safeBallX - safePaddleX) / safePaddleWidth, 0, 1);
   const centered = (hitRatio - 0.5) * 2;
+  const angleStrength = Math.sign(centered) * Math.pow(Math.abs(centered), 0.8);
+  const dx = safeBaseSpeed * angleStrength * safeBounceBoost;
+  const dy = -Math.sqrt(Math.max(0.4, safeBaseSpeed * safeBaseSpeed - dx * dx * 0.42));
 
   return {
-    dx: safeBaseSpeed * centered * safeBounceBoost,
-    dy: -Math.abs(safeBaseSpeed),
+    dx,
+    dy,
   };
 }
 
@@ -82,7 +85,10 @@ export function getBrickHitReflection(ball, brick) {
   const diffX = ballCenterX - brickCenterX;
   const diffY = ballCenterY - brickCenterY;
 
-  if (Math.abs(diffX / brick.width) > Math.abs(diffY / brick.height)) {
+  const overlapX = brick.width / 2 + ball.radius - Math.abs(diffX);
+  const overlapY = brick.height / 2 + ball.radius - Math.abs(diffY);
+
+  if (overlapX < overlapY) {
     return {
       dx: -ball.dx,
       dy: ball.dy,
