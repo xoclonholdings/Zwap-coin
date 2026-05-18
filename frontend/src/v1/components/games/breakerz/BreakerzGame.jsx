@@ -15,6 +15,7 @@ export default function BreakerzGame({
   onOutOfLives,
   isPlaying,
   reviveUsed = false,
+  reviveSignal = 0,
   level = 1,
   round = 1,
 }) {
@@ -23,7 +24,7 @@ export default function BreakerzGame({
   const engineRef = useRef(null);
   const sessionStartedAtRef = useRef(null);
   const handledFinishRef = useRef(false);
-  const previousReviveUsedRef = useRef(Boolean(reviveUsed));
+  const previousReviveSignalRef = useRef(Number(reviveSignal) || 0);
 
   const [gameState, setGameState] = useState("splash");
   const [showSplashContent, setShowSplashContent] = useState(false);
@@ -91,7 +92,7 @@ export default function BreakerzGame({
     });
 
     handledFinishRef.current = false;
-    previousReviveUsedRef.current = Boolean(reviveUsed);
+    previousReviveSignalRef.current = Number(reviveSignal) || 0;
 
     const timer = window.setTimeout(() => {
       setShowSplashContent(true);
@@ -103,12 +104,17 @@ export default function BreakerzGame({
   useEffect(() => {
     if (!isPlaying) return;
 
-    const previousReviveUsed = previousReviveUsedRef.current;
-    const nextReviveUsed = Boolean(reviveUsed);
+    const previousReviveSignal = previousReviveSignalRef.current;
+    const nextReviveSignal = Number(reviveSignal) || 0;
 
-    if (!previousReviveUsed && nextReviveUsed && engineRef.current) {
+    if (
+      reviveUsed &&
+      nextReviveSignal > previousReviveSignal &&
+      engineRef.current
+    ) {
       handledFinishRef.current = false;
       engineRef.current.reviveWithExtraLife?.();
+
       setGameState("live");
       setOverlayState({
         pauseOpen: false,
@@ -116,8 +122,8 @@ export default function BreakerzGame({
       });
     }
 
-    previousReviveUsedRef.current = nextReviveUsed;
-  }, [isPlaying, reviveUsed]);
+    previousReviveSignalRef.current = nextReviveSignal;
+  }, [isPlaying, reviveUsed, reviveSignal]);
 
   useEffect(() => {
     if (!isPlaying || gameState !== "live") return undefined;
@@ -151,6 +157,7 @@ export default function BreakerzGame({
         engine.togglePause();
 
         const publicState = engine.getPublicState();
+
         setOverlayState((prev) => ({
           ...prev,
           pauseOpen: Boolean(publicState.paused),
