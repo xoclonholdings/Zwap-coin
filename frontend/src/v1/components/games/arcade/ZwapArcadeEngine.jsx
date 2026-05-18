@@ -93,6 +93,7 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
   const [roundResult, setRoundResult] = useState(null);
   const [rewardDoubled, setRewardDoubled] = useState(false);
   const [reviveUsed, setReviveUsed] = useState(false);
+  const [reviveSignal, setReviveSignal] = useState(0);
   const [adRunning, setAdRunning] = useState(false);
   const [roundSeed, setRoundSeed] = useState(1);
   const [currentRound, setCurrentRound] = useState(1);
@@ -155,8 +156,8 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
 
       setRoundResult(updatedResult);
       setReviveUsed(true);
+      setReviveSignal((current) => current + 1);
       setFlowState("live");
-      setRoundSeed((current) => current + 1);
     } finally {
       setAdRunning(false);
     }
@@ -168,6 +169,8 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
     setCurrentRound(nextRound);
     setRoundResult(null);
     setRewardDoubled(false);
+    setReviveUsed(false);
+    setReviveSignal(0);
     setFlowState("live");
     setRoundSeed((current) => current + 1);
   }
@@ -188,6 +191,7 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
       onRoundComplete: handleRoundComplete,
       onOutOfLives: handleOutOfLives,
       reviveUsed,
+      reviveSignal,
     };
 
     if (activeGameId === "stackz") return <StackzGame {...sharedProps} />;
