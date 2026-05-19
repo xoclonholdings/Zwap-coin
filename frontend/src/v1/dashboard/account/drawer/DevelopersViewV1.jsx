@@ -23,6 +23,29 @@ function HeaderButton({ children, label }) {
   );
 }
 
+function ModePill({ mode, active = false, onClick }) {
+  const activeStyles =
+    mode.tone === "gold"
+      ? "border-amber-300/28 bg-amber-400/[0.10] text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.10)]"
+      : mode.tone === "violet"
+        ? "border-violet-300/28 bg-violet-400/[0.10] text-violet-100 shadow-[0_0_18px_rgba(168,85,247,0.10)]"
+        : "border-cyan-300/28 bg-cyan-400/[0.10] text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.10)]";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "flex h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-[11px] font-black tracking-[-0.01em] transition active:scale-[0.98]",
+        active ? activeStyles : "border-white/10 bg-white/[0.035] text-white/45",
+      ].join(" ")}
+    >
+      {mode.smallIcon}
+      {mode.navLabel}
+    </button>
+  );
+}
+
 function StatusPill({ label, tone = "cyan" }) {
   const styles =
     tone === "gold"
@@ -43,33 +66,28 @@ function StatusPill({ label, tone = "cyan" }) {
   );
 }
 
-function DeveloperModePanel({ mode, active = false, onClick }) {
+function FeaturedModeCard({ mode }) {
   const toneStyles =
     mode.tone === "gold"
       ? {
-          panel:
-            "border-amber-300/22 bg-[radial-gradient(circle_at_18%_0%,rgba(251,191,36,0.16),transparent_42%),linear-gradient(180deg,rgba(30,22,10,0.96),rgba(8,9,14,0.98))]",
+          card: "border-amber-300/22 bg-[radial-gradient(circle_at_18%_0%,rgba(251,191,36,0.16),transparent_42%),linear-gradient(180deg,rgba(30,22,10,0.96),rgba(8,9,14,0.98))]",
           icon: "border-amber-300/24 bg-amber-400/12 text-amber-100",
         }
       : mode.tone === "violet"
         ? {
-            panel:
-              "border-violet-300/22 bg-[radial-gradient(circle_at_18%_0%,rgba(168,85,247,0.16),transparent_42%),linear-gradient(180deg,rgba(22,14,34,0.96),rgba(8,9,18,0.98))]",
+            card: "border-violet-300/22 bg-[radial-gradient(circle_at_18%_0%,rgba(168,85,247,0.16),transparent_42%),linear-gradient(180deg,rgba(22,14,34,0.96),rgba(8,9,18,0.98))]",
             icon: "border-violet-300/24 bg-violet-400/12 text-violet-100",
           }
         : {
-            panel:
-              "border-cyan-300/22 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.15),transparent_42%),linear-gradient(180deg,rgba(10,24,34,0.96),rgba(6,10,18,0.98))]",
+            card: "border-cyan-300/22 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.15),transparent_42%),linear-gradient(180deg,rgba(10,24,34,0.96),rgba(6,10,18,0.98))]",
             icon: "border-cyan-300/24 bg-cyan-400/12 text-cyan-100",
           };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
       className={[
-        "relative overflow-hidden rounded-[26px] border p-4 text-left shadow-[0_16px_34px_rgba(0,0,0,0.30)] transition active:scale-[0.985]",
-        active ? toneStyles.panel : "border-white/10 bg-white/[0.03]",
+        "relative overflow-hidden rounded-[28px] border p-4 shadow-[0_16px_34px_rgba(0,0,0,0.30)]",
+        toneStyles.card,
       ].join(" ")}
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.055),transparent_38%)]" />
@@ -85,7 +103,7 @@ function DeveloperModePanel({ mode, active = false, onClick }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="text-[16px] font-black tracking-[-0.03em] text-white">
+          <div className="text-[17px] font-black tracking-[-0.035em] text-white">
             {mode.title}
           </div>
 
@@ -93,16 +111,14 @@ function DeveloperModePanel({ mode, active = false, onClick }) {
             {mode.subtitle}
           </div>
 
-          {active ? (
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-              {mode.pills.map((pill) => (
-                <StatusPill key={pill} label={pill} tone={mode.tone} />
-              ))}
-            </div>
-          ) : null}
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {mode.pills.map((pill) => (
+              <StatusPill key={pill} label={pill} tone={mode.tone} />
+            ))}
+          </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -141,7 +157,9 @@ export default function DevelopersViewV1({ onBack }) {
     () => [
       {
         id: "integrations",
+        navLabel: "Integrations",
         tone: "cyan",
+        smallIcon: <KeyRound size={13} strokeWidth={2.3} />,
         icon: <KeyRound size={20} strokeWidth={2.3} />,
         title: "Create Integration",
         subtitle: "Generate API connections, callback routes, and event signals.",
@@ -149,7 +167,9 @@ export default function DevelopersViewV1({ onBack }) {
       },
       {
         id: "games",
+        navLabel: "Games",
         tone: "violet",
+        smallIcon: <Gamepad2 size={13} strokeWidth={2.3} />,
         icon: <Gamepad2 size={20} strokeWidth={2.3} />,
         title: "Submit Game Build",
         subtitle: "Upload playable experiences for PLAY ecosystem review.",
@@ -157,7 +177,9 @@ export default function DevelopersViewV1({ onBack }) {
       },
       {
         id: "sponsors",
+        navLabel: "Sponsors",
         tone: "gold",
+        smallIcon: <Megaphone size={13} strokeWidth={2.3} />,
         icon: <Megaphone size={20} strokeWidth={2.3} />,
         title: "Create Sponsor Campaign",
         subtitle: "Launch challenge pools, Tapjoy activations, and reward campaigns.",
@@ -165,7 +187,9 @@ export default function DevelopersViewV1({ onBack }) {
       },
       {
         id: "tools",
+        navLabel: "Tools",
         tone: "cyan",
+        smallIcon: <Wrench size={13} strokeWidth={2.3} />,
         icon: <Wrench size={20} strokeWidth={2.3} />,
         title: "Open Creator Tools",
         subtitle: "Access creator utilities, diagnostics, and payload controls.",
@@ -174,6 +198,9 @@ export default function DevelopersViewV1({ onBack }) {
     ],
     []
   );
+
+  const activeContent =
+    modes.find((mode) => mode.id === activeMode) || modes[0];
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(6,12,18,0.98),rgba(4,8,14,1))] text-white">
@@ -218,17 +245,18 @@ export default function DevelopersViewV1({ onBack }) {
             </div>
           </div>
 
-          <div className="flex snap-x gap-2.5 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {modes.map((mode) => (
-              <div key={mode.id} className="w-[82%] shrink-0 snap-center">
-                <DeveloperModePanel
-                  mode={mode}
-                  active={activeMode === mode.id}
-                  onClick={() => setActiveMode(mode.id)}
-                />
-              </div>
+              <ModePill
+                key={mode.id}
+                mode={mode}
+                active={activeMode === mode.id}
+                onClick={() => setActiveMode(mode.id)}
+              />
             ))}
           </div>
+
+          <FeaturedModeCard mode={activeContent} />
 
           <div className="grid grid-cols-2 gap-2.5">
             <QuickAction
