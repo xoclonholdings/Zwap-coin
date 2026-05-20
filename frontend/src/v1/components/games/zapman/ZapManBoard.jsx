@@ -55,7 +55,7 @@ export default function ZapManBoard({ state }) {
 
   function getCellClass(type) {
     const base =
-      "relative flex aspect-square w-full items-center justify-center overflow-visible rounded-[8px] border transition-colors duration-200";
+      "relative flex h-full w-full items-center justify-center overflow-visible rounded-[8px] border transition-colors duration-200";
 
     if (type === "wall") {
       return `${base} border-cyan-200/25 bg-[linear-gradient(180deg,rgba(103,242,255,0.22),rgba(14,165,233,0.10)_42%,rgba(2,6,23,0.72)_100%)] shadow-[inset_0_1px_10px_rgba(255,255,255,0.10),inset_0_-10px_18px_rgba(8,47,73,0.36),0_0_15px_rgba(34,211,238,0.24)]`;
@@ -90,8 +90,8 @@ export default function ZapManBoard({ state }) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center">
-      <div className="relative w-full max-w-[520px] rounded-[34px] border border-cyan-300/28 bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.12),transparent_58%),linear-gradient(180deg,rgba(4,13,24,0.98),rgba(1,4,12,0.99))] p-3.5 shadow-[0_26px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(34,211,238,0.16)]">
+    <div className="flex min-h-0 flex-1 items-stretch justify-center">
+      <div className="relative flex h-full w-full max-w-[520px] flex-col rounded-[34px] border border-cyan-300/28 bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.12),transparent_58%),linear-gradient(180deg,rgba(4,13,24,0.98),rgba(1,4,12,0.99))] p-3 shadow-[0_26px_80px_rgba(0,0,0,0.55),0_0_42px_rgba(34,211,238,0.16)]">
         <div className="pointer-events-none absolute inset-0 rounded-[34px] bg-[linear-gradient(135deg,rgba(255,255,255,0.10),transparent_28%,rgba(34,211,238,0.08)_74%,transparent)]" />
 
         <div className="pointer-events-none absolute inset-2 rounded-[28px] border border-cyan-200/12 shadow-[inset_0_0_38px_rgba(34,211,238,0.14)]" />
@@ -99,9 +99,10 @@ export default function ZapManBoard({ state }) {
         <div className="pointer-events-none absolute inset-4 rounded-[24px] bg-[radial-gradient(circle_at_center,transparent_42%,rgba(34,211,238,0.07)_100%)]" />
 
         <div
-          className="relative grid gap-[5px]"
+          className="relative grid min-h-0 flex-1 gap-[4px]"
           style={{
             gridTemplateColumns: `repeat(${GRID_WIDTH}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${GRID_HEIGHT}, minmax(0, 1fr))`,
           }}
         >
           {cells.map((cell) => (
