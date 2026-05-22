@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 
-import StackzOnboardingGame from "@/v1/components/games/stackz/StackzOnboardingGame";
+import BreakerzGame from "@/v1/components/games/breakerz/BreakerzGame";
 
 import usePlayOnboardingMachine from "./usePlayOnboardingMachine";
 import {
@@ -49,7 +49,7 @@ export default function PlayOnboardingSequence({
 
       {!showVoice && phase === "game" && (
         <PlayGameStage key="play-game">
-          <StackzOnboardingGame
+          <BreakerzGame
             isPlaying={true}
             level={stackzLevel}
             round={1}
