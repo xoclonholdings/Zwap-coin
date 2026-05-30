@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MOVE_ONBOARDING_VOICE } from "./moveOnboardingScript";
 
-const VOICE_HOLD_MS = 1800;
-const COMPLETE_HOLD_MS = 1400;
+const VOICE_HOLD_MS = 2600;
+const COMPLETE_HOLD_MS = 1800;
 
-const MOCK_START_DELAY_MS = 2600;
+const MOCK_START_DELAY_MS = 3200;
 const MOCK_STEP_SEQUENCE = [1, 2, 3, 5, 7, 10];
-const MOCK_STEP_INTERVAL_MS = 900;
+const MOCK_STEP_INTERVAL_MS = 1100;
 
 export default function useMoveOnboardingMachine({
   totalSteps,
