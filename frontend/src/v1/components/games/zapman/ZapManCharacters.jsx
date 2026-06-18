@@ -11,27 +11,31 @@ export function ZapManPlayer({ direction = "right", powered = false }) {
   return (
     <div
       className={[
-        "relative h-[118%] w-[118%] transition-transform duration-150",
+        "relative h-[108%] w-[108%] transition-transform duration-150",
         rotationMap[direction] || "rotate-0",
       ].join(" ")}
     >
       <div
         className={[
-          "absolute inset-[7%] rounded-full",
+          "absolute inset-[8%] rounded-full",
           powered
-            ? "bg-[radial-gradient(circle_at_32%_28%,#ffffff_0%,#fff7ad_18%,#67f2ff_48%,#a855f7_100%)] shadow-[0_0_18px_rgba(250,204,21,0.95),0_0_30px_rgba(34,211,238,0.50)]"
-            : "bg-[radial-gradient(circle_at_32%_28%,#ffffff_0%,#dffbff_18%,#67f2ff_48%,#7c3aed_100%)] shadow-[0_0_18px_rgba(103,242,255,0.88),0_0_28px_rgba(124,58,237,0.45)]",
+            ? "bg-[radial-gradient(circle_at_30%_24%,#ffffff_0%,#fff7ad_18%,#67f2ff_46%,#a855f7_100%)] shadow-[0_0_20px_rgba(250,204,21,0.95),0_0_34px_rgba(34,211,238,0.52)]"
+            : "bg-[radial-gradient(circle_at_30%_24%,#ffffff_0%,#dffbff_18%,#67f2ff_46%,#7c3aed_100%)] shadow-[0_0_18px_rgba(103,242,255,0.86),0_0_28px_rgba(124,58,237,0.42)]",
         ].join(" ")}
       />
 
-      <div className="absolute left-[36%] top-[21%] h-[13%] w-[13%] rounded-full bg-slate-950 shadow-[0_0_4px_rgba(255,255,255,0.8)]" />
+      <div className="absolute left-[36%] top-[22%] h-[12%] w-[12%] rounded-full bg-slate-950 shadow-[0_0_4px_rgba(255,255,255,0.85)]" />
 
-      <div className="absolute bottom-[16%] left-[31%] h-[30%] w-[38%] rounded-[30%] bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(30,41,59,0.96))] shadow-[inset_0_0_8px_rgba(103,242,255,0.35)]">
-        <div className="absolute left-1/2 top-1/2 h-[54%] w-[30%] -translate-x-1/2 -translate-y-1/2 rotate-12 bg-[linear-gradient(180deg,#ffffff,#67f2ff_48%,#a855f7)] [clip-path:polygon(58%_0,18%_50%,47%_50%,34%_100%,84%_38%,55%_38%)]" />
+      <div className="absolute bottom-[17%] left-[31%] h-[31%] w-[38%] rounded-[32%] bg-[linear-gradient(180deg,rgba(15,23,42,0.9),rgba(30,41,59,0.98))] shadow-[inset_0_0_9px_rgba(103,242,255,0.38),0_0_8px_rgba(34,211,238,0.2)]">
+        <div className="absolute left-1/2 top-1/2 h-[58%] w-[32%] -translate-x-1/2 -translate-y-1/2 rotate-12 bg-[linear-gradient(180deg,#ffffff,#67f2ff_50%,#a855f7)] [clip-path:polygon(58%_0,18%_50%,47%_50%,34%_100%,84%_38%,55%_38%)]" />
       </div>
 
-      <div className="absolute bottom-[7%] left-[21%] h-[22%] w-[17%] -rotate-12 rounded-full bg-[linear-gradient(180deg,#eef6ff,#67f2ff)] shadow-[0_0_8px_rgba(103,242,255,0.75)]" />
-      <div className="absolute bottom-[7%] right-[21%] h-[22%] w-[17%] rotate-12 rounded-full bg-[linear-gradient(180deg,#eef6ff,#67f2ff)] shadow-[0_0_8px_rgba(103,242,255,0.75)]" />
+      <div className="absolute bottom-[8%] left-[22%] h-[21%] w-[16%] -rotate-12 rounded-full bg-[linear-gradient(180deg,#eef6ff,#67f2ff)] shadow-[0_0_8px_rgba(103,242,255,0.72)]" />
+      <div className="absolute bottom-[8%] right-[22%] h-[21%] w-[16%] rotate-12 rounded-full bg-[linear-gradient(180deg,#eef6ff,#67f2ff)] shadow-[0_0_8px_rgba(103,242,255,0.72)]" />
+
+      {powered ? (
+        <div className="absolute inset-[-18%] rounded-full border border-yellow-200/30 shadow-[0_0_16px_rgba(250,204,21,0.45)]" />
+      ) : null}
     </div>
   );
 }
@@ -47,10 +51,10 @@ export function ZapManEnemy({ character = "glitch", vulnerable = false }) {
   };
 
   return (
-    <div className="relative h-[112%] w-[112%]">
+    <div className="relative h-[105%] w-[105%]">
       <div
         className={[
-          "absolute inset-x-[8%] bottom-[6%] top-[2%] rounded-t-full rounded-b-[30%] shadow-[0_0_16px_rgba(217,70,239,0.72),0_0_26px_rgba(34,211,238,0.20)]",
+          "absolute inset-x-[9%] bottom-[7%] top-[3%] rounded-t-full rounded-b-[30%] shadow-[0_0_16px_rgba(217,70,239,0.68),0_0_26px_rgba(34,211,238,0.18)]",
           vulnerable
             ? "animate-pulse bg-gradient-to-br from-blue-200 via-cyan-300 to-white"
             : `bg-gradient-to-br ${colorMap[character] || colorMap.glitch}`,
@@ -69,20 +73,20 @@ export function ZapManEnemy({ character = "glitch", vulnerable = false }) {
         <div className="absolute bottom-[-1px] left-0 h-[18%] w-full rounded-b-[30%] bg-[repeating-linear-gradient(90deg,transparent_0_7px,rgba(255,255,255,0.24)_7px_11px)]" />
       </div>
 
-      <div className="absolute inset-x-[12%] bottom-[0] h-[18%] rounded-full bg-current opacity-20 blur-md" />
+      <div className="absolute inset-x-[14%] bottom-[1%] h-[16%] rounded-full bg-cyan-300/20 blur-md" />
     </div>
   );
 }
 
 export function ZapManPellet() {
   return (
-    <div className="h-[34%] w-[34%] rounded-full bg-[radial-gradient(circle,#ffffff_0%,#fde68a_35%,#f59e0b_72%,rgba(245,158,11,0.15)_100%)] shadow-[0_0_10px_rgba(251,191,36,0.9),0_0_18px_rgba(34,211,238,0.18)]" />
+    <div className="h-[28%] w-[28%] rounded-full bg-[radial-gradient(circle,#ffffff_0%,#fde68a_35%,#f59e0b_72%,rgba(245,158,11,0.15)_100%)] shadow-[0_0_10px_rgba(251,191,36,0.9),0_0_18px_rgba(34,211,238,0.18)]" />
   );
 }
 
 export function ZapManPowerPellet() {
   return (
-    <div className="relative h-[68%] w-[68%] animate-pulse rounded-full bg-[radial-gradient(circle,#ffffff_0%,#fef08a_30%,#f97316_62%,#ec4899_100%)] shadow-[0_0_16px_rgba(250,204,21,0.95),0_0_28px_rgba(236,72,153,0.45)]">
+    <div className="relative h-[58%] w-[58%] animate-pulse rounded-full bg-[radial-gradient(circle,#ffffff_0%,#fef08a_30%,#f97316_62%,#ec4899_100%)] shadow-[0_0_16px_rgba(250,204,21,0.95),0_0_28px_rgba(236,72,153,0.45)]">
       <div className="absolute inset-[-35%] rounded-full border border-yellow-200/35" />
     </div>
   );
