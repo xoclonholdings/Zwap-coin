@@ -53,6 +53,8 @@ export default function ZapManGame({
   onOutOfLives,
   isPlaying,
   reviveUsed = false,
+  skipIntro = false,
+  startMode = "splash",
   level = 1,
   round = 1,
 }) {
@@ -92,16 +94,22 @@ export default function ZapManGame({
     handledRoundRef.current = false;
     handledGameOverRef.current = false;
     previousReviveUsedRef.current = Boolean(reviveUsed);
-    sessionStartedAtRef.current = null;
 
     setState(
       createInitialState({
         round,
       })
     );
-    setGameState("splash");
+
+    setGameState(skipIntro || startMode === "countdown" ? "live" : "splash");
     setExitOpen(false);
-  }, [isPlaying, round, reviveUsed]);
+
+    if (skipIntro || startMode === "countdown") {
+      sessionStartedAtRef.current = Date.now();
+    } else {
+      sessionStartedAtRef.current = null;
+    }
+  }, [isPlaying, round, reviveUsed, skipIntro, startMode]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -114,6 +122,10 @@ export default function ZapManGame({
       setState((current) => reviveGame(current));
       setGameState("live");
       setExitOpen(false);
+
+      if (!sessionStartedAtRef.current) {
+        sessionStartedAtRef.current = Date.now();
+      }
     }
 
     previousReviveUsedRef.current = nextReviveUsed;
@@ -299,7 +311,7 @@ export default function ZapManGame({
       </div>
 
       <ZapManSplashOverlay
-        open={gameState === "splash"}
+        open={gameState === "splash" && !skipIntro && startMode !== "countdown"}
         onStart={handleStart}
         onBackToArcade={handleConfirmExit}
       />
