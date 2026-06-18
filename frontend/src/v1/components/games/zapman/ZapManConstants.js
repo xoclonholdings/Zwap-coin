@@ -1,5 +1,5 @@
-export const GRID_WIDTH = 15;
-export const GRID_HEIGHT = 15;
+export const GRID_WIDTH = 13;
+export const GRID_HEIGHT = 13;
 
 export const INITIAL_PLAYER_POSITION = { x: 7, y: 11 };
 export const INITIAL_PLAYER_DIRECTION = "right";
