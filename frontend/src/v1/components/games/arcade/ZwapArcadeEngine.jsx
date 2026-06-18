@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useMemo, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 
 import GameInterstitialOverlay from "./GameInterstitialOverlay";
 import GameRoundCompleteOverlay from "./GameRoundCompleteOverlay";
@@ -72,6 +72,20 @@ function GameLoadingScreen() {
   );
 }
 
+function GameCountdownOverlay({ open, value }) {
+  if (!open) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-60 flex items-center justify-center bg-black/25 text-white backdrop-blur-[2px]">
+      <div className="flex h-32 w-32 items-center justify-center rounded-full border border-cyan-200/25 bg-black/55 shadow-[0_0_42px_rgba(34,211,238,0.28)]">
+        <div className="bg-[linear-gradient(180deg,#ffffff,#67f2ff_45%,#a855f7)] bg-clip-text text-5xl font-black text-transparent drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]">
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function getGameTitle(gameId) {
   if (gameId === "zap-man") return "Zap-Man";
   if (gameId === "breakerz") return "Breakerz";
@@ -97,8 +111,33 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
   const [adRunning, setAdRunning] = useState(false);
   const [roundSeed, setRoundSeed] = useState(1);
   const [currentRound, setCurrentRound] = useState(1);
+  const [countdownValue, setCountdownValue] = useState("3");
+  const [skipIntro, setSkipIntro] = useState(false);
 
   const gameTitle = useMemo(() => getGameTitle(activeGameId), [activeGameId]);
+
+  useEffect(() => {
+    if (flowState !== "countdown") return undefined;
+
+    const sequence = ["3", "2", "1", "GO!"];
+    let index = 0;
+
+    setCountdownValue(sequence[index]);
+
+    const interval = window.setInterval(() => {
+      index += 1;
+
+      if (index >= sequence.length) {
+        window.clearInterval(interval);
+        setFlowState("live");
+        return;
+      }
+
+      setCountdownValue(sequence[index]);
+    }, 650);
+
+    return () => window.clearInterval(interval);
+  }, [flowState]);
 
   function handleRoundComplete(result) {
     setRoundResult(result || {});
@@ -157,7 +196,8 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
       setRoundResult(updatedResult);
       setReviveUsed(true);
       setReviveSignal((current) => current + 1);
-      setFlowState("live");
+      setSkipIntro(true);
+      setFlowState("countdown");
     } finally {
       setAdRunning(false);
     }
@@ -171,8 +211,9 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
     setRewardDoubled(false);
     setReviveUsed(false);
     setReviveSignal(0);
-    setFlowState("live");
+    setSkipIntro(true);
     setRoundSeed((current) => current + 1);
+    setFlowState("countdown");
   }
 
   function handleFinalGameEnd(result) {
@@ -192,6 +233,8 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
       onOutOfLives: handleOutOfLives,
       reviveUsed,
       reviveSignal,
+      skipIntro,
+      startMode: skipIntro ? "countdown" : "splash",
     };
 
     if (activeGameId === "stackz") return <StackzGame {...sharedProps} />;
@@ -238,6 +281,11 @@ export default function ZwapArcadeEngine({ activeGameId, onGameEnd }) {
         adRunning={adRunning}
         onWatchReviveAd={handleWatchReviveAd}
         onEndSession={() => handleFinalGameEnd(roundResult)}
+      />
+
+      <GameCountdownOverlay
+        open={flowState === "countdown"}
+        value={countdownValue}
       />
     </div>
   );
