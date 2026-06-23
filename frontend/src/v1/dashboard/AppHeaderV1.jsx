@@ -212,13 +212,13 @@ export default function AppHeaderV1({
         <div className="flex h-[64px] items-center gap-2 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,26,0.94),rgba(5,10,16,0.96))] px-3 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
           <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
             <HeaderIconButton
-              label="Activity"
+              label="Discovery"
               onClick={onActivityClick}
               icon={
                 <div className="flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/20 p-[3px]">
                   <img
                     src={activityLogo}
-                    alt="Activity"
+                    alt="Discovery"
                     className="h-5 w-5 object-contain"
                   />
                 </div>
