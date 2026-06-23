@@ -166,7 +166,6 @@ function buildDiscoverySummary(activityData = {}, stepsData = []) {
   const weeklySteps = stepsData.reduce((sum, item) => sum + toSafeNumber(item.steps), 0);
   const gamesPlayedToday = toSafeNumber(activityData.gamesPlayedToday);
   const lessonsCompletedToday = toSafeNumber(activityData.lessonsCompletedToday);
-  const streakDays = toSafeNumber(activityData.streakDays);
 
   if (!activeDays && !weeklySteps && !completedTasks && !gamesPlayedToday && !lessonsCompletedToday) {
     return {
@@ -334,25 +333,21 @@ function ProgressBar({ value = 0, max = 1 }) {
 
 function DiscoverySummaryCard({ summary }) {
   return (
-    <div className="relative overflow-hidden rounded-[28px] border border-cyan-300/15 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.20),transparent_38%),radial-gradient(circle_at_88%_12%,rgba(168,85,247,0.14),transparent_34%),linear-gradient(180deg,rgba(12,20,32,0.96),rgba(5,9,18,0.98))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.32)]">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.07),transparent_34%,rgba(34,211,238,0.04))]" />
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 shadow-[0_12px_34px_rgba(0,0,0,0.18)]">
+      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">
+        Discover You
+      </div>
 
-      <div className="relative">
-        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100/62">
-          Discover You
-        </div>
+      <div className="mt-4 text-[12px] font-semibold leading-5 text-white/70">
+        {summary.eyebrow}
+      </div>
 
-        <div className="mt-3 text-[12px] font-semibold leading-5 text-cyan-100/78">
-          {summary.eyebrow}
-        </div>
+      <div className="mt-1.5 text-[19px] font-black leading-tight tracking-[-0.05em] text-white">
+        {summary.title}
+      </div>
 
-        <div className="mt-1 text-[24px] font-black leading-[0.98] tracking-[-0.07em] text-white">
-          {summary.title}
-        </div>
-
-        <div className="mt-3 text-[12px] font-medium leading-5 text-white/58">
-          {summary.body}
-        </div>
+      <div className="mt-3 text-[12px] font-medium leading-5 text-white/58">
+        {summary.body}
       </div>
     </div>
   );
@@ -360,16 +355,16 @@ function DiscoverySummaryCard({ summary }) {
 
 function DiscoveryInsightCard({ insight }) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-white/[0.035] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
-      <div className="text-[9px] font-black uppercase tracking-[0.16em] text-cyan-100/48">
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 shadow-[0_12px_34px_rgba(0,0,0,0.16)]">
+      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">
         {insight.label}
       </div>
 
-      <div className="mt-1.5 text-[14px] font-black leading-tight tracking-[-0.04em] text-white/88">
+      <div className="mt-3 text-[14px] font-black leading-tight tracking-[-0.04em] text-white/88">
         {insight.title}
       </div>
 
-      <div className="mt-1.5 text-[11px] font-medium leading-4 text-white/48">
+      <div className="mt-2 text-[12px] font-medium leading-5 text-white/52">
         {insight.body}
       </div>
     </div>
@@ -378,12 +373,12 @@ function DiscoveryInsightCard({ insight }) {
 
 function DiscoveryReflectionCard() {
   return (
-    <div className="rounded-[22px] border border-purple-300/12 bg-purple-300/[0.045] p-3">
-      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-purple-100/55">
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4 shadow-[0_12px_34px_rgba(0,0,0,0.16)]">
+      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/34">
         Reflection
       </div>
 
-      <div className="mt-1.5 text-[12px] font-semibold leading-5 text-white/62">
+      <div className="mt-3 text-[12px] font-semibold leading-5 text-white/62">
         ZWAP! reflects what is visible. You bring the context only you could know.
       </div>
     </div>
